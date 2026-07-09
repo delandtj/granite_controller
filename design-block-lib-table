@@ -1,0 +1,10 @@
+(design_block_lib_table
+	(version 1)
+	(lib
+		(name "granite")
+		(type "KiCad")
+		(uri "${KIPRJMOD}/schematic/design_blocks/granite.kicad_blocks")
+		(options "")
+		(descr "granite_controller design blocks")
+	)
+)
