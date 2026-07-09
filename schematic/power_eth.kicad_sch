@@ -4550,12 +4550,6 @@
 		(uuid "36be9d7f-f311-4a72-9c2e-28bf8e9ec15e")
 	)
 	(junction
-		(at 135.89 105.41)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "3c505caa-fc3a-406e-a15e-271ce775a6cd")
-	)
-	(junction
 		(at 153.67 172.72)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -4626,6 +4620,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "75be28ce-818d-4b6f-ad1d-ed4078926321")
+	)
+	(junction
+		(at 135.89 97.79)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "797447fa-c7c9-4895-a871-497870101bbe")
 	)
 	(junction
 		(at 273.05 87.63)
@@ -4730,12 +4730,6 @@
 		(uuid "bebdf56e-0763-4fca-98f6-ded8f9b6f01a")
 	)
 	(junction
-		(at 135.89 97.79)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "c026e0cd-f448-4876-ac13-e885469ad759")
-	)
-	(junction
 		(at 83.82 125.73)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -4794,6 +4788,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "f895b0a9-2cf8-4e56-9219-6234ae308b03")
+	)
+	(junction
+		(at 135.89 105.41)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "fb965f6a-0d53-4f2b-aeeb-4dce0eae09b1")
 	)
 	(no_connect
 		(at 179.07 109.22)
@@ -5165,6 +5165,16 @@
 	)
 	(wire
 		(pts
+			(xy 135.89 97.79) (xy 147.32 97.79)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "36009cc5-ee5f-4eb5-a120-f5b1ef8266d2")
+	)
+	(wire
+		(pts
 			(xy 165.1 182.88) (xy 165.1 184.15)
 		)
 		(stroke
@@ -5332,16 +5342,6 @@
 			(type default)
 		)
 		(uuid "56264255-51b9-4419-a89c-ba5795531684")
-	)
-	(wire
-		(pts
-			(xy 135.89 105.41) (xy 147.32 105.41)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "5695c99b-20ab-47ed-8f6e-e6d04f078f04")
 	)
 	(wire
 		(pts
@@ -6325,16 +6325,6 @@
 	)
 	(wire
 		(pts
-			(xy 135.89 97.79) (xy 147.32 97.79)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "e3f75dbc-eef0-4cd2-b188-9282360a6ce4")
-	)
-	(wire
-		(pts
 			(xy 127 237.49) (xy 137.16 237.49)
 		)
 		(stroke
@@ -6582,6 +6572,16 @@
 			(type default)
 		)
 		(uuid "f8af2071-42bc-4417-86d9-1654691e3116")
+	)
+	(wire
+		(pts
+			(xy 135.89 105.41) (xy 147.32 105.41)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "f8b2056a-c971-4fdf-a244-95155efa7a86")
 	)
 	(wire
 		(pts
@@ -7540,7 +7540,7 @@
 	)
 	(symbol
 		(lib_id "Device:D_Zener")
-		(at 135.89 101.6 90)
+		(at 135.89 101.6 270)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -7558,7 +7558,7 @@
 				(font
 					(size 1.27 1.27)
 				)
-				(justify right)
+				(justify left)
 			)
 		)
 		(property "Value" "SMAJ58A"
@@ -7569,7 +7569,7 @@
 				(font
 					(size 1.27 1.27)
 				)
-				(justify right)
+				(justify left)
 			)
 		)
 		(property "Footprint" "Diode_SMD:D_SMA"
