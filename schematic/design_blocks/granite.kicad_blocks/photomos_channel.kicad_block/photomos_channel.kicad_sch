@@ -151,13 +151,13 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Relay_SolidState:CPC1017N"
+		(symbol "granite:TLP176AM"
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
 			(in_pos_files yes)
 			(duplicate_pin_numbers_are_jumpers no)
-			(property "Reference" "U"
+			(property "Reference" "K"
 				(at -5.08 5.08 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -168,7 +168,7 @@
 					(justify left)
 				)
 			)
-			(property "Value" "CPC1017N"
+			(property "Value" "TLP176AM"
 				(at 0 5.08 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -179,7 +179,7 @@
 					(justify left)
 				)
 			)
-			(property "Footprint" "Package_SO:SOP-4_3.8x4.1mm_P2.54mm"
+			(property "Footprint" "Package_SO:SOIC-4_4.55x3.7mm_P2.54mm"
 				(at 0 -5.334 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -191,7 +191,7 @@
 					)
 				)
 			)
-			(property "Datasheet" "https://www.littelfuse.com/assetdocs/littelfuse-integrated-circuits-cpc1017n-datasheet?assetguid=b4f177f1-629f-4104-97a5-8b8d709e83de"
+			(property "Datasheet" "https://toshiba.semicon-storage.com/ap-en/semiconductor/product/isolators-solid-state-relays/photorelay-mosfet-output/detail.TLP176AM.html"
 				(at 0 -9.398 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -202,7 +202,7 @@
 					)
 				)
 			)
-			(property "Description" "Form A, Solid State Relay (Photo MOSFET) 60V, 0.1A, 16Ohm, AC/DC, SO-4"
+			(property "Description" "Photorelay, MOSFET output, 1-Form-A, 60V 0.7A, Toshiba TLP176AM (SO6 4-pin, pins 1/3/4/6)"
 				(at 0 -7.366 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -235,7 +235,7 @@
 					)
 				)
 			)
-			(symbol "CPC1017N_0_1"
+			(symbol "TLP176AM_0_1"
 				(rectangle
 					(start -5.08 3.81)
 					(end 5.08 -3.81)
@@ -615,7 +615,7 @@
 					)
 				)
 			)
-			(symbol "CPC1017N_1_1"
+			(symbol "TLP176AM_1_1"
 				(polyline
 					(pts
 						(xy 1.524 2.286)
@@ -722,7 +722,7 @@
 							)
 						)
 					)
-					(number "2"
+					(number "3"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -740,7 +740,7 @@
 							)
 						)
 					)
-					(number "3"
+					(number "4"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -758,7 +758,7 @@
 							)
 						)
 					)
-					(number "4"
+					(number "6"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -890,7 +890,7 @@
 			(embedded_fonts no)
 		)
 	)
-	(text "Floating contact closure: DRV (3V3 GPIO, ~6.5mA) -> TLP176A -> OUT_A/OUT_B"
+	(text "Floating contact closure: DRV (3V3 GPIO, ~6.2mA) -> TLP176AM -> OUT_A/OUT_B"
 		(exclude_from_sim no)
 		(at 20 20 0)
 		(effects
@@ -983,7 +983,7 @@
 		(uuid "f23f0f6e-ffea-5d17-81cf-f97d12d1d0a5")
 	)
 	(symbol
-		(lib_id "Relay_SolidState:CPC1017N")
+		(lib_id "granite:TLP176AM")
 		(at 57.15 50.8 0)
 		(unit 1)
 		(exclude_from_sim no)
@@ -1000,7 +1000,7 @@
 				)
 			)
 		)
-		(property "Value" "TLP176A"
+		(property "Value" "TLP176AM"
 			(at 59.69 50.8 0)
 			(effects
 				(font
@@ -1008,7 +1008,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_SO:SOP-4_3.8x4.1mm_P2.54mm"
+		(property "Footprint" "Package_SO:SOIC-4_4.55x3.7mm_P2.54mm"
 			(at 57.15 50.8 0)
 			(effects
 				(font
@@ -1029,13 +1029,13 @@
 		(pin "1"
 			(uuid "65ed3752-c10c-580f-aea9-d673d8501dab")
 		)
-		(pin "2"
+		(pin "3"
 			(uuid "80c15d9b-f688-533f-b3b7-994bb5a93edb")
 		)
-		(pin "3"
+		(pin "4"
 			(uuid "29ea5d9a-ba7b-5291-8805-c4ebe12c8ccc")
 		)
-		(pin "4"
+		(pin "6"
 			(uuid "30679041-4cee-5d6c-b1fe-e16d35cc5aae")
 		)
 		(instances

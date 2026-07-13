@@ -5160,6 +5160,16 @@
 	)
 	(wire
 		(pts
+			(xy 85.09 236.22) (xy 82.55 236.22)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2c9312d7-f003-4907-9901-6de15b640ab0")
+	)
+	(wire
+		(pts
 			(xy 123.19 208.28) (xy 156.21 208.28)
 		)
 		(stroke
@@ -5247,6 +5257,16 @@
 			(type default)
 		)
 		(uuid "3cadc498-aeab-4659-96fd-8c292cc24a6f")
+	)
+	(wire
+		(pts
+			(xy 74.93 236.22) (xy 72.39 236.22)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3dc60b56-e772-4af0-ab77-a5eaef0e928d")
 	)
 	(wire
 		(pts
@@ -6717,16 +6737,6 @@
 			(type default)
 		)
 		(uuid "fb6ed9aa-c54e-47c0-914b-e8f0712a5e30")
-	)
-	(wire
-		(pts
-			(xy 85.09 236.22) (xy 72.39 236.22)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "fde7b4ef-22b0-526a-8cf1-14826379cfbd")
 	)
 	(wire
 		(pts
@@ -8484,7 +8494,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "granite:Silvertel_Ag9905MT"
 			(at 163.83 104.14 0)
 			(hide yes)
 			(show_name no)
@@ -9205,7 +9215,7 @@
 				)
 			)
 		)
-		(property "Value" "25MHz ABM8G"
+		(property "Value" "25MHz 12pF YXC"
 			(at 63.5 241.3 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -11879,6 +11889,87 @@
 			(project "granite_controller"
 				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/8063e2cb-b212-5b7f-a3a7-22937e0bc76b"
 					(reference "D2")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 78.74 236.22 90)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "cf3fd471-4a6e-4848-8599-13b0c7160dd8")
+		(property "Reference" "R29"
+			(at 79.756 239.014 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "499"
+			(at 79.502 240.792 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 78.74 236.22 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 78.74 236.22 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 78.74 236.22 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "4ddd62c7-0025-4503-ac83-044e6a9151c0")
+		)
+		(pin "2"
+			(uuid "693753ca-678c-4e99-a79c-93214463e9b9")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/8063e2cb-b212-5b7f-a3a7-22937e0bc76b"
+					(reference "R29")
 					(unit 1)
 				)
 			)

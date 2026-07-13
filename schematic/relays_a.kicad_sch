@@ -367,13 +367,13 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Relay_SolidState:CPC1017N"
+		(symbol "granite:TLP176AM"
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
 			(in_pos_files yes)
 			(duplicate_pin_numbers_are_jumpers no)
-			(property "Reference" "U"
+			(property "Reference" "K"
 				(at -5.08 5.08 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -384,7 +384,7 @@
 					(justify left)
 				)
 			)
-			(property "Value" "CPC1017N"
+			(property "Value" "TLP176AM"
 				(at 0 5.08 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -395,7 +395,7 @@
 					(justify left)
 				)
 			)
-			(property "Footprint" "Package_SO:SOP-4_3.8x4.1mm_P2.54mm"
+			(property "Footprint" "Package_SO:SOIC-4_4.55x3.7mm_P2.54mm"
 				(at 0 -5.334 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -407,7 +407,7 @@
 					)
 				)
 			)
-			(property "Datasheet" "https://www.littelfuse.com/assetdocs/littelfuse-integrated-circuits-cpc1017n-datasheet?assetguid=b4f177f1-629f-4104-97a5-8b8d709e83de"
+			(property "Datasheet" "https://toshiba.semicon-storage.com/ap-en/semiconductor/product/isolators-solid-state-relays/photorelay-mosfet-output/detail.TLP176AM.html"
 				(at 0 -9.398 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -418,7 +418,7 @@
 					)
 				)
 			)
-			(property "Description" "Form A, Solid State Relay (Photo MOSFET) 60V, 0.1A, 16Ohm, AC/DC, SO-4"
+			(property "Description" "Photorelay, MOSFET output, 1-Form-A, 60V 0.7A, Toshiba TLP176AM (SO6 4-pin, pins 1/3/4/6)"
 				(at 0 -7.366 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -451,7 +451,7 @@
 					)
 				)
 			)
-			(symbol "CPC1017N_0_1"
+			(symbol "TLP176AM_0_1"
 				(rectangle
 					(start -5.08 3.81)
 					(end 5.08 -3.81)
@@ -782,7 +782,7 @@
 					)
 				)
 			)
-			(symbol "CPC1017N_1_1"
+			(symbol "TLP176AM_1_1"
 				(polyline
 					(pts
 						(xy 1.524 2.286) (xy 1.524 2.032)
@@ -883,7 +883,7 @@
 							)
 						)
 					)
-					(number "2"
+					(number "3"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -901,7 +901,7 @@
 							)
 						)
 					)
-					(number "3"
+					(number "4"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -919,7 +919,7 @@
 							)
 						)
 					)
-					(number "4"
+					(number "6"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -1046,7 +1046,7 @@
 			(embedded_fonts no)
 		)
 	)
-	(text "Channels 1-7: 2x photoMOS contact closure (RESET, PWR BTN) per motherboard front-panel header. Floating outputs. TLP176A: 3mA max trigger, ~6.5mA drive."
+	(text "Channels 1-7: 2x photoMOS contact closure (RESET, PWR BTN) per motherboard front-panel header. Floating outputs. TLP176AM: 3mA max trigger, ~6.2mA drive."
 		(exclude_from_sim no)
 		(at 15 16.51 0)
 		(effects
@@ -3420,7 +3420,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Relay_SolidState:CPC1017N")
+		(lib_id "granite:TLP176AM")
 		(at 226.06 44.45 0)
 		(unit 1)
 		(body_style 1)
@@ -3441,7 +3441,7 @@
 				)
 			)
 		)
-		(property "Value" "TLP176A"
+		(property "Value" "TLP176AM"
 			(at 226.06 38.1 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3451,7 +3451,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_SO:SOP-4_3.8x4.1mm_P2.54mm"
+		(property "Footprint" "Package_SO:SOIC-4_4.55x3.7mm_P2.54mm"
 			(at 226.06 44.45 0)
 			(hide yes)
 			(show_name no)
@@ -3486,13 +3486,13 @@
 		(pin "1"
 			(uuid "f80f2d13-a30e-531c-8dc8-6cc84f29d12d")
 		)
-		(pin "2"
+		(pin "3"
 			(uuid "5e87e5e7-0dfd-5c23-b378-b3433d8f8870")
 		)
-		(pin "3"
+		(pin "4"
 			(uuid "525883e4-d0af-5a1f-8cd6-19707d53a386")
 		)
-		(pin "4"
+		(pin "6"
 			(uuid "793047d4-f9df-59d2-98b4-9354beeaa1ce")
 		)
 		(instances
@@ -3673,7 +3673,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Relay_SolidState:CPC1017N")
+		(lib_id "granite:TLP176AM")
 		(at 149.86 100.33 0)
 		(unit 1)
 		(body_style 1)
@@ -3694,7 +3694,7 @@
 				)
 			)
 		)
-		(property "Value" "TLP176A"
+		(property "Value" "TLP176AM"
 			(at 149.86 93.98 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3704,7 +3704,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_SO:SOP-4_3.8x4.1mm_P2.54mm"
+		(property "Footprint" "Package_SO:SOIC-4_4.55x3.7mm_P2.54mm"
 			(at 149.86 100.33 0)
 			(hide yes)
 			(show_name no)
@@ -3739,13 +3739,13 @@
 		(pin "1"
 			(uuid "a723d4d7-9f3d-52a4-9c42-ca0716999b89")
 		)
-		(pin "2"
+		(pin "3"
 			(uuid "cbeaa913-9e7c-5f5a-8b2c-4f8a54e91391")
 		)
-		(pin "3"
+		(pin "4"
 			(uuid "393557e7-bc52-53d0-881d-fa4ed430d068")
 		)
-		(pin "4"
+		(pin "6"
 			(uuid "220a8ab3-c5bc-5ab9-9044-c67bbeaf0dda")
 		)
 		(instances
@@ -4483,7 +4483,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Relay_SolidState:CPC1017N")
+		(lib_id "granite:TLP176AM")
 		(at 149.86 72.39 0)
 		(unit 1)
 		(body_style 1)
@@ -4504,7 +4504,7 @@
 				)
 			)
 		)
-		(property "Value" "TLP176A"
+		(property "Value" "TLP176AM"
 			(at 149.86 66.04 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4514,7 +4514,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_SO:SOP-4_3.8x4.1mm_P2.54mm"
+		(property "Footprint" "Package_SO:SOIC-4_4.55x3.7mm_P2.54mm"
 			(at 149.86 72.39 0)
 			(hide yes)
 			(show_name no)
@@ -4549,13 +4549,13 @@
 		(pin "1"
 			(uuid "87893a1c-246e-5b78-b50b-7e68bdd161c9")
 		)
-		(pin "2"
+		(pin "3"
 			(uuid "47c277d8-ad5b-5dcb-bffd-89e07b7ab13c")
 		)
-		(pin "3"
+		(pin "4"
 			(uuid "4c5f0432-5e36-5cc8-b7a0-7feb873f68ee")
 		)
-		(pin "4"
+		(pin "6"
 			(uuid "2f367c3a-64ca-579c-a60a-4cff88f88963")
 		)
 		(instances
@@ -5293,7 +5293,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Relay_SolidState:CPC1017N")
+		(lib_id "granite:TLP176AM")
 		(at 73.66 44.45 0)
 		(unit 1)
 		(body_style 1)
@@ -5314,7 +5314,7 @@
 				)
 			)
 		)
-		(property "Value" "TLP176A"
+		(property "Value" "TLP176AM"
 			(at 73.66 38.1 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -5324,7 +5324,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_SO:SOP-4_3.8x4.1mm_P2.54mm"
+		(property "Footprint" "Package_SO:SOIC-4_4.55x3.7mm_P2.54mm"
 			(at 73.66 44.45 0)
 			(hide yes)
 			(show_name no)
@@ -5359,13 +5359,13 @@
 		(pin "1"
 			(uuid "6870174f-f89b-5fec-ae53-4dd061b9afb4")
 		)
-		(pin "2"
+		(pin "3"
 			(uuid "69c302cb-0b88-5187-8a84-cedd3e3d23f0")
 		)
-		(pin "3"
+		(pin "4"
 			(uuid "65dd47ec-1261-575e-a49a-64ecf7154eea")
 		)
-		(pin "4"
+		(pin "6"
 			(uuid "cdb8e93b-bf3a-58ed-9da9-88ad94e4f8e4")
 		)
 		(instances
@@ -5692,7 +5692,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Relay_SolidState:CPC1017N")
+		(lib_id "granite:TLP176AM")
 		(at 149.86 128.27 0)
 		(unit 1)
 		(body_style 1)
@@ -5713,7 +5713,7 @@
 				)
 			)
 		)
-		(property "Value" "TLP176A"
+		(property "Value" "TLP176AM"
 			(at 149.86 121.92 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -5723,7 +5723,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_SO:SOP-4_3.8x4.1mm_P2.54mm"
+		(property "Footprint" "Package_SO:SOIC-4_4.55x3.7mm_P2.54mm"
 			(at 149.86 128.27 0)
 			(hide yes)
 			(show_name no)
@@ -5758,13 +5758,13 @@
 		(pin "1"
 			(uuid "860bf56f-ae08-5e6e-aeaa-62aeaac5fdb2")
 		)
-		(pin "2"
+		(pin "3"
 			(uuid "270744e6-9198-5b02-83b4-1be3125dfb7d")
 		)
-		(pin "3"
+		(pin "4"
 			(uuid "de74010a-970b-5038-8a14-f5674a8ceab8")
 		)
-		(pin "4"
+		(pin "6"
 			(uuid "b50c289c-66ac-5904-b715-83d69eff69e0")
 		)
 		(instances
@@ -5777,7 +5777,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Relay_SolidState:CPC1017N")
+		(lib_id "granite:TLP176AM")
 		(at 73.66 184.15 0)
 		(unit 1)
 		(body_style 1)
@@ -5798,7 +5798,7 @@
 				)
 			)
 		)
-		(property "Value" "TLP176A"
+		(property "Value" "TLP176AM"
 			(at 73.66 177.8 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -5808,7 +5808,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_SO:SOP-4_3.8x4.1mm_P2.54mm"
+		(property "Footprint" "Package_SO:SOIC-4_4.55x3.7mm_P2.54mm"
 			(at 73.66 184.15 0)
 			(hide yes)
 			(show_name no)
@@ -5843,13 +5843,13 @@
 		(pin "1"
 			(uuid "fea837d9-1676-5f79-91e4-8ae335ca459c")
 		)
-		(pin "2"
+		(pin "3"
 			(uuid "78a1d208-5942-5c90-9788-36bda6220089")
 		)
-		(pin "3"
+		(pin "4"
 			(uuid "8c9bcc34-f453-5988-8846-90c7cb813609")
 		)
-		(pin "4"
+		(pin "6"
 			(uuid "b199221b-2390-528c-a5d6-d2bc93fce927")
 		)
 		(instances
@@ -5862,7 +5862,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Relay_SolidState:CPC1017N")
+		(lib_id "granite:TLP176AM")
 		(at 73.66 128.27 0)
 		(unit 1)
 		(body_style 1)
@@ -5883,7 +5883,7 @@
 				)
 			)
 		)
-		(property "Value" "TLP176A"
+		(property "Value" "TLP176AM"
 			(at 73.66 121.92 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -5893,7 +5893,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_SO:SOP-4_3.8x4.1mm_P2.54mm"
+		(property "Footprint" "Package_SO:SOIC-4_4.55x3.7mm_P2.54mm"
 			(at 73.66 128.27 0)
 			(hide yes)
 			(show_name no)
@@ -5928,13 +5928,13 @@
 		(pin "1"
 			(uuid "cd53267a-7f94-53ad-b52c-87f7c18de27a")
 		)
-		(pin "2"
+		(pin "3"
 			(uuid "813811d4-7705-5e65-9560-17e98b32bd0f")
 		)
-		(pin "3"
+		(pin "4"
 			(uuid "d8610615-b13a-5cec-b115-a425b67d1cd3")
 		)
-		(pin "4"
+		(pin "6"
 			(uuid "7d492887-1387-5dac-9c39-e793e53c1ff6")
 		)
 		(instances
@@ -5947,7 +5947,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Relay_SolidState:CPC1017N")
+		(lib_id "granite:TLP176AM")
 		(at 149.86 44.45 0)
 		(unit 1)
 		(body_style 1)
@@ -5968,7 +5968,7 @@
 				)
 			)
 		)
-		(property "Value" "TLP176A"
+		(property "Value" "TLP176AM"
 			(at 149.86 38.1 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -5978,7 +5978,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_SO:SOP-4_3.8x4.1mm_P2.54mm"
+		(property "Footprint" "Package_SO:SOIC-4_4.55x3.7mm_P2.54mm"
 			(at 149.86 44.45 0)
 			(hide yes)
 			(show_name no)
@@ -6013,13 +6013,13 @@
 		(pin "1"
 			(uuid "e775f2de-52a4-5abb-a9dc-b5e508999dcc")
 		)
-		(pin "2"
+		(pin "3"
 			(uuid "ca2ed90f-abd9-522a-91d7-5f215d1aad7f")
 		)
-		(pin "3"
+		(pin "4"
 			(uuid "7f81bac5-055d-57a4-a7fc-69caea8cf0b6")
 		)
-		(pin "4"
+		(pin "6"
 			(uuid "8e5754f3-7a64-59af-bd52-6e749599cff4")
 		)
 		(instances
@@ -6032,7 +6032,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Relay_SolidState:CPC1017N")
+		(lib_id "granite:TLP176AM")
 		(at 73.66 156.21 0)
 		(unit 1)
 		(body_style 1)
@@ -6053,7 +6053,7 @@
 				)
 			)
 		)
-		(property "Value" "TLP176A"
+		(property "Value" "TLP176AM"
 			(at 73.66 149.86 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -6063,7 +6063,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_SO:SOP-4_3.8x4.1mm_P2.54mm"
+		(property "Footprint" "Package_SO:SOIC-4_4.55x3.7mm_P2.54mm"
 			(at 73.66 156.21 0)
 			(hide yes)
 			(show_name no)
@@ -6098,13 +6098,13 @@
 		(pin "1"
 			(uuid "2646a30c-c170-5713-977f-ecf961c3c9f6")
 		)
-		(pin "2"
+		(pin "3"
 			(uuid "e44b6419-bee9-570e-8d42-272792f9d969")
 		)
-		(pin "3"
+		(pin "4"
 			(uuid "ef6588ad-c223-5e34-8e26-9b81401fcc7c")
 		)
-		(pin "4"
+		(pin "6"
 			(uuid "650ae2ac-df73-5b0c-857a-00ab12307751")
 		)
 		(instances
@@ -6356,7 +6356,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Relay_SolidState:CPC1017N")
+		(lib_id "granite:TLP176AM")
 		(at 73.66 72.39 0)
 		(unit 1)
 		(body_style 1)
@@ -6377,7 +6377,7 @@
 				)
 			)
 		)
-		(property "Value" "TLP176A"
+		(property "Value" "TLP176AM"
 			(at 73.66 66.04 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -6387,7 +6387,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_SO:SOP-4_3.8x4.1mm_P2.54mm"
+		(property "Footprint" "Package_SO:SOIC-4_4.55x3.7mm_P2.54mm"
 			(at 73.66 72.39 0)
 			(hide yes)
 			(show_name no)
@@ -6422,13 +6422,13 @@
 		(pin "1"
 			(uuid "5bfb84d4-c091-52a1-b640-0fe870c3fd78")
 		)
-		(pin "2"
+		(pin "3"
 			(uuid "36cda577-8d6b-57bc-bb54-6b16ee191ca6")
 		)
-		(pin "3"
+		(pin "4"
 			(uuid "1aedceff-bf3f-5b66-9535-40c7f2ee6fb1")
 		)
-		(pin "4"
+		(pin "6"
 			(uuid "64bb35f4-577b-5d23-92cd-3339806b542e")
 		)
 		(instances
@@ -6996,7 +6996,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Relay_SolidState:CPC1017N")
+		(lib_id "granite:TLP176AM")
 		(at 226.06 72.39 0)
 		(unit 1)
 		(body_style 1)
@@ -7017,7 +7017,7 @@
 				)
 			)
 		)
-		(property "Value" "TLP176A"
+		(property "Value" "TLP176AM"
 			(at 226.06 66.04 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -7027,7 +7027,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_SO:SOP-4_3.8x4.1mm_P2.54mm"
+		(property "Footprint" "Package_SO:SOIC-4_4.55x3.7mm_P2.54mm"
 			(at 226.06 72.39 0)
 			(hide yes)
 			(show_name no)
@@ -7062,13 +7062,13 @@
 		(pin "1"
 			(uuid "6b0d7aec-2d42-5470-a705-9cf05ae30898")
 		)
-		(pin "2"
+		(pin "3"
 			(uuid "cacfe3db-cc09-5054-a2e1-5a293fc65766")
 		)
-		(pin "3"
+		(pin "4"
 			(uuid "2caf8cae-7dbe-59e8-99d2-4e07c7ce29a2")
 		)
-		(pin "4"
+		(pin "6"
 			(uuid "15cc16f3-4792-50d6-a313-70876e7f208d")
 		)
 		(instances
@@ -7490,7 +7490,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Relay_SolidState:CPC1017N")
+		(lib_id "granite:TLP176AM")
 		(at 226.06 128.27 0)
 		(unit 1)
 		(body_style 1)
@@ -7511,7 +7511,7 @@
 				)
 			)
 		)
-		(property "Value" "TLP176A"
+		(property "Value" "TLP176AM"
 			(at 226.06 121.92 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -7521,7 +7521,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_SO:SOP-4_3.8x4.1mm_P2.54mm"
+		(property "Footprint" "Package_SO:SOIC-4_4.55x3.7mm_P2.54mm"
 			(at 226.06 128.27 0)
 			(hide yes)
 			(show_name no)
@@ -7556,13 +7556,13 @@
 		(pin "1"
 			(uuid "c1c3f1b0-9551-595b-97a3-f8d9a5c271f6")
 		)
-		(pin "2"
+		(pin "3"
 			(uuid "e78733fc-6b1a-5628-b610-8e26a151d734")
 		)
-		(pin "3"
+		(pin "4"
 			(uuid "16108328-da67-5864-8e1d-7212f8159452")
 		)
-		(pin "4"
+		(pin "6"
 			(uuid "63ab5697-fb1c-50bd-a632-2e3af7d76cc3")
 		)
 		(instances
@@ -7652,7 +7652,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Relay_SolidState:CPC1017N")
+		(lib_id "granite:TLP176AM")
 		(at 73.66 100.33 0)
 		(unit 1)
 		(body_style 1)
@@ -7673,7 +7673,7 @@
 				)
 			)
 		)
-		(property "Value" "TLP176A"
+		(property "Value" "TLP176AM"
 			(at 73.66 93.98 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -7683,7 +7683,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_SO:SOP-4_3.8x4.1mm_P2.54mm"
+		(property "Footprint" "Package_SO:SOIC-4_4.55x3.7mm_P2.54mm"
 			(at 73.66 100.33 0)
 			(hide yes)
 			(show_name no)
@@ -7718,13 +7718,13 @@
 		(pin "1"
 			(uuid "ee7daacc-3d27-5113-9ff7-79bbbb5b317c")
 		)
-		(pin "2"
+		(pin "3"
 			(uuid "d0591016-f2e3-5bc4-8ec8-9efaaa3945a3")
 		)
-		(pin "3"
+		(pin "4"
 			(uuid "6e226d2f-60c7-5736-b736-559fbc890e51")
 		)
-		(pin "4"
+		(pin "6"
 			(uuid "cd7587c6-058b-529e-a5c2-b9242d4a3b1d")
 		)
 		(instances
@@ -8063,7 +8063,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Relay_SolidState:CPC1017N")
+		(lib_id "granite:TLP176AM")
 		(at 226.06 100.33 0)
 		(unit 1)
 		(body_style 1)
@@ -8084,7 +8084,7 @@
 				)
 			)
 		)
-		(property "Value" "TLP176A"
+		(property "Value" "TLP176AM"
 			(at 226.06 93.98 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -8094,7 +8094,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_SO:SOP-4_3.8x4.1mm_P2.54mm"
+		(property "Footprint" "Package_SO:SOIC-4_4.55x3.7mm_P2.54mm"
 			(at 226.06 100.33 0)
 			(hide yes)
 			(show_name no)
@@ -8129,13 +8129,13 @@
 		(pin "1"
 			(uuid "f63fb39f-d312-5738-a6e8-dab4c4aca500")
 		)
-		(pin "2"
+		(pin "3"
 			(uuid "a226db69-40ff-51a1-ad71-ecd5ef7edefc")
 		)
-		(pin "3"
+		(pin "4"
 			(uuid "23e8f5e5-aa55-5210-a49b-798f371b8a1e")
 		)
-		(pin "4"
+		(pin "6"
 			(uuid "05bc01e7-3bbb-5aee-a686-f000b066ccdb")
 		)
 		(instances
