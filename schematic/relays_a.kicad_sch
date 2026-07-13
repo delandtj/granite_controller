@@ -1058,7 +1058,7 @@
 		(uuid "0acffb5c-52a2-561d-aaea-0d8f9a0e4b21")
 	)
 	(bus_entry
-		(at 15.24 119.38)
+		(at 15.24 125.73)
 		(size 2.54 -2.54)
 		(stroke
 			(width 0)
@@ -1067,7 +1067,7 @@
 		(uuid "203d142c-5db3-539a-a896-afcd6cea4770")
 	)
 	(bus_entry
-		(at 15.24 68.58)
+		(at 15.24 74.93)
 		(size 2.54 -2.54)
 		(stroke
 			(width 0)
@@ -1076,7 +1076,7 @@
 		(uuid "60c07a0f-e12a-53ce-8f91-462b563bbe00")
 	)
 	(bus_entry
-		(at 15.24 144.78)
+		(at 15.24 151.13)
 		(size 2.54 -2.54)
 		(stroke
 			(width 0)
@@ -1085,7 +1085,7 @@
 		(uuid "78e1c63b-023d-53f2-89bb-cc2d877029fa")
 	)
 	(bus_entry
-		(at 15.24 43.18)
+		(at 15.24 49.53)
 		(size 2.54 -2.54)
 		(stroke
 			(width 0)
@@ -1094,7 +1094,7 @@
 		(uuid "7c099d50-f5e3-5cd7-bdfa-6cf57a5ccae9")
 	)
 	(bus_entry
-		(at 15.24 124.46)
+		(at 15.24 130.81)
 		(size 2.54 -2.54)
 		(stroke
 			(width 0)
@@ -1103,7 +1103,7 @@
 		(uuid "89c5fd88-a88e-504d-a7d1-0212ff97fda7")
 	)
 	(bus_entry
-		(at 15.24 129.54)
+		(at 15.24 135.89)
 		(size 2.54 -2.54)
 		(stroke
 			(width 0)
@@ -1112,7 +1112,7 @@
 		(uuid "89d39ebc-d271-5cee-bf7a-e9dea2ba12df")
 	)
 	(bus_entry
-		(at 15.24 53.34)
+		(at 15.24 59.69)
 		(size 2.54 -2.54)
 		(stroke
 			(width 0)
@@ -1121,7 +1121,7 @@
 		(uuid "b1a11399-d906-5aa6-83a3-6e03e8c1e931")
 	)
 	(bus_entry
-		(at 15.24 48.26)
+		(at 15.24 54.61)
 		(size 2.54 -2.54)
 		(stroke
 			(width 0)
@@ -1130,7 +1130,7 @@
 		(uuid "b45d7d8d-77e3-5414-93fa-24360ca45037")
 	)
 	(bus_entry
-		(at 15.24 149.86)
+		(at 15.24 156.21)
 		(size 2.54 -2.54)
 		(stroke
 			(width 0)
@@ -1139,7 +1139,7 @@
 		(uuid "c08bcf74-d3f2-5514-8d04-4dd7f5095203")
 	)
 	(bus_entry
-		(at 15.24 134.62)
+		(at 15.24 140.97)
 		(size 2.54 -2.54)
 		(stroke
 			(width 0)
@@ -1148,7 +1148,7 @@
 		(uuid "cbe10edc-3247-5f27-8c05-debafd4a4d3b")
 	)
 	(bus_entry
-		(at 15.24 58.42)
+		(at 15.24 64.77)
 		(size 2.54 -2.54)
 		(stroke
 			(width 0)
@@ -1157,7 +1157,7 @@
 		(uuid "d1a0e0c8-24c8-5ea0-ae2a-f60d7167aa05")
 	)
 	(bus_entry
-		(at 15.24 139.7)
+		(at 15.24 146.05)
 		(size 2.54 -2.54)
 		(stroke
 			(width 0)
@@ -1166,7 +1166,7 @@
 		(uuid "e26c2cda-50b2-53cf-b652-4a23e18e50c1")
 	)
 	(bus_entry
-		(at 15.24 38.1)
+		(at 15.24 44.45)
 		(size 2.54 -2.54)
 		(stroke
 			(width 0)
@@ -1175,7 +1175,7 @@
 		(uuid "f4ba9f35-3cad-5ce6-b4d6-7f7108de5325")
 	)
 	(bus_entry
-		(at 15.24 63.5)
+		(at 15.24 69.85)
 		(size 2.54 -2.54)
 		(stroke
 			(width 0)
@@ -1195,7 +1195,7 @@
 	)
 	(wire
 		(pts
-			(xy 17.78 116.84) (xy 27.94 116.84)
+			(xy 17.78 123.19) (xy 27.94 123.19)
 		)
 		(stroke
 			(width 0)
@@ -1315,7 +1315,7 @@
 	)
 	(wire
 		(pts
-			(xy 17.78 66.04) (xy 27.94 66.04)
+			(xy 17.78 72.39) (xy 27.94 72.39)
 		)
 		(stroke
 			(width 0)
@@ -1575,7 +1575,7 @@
 	)
 	(bus
 		(pts
-			(xy 15.24 30.48) (xy 15.24 68.58)
+			(xy 15.24 36.83) (xy 15.24 74.93)
 		)
 		(stroke
 			(width 0)
@@ -1795,7 +1795,7 @@
 	)
 	(wire
 		(pts
-			(xy 17.78 147.32) (xy 27.94 147.32)
+			(xy 17.78 153.67) (xy 27.94 153.67)
 		)
 		(stroke
 			(width 0)
@@ -1865,7 +1865,7 @@
 	)
 	(wire
 		(pts
-			(xy 17.78 50.8) (xy 27.94 50.8)
+			(xy 17.78 57.15) (xy 27.94 57.15)
 		)
 		(stroke
 			(width 0)
@@ -1925,7 +1925,7 @@
 	)
 	(wire
 		(pts
-			(xy 17.78 55.88) (xy 27.94 55.88)
+			(xy 17.78 62.23) (xy 27.94 62.23)
 		)
 		(stroke
 			(width 0)
@@ -2065,7 +2065,7 @@
 	)
 	(wire
 		(pts
-			(xy 17.78 137.16) (xy 27.94 137.16)
+			(xy 17.78 143.51) (xy 27.94 143.51)
 		)
 		(stroke
 			(width 0)
@@ -2145,7 +2145,7 @@
 	)
 	(wire
 		(pts
-			(xy 17.78 35.56) (xy 27.94 35.56)
+			(xy 17.78 41.91) (xy 27.94 41.91)
 		)
 		(stroke
 			(width 0)
@@ -2375,7 +2375,7 @@
 	)
 	(bus
 		(pts
-			(xy 15.24 111.76) (xy 15.24 149.86)
+			(xy 15.24 118.11) (xy 15.24 156.21)
 		)
 		(stroke
 			(width 0)
@@ -2445,7 +2445,7 @@
 	)
 	(wire
 		(pts
-			(xy 17.78 142.24) (xy 27.94 142.24)
+			(xy 17.78 148.59) (xy 27.94 148.59)
 		)
 		(stroke
 			(width 0)
@@ -2455,7 +2455,7 @@
 	)
 	(wire
 		(pts
-			(xy 17.78 121.92) (xy 27.94 121.92)
+			(xy 17.78 128.27) (xy 27.94 128.27)
 		)
 		(stroke
 			(width 0)
@@ -2555,7 +2555,7 @@
 	)
 	(wire
 		(pts
-			(xy 17.78 60.96) (xy 27.94 60.96)
+			(xy 17.78 67.31) (xy 27.94 67.31)
 		)
 		(stroke
 			(width 0)
@@ -2575,7 +2575,7 @@
 	)
 	(wire
 		(pts
-			(xy 17.78 40.64) (xy 27.94 40.64)
+			(xy 17.78 46.99) (xy 27.94 46.99)
 		)
 		(stroke
 			(width 0)
@@ -2785,7 +2785,7 @@
 	)
 	(wire
 		(pts
-			(xy 17.78 132.08) (xy 27.94 132.08)
+			(xy 17.78 138.43) (xy 27.94 138.43)
 		)
 		(stroke
 			(width 0)
@@ -2805,7 +2805,7 @@
 	)
 	(wire
 		(pts
-			(xy 17.78 127) (xy 27.94 127)
+			(xy 17.78 133.35) (xy 27.94 133.35)
 		)
 		(stroke
 			(width 0)
@@ -2875,7 +2875,7 @@
 	)
 	(wire
 		(pts
-			(xy 17.78 45.72) (xy 27.94 45.72)
+			(xy 17.78 52.07) (xy 27.94 52.07)
 		)
 		(stroke
 			(width 0)
@@ -2994,7 +2994,7 @@
 		(uuid "0b149ae8-0c2e-5a76-8819-6205c35bf1b7")
 	)
 	(label "RST_DRV2"
-		(at 27.94 40.64 0)
+		(at 27.94 46.99 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3024,7 +3024,7 @@
 		(uuid "23c37686-92db-5d1a-95fd-d15cc826f02d")
 	)
 	(label "PWR_DRV4"
-		(at 27.94 132.08 0)
+		(at 27.94 138.43 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3044,7 +3044,7 @@
 		(uuid "280b5e9b-07dd-50fb-a94b-03ec94cf8ecf")
 	)
 	(label "PWR_DRV1"
-		(at 27.94 116.84 0)
+		(at 27.94 123.19 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3054,7 +3054,7 @@
 		(uuid "2d8e55d9-2a86-5017-9e49-a53e131e2d2f")
 	)
 	(label "RST_DRV1"
-		(at 27.94 35.56 0)
+		(at 27.94 41.91 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3074,7 +3074,7 @@
 		(uuid "3369e226-c9b3-5f26-af59-080745416716")
 	)
 	(label "PWR_DRV3"
-		(at 27.94 127 0)
+		(at 27.94 133.35 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3094,7 +3094,7 @@
 		(uuid "45778462-d57c-5558-8ec1-0e7162901e56")
 	)
 	(label "RST_DRV7"
-		(at 27.94 66.04 0)
+		(at 27.94 72.39 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3114,7 +3114,7 @@
 		(uuid "5c5e0c38-dcf2-5c5b-84c7-10ae78231966")
 	)
 	(label "RST_DRV6"
-		(at 27.94 60.96 0)
+		(at 27.94 67.31 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3124,7 +3124,7 @@
 		(uuid "5cc2a085-5a08-5409-837a-ad4d97070081")
 	)
 	(label "PWR_DRV2"
-		(at 27.94 121.92 0)
+		(at 27.94 128.27 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3134,7 +3134,7 @@
 		(uuid "601905d1-c768-52cf-a257-0d01d2faa0d4")
 	)
 	(label "PWR_DRV7"
-		(at 27.94 147.32 0)
+		(at 27.94 153.67 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3164,7 +3164,7 @@
 		(uuid "86a03397-9880-5014-8b26-f83cb8853609")
 	)
 	(label "RST_DRV5"
-		(at 27.94 55.88 0)
+		(at 27.94 62.23 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3174,7 +3174,7 @@
 		(uuid "8f2b5d3c-033d-532b-8ab8-8f236a4de0a0")
 	)
 	(label "RST_DRV4"
-		(at 27.94 50.8 0)
+		(at 27.94 57.15 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3194,7 +3194,7 @@
 		(uuid "9cf33c36-878f-5995-bd51-2565e471a3b5")
 	)
 	(label "RST_DRV3"
-		(at 27.94 45.72 0)
+		(at 27.94 52.07 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3204,7 +3204,7 @@
 		(uuid "a54de285-1ece-5798-97bf-8225545dbe85")
 	)
 	(label "PWR_DRV6"
-		(at 27.94 142.24 0)
+		(at 27.94 148.59 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3214,7 +3214,7 @@
 		(uuid "b7a8d4e2-2487-5e0f-82d1-5800443ec98d")
 	)
 	(label "PWR_DRV5"
-		(at 27.94 137.16 0)
+		(at 27.94 143.51 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3235,7 +3235,7 @@
 	)
 	(hierarchical_label "PWR_DRV[1..14]"
 		(shape input)
-		(at 15.24 111.76 90)
+		(at 15.24 118.11 90)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3246,7 +3246,7 @@
 	)
 	(hierarchical_label "RST_DRV[1..14]"
 		(shape input)
-		(at 15.24 30.48 90)
+		(at 15.24 36.83 90)
 		(effects
 			(font
 				(size 1.27 1.27)

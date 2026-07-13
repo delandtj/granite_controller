@@ -282,73 +282,101 @@
         "wire_width": 6
       },
       {
+        "name": "ETH_CTL",
+        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "priority": 0,
+        "schematic_color": "rgb(255, 143, 245)",
+        "tuning_profile": ""
+      },
+      {
+        "name": "ETH_Lines",
+        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "priority": 2,
+        "schematic_color": "rgb(255, 0, 234)",
+        "tuning_profile": ""
+      },
+      {
         "name": "GND",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
-        "priority": 11,
+        "priority": 15,
         "schematic_color": "rgb(0, 0, 0)",
         "tuning_profile": ""
       },
       {
         "name": "IC2_1",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
-        "priority": 10,
+        "priority": 14,
         "schematic_color": "rgb(255, 242, 0)",
         "tuning_profile": "",
         "wire_width": 6
       },
       {
+        "name": "MAGJACK_TRANSFORMERS",
+        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "priority": 1,
+        "schematic_color": "rgb(255, 149, 0)",
+        "tuning_profile": ""
+      },
+      {
         "name": "PWR_3V3",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
-        "priority": 13,
+        "priority": 17,
         "schematic_color": "rgb(255, 0, 0)",
         "tuning_profile": ""
       },
       {
         "name": "PWR_5V",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
-        "priority": 12,
+        "priority": 16,
         "schematic_color": "rgb(255, 80, 0)",
         "tuning_profile": ""
       },
       {
         "name": "PWR_DRV_BANK_0",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
-        "priority": 6,
+        "priority": 10,
         "schematic_color": "rgb(255, 124, 193)",
         "tuning_profile": ""
       },
       {
         "name": "PWR_DRV_BANK_1",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
-        "priority": 5,
+        "priority": 9,
         "schematic_color": "rgb(255, 133, 161)",
         "tuning_profile": ""
       },
       {
         "name": "PWR_POE",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
-        "priority": 0,
+        "priority": 4,
         "schematic_color": "rgb(168, 34, 69)",
         "tuning_profile": ""
       },
       {
         "name": "PWR_POE_5V",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
-        "priority": 1,
+        "priority": 5,
         "schematic_color": "rgb(223, 118, 55)",
         "tuning_profile": ""
       },
       {
         "name": "PWR_VBUS",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
-        "priority": 2,
+        "priority": 6,
         "schematic_color": "rgb(255, 0, 118)",
+        "tuning_profile": ""
+      },
+      {
+        "name": "RMII",
+        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "priority": 3,
+        "schematic_color": "rgb(107, 0, 255)",
         "tuning_profile": ""
       },
       {
         "name": "RST",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
-        "priority": 7,
+        "priority": 11,
         "schematic_color": "rgb(0, 255, 217)",
         "tuning_profile": "",
         "wire_width": 6
@@ -356,21 +384,21 @@
       {
         "name": "RST_DRV_BANK_0",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
-        "priority": 4,
+        "priority": 8,
         "schematic_color": "rgb(170, 220, 255)",
         "tuning_profile": ""
       },
       {
         "name": "RST_DRV_BANK_1",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
-        "priority": 3,
+        "priority": 7,
         "schematic_color": "rgb(163, 180, 255)",
         "tuning_profile": ""
       },
       {
         "name": "SWD",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
-        "priority": 9,
+        "priority": 13,
         "schematic_color": "rgb(6, 255, 18)",
         "tuning_profile": "",
         "wire_width": 8
@@ -378,7 +406,7 @@
       {
         "name": "USB",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
-        "priority": 8,
+        "priority": 12,
         "schematic_color": "rgb(236, 6, 255)",
         "tuning_profile": ""
       }
@@ -387,7 +415,38 @@
       "version": 5
     },
     "net_colors": null,
-    "netclass_assignments": null,
+    "netclass_assignments": {
+      "/MCU and USB/ETH_CRS_DV": [
+        "RMII"
+      ],
+      "/MCU and USB/ETH_MDC": [
+        "RMII"
+      ],
+      "/MCU and USB/ETH_MDIO": [
+        "RMII"
+      ],
+      "/MCU and USB/ETH_nRST": [
+        "ETH_CTL"
+      ],
+      "Net-(U3-RXD0{slash}MODE0)": [
+        "RMII"
+      ],
+      "Net-(U3-RXD1{slash}MODE1)": [
+        "RMII"
+      ],
+      "Net-(U3-TXD0)": [
+        "RMII"
+      ],
+      "Net-(U3-TXD1)": [
+        "RMII"
+      ],
+      "Net-(U3-TXEN)": [
+        "RMII"
+      ],
+      "Net-(U3-~{INT}{slash}REFCLKO)": [
+        "ETH_CTL"
+      ]
+    },
     "netclass_patterns": [
       {
         "netclass": "USB",
@@ -456,6 +515,22 @@
       {
         "netclass": "PWR_POE",
         "pattern": "*/VPOE*"
+      },
+      {
+        "netclass": "RMII",
+        "pattern": "/MCU and USB/ETH_(CRS_DV|MDC|MDIO|RXD0|RXD1|TXD0|TXD1|TX_EN)"
+      },
+      {
+        "netclass": "ETH_Lines",
+        "pattern": "/Power and Ethernet/ETH_(RX\\+|RX-|TX\\+|TX-)"
+      },
+      {
+        "netclass": "MAGJACK_TRANSFORMERS",
+        "pattern": "/Power and Ethernet/ETH_(RCT|TCT)"
+      },
+      {
+        "netclass": "ETH_CTL",
+        "pattern": "/MCU and USB/ETH_(nRST|REF_CLK)"
       }
     ]
   },
@@ -588,7 +663,7 @@
         "uuid": "bd3d1081-8fd5-561e-93ea-9d28b3145149"
       }
     ],
-    "used_designators": "#PWR48",
+    "used_designators": "",
     "variants": []
   },
   "sheets": [
