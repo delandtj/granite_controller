@@ -1,0 +1,10 @@
+(fp_lib_table
+	(version 7)
+	(lib
+		(name "granite")
+		(type "KiCad")
+		(uri "${KIPRJMOD}/footprints/granite.pretty")
+		(options "")
+		(descr "Project-specific footprints (Ag9905MT PoE module, custom photorelay land)")
+	)
+)
