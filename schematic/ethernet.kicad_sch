@@ -4209,6 +4209,17 @@
 				)
 			)
 		)
+		(property "LCSC" "C32843"
+			(at 114.3 109.22 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "e022e4e5-c199-4d91-a756-198188033f0c")
 		)
@@ -4451,6 +4462,17 @@
 				)
 			)
 		)
+		(property "LCSC" "C25744"
+			(at 30.48 71.12 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "752d0c90-6802-4714-8895-583dd5a72a97")
 		)
@@ -4555,6 +4577,17 @@
 				)
 			)
 		)
+		(property "LCSC" "C25744"
+			(at 38.1 71.12 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "e59e59eb-92b9-4708-b1af-bbda90fd4be0")
 		)
@@ -4649,6 +4682,17 @@
 			)
 		)
 		(property "MPN" "0402WGF1002TCE"
+			(at 45.72 71.12 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25744"
 			(at 45.72 71.12 0)
 			(hide yes)
 			(show_name no)
@@ -4899,7 +4943,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 77.47 119.38 0)
 			(hide yes)
 			(show_name no)
@@ -4910,7 +4954,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0402FR-071ML"
+		(property "MPN" "0402WGF1004TCE"
+			(at 77.47 119.38 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C26083"
 			(at 77.47 119.38 0)
 			(hide yes)
 			(show_name no)
@@ -5025,6 +5080,17 @@
 				)
 			)
 		)
+		(property "LCSC" "C9006"
+			(at 77.47 127 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "54fea3bd-2f24-4f83-b8d3-1b77116d9942")
 		)
@@ -5113,7 +5179,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "FH"
 			(at 73.66 140.97 0)
 			(hide yes)
 			(show_name no)
@@ -5124,7 +5190,18 @@
 				)
 			)
 		)
-		(property "MPN" "CC0402JRNPO9BN180"
+		(property "MPN" "0402CG180J500NT"
+			(at 73.66 140.97 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C1549"
 			(at 73.66 140.97 0)
 			(hide yes)
 			(show_name no)
@@ -5217,7 +5294,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "FH"
 			(at 81.28 140.97 0)
 			(hide yes)
 			(show_name no)
@@ -5228,7 +5305,18 @@
 				)
 			)
 		)
-		(property "MPN" "CC0402JRNPO9BN180"
+		(property "MPN" "0402CG180J500NT"
+			(at 81.28 140.97 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C1549"
 			(at 81.28 140.97 0)
 			(hide yes)
 			(show_name no)
@@ -5422,6 +5510,17 @@
 				)
 			)
 		)
+		(property "LCSC" "C14709"
+			(at 50.8 45.72 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "00a86298-e054-4867-b74d-b7fe780910b0")
 		)
@@ -5605,6 +5704,17 @@
 				)
 			)
 		)
+		(property "LCSC" "C15850"
+			(at 63.5 49.53 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "ea88c87b-1e5a-4e96-b1f9-8708ff12ed67")
 		)
@@ -5766,7 +5876,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "Samsung Electro-Mechanics"
 			(at 71.12 49.53 0)
 			(hide yes)
 			(show_name no)
@@ -5777,7 +5887,18 @@
 				)
 			)
 		)
-		(property "MPN" "CC0402KRX7R7BB104"
+		(property "MPN" "CL05B104KO5NNNC"
+			(at 71.12 49.53 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C1525"
 			(at 71.12 49.53 0)
 			(hide yes)
 			(show_name no)
@@ -5949,7 +6070,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "Samsung Electro-Mechanics"
 			(at 78.74 49.53 0)
 			(hide yes)
 			(show_name no)
@@ -5960,7 +6081,18 @@
 				)
 			)
 		)
-		(property "MPN" "CC0402KRX7R7BB104"
+		(property "MPN" "CL05B104KO5NNNC"
+			(at 78.74 49.53 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C1525"
 			(at 78.74 49.53 0)
 			(hide yes)
 			(show_name no)
@@ -6132,7 +6264,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "Samsung Electro-Mechanics"
 			(at 86.36 49.53 0)
 			(hide yes)
 			(show_name no)
@@ -6143,7 +6275,18 @@
 				)
 			)
 		)
-		(property "MPN" "CC0402KRX7R7BB104"
+		(property "MPN" "CL05B104KO5NNNC"
+			(at 86.36 49.53 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C1525"
 			(at 86.36 49.53 0)
 			(hide yes)
 			(show_name no)
@@ -6315,7 +6458,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "Samsung Electro-Mechanics"
 			(at 93.98 49.53 0)
 			(hide yes)
 			(show_name no)
@@ -6326,7 +6469,18 @@
 				)
 			)
 		)
-		(property "MPN" "CC0402KRX7R7BB104"
+		(property "MPN" "CL05B104KO5NNNC"
+			(at 93.98 49.53 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C1525"
 			(at 93.98 49.53 0)
 			(hide yes)
 			(show_name no)
@@ -6498,7 +6652,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "Samsung Electro-Mechanics"
 			(at 101.6 49.53 0)
 			(hide yes)
 			(show_name no)
@@ -6509,7 +6663,18 @@
 				)
 			)
 		)
-		(property "MPN" "CC0402KRX7R7BB104"
+		(property "MPN" "CL05B104KO5NNNC"
+			(at 101.6 49.53 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C1525"
 			(at 101.6 49.53 0)
 			(hide yes)
 			(show_name no)
@@ -6681,7 +6846,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "Samsung Electro-Mechanics"
 			(at 109.22 49.53 0)
 			(hide yes)
 			(show_name no)
@@ -6692,7 +6857,18 @@
 				)
 			)
 		)
-		(property "MPN" "CC0402KRX7R7BB104"
+		(property "MPN" "CL05B104KO5NNNC"
+			(at 109.22 49.53 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C1525"
 			(at 109.22 49.53 0)
 			(hide yes)
 			(show_name no)
@@ -6944,7 +7120,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "Samsung Electro-Mechanics"
 			(at 81.28 77.47 0)
 			(hide yes)
 			(show_name no)
@@ -6955,7 +7131,18 @@
 				)
 			)
 		)
-		(property "MPN" "CC0402KRX7R7BB104"
+		(property "MPN" "CL05B104KO5NNNC"
+			(at 81.28 77.47 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C1525"
 			(at 81.28 77.47 0)
 			(hide yes)
 			(show_name no)
@@ -7285,7 +7472,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 142.24 71.12 0)
 			(hide yes)
 			(show_name no)
@@ -7296,7 +7483,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0402FR-0733RL"
+		(property "MPN" "0402WGF330JTCE"
+			(at 142.24 71.12 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25105"
 			(at 142.24 71.12 0)
 			(hide yes)
 			(show_name no)
@@ -7389,7 +7587,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 142.24 78.74 0)
 			(hide yes)
 			(show_name no)
@@ -7400,7 +7598,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0402FR-0733RL"
+		(property "MPN" "0402WGF330JTCE"
+			(at 142.24 78.74 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25105"
 			(at 142.24 78.74 0)
 			(hide yes)
 			(show_name no)
@@ -7493,7 +7702,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 149.86 67.31 0)
 			(hide yes)
 			(show_name no)
@@ -7504,7 +7713,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0402FR-0749R9L"
+		(property "MPN" "0402WGF499JTCE"
+			(at 149.86 67.31 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25120"
 			(at 149.86 67.31 0)
 			(hide yes)
 			(show_name no)
@@ -7597,7 +7817,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 165.1 74.93 0)
 			(hide yes)
 			(show_name no)
@@ -7608,7 +7828,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0402FR-0749R9L"
+		(property "MPN" "0402WGF499JTCE"
+			(at 165.1 74.93 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25120"
 			(at 165.1 74.93 0)
 			(hide yes)
 			(show_name no)
@@ -7701,7 +7932,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 142.24 93.98 0)
 			(hide yes)
 			(show_name no)
@@ -7712,7 +7943,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0402FR-0733RL"
+		(property "MPN" "0402WGF330JTCE"
+			(at 142.24 93.98 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25105"
 			(at 142.24 93.98 0)
 			(hide yes)
 			(show_name no)
@@ -7827,6 +8069,17 @@
 				)
 			)
 		)
+		(property "LCSC" "C93654"
+			(at 165.1 93.98 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "74bf547f-a122-4762-9eb8-9c5184134474")
 		)
@@ -7909,7 +8162,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 142.24 109.22 0)
 			(hide yes)
 			(show_name no)
@@ -7920,7 +8173,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0402FR-0733RL"
+		(property "MPN" "0402WGF330JTCE"
+			(at 142.24 109.22 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25105"
 			(at 142.24 109.22 0)
 			(hide yes)
 			(show_name no)
@@ -8035,6 +8299,17 @@
 				)
 			)
 		)
+		(property "LCSC" "C93654"
+			(at 165.1 109.22 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "47ad43ec-84b6-4b0e-b462-9ece6e66db0b")
 		)
@@ -8117,7 +8392,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 157.48 97.79 0)
 			(hide yes)
 			(show_name no)
@@ -8128,7 +8403,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0402FR-0749R9L"
+		(property "MPN" "0402WGF499JTCE"
+			(at 157.48 97.79 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25120"
 			(at 157.48 97.79 0)
 			(hide yes)
 			(show_name no)
@@ -8221,7 +8507,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 157.48 105.41 0)
 			(hide yes)
 			(show_name no)
@@ -8232,7 +8518,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0402FR-0749R9L"
+		(property "MPN" "0402WGF499JTCE"
+			(at 157.48 105.41 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25120"
 			(at 157.48 105.41 0)
 			(hide yes)
 			(show_name no)
@@ -8325,7 +8622,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "Samsung Electro-Mechanics"
 			(at 185.42 105.41 0)
 			(hide yes)
 			(show_name no)
@@ -8336,7 +8633,18 @@
 				)
 			)
 		)
-		(property "MPN" "CC0402KRX7R9BB103"
+		(property "MPN" "CL05B103KB5NNNC"
+			(at 185.42 105.41 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C15195"
 			(at 185.42 105.41 0)
 			(hide yes)
 			(show_name no)
@@ -8508,7 +8816,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 152.4 116.84 0)
 			(hide yes)
 			(show_name no)
@@ -8519,7 +8827,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0402FR-07330RL"
+		(property "MPN" "0402WGF3300TCE"
+			(at 152.4 116.84 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25104"
 			(at 152.4 116.84 0)
 			(hide yes)
 			(show_name no)
@@ -8612,7 +8931,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 152.4 121.92 0)
 			(hide yes)
 			(show_name no)
@@ -8623,7 +8942,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0402FR-07330RL"
+		(property "MPN" "0402WGF3300TCE"
+			(at 152.4 121.92 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25104"
 			(at 152.4 121.92 0)
 			(hide yes)
 			(show_name no)
@@ -8716,7 +9046,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "Samsung Electro-Mechanics"
 			(at 137.16 138.43 0)
 			(hide yes)
 			(show_name no)
@@ -8727,7 +9057,18 @@
 				)
 			)
 		)
-		(property "MPN" "CC0402KRX7R9BB103"
+		(property "MPN" "CL05B103KB5NNNC"
+			(at 137.16 138.43 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C15195"
 			(at 137.16 138.43 0)
 			(hide yes)
 			(show_name no)
@@ -8842,6 +9183,17 @@
 				)
 			)
 		)
+		(property "LCSC" "C19666"
+			(at 144.78 135.89 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "b1dde6d8-96ea-4eba-9ef1-6c93152a8fb0")
 		)
@@ -8936,6 +9288,17 @@
 			)
 		)
 		(property "MPN" "RC0402FR-0712K4L"
+			(at 152.4 130.81 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C138060"
 			(at 152.4 130.81 0)
 			(hide yes)
 			(show_name no)
@@ -9129,6 +9492,17 @@
 				)
 			)
 		)
+		(property "LCSC" "C6125670"
+			(at 241.3 91.44 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "f9a71b82-00b9-42aa-abeb-7720e6810797")
 		)
@@ -9250,7 +9624,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 203.2 80.01 0)
 			(hide yes)
 			(show_name no)
@@ -9261,7 +9635,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0402FR-0710RL"
+		(property "MPN" "0402WGF100JTCE"
+			(at 203.2 80.01 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25077"
 			(at 203.2 80.01 0)
 			(hide yes)
 			(show_name no)
@@ -9354,7 +9739,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "FH"
 			(at 203.2 105.41 0)
 			(hide yes)
 			(show_name no)
@@ -9365,7 +9750,18 @@
 				)
 			)
 		)
-		(property "MPN" "CC0402KRX7R9BB223"
+		(property "MPN" "0402B223K500NT"
+			(at 203.2 105.41 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C1532"
 			(at 203.2 105.41 0)
 			(hide yes)
 			(show_name no)
@@ -9799,6 +10195,17 @@
 				)
 			)
 		)
+		(property "LCSC" "C2167446"
+			(at 243.84 120.65 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "8f49cea7-a599-45b2-b10c-1e1f3f01d3e3")
 		)
@@ -9881,7 +10288,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 236.22 120.65 0)
 			(hide yes)
 			(show_name no)
@@ -9892,7 +10299,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0603FR-071ML"
+		(property "MPN" "0603WAF1004T5E"
+			(at 236.22 120.65 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C22935"
 			(at 236.22 120.65 0)
 			(hide yes)
 			(show_name no)

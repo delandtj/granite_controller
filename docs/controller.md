@@ -63,9 +63,16 @@ later. Choose materials for the harsher case now.
 - The Ag9905MT potting must be confirmed epoxy (requirement 2) or the
   module soak-tested.
 - C1/C2 (220 uF aluminium-polymer, rubber seal) are replaced with
-  KEMET T520D227M006ATE015 (220 uF / 6.3 V molded tantalum-polymer,
-  D case): 5 V is 79 % of rating, within KEMET's polymer derating.
-  Check ripple rating against the Ag9905MT output requirement.
+  KEMET T520D227M010ATE018 (220 uF / 10 V molded tantalum-polymer,
+  18 mOhm, D case): 5 V is 50 % of rating, well within KEMET's polymer
+  derating. The 6.3 V / 15 mOhm M006ATE015 was dropped because LCSC
+  does not stock it. Check ripple rating against the Ag9905MT output
+  requirement.
+- PS1 (Ag9905MT) is DNP in the schematic: not stocked at JLC/LCSC, so
+  it is bought separately and hand-soldered after assembly.
+- Every other part carries an LCSC field (JLC assembly). Generic
+  passives use JLC basic parts with equal or better voltage, dielectric
+  and tolerance than the original MPNs.
 - USB-C VBUS can power the board for bench service (existing D2/D3
   OR-ing kept).
 

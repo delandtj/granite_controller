@@ -2089,6 +2089,17 @@
 				)
 			)
 		)
+		(property "LCSC" "C47023"
+			(at 60.96 132.08 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "79b6b6e8-c17b-4d92-8e35-b4375b892e77")
 		)
@@ -3013,7 +3024,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "Samsung Electro-Mechanics"
 			(at 38.1 96.52 0)
 			(hide yes)
 			(show_name no)
@@ -3024,7 +3035,18 @@
 				)
 			)
 		)
-		(property "MPN" "CC0402KRX7R7BB104"
+		(property "MPN" "CL05B104KO5NNNC"
+			(at 38.1 96.52 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C1525"
 			(at 38.1 96.52 0)
 			(hide yes)
 			(show_name no)
@@ -3319,6 +3341,17 @@
 				)
 			)
 		)
+		(property "LCSC" "C25744"
+			(at 25.4 165.1 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "db9d5ff6-34f1-4d32-899f-5b48548709e7")
 		)
@@ -3545,6 +3578,17 @@
 				)
 			)
 		)
+		(property "LCSC" "C25744"
+			(at 45.72 175.26 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "b9829ad0-dc54-4f6b-a22e-8806a7b512b6")
 		)
@@ -3749,7 +3793,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 124.46 35.56 0)
 			(hide yes)
 			(show_name no)
@@ -3760,7 +3804,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0402FR-07330RL"
+		(property "MPN" "0402WGF3300TCE"
+			(at 124.46 35.56 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25104"
 			(at 124.46 35.56 0)
 			(hide yes)
 			(show_name no)
@@ -3885,6 +3940,17 @@
 			)
 		)
 		(property "MPN" "TLP176AM(TPL,E)"
+			(at 143.51 38.1 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C5370540"
 			(at 143.51 38.1 0)
 			(hide yes)
 			(show_name no)
@@ -4103,7 +4169,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 158.75 40.64 0)
 			(hide yes)
 			(show_name no)
@@ -4114,7 +4180,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0603FR-07100RL"
+		(property "MPN" "0603WAF1000T5E"
+			(at 158.75 40.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C22775"
 			(at 158.75 40.64 0)
 			(hide yes)
 			(show_name no)
@@ -4237,7 +4314,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 124.46 48.26 0)
 			(hide yes)
 			(show_name no)
@@ -4248,7 +4325,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0402FR-07330RL"
+		(property "MPN" "0402WGF3300TCE"
+			(at 124.46 48.26 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25104"
 			(at 124.46 48.26 0)
 			(hide yes)
 			(show_name no)
@@ -4373,6 +4461,17 @@
 			)
 		)
 		(property "MPN" "TLP176AM(TPL,E)"
+			(at 143.51 50.8 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C5370540"
 			(at 143.51 50.8 0)
 			(hide yes)
 			(show_name no)
@@ -4591,7 +4690,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 158.75 53.34 0)
 			(hide yes)
 			(show_name no)
@@ -4602,7 +4701,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0603FR-07100RL"
+		(property "MPN" "0603WAF1000T5E"
+			(at 158.75 53.34 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C22775"
 			(at 158.75 53.34 0)
 			(hide yes)
 			(show_name no)
@@ -4737,6 +4847,17 @@
 			)
 		)
 		(property "MPN" "B4B-PH-K-S(LF)(SN)"
+			(at 205.74 43.18 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C131334"
 			(at 205.74 43.18 0)
 			(hide yes)
 			(show_name no)
@@ -4915,7 +5036,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 124.46 66.04 0)
 			(hide yes)
 			(show_name no)
@@ -4926,7 +5047,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0402FR-07330RL"
+		(property "MPN" "0402WGF3300TCE"
+			(at 124.46 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25104"
 			(at 124.46 66.04 0)
 			(hide yes)
 			(show_name no)
@@ -5051,6 +5183,17 @@
 			)
 		)
 		(property "MPN" "TLP176AM(TPL,E)"
+			(at 143.51 68.58 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C5370540"
 			(at 143.51 68.58 0)
 			(hide yes)
 			(show_name no)
@@ -5269,7 +5412,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 158.75 71.12 0)
 			(hide yes)
 			(show_name no)
@@ -5280,7 +5423,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0603FR-07100RL"
+		(property "MPN" "0603WAF1000T5E"
+			(at 158.75 71.12 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C22775"
 			(at 158.75 71.12 0)
 			(hide yes)
 			(show_name no)
@@ -5403,7 +5557,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 124.46 78.74 0)
 			(hide yes)
 			(show_name no)
@@ -5414,7 +5568,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0402FR-07330RL"
+		(property "MPN" "0402WGF3300TCE"
+			(at 124.46 78.74 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25104"
 			(at 124.46 78.74 0)
 			(hide yes)
 			(show_name no)
@@ -5539,6 +5704,17 @@
 			)
 		)
 		(property "MPN" "TLP176AM(TPL,E)"
+			(at 143.51 81.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C5370540"
 			(at 143.51 81.28 0)
 			(hide yes)
 			(show_name no)
@@ -5757,7 +5933,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 158.75 83.82 0)
 			(hide yes)
 			(show_name no)
@@ -5768,7 +5944,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0603FR-07100RL"
+		(property "MPN" "0603WAF1000T5E"
+			(at 158.75 83.82 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C22775"
 			(at 158.75 83.82 0)
 			(hide yes)
 			(show_name no)
@@ -5903,6 +6090,17 @@
 			)
 		)
 		(property "MPN" "B4B-PH-K-S(LF)(SN)"
+			(at 205.74 73.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C131334"
 			(at 205.74 73.66 0)
 			(hide yes)
 			(show_name no)
@@ -6081,7 +6279,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 124.46 96.52 0)
 			(hide yes)
 			(show_name no)
@@ -6092,7 +6290,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0402FR-07330RL"
+		(property "MPN" "0402WGF3300TCE"
+			(at 124.46 96.52 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25104"
 			(at 124.46 96.52 0)
 			(hide yes)
 			(show_name no)
@@ -6217,6 +6426,17 @@
 			)
 		)
 		(property "MPN" "TLP176AM(TPL,E)"
+			(at 143.51 99.06 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C5370540"
 			(at 143.51 99.06 0)
 			(hide yes)
 			(show_name no)
@@ -6435,7 +6655,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 158.75 101.6 0)
 			(hide yes)
 			(show_name no)
@@ -6446,7 +6666,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0603FR-07100RL"
+		(property "MPN" "0603WAF1000T5E"
+			(at 158.75 101.6 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C22775"
 			(at 158.75 101.6 0)
 			(hide yes)
 			(show_name no)
@@ -6569,7 +6800,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 124.46 109.22 0)
 			(hide yes)
 			(show_name no)
@@ -6580,7 +6811,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0402FR-07330RL"
+		(property "MPN" "0402WGF3300TCE"
+			(at 124.46 109.22 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25104"
 			(at 124.46 109.22 0)
 			(hide yes)
 			(show_name no)
@@ -6705,6 +6947,17 @@
 			)
 		)
 		(property "MPN" "TLP176AM(TPL,E)"
+			(at 143.51 111.76 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C5370540"
 			(at 143.51 111.76 0)
 			(hide yes)
 			(show_name no)
@@ -6923,7 +7176,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 158.75 114.3 0)
 			(hide yes)
 			(show_name no)
@@ -6934,7 +7187,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0603FR-07100RL"
+		(property "MPN" "0603WAF1000T5E"
+			(at 158.75 114.3 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C22775"
 			(at 158.75 114.3 0)
 			(hide yes)
 			(show_name no)
@@ -7069,6 +7333,17 @@
 			)
 		)
 		(property "MPN" "B4B-PH-K-S(LF)(SN)"
+			(at 205.74 104.14 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C131334"
 			(at 205.74 104.14 0)
 			(hide yes)
 			(show_name no)
@@ -7247,7 +7522,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 124.46 127 0)
 			(hide yes)
 			(show_name no)
@@ -7258,7 +7533,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0402FR-07330RL"
+		(property "MPN" "0402WGF3300TCE"
+			(at 124.46 127 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25104"
 			(at 124.46 127 0)
 			(hide yes)
 			(show_name no)
@@ -7383,6 +7669,17 @@
 			)
 		)
 		(property "MPN" "TLP176AM(TPL,E)"
+			(at 143.51 129.54 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C5370540"
 			(at 143.51 129.54 0)
 			(hide yes)
 			(show_name no)
@@ -7601,7 +7898,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 158.75 132.08 0)
 			(hide yes)
 			(show_name no)
@@ -7612,7 +7909,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0603FR-07100RL"
+		(property "MPN" "0603WAF1000T5E"
+			(at 158.75 132.08 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C22775"
 			(at 158.75 132.08 0)
 			(hide yes)
 			(show_name no)
@@ -7735,7 +8043,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 124.46 139.7 0)
 			(hide yes)
 			(show_name no)
@@ -7746,7 +8054,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0402FR-07330RL"
+		(property "MPN" "0402WGF3300TCE"
+			(at 124.46 139.7 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25104"
 			(at 124.46 139.7 0)
 			(hide yes)
 			(show_name no)
@@ -7871,6 +8190,17 @@
 			)
 		)
 		(property "MPN" "TLP176AM(TPL,E)"
+			(at 143.51 142.24 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C5370540"
 			(at 143.51 142.24 0)
 			(hide yes)
 			(show_name no)
@@ -8089,7 +8419,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 158.75 144.78 0)
 			(hide yes)
 			(show_name no)
@@ -8100,7 +8430,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0603FR-07100RL"
+		(property "MPN" "0603WAF1000T5E"
+			(at 158.75 144.78 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C22775"
 			(at 158.75 144.78 0)
 			(hide yes)
 			(show_name no)
@@ -8235,6 +8576,17 @@
 			)
 		)
 		(property "MPN" "B4B-PH-K-S(LF)(SN)"
+			(at 205.74 134.62 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C131334"
 			(at 205.74 134.62 0)
 			(hide yes)
 			(show_name no)
@@ -8413,7 +8765,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 124.46 157.48 0)
 			(hide yes)
 			(show_name no)
@@ -8424,7 +8776,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0402FR-07330RL"
+		(property "MPN" "0402WGF3300TCE"
+			(at 124.46 157.48 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25104"
 			(at 124.46 157.48 0)
 			(hide yes)
 			(show_name no)
@@ -8549,6 +8912,17 @@
 			)
 		)
 		(property "MPN" "TLP176AM(TPL,E)"
+			(at 143.51 160.02 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C5370540"
 			(at 143.51 160.02 0)
 			(hide yes)
 			(show_name no)
@@ -8767,7 +9141,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 158.75 162.56 0)
 			(hide yes)
 			(show_name no)
@@ -8778,7 +9152,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0603FR-07100RL"
+		(property "MPN" "0603WAF1000T5E"
+			(at 158.75 162.56 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C22775"
 			(at 158.75 162.56 0)
 			(hide yes)
 			(show_name no)
@@ -8901,7 +9286,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 124.46 170.18 0)
 			(hide yes)
 			(show_name no)
@@ -8912,7 +9297,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0402FR-07330RL"
+		(property "MPN" "0402WGF3300TCE"
+			(at 124.46 170.18 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25104"
 			(at 124.46 170.18 0)
 			(hide yes)
 			(show_name no)
@@ -9037,6 +9433,17 @@
 			)
 		)
 		(property "MPN" "TLP176AM(TPL,E)"
+			(at 143.51 172.72 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C5370540"
 			(at 143.51 172.72 0)
 			(hide yes)
 			(show_name no)
@@ -9255,7 +9662,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 158.75 175.26 0)
 			(hide yes)
 			(show_name no)
@@ -9266,7 +9673,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0603FR-07100RL"
+		(property "MPN" "0603WAF1000T5E"
+			(at 158.75 175.26 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C22775"
 			(at 158.75 175.26 0)
 			(hide yes)
 			(show_name no)
@@ -9401,6 +9819,17 @@
 			)
 		)
 		(property "MPN" "B4B-PH-K-S(LF)(SN)"
+			(at 205.74 165.1 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C131334"
 			(at 205.74 165.1 0)
 			(hide yes)
 			(show_name no)
@@ -9579,7 +10008,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 124.46 187.96 0)
 			(hide yes)
 			(show_name no)
@@ -9590,7 +10019,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0402FR-07330RL"
+		(property "MPN" "0402WGF3300TCE"
+			(at 124.46 187.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25104"
 			(at 124.46 187.96 0)
 			(hide yes)
 			(show_name no)
@@ -9715,6 +10155,17 @@
 			)
 		)
 		(property "MPN" "TLP176AM(TPL,E)"
+			(at 143.51 190.5 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C5370540"
 			(at 143.51 190.5 0)
 			(hide yes)
 			(show_name no)
@@ -9933,7 +10384,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 158.75 193.04 0)
 			(hide yes)
 			(show_name no)
@@ -9944,7 +10395,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0603FR-07100RL"
+		(property "MPN" "0603WAF1000T5E"
+			(at 158.75 193.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C22775"
 			(at 158.75 193.04 0)
 			(hide yes)
 			(show_name no)
@@ -10067,7 +10529,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 124.46 200.66 0)
 			(hide yes)
 			(show_name no)
@@ -10078,7 +10540,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0402FR-07330RL"
+		(property "MPN" "0402WGF3300TCE"
+			(at 124.46 200.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25104"
 			(at 124.46 200.66 0)
 			(hide yes)
 			(show_name no)
@@ -10203,6 +10676,17 @@
 			)
 		)
 		(property "MPN" "TLP176AM(TPL,E)"
+			(at 143.51 203.2 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C5370540"
 			(at 143.51 203.2 0)
 			(hide yes)
 			(show_name no)
@@ -10421,7 +10905,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 158.75 205.74 0)
 			(hide yes)
 			(show_name no)
@@ -10432,7 +10916,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0603FR-07100RL"
+		(property "MPN" "0603WAF1000T5E"
+			(at 158.75 205.74 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C22775"
 			(at 158.75 205.74 0)
 			(hide yes)
 			(show_name no)
@@ -10567,6 +11062,17 @@
 			)
 		)
 		(property "MPN" "B4B-PH-K-S(LF)(SN)"
+			(at 205.74 195.58 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C131334"
 			(at 205.74 195.58 0)
 			(hide yes)
 			(show_name no)
@@ -10745,7 +11251,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 124.46 218.44 0)
 			(hide yes)
 			(show_name no)
@@ -10756,7 +11262,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0402FR-07330RL"
+		(property "MPN" "0402WGF3300TCE"
+			(at 124.46 218.44 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25104"
 			(at 124.46 218.44 0)
 			(hide yes)
 			(show_name no)
@@ -10881,6 +11398,17 @@
 			)
 		)
 		(property "MPN" "TLP176AM(TPL,E)"
+			(at 143.51 220.98 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C5370540"
 			(at 143.51 220.98 0)
 			(hide yes)
 			(show_name no)
@@ -11099,7 +11627,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 158.75 223.52 0)
 			(hide yes)
 			(show_name no)
@@ -11110,7 +11638,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0603FR-07100RL"
+		(property "MPN" "0603WAF1000T5E"
+			(at 158.75 223.52 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C22775"
 			(at 158.75 223.52 0)
 			(hide yes)
 			(show_name no)
@@ -11233,7 +11772,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 124.46 231.14 0)
 			(hide yes)
 			(show_name no)
@@ -11244,7 +11783,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0402FR-07330RL"
+		(property "MPN" "0402WGF3300TCE"
+			(at 124.46 231.14 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25104"
 			(at 124.46 231.14 0)
 			(hide yes)
 			(show_name no)
@@ -11369,6 +11919,17 @@
 			)
 		)
 		(property "MPN" "TLP176AM(TPL,E)"
+			(at 143.51 233.68 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C5370540"
 			(at 143.51 233.68 0)
 			(hide yes)
 			(show_name no)
@@ -11587,7 +12148,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 158.75 236.22 0)
 			(hide yes)
 			(show_name no)
@@ -11598,7 +12159,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0603FR-07100RL"
+		(property "MPN" "0603WAF1000T5E"
+			(at 158.75 236.22 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C22775"
 			(at 158.75 236.22 0)
 			(hide yes)
 			(show_name no)
@@ -11733,6 +12305,17 @@
 			)
 		)
 		(property "MPN" "B4B-PH-K-S(LF)(SN)"
+			(at 205.74 226.06 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C131334"
 			(at 205.74 226.06 0)
 			(hide yes)
 			(show_name no)
@@ -11911,7 +12494,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 124.46 248.92 0)
 			(hide yes)
 			(show_name no)
@@ -11922,7 +12505,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0402FR-07330RL"
+		(property "MPN" "0402WGF3300TCE"
+			(at 124.46 248.92 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25104"
 			(at 124.46 248.92 0)
 			(hide yes)
 			(show_name no)
@@ -12047,6 +12641,17 @@
 			)
 		)
 		(property "MPN" "TLP176AM(TPL,E)"
+			(at 143.51 251.46 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C5370540"
 			(at 143.51 251.46 0)
 			(hide yes)
 			(show_name no)
@@ -12265,7 +12870,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 158.75 254 0)
 			(hide yes)
 			(show_name no)
@@ -12276,7 +12881,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0603FR-07100RL"
+		(property "MPN" "0603WAF1000T5E"
+			(at 158.75 254 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C22775"
 			(at 158.75 254 0)
 			(hide yes)
 			(show_name no)
@@ -12399,7 +13015,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 124.46 261.62 0)
 			(hide yes)
 			(show_name no)
@@ -12410,7 +13026,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0402FR-07330RL"
+		(property "MPN" "0402WGF3300TCE"
+			(at 124.46 261.62 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25104"
 			(at 124.46 261.62 0)
 			(hide yes)
 			(show_name no)
@@ -12535,6 +13162,17 @@
 			)
 		)
 		(property "MPN" "TLP176AM(TPL,E)"
+			(at 143.51 264.16 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C5370540"
 			(at 143.51 264.16 0)
 			(hide yes)
 			(show_name no)
@@ -12753,7 +13391,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 158.75 266.7 0)
 			(hide yes)
 			(show_name no)
@@ -12764,7 +13402,18 @@
 				)
 			)
 		)
-		(property "MPN" "RC0603FR-07100RL"
+		(property "MPN" "0603WAF1000T5E"
+			(at 158.75 266.7 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C22775"
 			(at 158.75 266.7 0)
 			(hide yes)
 			(show_name no)
@@ -12899,6 +13548,17 @@
 			)
 		)
 		(property "MPN" "B4B-PH-K-S(LF)(SN)"
+			(at 205.74 256.54 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C131334"
 			(at 205.74 256.54 0)
 			(hide yes)
 			(show_name no)

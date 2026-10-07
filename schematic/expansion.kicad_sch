@@ -2930,7 +2930,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 55.88 50.8 0)
 			(hide yes)
 			(show_name no)
@@ -2941,7 +2941,18 @@
 				)
 			)
 		)
-		(property "MPN" "YC124-JR-07330RL"
+		(property "MPN" "4D02WGJ0331TCE"
+			(at 55.88 50.8 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C43557"
 			(at 55.88 50.8 0)
 			(hide yes)
 			(show_name no)
@@ -3064,6 +3075,17 @@
 			)
 		)
 		(property "MPN" "TPD4E05U06DQAR"
+			(at 127 55.88 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C138714"
 			(at 127 55.88 0)
 			(hide yes)
 			(show_name no)
@@ -3259,7 +3281,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 55.88 83.82 0)
 			(hide yes)
 			(show_name no)
@@ -3270,7 +3292,18 @@
 				)
 			)
 		)
-		(property "MPN" "YC124-JR-07330RL"
+		(property "MPN" "4D02WGJ0331TCE"
+			(at 55.88 83.82 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C43557"
 			(at 55.88 83.82 0)
 			(hide yes)
 			(show_name no)
@@ -3393,6 +3426,17 @@
 			)
 		)
 		(property "MPN" "TPD4E05U06DQAR"
+			(at 127 88.9 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C138714"
 			(at 127 88.9 0)
 			(hide yes)
 			(show_name no)
@@ -3588,7 +3632,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "Samtec"
+		(property "MANUFACTURER" "Megastar"
 			(at 187.96 66.04 0)
 			(hide yes)
 			(show_name no)
@@ -3599,7 +3643,18 @@
 				)
 			)
 		)
-		(property "MPN" "TSW-106-07-G-D"
+		(property "MPN" "ZX-PZ2.54-2-6PZZ"
+			(at 187.96 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C7501277"
 			(at 187.96 66.04 0)
 			(hide yes)
 			(show_name no)
@@ -3959,7 +4014,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "Bourns"
+		(property "MANUFACTURER" "LUTE"
 			(at 35.56 121.92 0)
 			(hide yes)
 			(show_name no)
@@ -3970,7 +4025,18 @@
 				)
 			)
 		)
-		(property "MPN" "MF-PSMF035X-2"
+		(property "MPN" "0805L035/24XR"
+			(at 35.56 121.92 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C7472565"
 			(at 35.56 121.92 0)
 			(hide yes)
 			(show_name no)
@@ -4063,7 +4129,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "Littelfuse"
+		(property "MANUFACTURER" "GOODWORK"
 			(at 45.72 125.73 0)
 			(hide yes)
 			(show_name no)
@@ -4074,7 +4140,18 @@
 				)
 			)
 		)
-		(property "MPN" "SMF3.3"
+		(property "MPN" "SMF3.3A"
+			(at 45.72 125.73 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C37331473"
 			(at 45.72 125.73 0)
 			(hide yes)
 			(show_name no)
@@ -4336,7 +4413,18 @@
 				)
 			)
 		)
-		(property "MPN" "1206L050/15YR-A"
+		(property "MPN" "1206L050/15YR"
+			(at 35.56 142.24 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C151162"
 			(at 35.56 142.24 0)
 			(hide yes)
 			(show_name no)
@@ -4441,6 +4529,17 @@
 			)
 		)
 		(property "MPN" "SMF5.0A"
+			(at 45.72 146.05 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C151296"
 			(at 45.72 146.05 0)
 			(hide yes)
 			(show_name no)
