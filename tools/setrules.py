@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Apply PCBWay default 4L 1.6 mm stackup (7628, 1oz/1oz) to the .kicad_pcb and rules/netclasses to the .kicad_pro."""
+"""Apply the JLCPCB JLC04161H-7628 4L 1.6 mm stackup (1 oz outer, 0.5 oz inner) to
+the .kicad_pcb and rules/netclasses to the .kicad_pro.
+
+Diff pairs (2D field solve, surface microstrip over In1 GND, 0.2104 mm 7628):
+ETH 0.16/0.15 = 101 ohm in fluid (Er 2.1 above the mask), 106 ohm in air.
+USB 0.25/0.15 = 89 ohm in air (service port, used out of the fluid).
+"""
 import json, sys
 pcb, pro = sys.argv[1:3]
 
@@ -8,11 +14,11 @@ STACKUP = '''\t\t(stackup
 \t\t\t(layer "F.Paste" (type "Top Solder Paste"))
 \t\t\t(layer "F.Mask" (type "Top Solder Mask") (thickness 0.01))
 \t\t\t(layer "F.Cu" (type "copper") (thickness 0.035))
-\t\t\t(layer "dielectric 1" (type "prepreg") (thickness 0.1855) (material "FR4") (epsilon_r 4.74) (loss_tangent 0.02))
-\t\t\t(layer "In1.Cu" (type "copper") (thickness 0.035))
-\t\t\t(layer "dielectric 2" (type "core") (thickness 1.03) (material "FR4") (epsilon_r 4.6) (loss_tangent 0.02))
-\t\t\t(layer "In2.Cu" (type "copper") (thickness 0.035))
-\t\t\t(layer "dielectric 3" (type "prepreg") (thickness 0.1855) (material "FR4") (epsilon_r 4.74) (loss_tangent 0.02))
+\t\t\t(layer "dielectric 1" (type "prepreg") (thickness 0.2104) (material "FR4 7628") (epsilon_r 4.4) (loss_tangent 0.02))
+\t\t\t(layer "In1.Cu" (type "copper") (thickness 0.0152))
+\t\t\t(layer "dielectric 2" (type "core") (thickness 1.065) (material "FR4") (epsilon_r 4.6) (loss_tangent 0.02))
+\t\t\t(layer "In2.Cu" (type "copper") (thickness 0.0152))
+\t\t\t(layer "dielectric 3" (type "prepreg") (thickness 0.2104) (material "FR4 7628") (epsilon_r 4.4) (loss_tangent 0.02))
 \t\t\t(layer "B.Cu" (type "copper") (thickness 0.035))
 \t\t\t(layer "B.Mask" (type "Bottom Solder Mask") (thickness 0.01))
 \t\t\t(layer "B.Paste" (type "Bottom Solder Paste"))
@@ -46,8 +52,8 @@ NC = {
     "PWR_VBUS":             (0.5,  0.2,  0.6, 0.3, None, None),
     "PWR_19V":              (0.4,  0.2,  0.6, 0.3, None, None),
     "MAGJACK_TRANSFORMERS": (0.3,  0.2,  0.6, 0.3, None, None),
-    "ETH_Lines":            (0.18, 0.2,  0.6, 0.3, 0.18, 0.15),
-    "USB":                  (0.22, 0.2,  0.6, 0.3, 0.22, 0.15),
+    "ETH_Lines":            (0.16, 0.2,  0.6, 0.3, 0.16, 0.15),
+    "USB":                  (0.25, 0.2,  0.6, 0.3, 0.25, 0.15),
     "RMII":                 (0.2,  0.15, 0.6, 0.3, None, None),
     "ETH_CTL":              (0.2,  0.15, 0.6, 0.3, None, None),
     "SWD":                  (0.2,  0.15, 0.6, 0.3, None, None),

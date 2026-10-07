@@ -197,9 +197,11 @@ as before:
 
 ### PCB
 
-- 4 layers, PCBWay, stackup and rules as already set up for this board.
-- Differential pairs (Ethernet MDI 100R, USB 90R) recomputed with the
-  fluid on the outer layers (requirement 6 under Environment).
+- 4 layers, JLCPCB (bare board and assembly), JLC04161H-7628 stackup.
+- Differential pairs: Ethernet MDI 0.16/0.15 mm = 101R with the fluid
+  above the outer layers (requirement 6 under Environment); USB
+  0.25/0.15 mm = 89R in air, since the service port is used out of
+  the fluid.
 
 ## Removed from the previous design
 

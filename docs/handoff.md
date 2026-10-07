@@ -33,20 +33,24 @@ map: docs/controller.md.
   (LTC4282 x8 @0x40-0x47).
 - Sheets: Power, Ethernet, MCU, Relay channels, Expansion header.
   Generated, then tidied by hand-style layout; netlist verified
-  identical across the tidy. ERC 0. PCB in sync (151 footprints), but
-  nothing placed: all footprints sit in a parking grid off-board.
+  identical across the tidy. ERC 0. PCB regenerated from scratch after
+  the 19 V change (162 footprints, 0 parity issues); nothing placed,
+  no outline: all footprints sit in a parking grid off-board.
 
 ## PCB setup already done
 
-4 layers, PCBWay default 1.6 mm stackup (7628 prepreg, 1 oz all
-layers), board rules for PCBWay, net classes with widths, diff pairs
-(ETH 100R: 0.18/0.15, USB 90R: 0.22/0.15 - computed for air, must be
-recomputed with the fluid's Er), granite_controller.kicad_dru
+4 layers, JLCPCB JLC04161H-7628 1.6 mm stackup (0.2104 mm 7628
+prepreg, 1 oz outer, 0.5 oz inner), net classes with widths, diff
+pairs from a 2D field solve: ETH 0.16/0.15 = 101R in fluid (Er 2.1),
+USB 0.25/0.15 = 89R in air (service port, used out of the fluid).
+Confirm with JLC's impedance calculator before ordering.
+granite_controller.kicad_dru
 (USB-C NPTH exception; the PoE clearance rule is gone with PoE).
 
 ## Decisions made with the user
 
-- Fab: PCBWay (not JLC). 4 layers. Claude does board setup, outline,
+- Fab: JLCPCB for bare board and assembly (changed from PCBWay on
+  2026-10-07; the colleague preferred PCBWay). 4 layers. Claude does board setup, outline,
   holes and grouped placement; the user routes critical nets (Ethernet
   pairs, USB, switcher loop, crystals).
 - 8 nodes per frame. MCP23017 relay drive, fail-safe via reset.
@@ -92,8 +96,7 @@ Power board: PSU model (paralleling, PMBus), node 19 V input connector
 - `tools/setrules.py <pcb> <pro>`: applies the stackup, board rules
   and net class values. Run after mkboard.
 - Check after any change: `kicad-cli sch erc --severity-all`,
-  `kicad-cli pcb drc --schematic-parity`. The only expected parity
-  warning is J1 pin 8 (NC pin without a pad).
+  `kicad-cli pcb drc --schematic-parity`. Expect 0 parity issues.
 - kicad-cli occasionally re-serializes granite_controller.kicad_pro;
   `git diff` it and restore with `git checkout` if it changed.
 - Do not use the KiCad MCP schematic tools on these files: they
