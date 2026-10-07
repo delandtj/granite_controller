@@ -75,15 +75,15 @@ These are the critical requirements.
 1. Default ON. A channel is ON unless the controller actively turns it
    OFF. Every undriven state counts as ON: board logic in reset, I2C dead,
    controller absent, rebooting or unpowered, or the cable unplugged.
-2. A channel only goes OFF on an explicit command (register write or
+1. A channel only goes OFF on an explicit command (register write or
    driven signal), never because a signal disappeared.
-3. Channel OFF state survives a controller reboot. Releasing it requires
+2. Channel OFF state survives a controller reboot. Releasing it requires
    a new command, so a power-cycle in progress is not cut short or
    repeated by a reboot.
-4. The board logic is powered from the 19 V bus (local 3.3 V regulator),
+3. The board logic is powered from the 19 V bus (local 3.3 V regulator),
    not from the controller, so requirements 1-3 hold with the
    controller disconnected.
-5. EXP_nRESET from the controller must NOT reset this board's channel
+4. EXP_nRESET from the controller must NOT reset this board's channel
    state. On the controller it resets the relay-drive expander on every
    MCU reset; here that would violate requirement 3. The board does not
    use EXP_nRESET.
@@ -141,28 +141,30 @@ These are the critical requirements.
 - Monitoring accuracy against a bench meter at 1, 5 and 10 A.
 - I2C robustness over the cable with all channels loaded.
 
+## Selected parts
+
+- Hot-swap controller: Analog Devices LTC4282, one per channel
+  (decided 2026-10-07). 2.9-33 V, 16-bit V/I/P plus energy
+  accumulation (+/-0.7 % total error), MOSFET power foldback for SOA,
+  fault log, configuration in internal EEPROM, 5x5 QFN-32.
+  Fallback if a check below fails: TI LM5066I (10-80 V, V/I/P/energy,
+  SOA power limit, lower accuracy, HTSSOP-28).
+  To confirm from the datasheet before schematic capture:
+  - I2C addresses available from ADR0/ADR1; if fewer than 8, add a
+    TCA9548A mux on the board.
+  - ON pin / EEPROM default-enable with I2C dead (requirement 1 under
+    Control and failure behaviour).
+  - Retry vs latch-off fault modes.
+  - Abs max on VDD and SENSE pins vs 30 V bus transients.
+  - Sense resistor value for a ~14 A limit; MOSFET choice (single vs
+    dual) for SOA at 15 A.
+
 ## Open decisions
 
-1. Hot-swap controller part. Needs: 17-24 V operation with margin, 15 A
-   via external N-MOSFET, I2C/PMBus V/I/P (energy preferred), a way to
-   meet default-ON, enough addresses or a mux.
-   Shortlist (first pass, datasheets not yet read in full):
-   - ADI LTC4282 (preferred): 2.9-33 V, 16-bit V/I/P plus energy
-     accumulation, +/-0.7 % total error, MOSFET power foldback for SOA,
-     fault log, config in internal EEPROM, 5x5 QFN-32, in stock.
-   - TI LM5066I (fallback): 10-80 V, V/I/P/energy (READ_EIN), temp,
-     programmable SOA power limit, retry or latch-off; lower accuracy
-     (1.75 % current, 2.5 % power), HTSSOP-28.
-   - Excluded: TPS25990 (16 V max), ADM1293 (20 V range), ADM1278
-     (likely too low a range).
-   Check in the LTC4282 datasheet before choosing: number of I2C
-   addresses from ADR0/ADR1 (else add a TCA9548A mux), ON pin / EEPROM
-   default-enable with I2C dead (requirement 1), retry vs latch-off,
-   abs max on VDD and SENSE, sense-resistor value for 15 A, price.
 2. PSU model: whether the two supplies are designed to run in parallel
    (current share or OR-ing) and whether they have PMBus.
 3. Node power input connector. A 5.5 x 2.5 mm barrel jack is not rated
    for 10.5 A; this decides the output connector and cabling.
 4. Fault mode: latch-off (proposed) or auto-retry.
 5. Main input fuse location and type (on board vs. in the supply cabling).
-6. Board outline, mounting and cable routing in the frame.
+5. Board outline, mounting and cable routing in the frame.
