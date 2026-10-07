@@ -110,11 +110,23 @@ Pin map:
   feedback across XI/XO per the datasheet figure.
 - EXRES1 12.4k 1 %; TOCAP 4.7 uF; 1V2O 10 nF; VBG open; RSVD pins
   to GND; PMODE pins open (all-capable autonegotiation).
-- Supplies: ferrite from 3V3 to AVDD, 100 nF on each AVDD pin and on
-  VDD, 10 uF bulk.
+- Supplies: see the AVDD line below; 100 nF on VDD.
 - Magjack: ARJP11A keeps its role (1CT:1CT magnetics, PoE rectifier,
   Bob Smith termination on pin 7). Its LEDs are driven by the W5500
   (active-low sink): LINK on one, ACT on the other.
+- PHY-side network, copied from WIZnet's W5500 Ethernet Shield
+  reference schematic (github.com/Wiznet/W5500_Ethernet_Shield,
+  Schematic/W5500_Ethernet_shield.sch):
+  - TXP / TXN: 33R series each, then to magjack TD+ / TD-. Each TD
+    line has 49R9 1 % to AVDD (+3V3A).
+  - Transmit center tap (TCT): 10R 1 % to AVDD, 22 nF to GND.
+  - RXP / RXN: 33R series each to an RX node; each node has 49R9 1 %
+    to the receive center tap and 6.8 nF in series to magjack RD+ / RD-.
+  - Receive center tap (RCT): joined to the 49R9 pair, 10 nF to GND.
+  - AVDD (+3V3A): from 3V3 through a 120R@100MHz ferrite bead
+    (HH-1M1608-121JT in the reference), 100 nF per AVDD pin, 10 uF bulk.
+  - LEDs: anodes to 3V3, cathodes through 330R to LINKLED / ACTLED.
+  - Shield: 1 nF / 2 kV to GND (already present as C36).
 - No auto-MDIX in the W5500: fine for switch ports with auto-MDIX.
 
 ### Relay channels (unchanged from rev B on this branch)
@@ -172,16 +184,13 @@ the 28-pin GPIO expansion header (replaced by the 2x8 header above).
 
 ## Open items and verification
 
-1. W5500 PHY-side network (TX/RX termination, TCT/RCT treatment) was
-   not confirmed from a WIZnet source; take it from the WIZ850io / W5500
-   EVB reference schematic before capture.
-2. ARJP11A LED polarity and pin mapping (pins 11-14) against its
+1. ARJP11A LED polarity and pin mapping (pins 11-14) against its
    datasheet drawing.
-3. Ag9905MT potting material; soak test plan for the magjack (LED
+2. Ag9905MT potting material; soak test plan for the magjack (LED
    lenses, internal potting) and the JST housings.
-4. Replacement part for C1/C2 (bulk on the PoE 5 V output).
-5. LP I2C from the HP core: if ESP-IDF supports it, use it instead of
+3. Replacement part for C1/C2 (bulk on the PoE 5 V output).
+4. LP I2C from the HP core: if ESP-IDF supports it, use it instead of
    software I2C for the external bus (same pins 6/7).
-6. ESP32-C6-WROOM-1U-N8 stock and price (Digi-Key lists ~$5.60).
-7. Board outline, connector placement, mounting holes, assembly side,
+5. ESP32-C6-WROOM-1U-N8 stock and price (Digi-Key lists ~$5.60).
+6. Board outline, connector placement, mounting holes, assembly side,
    surface finish (carried over from the layout discussion).
