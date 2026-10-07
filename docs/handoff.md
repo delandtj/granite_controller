@@ -115,6 +115,11 @@ Power board: PSU model (paralleling, PMBus), node 19 V input connector
   and USB-C openings on the top edge, WROOM antenna overhanging the
   bottom edge. Anchors big parts, packs the rest per sheet. A start for
   hand placement only: re-running it discards hand moves.
+- `tools/silk.py <in.pcb> <out.pcb>`: values to F.Fab, silk refs hidden
+  on small passives (F.Fab keeps them), other refs 0.8 mm placed clear
+  of pads, silk outlines, other courtyards and each other (connectors
+  first). Run after place. Only expected silk DRC hits: U1's outline
+  where the antenna overhangs the bottom edge.
 - Check after any change: `kicad-cli sch erc --severity-all`,
   `kicad-cli pcb drc --schematic-parity`. Expect 0 parity issues.
 - kicad-cli occasionally re-serializes granite_controller.kicad_pro;

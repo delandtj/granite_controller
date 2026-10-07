@@ -159,6 +159,7 @@
 		(property "Reference" "R9"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "5c335157-847a-4045-83ed-b2e76d0bdc32")
 			(effects
 				(font
@@ -344,6 +345,7 @@
 		(property "Reference" "R8"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "37bc26de-4685-4aa7-b8ec-9add7b9df610")
 			(effects
 				(font
@@ -529,6 +531,7 @@
 		(property "Reference" "R39"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "4ce9ee13-eef4-4247-b7a8-8c8c68d2c9c0")
 			(effects
 				(font
@@ -712,12 +715,12 @@
 		(descr "SOIC, 4 Pin (https://toshiba.semicon-storage.com/info/docget.jsp?did=11791&prodName=TLP185)")
 		(tags "SOIC SO")
 		(property "Reference" "K8"
-			(at 0 -2.8 0)
+			(at 0 3.095 0)
 			(layer "F.SilkS")
 			(uuid "41641477-5a54-4150-87ad-55bdedf8daba")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -1177,6 +1180,7 @@
 		(property "Reference" "C29"
 			(at 0 -1.16 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "bcba9c09-786c-4211-87ea-b51a8a8b45aa")
 			(effects
 				(font
@@ -1360,12 +1364,12 @@
 		(descr "SOIC, 4 Pin (https://toshiba.semicon-storage.com/info/docget.jsp?did=11791&prodName=TLP185)")
 		(tags "SOIC SO")
 		(property "Reference" "K2"
-			(at 0 -2.8 0)
+			(at 0 3.095 0)
 			(layer "F.SilkS")
 			(uuid "0f68ae70-3048-48c6-8311-8dbcb464e745")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -1825,6 +1829,7 @@
 		(property "Reference" "R3"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "d0ce62f7-4967-4ca4-bc30-fb007a8591e3")
 			(effects
 				(font
@@ -2004,12 +2009,13 @@
 	(footprint "Resistor_SMD:R_0402_1005Metric"
 		(layer "F.Cu")
 		(uuid "09c5a3b1-c7ce-405f-bf97-7a9d3de70c2a")
-		(at 106.475 10.515)
+		(at 103.475 12.115)
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R61"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "22aaa50d-f642-44d7-a239-37c52f779295")
 			(effects
 				(font
@@ -2193,12 +2199,12 @@
 		(descr "JST PH series connector, B3B-PH-K (http://www.jst-mfg.com/product/pdf/eng/ePH.pdf)")
 		(tags "connector JST PH vertical")
 		(property "Reference" "J4"
-			(at 2 -2.9 0)
+			(at 2 4.045 0)
 			(layer "F.SilkS")
 			(uuid "5a596b82-c1d5-4dcb-a96f-af41ac963ce7")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -2653,6 +2659,7 @@
 		(property "Reference" "R209"
 			(at 0 -1.43 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "dbf50852-f547-4bd7-ad50-72caaa5a2991")
 			(effects
 				(font
@@ -2836,12 +2843,12 @@
 		(descr "SOIC, 4 Pin (https://toshiba.semicon-storage.com/info/docget.jsp?did=11791&prodName=TLP185)")
 		(tags "SOIC SO")
 		(property "Reference" "K13"
-			(at 0 -2.8 0)
+			(at 0 0.955 0)
 			(layer "F.SilkS")
 			(uuid "1680b6aa-2f92-4608-9112-1f6e420b1b1b")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -3299,13 +3306,13 @@
 		(descr "ESP32-C6-WROOM-1 (N4/N8/N16) 2.4 GHz Wi-Fi 6, BLE, Zigbee, Thread module, onboard PCB antenna, 18x25.5mm, land pattern per datasheet v1.4 fig 11-1, https://www.espressif.com/sites/default/files/documentation/esp32-c6-wroom-1_wroom-1u_datasheet_en.pdf")
 		(tags "ESP32-C6 WROOM-1 Espressif Wi-Fi Bluetooth Zigbee Thread 18x25.5mm")
 		(property "Reference" "U1"
-			(at 0 -14.25 180)
+			(at 0 13.995 0)
 			(unlocked yes)
 			(layer "F.SilkS")
 			(uuid "91d8db8d-e3a7-4669-ae74-d07e4e3cafe2")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -3966,13 +3973,13 @@
 		(descr "USB 2.0 Type C Receptacle, GCT, 16P, top mounted, horizontal, 5A: https://gct.co/files/drawings/usb4105.pdf")
 		(tags "USB C Type-C Receptacle SMD USB 2.0 16P 16C USB4105-15-A USB4105-15-A-060 USB4105-15-A-120 USB4105-GF-A USB4105-GF-A-060 USB4105-GF-A-120")
 		(property "Reference" "J2"
-			(at 0 -5.5 180)
+			(at 6.465 -0.29 0)
 			(unlocked yes)
 			(layer "F.SilkS")
 			(uuid "d869e756-4a7b-4f75-9291-b9d0bbae8958")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -4336,6 +4343,7 @@
 		(property "Reference" "R44"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "49ee72e3-e5ae-425e-8f11-75194115cd58")
 			(effects
 				(font
@@ -4515,12 +4523,13 @@
 	(footprint "Package_SON:USON-10_2.5x1.0mm_P0.5mm"
 		(layer "F.Cu")
 		(uuid "14fb0856-2627-4df3-a03e-bb07a4ff1c75")
-		(at 123.455 11.545)
+		(at 115.955 13.145)
 		(descr "USON-10 2.5x1.0mm_ Pitch 0.5mm http://www.ti.com/lit/ds/symlink/tpd4e02b04.pdf")
 		(tags "USON-10 2.5x1.0mm Pitch 0.5mm")
 		(property "Reference" "U7"
 			(at 0.01829 -2.5 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "9a6d8882-c4bc-43b4-b863-2be51cbc65f1")
 			(effects
 				(font
@@ -4842,6 +4851,7 @@
 		(property "Reference" "R211"
 			(at 0 -1.43 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "09990e15-013c-4755-82c5-ad63b55050e7")
 			(effects
 				(font
@@ -5027,6 +5037,7 @@
 		(property "Reference" "R15"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "a1b9b8bf-40a4-4cb2-a245-6e65d1212b54")
 			(effects
 				(font
@@ -5212,6 +5223,7 @@
 		(property "Reference" "C28"
 			(at 0 -1.16 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "0cc8f4a2-b0df-445a-9b27-a79c072f9190")
 			(effects
 				(font
@@ -5397,6 +5409,7 @@
 		(property "Reference" "R105"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "39dc4935-20c3-40f2-a4b5-5c669c2ee7f1")
 			(effects
 				(font
@@ -5582,6 +5595,7 @@
 		(property "Reference" "R205"
 			(at 0 -1.43 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "30d9a13c-7ccd-4246-a89c-9f5cbbb943be")
 			(effects
 				(font
@@ -5761,16 +5775,16 @@
 	(footprint "Fuse:Fuse_1206_3216Metric"
 		(layer "F.Cu")
 		(uuid "1e652ff4-cbe6-483a-9c21-dc618a34ab3d")
-		(at 126.325 8.175)
+		(at 126.825 9.775)
 		(descr "Fuse SMD 1206 (3216 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: http://www.tortai-tech.com/upload/download/2011102023233369053.pdf)")
 		(tags "fuse")
 		(property "Reference" "F2"
-			(at 0 -1.83 0)
+			(at 0 1.874999 0)
 			(layer "F.SilkS")
 			(uuid "ba497fdd-0903-476d-a070-31c84044e568")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -5952,6 +5966,7 @@
 		(property "Reference" "R12"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "63a796dd-b7a8-405c-a6ee-095743007ac0")
 			(effects
 				(font
@@ -6131,12 +6146,13 @@
 	(footprint "Capacitor_SMD:C_0402_1005Metric"
 		(layer "F.Cu")
 		(uuid "202feb7c-9175-4d22-8793-c5081d045ec2")
-		(at 108.455 7.505)
+		(at 108.955 9.105)
 		(descr "Capacitor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "capacitor")
 		(property "Reference" "C50"
 			(at 0 -1.16 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "090fb494-e613-4720-96c6-3ab034f26fd0")
 			(effects
 				(font
@@ -6322,6 +6338,7 @@
 		(property "Reference" "R109"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "d4d90a63-2778-4548-be23-50703f4b467a")
 			(effects
 				(font
@@ -6507,6 +6524,7 @@
 		(property "Reference" "R116"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "571fbca7-ae51-43fc-8cbf-b680e302e7c6")
 			(effects
 				(font
@@ -6692,6 +6710,7 @@
 		(property "Reference" "C43"
 			(at 0 -1.16 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "a8532cbb-5c5c-499e-9e19-84ba1419b34c")
 			(effects
 				(font
@@ -6874,12 +6893,12 @@
 		(at 30.145 24.795)
 		(descr "Abracon ABM8G, Miniature Ceramic Crystal, 3.2x2.5mm package, SMD, http://www.abracon.com/Resonators/ABM8G.pdf")
 		(property "Reference" "Y2"
-			(at 0 -2.45 0)
+			(at 0 -2.495 0)
 			(layer "F.SilkS")
 			(uuid "e992a2c6-f89f-4d93-a311-d20b774438fd")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -7076,12 +7095,12 @@
 		(descr "SOT, 6 Pin (JEDEC MO-178 Var AB https://www.jedec.org/document_search?search_api_views_fulltext=MO-178)")
 		(tags "SOT TO_SOT_SMD")
 		(property "Reference" "U4"
-			(at 0 -2.4 0)
+			(at 0 2.695 0)
 			(layer "F.SilkS")
 			(uuid "46695e41-00d6-42b4-bb9e-e747dfec39e5")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -7457,6 +7476,7 @@
 		(property "Reference" "R64"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "2c0c8106-0930-48cf-8e85-35823dbcf4cf")
 			(effects
 				(font
@@ -7642,6 +7662,7 @@
 		(property "Reference" "C15"
 			(at 0 -1.16 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "0dfab351-f7d7-43e0-9319-70eab4847f9d")
 			(effects
 				(font
@@ -7827,6 +7848,7 @@
 		(property "Reference" "R24"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "1959d075-9a05-4021-8ddd-41bade2aafa2")
 			(effects
 				(font
@@ -8010,12 +8032,12 @@
 		(descr "JST PH series connector, B5B-PH-K (http://www.jst-mfg.com/product/pdf/eng/ePH.pdf)")
 		(tags "connector JST PH vertical")
 		(property "Reference" "J14"
-			(at 4 -2.9 0)
+			(at 11.945 0.55 0)
 			(layer "F.SilkS")
 			(uuid "1176fc8e-d454-4eee-a17b-6a3aeba98de2")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -8568,6 +8590,7 @@
 		(property "Reference" "TP1"
 			(at 0 -1.648 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "5687c887-d75d-409e-b8ac-cf8c1675a5da")
 			(effects
 				(font
@@ -8669,6 +8692,7 @@
 		(property "Reference" "C9"
 			(at 0 -1.16 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "201c09c7-04f7-47ba-b722-101b6c67a108")
 			(effects
 				(font
@@ -8854,6 +8878,7 @@
 		(property "Reference" "R2"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "cfeebef4-51ff-4832-9e5b-242273e2ed36")
 			(effects
 				(font
@@ -9037,12 +9062,12 @@
 		(descr "SOIC, 4 Pin (https://toshiba.semicon-storage.com/info/docget.jsp?did=11791&prodName=TLP185)")
 		(tags "SOIC SO")
 		(property "Reference" "K9"
-			(at 0 -2.8 0)
+			(at -5.445 0 0)
 			(layer "F.SilkS")
 			(uuid "c6bc9890-67d1-4595-97a0-a998848e0d75")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -9502,6 +9527,7 @@
 		(property "Reference" "R47"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "9b42086f-2b1a-4589-b781-343304e76a49")
 			(effects
 				(font
@@ -9687,6 +9713,7 @@
 		(property "Reference" "R18"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "14c1ddd7-02ee-4bef-bbc2-9f6528b403c7")
 			(effects
 				(font
@@ -9872,6 +9899,7 @@
 		(property "Reference" "R25"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "5ff29c8c-ede7-40ab-99cf-755266cdec34")
 			(effects
 				(font
@@ -10057,6 +10085,7 @@
 		(property "Reference" "R50"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "f9319ecf-d47e-49bc-9645-8a406a4c7ea5")
 			(effects
 				(font
@@ -10242,6 +10271,7 @@
 		(property "Reference" "R27"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "d8f7176b-55d9-4fb0-80d0-217e4025f20c")
 			(effects
 				(font
@@ -10427,6 +10457,7 @@
 		(property "Reference" "C10"
 			(at 0 -1.16 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "44e62b44-4db8-497a-9a12-eb39a65427b1")
 			(effects
 				(font
@@ -10606,12 +10637,13 @@
 	(footprint "Resistor_SMD:R_0402_1005Metric"
 		(layer "F.Cu")
 		(uuid "3dc8404c-ff25-4418-8efe-d84baedbc110")
-		(at 106.475 9.015)
+		(at 106.475 10.615)
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R57"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "19ae3bbf-a1ce-4286-bc37-3e0d64343acc")
 			(effects
 				(font
@@ -10797,6 +10829,7 @@
 		(property "Reference" "D5"
 			(at 0 -1.2 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "fc3a65e3-c588-454f-9fda-223e7f2f86cb")
 			(effects
 				(font
@@ -11182,6 +11215,7 @@
 		(property "Reference" "R46"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "9f8bda3d-44c1-4e89-8bc4-0a93ef43d5a1")
 			(effects
 				(font
@@ -11367,6 +11401,7 @@
 		(property "Reference" "R5"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "6d2e4a1b-478b-47df-9f3d-2ea43a5dcfc3")
 			(effects
 				(font
@@ -11552,6 +11587,7 @@
 		(property "Reference" "R63"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "22ba1cae-265f-4e9d-998c-8444ea846876")
 			(effects
 				(font
@@ -11735,12 +11771,12 @@
 		(descr "SOIC, 28 Pin (JEDEC MS-013AE, https://www.analog.com/media/en/package-pcb-resources/package/35833120341221rw_28.pdf)")
 		(tags "SOIC SO")
 		(property "Reference" "U14"
-			(at 0 -9.9 90)
+			(at 6.675 0 0)
 			(layer "F.SilkS")
 			(uuid "bdd62ceb-60a5-4c1d-81e6-db4fca2f558d")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -12292,6 +12328,7 @@
 		(property "Reference" "C30"
 			(at 0 -1.43 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "9c70801f-7f67-4e7f-bf78-a99ab8dd8fb1")
 			(effects
 				(font
@@ -12475,12 +12512,12 @@
 		(descr "JST PH series connector, B5B-PH-K (http://www.jst-mfg.com/product/pdf/eng/ePH.pdf)")
 		(tags "connector JST PH vertical")
 		(property "Reference" "J18"
-			(at 4 -2.9 0)
+			(at 4 -2.945001 0)
 			(layer "F.SilkS")
 			(uuid "e57919dc-b6f3-49a4-855b-c1f1dfd6a092")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -13031,12 +13068,13 @@
 		(descr "Capacitor SMD 1812 (4532 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "capacitor")
 		(property "Reference" "C36"
-			(at 0 -2.65 0)
+			(at 0 0.105 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "f1baa989-4654-49bc-87d7-0bfdb70b3605")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -13216,12 +13254,12 @@
 		(descr "JST PH series connector, B2B-PH-K (http://www.jst-mfg.com/product/pdf/eng/ePH.pdf)")
 		(tags "connector JST PH vertical")
 		(property "Reference" "J3"
-			(at 1 -2.9 0)
+			(at 1 -2.945 0)
 			(layer "F.SilkS")
 			(uuid "c6379b56-d923-4046-a181-f4c1366043d3")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -13627,6 +13665,7 @@
 		(property "Reference" "C3"
 			(at 0 -1.68 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "5f57bbab-6b7e-4468-a1a4-7bcce3a7f9c7")
 			(effects
 				(font
@@ -13812,6 +13851,7 @@
 		(property "Reference" "R28"
 			(at 0 -1.43 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "e77aa25c-60a5-4537-bb73-94305d079b11")
 			(effects
 				(font
@@ -13997,6 +14037,7 @@
 		(property "Reference" "R19"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "e908868a-0f22-4a18-a08d-ba5b3f4cfecb")
 			(effects
 				(font
@@ -14176,12 +14217,13 @@
 	(footprint "Resistor_SMD:R_0402_1005Metric"
 		(layer "F.Cu")
 		(uuid "4ab51259-1661-47f8-8867-0581b2f5fa2e")
-		(at 103.975 10.515)
+		(at 100.975 12.115)
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R60"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "69b954f0-30e6-4041-b4ce-0ed8ae7184bb")
 			(effects
 				(font
@@ -14367,6 +14409,7 @@
 		(property "Reference" "R49"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "d3aa2974-6467-444b-8a45-b6b8f52d84d8")
 			(effects
 				(font
@@ -14552,6 +14595,7 @@
 		(property "Reference" "C4"
 			(at 0 -1.68 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "3469e90d-1b50-4875-9c46-f318c9424e3b")
 			(effects
 				(font
@@ -14737,6 +14781,7 @@
 		(property "Reference" "R10"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "ccda065d-f2b8-4436-9020-a3d7fa501754")
 			(effects
 				(font
@@ -14920,12 +14965,13 @@
 		(descr "Capacitor SMD 1206 (3216 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "capacitor")
 		(property "Reference" "C40"
-			(at 0 -1.85 0)
+			(at 0 -0.095 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "79bc736d-1d31-4b39-8335-b578ff08a1a6")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -15101,12 +15147,13 @@
 	(footprint "Resistor_SMD:R_0402_1005Metric"
 		(layer "F.Cu")
 		(uuid "50f03cb3-a148-4651-b0bf-2665cb46744d")
-		(at 101.475 9.015)
+		(at 101.475 10.615)
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R55"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "5227acc3-0193-4736-9620-c5fb8a5c00a6")
 			(effects
 				(font
@@ -15290,12 +15337,12 @@
 		(descr "SOIC, 4 Pin (https://toshiba.semicon-storage.com/info/docget.jsp?did=11791&prodName=TLP185)")
 		(tags "SOIC SO")
 		(property "Reference" "K14"
-			(at 0 -2.8 0)
+			(at 0 3.095 0)
 			(layer "F.SilkS")
 			(uuid "51d4f53c-627e-4798-9f4e-a08dafb1145e")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -15753,12 +15800,12 @@
 		(descr "1 Port RJ45 8P8C receptacle, shielded, with magnetics, through hole, 2 LEDs, tab down, http://www.hanrun.com/public/upload/down/2020/09-11/cc11be56d66bb63d5f1eeb85492439c0.pdf")
 		(tags "RJ45 Magjack ethernet")
 		(property "Reference" "J1"
-			(at 4.44 -5 180)
+			(at 4.44 -5.285 0)
 			(layer "F.SilkS")
 			(uuid "3930caca-b15c-4d80-92f4-b218756578cb")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -16263,12 +16310,12 @@
 		(descr "SOIC, 4 Pin (https://toshiba.semicon-storage.com/info/docget.jsp?did=11791&prodName=TLP185)")
 		(tags "SOIC SO")
 		(property "Reference" "K10"
-			(at 0 -2.8 0)
+			(at 0 3.095 0)
 			(layer "F.SilkS")
 			(uuid "40739cf7-bb6e-4beb-907d-2d1bc5b1d350")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -16728,6 +16775,7 @@
 		(property "Reference" "R6"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "06519602-e7c6-4c67-91dc-b6bcfeead9a8")
 			(effects
 				(font
@@ -16913,6 +16961,7 @@
 		(property "Reference" "R102"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "41f2c54c-4092-4063-b4d6-60d4f1d34c84")
 			(effects
 				(font
@@ -17098,6 +17147,7 @@
 		(property "Reference" "R110"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "dc932991-5168-4676-95a3-5d819741ed4c")
 			(effects
 				(font
@@ -17283,6 +17333,7 @@
 		(property "Reference" "C27"
 			(at 0 -1.16 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "d6e93c20-5bc1-4c06-8b95-f72f9fa10009")
 			(effects
 				(font
@@ -17468,6 +17519,7 @@
 		(property "Reference" "R107"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "be9140d9-4169-4c1e-ae0a-f4ebc77b7c08")
 			(effects
 				(font
@@ -17647,12 +17699,13 @@
 	(footprint "Resistor_SMD:R_0402_1005Metric"
 		(layer "F.Cu")
 		(uuid "612750b4-235b-43eb-88cd-f2ba34cbdb2a")
-		(at 103.975 9.015)
+		(at 103.975 10.615)
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R56"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "42229b51-1fe7-443f-b54e-edcfd0f6c800")
 			(effects
 				(font
@@ -17838,6 +17891,7 @@
 		(property "Reference" "R103"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "e852a783-72fc-41cd-b1fe-35657f1adc2e")
 			(effects
 				(font
@@ -18023,6 +18077,7 @@
 		(property "Reference" "R113"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "6c768a5f-8d49-4e37-b96c-6580f67e93d7")
 			(effects
 				(font
@@ -18208,6 +18263,7 @@
 		(property "Reference" "C45"
 			(at 0 -1.68 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "6f732b07-758a-479c-8b66-c21c3c1f0bfd")
 			(effects
 				(font
@@ -18393,6 +18449,7 @@
 		(property "Reference" "R213"
 			(at 0 -1.43 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "b59067d7-7bfa-4338-a69f-da395e503ec2")
 			(effects
 				(font
@@ -18578,6 +18635,7 @@
 		(property "Reference" "C7"
 			(at 0 -1.16 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "536a5fe3-3d50-40df-ab22-c0150ba06c5c")
 			(effects
 				(font
@@ -18763,6 +18821,7 @@
 		(property "Reference" "C42"
 			(at 0 -1.16 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "71d1fb62-bd8a-413d-9f5e-e806108b5be8")
 			(effects
 				(font
@@ -18948,6 +19007,7 @@
 		(property "Reference" "R202"
 			(at 0 -1.43 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "e0f42407-6542-47b1-ad5d-a777c796541a")
 			(effects
 				(font
@@ -19240,6 +19300,7 @@
 		(property "Reference" "TP3"
 			(at 0 -1.648 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "5c5261bd-0983-42c1-9596-3838b583b2f8")
 			(effects
 				(font
@@ -19339,12 +19400,12 @@
 		(descr "Diode SMA (DO-214AC)")
 		(tags "Diode SMA (DO-214AC)")
 		(property "Reference" "D2"
-			(at 0 -2.5 0)
+			(at -4.645001 0 0)
 			(layer "F.SilkS")
 			(uuid "f3ee214e-b5be-4a28-988d-93bad7e2bdb5")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -19646,6 +19707,7 @@
 		(property "Reference" "C44"
 			(at 0 -1.68 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "ff97e10f-4515-4263-84db-25db9a47e86d")
 			(effects
 				(font
@@ -19829,12 +19891,12 @@
 		(descr "SOIC, 4 Pin (https://toshiba.semicon-storage.com/info/docget.jsp?did=11791&prodName=TLP185)")
 		(tags "SOIC SO")
 		(property "Reference" "K5"
-			(at 0 -2.8 0)
+			(at 0 0.955 0)
 			(layer "F.SilkS")
 			(uuid "29283b6a-49db-492e-8a7f-57b02322546a")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -20294,6 +20356,7 @@
 		(property "Reference" "L2"
 			(at 0 -1.43 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "5896b3ad-ebde-4d7b-b2d2-c822749887c0")
 			(effects
 				(font
@@ -20479,6 +20542,7 @@
 		(property "Reference" "C5"
 			(at 0 -1.16 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "f5c15e1c-943c-493c-a16e-659d9cb7386a")
 			(effects
 				(font
@@ -20662,12 +20726,12 @@
 		(descr "Inductor, Sunlord, SWPA3015S, 3.0x3.0x1.5mm, (https://www.sunlordinc.com/UploadFiles/PDF_Cat/20120704094224784.pdf)")
 		(tags "swpa")
 		(property "Reference" "L1"
-			(at 0 -2.45 0)
+			(at 2.945 0 0)
 			(layer "F.SilkS")
 			(uuid "9fa3a601-c696-45af-ba45-603d25d81435")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -20958,6 +21022,7 @@
 		(property "Reference" "R11"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "1ae96975-4aea-4bb3-a397-bdb746aa6b2f")
 			(effects
 				(font
@@ -21143,6 +21208,7 @@
 		(property "Reference" "R108"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "e90ed97e-4d05-4913-98cc-0455774a1729")
 			(effects
 				(font
@@ -21326,12 +21392,13 @@
 		(descr "Diode SMA (DO-214AC)")
 		(tags "Diode SMA (DO-214AC)")
 		(property "Reference" "D1"
-			(at 0 -2.5 0)
+			(at 0 0.055 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "419a6c2f-9ea3-43af-9c0a-9b4074e0c942")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -21631,12 +21698,12 @@
 		(descr "JST PH series connector, B3B-PH-K (http://www.jst-mfg.com/product/pdf/eng/ePH.pdf)")
 		(tags "connector JST PH vertical")
 		(property "Reference" "J5"
-			(at 2 -2.9 0)
+			(at 2 4.045 0)
 			(layer "F.SilkS")
 			(uuid "25414c9b-3f32-4260-b0eb-f97f801ba95d")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -22091,6 +22158,7 @@
 		(property "Reference" "R33"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "9fc750bf-f15f-494b-a8ae-adf80139dbab")
 			(effects
 				(font
@@ -22276,6 +22344,7 @@
 		(property "Reference" "R7"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "d1965b66-04f7-412e-bdc6-626862328f49")
 			(effects
 				(font
@@ -22461,6 +22530,7 @@
 		(property "Reference" "R34"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "3ddc146d-8c8e-4b08-b727-2f78aba6e90c")
 			(effects
 				(font
@@ -22644,12 +22714,12 @@
 		(descr "Tantalum Capacitor SMD Kemet-D (7343-31 Metric), IPC-7352 nominal, (Body size from: http://www.kemet.com/Lists/ProductCatalog/Attachments/253/KEM_TC101_STD.pdf)")
 		(tags "capacitor tantalum")
 		(property "Reference" "C2"
-			(at 0 -3.1 0)
+			(at 0 1.155 0)
 			(layer "F.SilkS")
 			(uuid "b867faa5-fa18-4f95-ae33-f92e3235d827")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -22878,12 +22948,12 @@
 		(descr "SOIC, 4 Pin (https://toshiba.semicon-storage.com/info/docget.jsp?did=11791&prodName=TLP185)")
 		(tags "SOIC SO")
 		(property "Reference" "K1"
-			(at 0 -2.8 0)
+			(at 0 0.955 0)
 			(layer "F.SilkS")
 			(uuid "f40f01b1-f86e-415d-ae31-9826641d8157")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -23343,6 +23413,7 @@
 		(property "Reference" "R51"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "e02a4561-7847-4dec-bdf0-2e605610e03f")
 			(effects
 				(font
@@ -23526,12 +23597,12 @@
 		(descr "JST PH series connector, B4B-PH-K (http://www.jst-mfg.com/product/pdf/eng/ePH.pdf)")
 		(tags "connector JST PH vertical")
 		(property "Reference" "J9"
-			(at 3 -2.9 0)
+			(at 3 4.045 0)
 			(layer "F.SilkS")
 			(uuid "6014bf74-e2a3-4e2a-a048-e23e0fbb318d")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -24035,6 +24106,7 @@
 		(property "Reference" "R40"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "8205346a-eb3c-48e2-a6f8-56a5e2b2e045")
 			(effects
 				(font
@@ -24220,6 +24292,7 @@
 		(property "Reference" "C32"
 			(at 0 -1.68 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "3ea7b85d-2ecf-4eb1-b73a-b4082c0fc0ce")
 			(effects
 				(font
@@ -24405,6 +24478,7 @@
 		(property "Reference" "R45"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "cf65e0f9-8ea3-4b27-bd53-12ac7442ab9d")
 			(effects
 				(font
@@ -24590,6 +24664,7 @@
 		(property "Reference" "R20"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "a19878d2-c545-42ae-9f9a-4fd5a777c71a")
 			(effects
 				(font
@@ -24775,6 +24850,7 @@
 		(property "Reference" "R21"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "a3e72003-825d-4b4d-9d7b-a80bf0af3aee")
 			(effects
 				(font
@@ -24960,6 +25036,7 @@
 		(property "Reference" "C26"
 			(at 0 -1.16 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "e755af3f-09be-4691-aa90-6b95b9efbc2e")
 			(effects
 				(font
@@ -25145,6 +25222,7 @@
 		(property "Reference" "C46"
 			(at 0 -1.16 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "b2ae9a92-3c1a-4554-89c8-c998c99f32ed")
 			(effects
 				(font
@@ -25330,6 +25408,7 @@
 		(property "Reference" "C8"
 			(at 0 -1.16 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "fddfd245-e6a7-4069-ad09-a6bcfdc53c43")
 			(effects
 				(font
@@ -25513,12 +25592,12 @@
 		(descr "JST PH series connector, B5B-PH-K (http://www.jst-mfg.com/product/pdf/eng/ePH.pdf)")
 		(tags "connector JST PH vertical")
 		(property "Reference" "J11"
-			(at 4 -2.9 0)
+			(at -3.945001 0.55 0)
 			(layer "F.SilkS")
 			(uuid "95d0ff0f-9954-49eb-b65e-b77d2624578c")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -26071,6 +26150,7 @@
 		(property "Reference" "D4"
 			(at 0 -1.43 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "9fead29d-2646-4732-83bf-6b13f089d8a0")
 			(effects
 				(font
@@ -26303,12 +26383,12 @@
 		(descr "Fuse SMD 1206 (3216 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: http://www.tortai-tech.com/upload/download/2011102023233369053.pdf)")
 		(tags "fuse")
 		(property "Reference" "F3"
-			(at 0 -1.83 0)
+			(at 3.424999 0 0)
 			(layer "F.SilkS")
 			(uuid "0f33ea5b-bcad-45a3-b025-8205d71202fc")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -26490,6 +26570,7 @@
 		(property "Reference" "R115"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "3fcdb0d6-ce47-4a4e-a7a4-99716b3a9435")
 			(effects
 				(font
@@ -26673,12 +26754,12 @@
 		(descr "JST PH series connector, B5B-PH-K (http://www.jst-mfg.com/product/pdf/eng/ePH.pdf)")
 		(tags "connector JST PH vertical")
 		(property "Reference" "J16"
-			(at 4 -2.9 0)
+			(at 4 -2.945001 0)
 			(layer "F.SilkS")
 			(uuid "25a86f9d-68b3-452d-9893-9639b6d10e40")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -27231,6 +27312,7 @@
 		(property "Reference" "R101"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "7a3c61b3-d9a5-418a-9cf3-e4ecdaab008e")
 			(effects
 				(font
@@ -27416,6 +27498,7 @@
 		(property "Reference" "R212"
 			(at 0 -1.43 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "35fd587c-fd5e-4aee-afd7-54f41a531f6a")
 			(effects
 				(font
@@ -27595,12 +27678,13 @@
 	(footprint "Resistor_SMD:R_0402_1005Metric"
 		(layer "F.Cu")
 		(uuid "94100353-1cf6-4cb3-b8cd-6bab35c55005")
-		(at 108.975 10.515)
+		(at 105.975 12.115)
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R62"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "92b5a93a-0d00-4325-b558-f582c5830e3d")
 			(effects
 				(font
@@ -27784,12 +27868,12 @@
 		(descr "JST PH series connector, B5B-PH-K (http://www.jst-mfg.com/product/pdf/eng/ePH.pdf)")
 		(tags "connector JST PH vertical")
 		(property "Reference" "J15"
-			(at 4 -2.9 0)
+			(at 4 -2.945001 0)
 			(layer "F.SilkS")
 			(uuid "357d9c52-67aa-405a-a44c-665561f8a820")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -28342,6 +28426,7 @@
 		(property "Reference" "R207"
 			(at 0 -1.43 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "3b73407c-90f3-4030-bcd2-c04eae502816")
 			(effects
 				(font
@@ -28527,6 +28612,7 @@
 		(property "Reference" "R22"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "cee6101b-01a6-4a6a-8f0e-88d14932d496")
 			(effects
 				(font
@@ -28712,6 +28798,7 @@
 		(property "Reference" "R35"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "45878f86-8109-43e0-9070-04b4a38c37fb")
 			(effects
 				(font
@@ -28895,12 +28982,12 @@
 		(descr "SOIC, 4 Pin (https://toshiba.semicon-storage.com/info/docget.jsp?did=11791&prodName=TLP185)")
 		(tags "SOIC SO")
 		(property "Reference" "K15"
-			(at 0 -2.8 0)
+			(at 0 0.955 0)
 			(layer "F.SilkS")
 			(uuid "deb44d48-2d77-42ba-a849-2631a86dad14")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -29360,6 +29447,7 @@
 		(property "Reference" "R215"
 			(at 0 -1.43 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "5b697469-8f81-463b-9b3a-baf657f42207")
 			(effects
 				(font
@@ -29650,12 +29738,12 @@
 		(descr "SOIC, 4 Pin (https://toshiba.semicon-storage.com/info/docget.jsp?did=11791&prodName=TLP185)")
 		(tags "SOIC SO")
 		(property "Reference" "K4"
-			(at 0 -2.8 0)
+			(at 0 3.095 0)
 			(layer "F.SilkS")
 			(uuid "670150c2-464e-4749-9641-ced8c945686a")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -30115,6 +30203,7 @@
 		(property "Reference" "R111"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "faecb0e5-a64a-4dff-b084-1174a4369e41")
 			(effects
 				(font
@@ -30300,6 +30389,7 @@
 		(property "Reference" "R52"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "ed86341a-97a8-4390-aa61-d36fa6888508")
 			(effects
 				(font
@@ -30479,12 +30569,13 @@
 	(footprint "Fuse:Fuse_0805_2012Metric"
 		(layer "F.Cu")
 		(uuid "a3718584-26d2-46bc-a6b0-f7088d9cdff7")
-		(at 121.725 7.995)
+		(at 122.225 9.594999)
 		(descr "Fuse SMD 0805 (2012 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: https://docs.google.com/spreadsheets/d/1BsfQQcO9C6DZCsRaXUlFlo91Tg2WpOkGARC1WS5S8t0/edit?usp=sharing)")
 		(tags "fuse")
 		(property "Reference" "F1"
 			(at 0 -1.65 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "93f7be7a-1d9f-4eb8-99a2-876d444d3159")
 			(effects
 				(font
@@ -30670,6 +30761,7 @@
 		(property "Reference" "R26"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "067d6b37-d161-4471-83e1-12fe6184f066")
 			(effects
 				(font
@@ -30855,6 +30947,7 @@
 		(property "Reference" "R30"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "7c6aeab7-61ed-4b1d-89e8-e11568105a13")
 			(effects
 				(font
@@ -31038,12 +31131,12 @@
 		(descr "SOT, 5 Pin (JEDEC MO-178 Var AA https://www.jedec.org/document_search?search_api_views_fulltext=MO-178)")
 		(tags "SOT TO_SOT_SMD")
 		(property "Reference" "U2"
-			(at 0 -2.4 0)
+			(at 0 2.694999 0)
 			(layer "F.SilkS")
 			(uuid "7bd4f43a-75c8-4173-8937-79d261945b14")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -31459,12 +31552,12 @@
 		(descr "SOIC, 8 Pin (JEDEC MS-012AA, https://www.analog.com/media/en/package-pcb-resources/package/pkg_pdf/soic_narrow-r/r_8.pdf)")
 		(tags "SOIC SO")
 		(property "Reference" "U5"
-			(at 0 -3.4 0)
+			(at 0 3.694999 0)
 			(layer "F.SilkS")
 			(uuid "e7a45b86-a795-47bf-b08e-2d74436ccee3")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -31850,16 +31943,17 @@
 	(footprint "Diode_SMD:D_SOD-123F"
 		(layer "F.Cu")
 		(uuid "a7c242d0-dffa-4242-a72f-8f4927d7f7a7")
-		(at 112.245 8.195)
+		(at 112.745 9.795)
 		(descr "D_SOD-123F")
 		(tags "D_SOD-123F")
 		(property "Reference" "D6"
-			(at -0.127 -1.905 0)
+			(at 0 -0.095 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "b2f6fb0b-82d0-4482-ac76-4c8b6a9505dd")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -32171,6 +32265,7 @@
 		(property "Reference" "C6"
 			(at 0 -1.16 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "9bb6e09b-ae65-4eed-ad9f-486ef065fe2e")
 			(effects
 				(font
@@ -32356,6 +32451,7 @@
 		(property "Reference" "R206"
 			(at 0 -1.43 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "4eaa18ee-3035-4699-a330-d98462540e3c")
 			(effects
 				(font
@@ -32539,12 +32635,12 @@
 		(descr "JST PH series connector, B3B-PH-K (http://www.jst-mfg.com/product/pdf/eng/ePH.pdf)")
 		(tags "connector JST PH vertical")
 		(property "Reference" "J7"
-			(at 2 -2.9 0)
+			(at 2 4.045 0)
 			(layer "F.SilkS")
 			(uuid "7ee7ff45-2361-40bb-ac80-86debc576f8c")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -32997,12 +33093,12 @@
 		(descr "Through hole straight pin header, 2x06, 2.54mm pitch, double rows")
 		(tags "Through hole pin header THT 2x06 2.54mm double row")
 		(property "Reference" "J8"
-			(at 1.27 -2.38 0)
+			(at 1.275 -2.515 0)
 			(layer "F.SilkS")
 			(uuid "37650c45-f562-475c-ad39-fd02ee2dc9d8")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -33369,12 +33465,13 @@
 	(footprint "Resistor_SMD:R_Array_Convex_4x0402"
 		(layer "F.Cu")
 		(uuid "b12ed4a6-cf9c-4bb1-aa58-2ab666c9b74b")
-		(at 114.045 11.295)
+		(at 111.045 12.895)
 		(descr "Chip Resistor Network, ROHM MNR04 (see mnr_g.pdf)")
 		(tags "resistor array")
 		(property "Reference" "RN2"
 			(at 0 -2.1 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "28b77881-1df1-4e7a-9411-809e9a84c740")
 			(effects
 				(font
@@ -33644,12 +33741,13 @@
 	(footprint "Capacitor_SMD:C_0402_1005Metric"
 		(layer "F.Cu")
 		(uuid "b18acc10-e20f-4492-8e04-18326e42c2ea")
-		(at 105.955 7.505)
+		(at 106.455 9.105)
 		(descr "Capacitor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "capacitor")
 		(property "Reference" "C49"
 			(at 0 -1.16 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "1f269f7b-f12a-44cd-ac31-cd8e06050476")
 			(effects
 				(font
@@ -33835,6 +33933,7 @@
 		(property "Reference" "R32"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "b3821df6-9aea-4b38-8089-49d4dda50889")
 			(effects
 				(font
@@ -34018,12 +34117,12 @@
 		(descr "JST PH series connector, B5B-PH-K (http://www.jst-mfg.com/product/pdf/eng/ePH.pdf)")
 		(tags "connector JST PH vertical")
 		(property "Reference" "J10"
-			(at 4 -2.9 0)
+			(at 4 -2.945001 0)
 			(layer "F.SilkS")
 			(uuid "5172a113-4f6e-4cb1-9102-7ebfea266729")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -34576,6 +34675,7 @@
 		(property "Reference" "TP4"
 			(at 0 -1.648 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "7800b50b-3e04-4a13-a1b6-92c404740c72")
 			(effects
 				(font
@@ -34671,12 +34771,13 @@
 	(footprint "Capacitor_SMD:C_0402_1005Metric"
 		(layer "F.Cu")
 		(uuid "b5cddc6d-0944-4a29-a3d5-b9221823e158")
-		(at 100.955 7.505)
+		(at 101.455 9.105)
 		(descr "Capacitor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "capacitor")
 		(property "Reference" "C47"
 			(at 0 -1.16 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "8a3b95ea-1346-411b-a438-867d790411d5")
 			(effects
 				(font
@@ -34862,6 +34963,7 @@
 		(property "Reference" "C35"
 			(at 0 -1.16 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "4a3984ba-cc08-4848-8cec-a62f8489caf1")
 			(effects
 				(font
@@ -35047,6 +35149,7 @@
 		(property "Reference" "C11"
 			(at 0 -1.16 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "9e4962c6-3670-470c-86ae-f7d24e1371af")
 			(effects
 				(font
@@ -35230,12 +35333,12 @@
 		(descr "LQFP, 48 Pin (JEDEC MS-026 variation BBC, 1.40mm body thickness, https://www.jedec.org/document_search?search_api_views_fulltext=MS-026, https://www.analog.com/media/en/package-pcb-resources/package/pkg_pdf/ltc-legacy-lqfp/05081760_a_lx48.pdf)")
 		(tags "LQFP QFP CASE-932AA CASE-932-03 C48-1 C48-2 C48-3 C48-5 C48-6 C48-6C PT0048A")
 		(property "Reference" "U3"
-			(at 0 -5.85 0)
+			(at 0 -5.895 0)
 			(layer "F.SilkS")
 			(uuid "0a934f34-f428-41d0-8a3c-e4b6e301e29b")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -36045,12 +36148,12 @@
 		(descr "Inductor, Changjiang, FXL0630, 6.45x6.6x2.8mm, (https://www.lcsc.com/datasheet/lcsc_datasheet_2404260921_cjiang--Changjiang-Microelectronics-Tech-FXL0420-2R2-M_C167206.pdf)")
 		(tags "power shielded cjiang fxl")
 		(property "Reference" "L3"
-			(at 0 -4.25 0)
+			(at 0 4.545 0)
 			(layer "F.SilkS")
 			(uuid "d201cb6f-d59e-4898-91cd-5fdca6ef641e")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -36381,6 +36484,7 @@
 		(property "Reference" "C34"
 			(at 0 -1.16 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "0444918c-0290-43ae-9fbd-ca1d2e03d2f4")
 			(effects
 				(font
@@ -36566,6 +36670,7 @@
 		(property "Reference" "R37"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "a5abe093-eacd-414d-90d7-bd64af8261d3")
 			(effects
 				(font
@@ -36749,12 +36854,12 @@
 		(descr "SOP, 16 Pin (https://toshiba.semicon-storage.com/info/docget.jsp?did=12855&prodName=TLP290-4)")
 		(tags "SOP SO")
 		(property "Reference" "U16"
-			(at 0 -6.1 0)
+			(at 0 6.395 0)
 			(layer "F.SilkS")
 			(uuid "2a641d17-3f57-4af0-abe1-e056e76a1901")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -37210,6 +37315,7 @@
 		(property "Reference" "R104"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "efd17774-9e63-4bfb-a6a1-32b5e01e00b1")
 			(effects
 				(font
@@ -37395,6 +37501,7 @@
 		(property "Reference" "C38"
 			(at 0 -1.16 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "725dc24a-f61c-4a96-a0ef-b676fc3430f1")
 			(effects
 				(font
@@ -37578,12 +37685,12 @@
 		(descr "Capacitor SMD 1206 (3216 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "capacitor")
 		(property "Reference" "C41"
-			(at 0 -1.85 0)
+			(at 3.795 0 0)
 			(layer "F.SilkS")
 			(uuid "1b2de2f8-1075-4fca-843f-d523f73ccb88")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -37765,6 +37872,7 @@
 		(property "Reference" "R1"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "5f2add52-5b03-4a5b-9896-87e93187455a")
 			(effects
 				(font
@@ -37950,6 +38058,7 @@
 		(property "Reference" "R53"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "f1d4021f-a50d-4d0c-aeb8-ab9d0f7fa8cb")
 			(effects
 				(font
@@ -38133,12 +38242,12 @@
 		(descr "SOT, 6 Pin (JEDEC MO-178 Var AB https://www.jedec.org/document_search?search_api_views_fulltext=MO-178)")
 		(tags "SOT TO_SOT_SMD")
 		(property "Reference" "U8"
-			(at 0 -2.4 0)
+			(at 0 2.694999 0)
 			(layer "F.SilkS")
 			(uuid "0f7b584c-a0e1-4e86-ae52-69c6b21ca840")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -38514,6 +38623,7 @@
 		(property "Reference" "TP2"
 			(at 0 -1.648 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "cc256b14-78b3-4bd8-a4f0-005be5a1f4d3")
 			(effects
 				(font
@@ -38722,6 +38832,7 @@
 		(property "Reference" "R112"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "affddf02-27cc-4384-9bd5-16924695cf27")
 			(effects
 				(font
@@ -38905,12 +39016,12 @@
 		(descr "Diode SMA (DO-214AC)")
 		(tags "Diode SMA (DO-214AC)")
 		(property "Reference" "D8"
-			(at 0 -2.5 0)
+			(at -4.645001 0 0)
 			(layer "F.SilkS")
 			(uuid "3222ddda-57cb-45b6-852f-b50560c61f3c")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -39212,6 +39323,7 @@
 		(property "Reference" "R13"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "57a9f62d-c15d-431d-a871-db3dde9657f8")
 			(effects
 				(font
@@ -39397,6 +39509,7 @@
 		(property "Reference" "R23"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "c4e1c7f6-66bb-4616-80d5-e1528f797b3c")
 			(effects
 				(font
@@ -39582,6 +39695,7 @@
 		(property "Reference" "C12"
 			(at 0 -1.68 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "de108386-6732-4d4f-959d-07e379bc9aa3")
 			(effects
 				(font
@@ -39765,12 +39879,12 @@
 		(descr "JST PH series connector, B5B-PH-K (http://www.jst-mfg.com/product/pdf/eng/ePH.pdf)")
 		(tags "connector JST PH vertical")
 		(property "Reference" "J17"
-			(at 4 -2.9 0)
+			(at 4 -2.945001 0)
 			(layer "F.SilkS")
 			(uuid "5161af97-0be2-4af2-b529-a4995bf967dd")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -40323,6 +40437,7 @@
 		(property "Reference" "R42"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "3c8e9f6e-6e51-45b5-a4d5-de95e5a0d169")
 			(effects
 				(font
@@ -40502,12 +40617,13 @@
 	(footprint "Capacitor_SMD:C_0402_1005Metric"
 		(layer "F.Cu")
 		(uuid "cff4f87c-2ef5-4d34-be26-064be9189b47")
-		(at 103.455 7.505)
+		(at 103.955 9.105)
 		(descr "Capacitor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "capacitor")
 		(property "Reference" "C48"
 			(at 0 -1.16 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "f2ed09f3-6f10-4433-9ab1-c43082b8f86f")
 			(effects
 				(font
@@ -40800,6 +40916,7 @@
 		(property "Reference" "R114"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "4fda9111-53d2-4994-bff5-09a6cfc5ed6f")
 			(effects
 				(font
@@ -40985,6 +41102,7 @@
 		(property "Reference" "R54"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "77d42345-0d58-4316-aa06-e9c4139bf08b")
 			(effects
 				(font
@@ -41168,12 +41286,12 @@
 		(descr "JST PH series connector, B3B-PH-K (http://www.jst-mfg.com/product/pdf/eng/ePH.pdf)")
 		(tags "connector JST PH vertical")
 		(property "Reference" "J6"
-			(at 2 -2.9 0)
+			(at 2 4.045 0)
 			(layer "F.SilkS")
 			(uuid "c2f0de49-54ac-4621-b4c3-c905ff81d09a")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -41622,12 +41740,13 @@
 	(footprint "Resistor_SMD:R_Array_Convex_4x0402"
 		(layer "F.Cu")
 		(uuid "d6fe819b-149c-4dcb-b1c9-a8b4ce9e999a")
-		(at 111.545 11.295)
+		(at 108.545 12.895)
 		(descr "Chip Resistor Network, ROHM MNR04 (see mnr_g.pdf)")
 		(tags "resistor array")
 		(property "Reference" "RN1"
 			(at 0 -2.1 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "c488b5c9-3085-46fb-ab6e-e90f6036e1c1")
 			(effects
 				(font
@@ -41901,12 +42020,12 @@
 		(descr "SOIC, 28 Pin (JEDEC MS-013AE, https://www.analog.com/media/en/package-pcb-resources/package/35833120341221rw_28.pdf)")
 		(tags "SOIC SO")
 		(property "Reference" "U15"
-			(at 0 -9.9 90)
+			(at 6.675 0 0)
 			(layer "F.SilkS")
 			(uuid "4393c88a-ddae-48ce-8484-3be74c81b96d")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -42456,12 +42575,12 @@
 		(descr "SOIC, 4 Pin (https://toshiba.semicon-storage.com/info/docget.jsp?did=11791&prodName=TLP185)")
 		(tags "SOIC SO")
 		(property "Reference" "K16"
-			(at 0 -2.8 0)
+			(at 0 3.095 0)
 			(layer "F.SilkS")
 			(uuid "7b8589dc-4e9c-4188-8b42-141431243bd9")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -42921,6 +43040,7 @@
 		(property "Reference" "R203"
 			(at 0 -1.43 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "2401ff84-7cfb-477a-b083-7314deca9c9f")
 			(effects
 				(font
@@ -43106,6 +43226,7 @@
 		(property "Reference" "C13"
 			(at 0 -1.16 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "1a494a54-ddb0-4767-93ea-b44a51da5cd0")
 			(effects
 				(font
@@ -43289,12 +43410,12 @@
 		(descr "SOIC, 4 Pin (https://toshiba.semicon-storage.com/info/docget.jsp?did=11791&prodName=TLP185)")
 		(tags "SOIC SO")
 		(property "Reference" "K6"
-			(at 0 -2.8 0)
+			(at 0 3.095 0)
 			(layer "F.SilkS")
 			(uuid "07610ecf-56ae-4754-9037-6aa19f391f5a")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -43754,6 +43875,7 @@
 		(property "Reference" "R17"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "22ae88f3-8d8b-440f-b310-8927500b1dae")
 			(effects
 				(font
@@ -43939,6 +44061,7 @@
 		(property "Reference" "R29"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "e308d2c1-8675-4c5b-bf46-285b3d905532")
 			(effects
 				(font
@@ -44124,6 +44247,7 @@
 		(property "Reference" "R208"
 			(at 0 -1.43 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "429ebebf-12f4-450c-a069-f2c1434e4e7a")
 			(effects
 				(font
@@ -44303,12 +44427,13 @@
 	(footprint "Resistor_SMD:R_0402_1005Metric"
 		(layer "F.Cu")
 		(uuid "e174b2d5-769b-4322-bdff-2cdd94b71de0")
-		(at 101.475 10.515)
+		(at 121.475 11.615)
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R59"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "1c04e9c0-73c2-46b8-857e-68ca9a77e68a")
 			(effects
 				(font
@@ -44492,12 +44617,12 @@
 		(descr "SOIC, 4 Pin (https://toshiba.semicon-storage.com/info/docget.jsp?did=11791&prodName=TLP185)")
 		(tags "SOIC SO")
 		(property "Reference" "K11"
-			(at 0 -2.8 0)
+			(at 0 0.955 0)
 			(layer "F.SilkS")
 			(uuid "9233e7e0-2d7c-46f3-ad97-fe5127c25ea7")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -44957,6 +45082,7 @@
 		(property "Reference" "R210"
 			(at 0 -1.43 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "514f89bc-8e98-4d20-8d4f-4f4e7f5a2a0b")
 			(effects
 				(font
@@ -45142,6 +45268,7 @@
 		(property "Reference" "R204"
 			(at 0 -1.43 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "02fc559b-5704-4003-ae17-99b3e4797070")
 			(effects
 				(font
@@ -45321,16 +45448,17 @@
 	(footprint "Diode_SMD:D_SOD-123F"
 		(layer "F.Cu")
 		(uuid "e68f8657-17a9-4f24-8ce8-f6058d96f889")
-		(at 117.245 8.195)
+		(at 117.745 9.795)
 		(descr "D_SOD-123F")
 		(tags "D_SOD-123F")
 		(property "Reference" "D7"
-			(at -0.127 -1.905 0)
+			(at 0 -0.095 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "81e05826-07cd-400e-a640-6c592fe27f1b")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -45640,12 +45768,12 @@
 		(descr "JST PH series connector, B5B-PH-K (http://www.jst-mfg.com/product/pdf/eng/ePH.pdf)")
 		(tags "connector JST PH vertical")
 		(property "Reference" "J13"
-			(at 4 -2.9 0)
+			(at -3.295001 0.55 90)
 			(layer "F.SilkS")
 			(uuid "c232e6cb-734e-4a8e-bc77-19cb5826290d")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -46196,12 +46324,12 @@
 		(descr "SOIC, 4 Pin (https://toshiba.semicon-storage.com/info/docget.jsp?did=11791&prodName=TLP185)")
 		(tags "SOIC SO")
 		(property "Reference" "K3"
-			(at 0 -2.8 0)
+			(at 0 0.955 0)
 			(layer "F.SilkS")
 			(uuid "f52cd287-490d-4b1e-996b-6cea432d65f7")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -46661,6 +46789,7 @@
 		(property "Reference" "R4"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "0cba22ad-68c4-4196-9854-5942a64a7739")
 			(effects
 				(font
@@ -46846,6 +46975,7 @@
 		(property "Reference" "R48"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "4271b5c8-ac11-4f95-ba66-c97771ad1332")
 			(effects
 				(font
@@ -47031,6 +47161,7 @@
 		(property "Reference" "R41"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "83b1cba6-5dfd-41fd-a76d-a9664eab224d")
 			(effects
 				(font
@@ -47216,6 +47347,7 @@
 		(property "Reference" "R16"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "2e4f5080-7ca8-46a4-b8ce-4609dcbad033")
 			(effects
 				(font
@@ -47399,12 +47531,12 @@
 		(descr "SOIC, 4 Pin (https://toshiba.semicon-storage.com/info/docget.jsp?did=11791&prodName=TLP185)")
 		(tags "SOIC SO")
 		(property "Reference" "K7"
-			(at 0 -2.8 0)
+			(at 0 0.955 0)
 			(layer "F.SilkS")
 			(uuid "1ed1bf5c-740d-4114-9631-1cd95b906b85")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -47862,12 +47994,12 @@
 		(descr "SOP, 16 Pin (https://toshiba.semicon-storage.com/info/docget.jsp?did=12855&prodName=TLP290-4)")
 		(tags "SOP SO")
 		(property "Reference" "U17"
-			(at 0 -6.1 0)
+			(at 0 6.395 0)
 			(layer "F.SilkS")
 			(uuid "c219c0be-076d-4eac-b83d-371b1b779682")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -48323,6 +48455,7 @@
 		(property "Reference" "R201"
 			(at 0 -1.43 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "4a7ed840-2f88-4334-9d30-925e3d1ee9a9")
 			(effects
 				(font
@@ -48502,12 +48635,13 @@
 	(footprint "Package_SON:USON-10_2.5x1.0mm_P0.5mm"
 		(layer "F.Cu")
 		(uuid "f193a535-76c9-48f8-b47c-479b2ddf6bed")
-		(at 116.455 11.545)
+		(at 113.455 13.145)
 		(descr "USON-10 2.5x1.0mm_ Pitch 0.5mm http://www.ti.com/lit/ds/symlink/tpd4e02b04.pdf")
 		(tags "USON-10 2.5x1.0mm Pitch 0.5mm")
 		(property "Reference" "U6"
 			(at 0.01829 -2.5 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "ee9c6715-41b5-4da8-bbf7-7961d20247bc")
 			(effects
 				(font
@@ -48829,6 +48963,7 @@
 		(property "Reference" "R43"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "c102beaa-c8b2-43c0-a235-652262b7b8bf")
 			(effects
 				(font
@@ -49014,6 +49149,7 @@
 		(property "Reference" "C31"
 			(at 0 -1.16 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "ff98ecf4-17f9-43cd-aa54-2c04f2aba862")
 			(effects
 				(font
@@ -49197,12 +49333,12 @@
 		(descr "SOIC, 4 Pin (https://toshiba.semicon-storage.com/info/docget.jsp?did=11791&prodName=TLP185)")
 		(tags "SOIC SO")
 		(property "Reference" "K12"
-			(at 0 -2.8 0)
+			(at 0 3.095 0)
 			(layer "F.SilkS")
 			(uuid "67a21c9a-de52-4717-acff-4f6ec8d00f3b")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -49662,6 +49798,7 @@
 		(property "Reference" "C51"
 			(at 0 -1.16 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "9e61ac4b-802f-4114-afb3-501f35cfe6a6")
 			(effects
 				(font
@@ -49845,12 +49982,12 @@
 		(descr "JST PH series connector, B5B-PH-K (http://www.jst-mfg.com/product/pdf/eng/ePH.pdf)")
 		(tags "connector JST PH vertical")
 		(property "Reference" "J12"
-			(at 4 -2.9 0)
+			(at -3.295001 0.55 90)
 			(layer "F.SilkS")
 			(uuid "d88f817b-b027-4cf5-a735-330ec8f35074")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -50401,12 +50538,13 @@
 		(descr "Diode SMA (DO-214AC)")
 		(tags "Diode SMA (DO-214AC)")
 		(property "Reference" "D3"
-			(at 0 -2.5 0)
+			(at 0 0.055 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "f89a4980-7110-4574-a895-63303f795f65")
 			(effects
 				(font
-					(size 1 1)
+					(size 0.8 0.8)
 					(thickness 0.15)
 				)
 			)
@@ -50702,12 +50840,13 @@
 	(footprint "Resistor_SMD:R_0402_1005Metric"
 		(layer "F.Cu")
 		(uuid "f5a6615f-7e81-46a9-a72d-fc454f31f147")
-		(at 120.975 10.015)
+		(at 108.975 10.615)
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R58"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "5e86f5d3-3cc6-4b0b-96cc-59a71e63ea8a")
 			(effects
 				(font
@@ -50887,12 +51026,13 @@
 	(footprint "Package_SON:USON-10_2.5x1.0mm_P0.5mm"
 		(layer "F.Cu")
 		(uuid "f5b76d16-62ec-42dd-b0f2-078ee78fc81f")
-		(at 125.955 11.545)
+		(at 118.455 13.145)
 		(descr "USON-10 2.5x1.0mm_ Pitch 0.5mm http://www.ti.com/lit/ds/symlink/tpd4e02b04.pdf")
 		(tags "USON-10 2.5x1.0mm Pitch 0.5mm")
 		(property "Reference" "U18"
 			(at 0.01829 -2.5 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "c1f15e6d-9002-466f-9f96-c3ae55ec3e80")
 			(effects
 				(font
@@ -51214,6 +51354,7 @@
 		(property "Reference" "C14"
 			(at 0 -1.43 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "cd5b619e-0c84-417a-9ca8-a30ce006a86e")
 			(effects
 				(font
@@ -51399,6 +51540,7 @@
 		(property "Reference" "R214"
 			(at 0 -1.43 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "4181f54b-df79-4260-8200-e97dbeaee3c8")
 			(effects
 				(font
@@ -51584,6 +51726,7 @@
 		(property "Reference" "R36"
 			(at 0 -1.43 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "dc936b42-5d5a-49c6-a0f4-cdc2a6575d75")
 			(effects
 				(font
@@ -51769,6 +51912,7 @@
 		(property "Reference" "R14"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "afde9c05-af58-4c90-b658-232e652a9b24")
 			(effects
 				(font
@@ -51954,6 +52098,7 @@
 		(property "Reference" "R38"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "bb77021d-0525-4fe4-9b18-2b83a5511f36")
 			(effects
 				(font
@@ -52139,6 +52284,7 @@
 		(property "Reference" "R106"
 			(at 0 -1.17 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "f289219e-df78-426b-897f-2626dacd54c6")
 			(effects
 				(font
@@ -52324,6 +52470,7 @@
 		(property "Reference" "R216"
 			(at 0 -1.43 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "e0977f58-0cb4-4914-bf88-3f04388689cf")
 			(effects
 				(font
