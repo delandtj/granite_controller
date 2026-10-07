@@ -621,19 +621,6 @@
         "microvia_drill": 0.1
       },
       {
-        "name": "PWR_DRV_BANK_1",
-        "pcb_color": "rgba(0, 0, 0, 0.000)",
-        "priority": 10,
-        "schematic_color": "rgb(255, 133, 161)",
-        "tuning_profile": "",
-        "track_width": 0.2,
-        "clearance": 0.15,
-        "via_diameter": 0.6,
-        "via_drill": 0.3,
-        "microvia_diameter": 0.3,
-        "microvia_drill": 0.1
-      },
-      {
         "name": "PWR_POE",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 5,
@@ -704,19 +691,6 @@
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 9,
         "schematic_color": "rgb(170, 220, 255)",
-        "tuning_profile": "",
-        "track_width": 0.2,
-        "clearance": 0.15,
-        "via_diameter": 0.6,
-        "via_drill": 0.3,
-        "microvia_diameter": 0.3,
-        "microvia_drill": 0.1
-      },
-      {
-        "name": "RST_DRV_BANK_1",
-        "pcb_color": "rgba(0, 0, 0, 0.000)",
-        "priority": 8,
-        "schematic_color": "rgb(163, 180, 255)",
         "tuning_profile": "",
         "track_width": 0.2,
         "clearance": 0.15,
@@ -847,22 +821,6 @@
         "pattern": "*/BOOT0"
       },
       {
-        "netclass": "PWR_DRV_BANK_0",
-        "pattern": "/MCU and USB/PWR_DRV(1|2|3|4|5|6|7)"
-      },
-      {
-        "netclass": "PWR_DRV_BANK_1",
-        "pattern": "/MCU and USB/PWR_DRV(8|9|10|11|12|13|14)"
-      },
-      {
-        "netclass": "RST_DRV_BANK_0",
-        "pattern": "/MCU and USB/RST_DRV(1|2|3|4|5|6|7)"
-      },
-      {
-        "netclass": "RST_DRV_BANK_1",
-        "pattern": "/MCU and USB/RST_DRV(8|9|10|11|12|13|14)"
-      },
-      {
         "netclass": "PWR_VBUS",
         "pattern": "VBUS"
       },
@@ -909,6 +867,14 @@
       {
         "netclass": "PWR_5V",
         "pattern": "*/HDR_5V"
+      },
+      {
+        "netclass": "PWR_DRV_BANK_0",
+        "pattern": "/Relay channels/PWR_DRV*"
+      },
+      {
+        "netclass": "RST_DRV_BANK_0",
+        "pattern": "/Relay channels/RST_DRV*"
       }
     ]
   },
@@ -1058,12 +1024,12 @@
       "MCU and USB"
     ],
     [
-      "21a5dc5e-fee8-5aea-a778-7aeac2970a33",
-      "Relay channels 1-7"
+      "523e2405-760a-59f0-a9bd-26a6a2afbbb8",
+      "Relay channels"
     ],
     [
-      "a9b73d11-6063-59c2-9527-16598518c570",
-      "Relay channels 8-14"
+      "b0a29a8c-351d-55c9-a76a-359903750a26",
+      "Expansion header"
     ]
   ],
   "text_variables": {},

@@ -12,7 +12,7 @@
 		(comment 2 "STM32H563 + LAN8742A + 802.3af PD, 28x photoMOS channels")
 	)
 	(lib_symbols)
-	(text "One RJ45 = power + control. 28 floating photoMOS contact channels."
+	(text "One RJ45 = power + control. 16 floating photoMOS contact channels."
 		(exclude_from_sim no)
 		(at 20 26 0)
 		(effects
@@ -23,7 +23,7 @@
 		)
 		(uuid "4159b5cf-293b-5729-9851-e22a4b903153")
 	)
-	(text "Granite Controller: PoE-powered reset/power controller for 2x7 Strix Halo motherboards."
+	(text "Granite Controller: PoE-powered reset/power controller for 8 Strix Halo motherboards."
 		(exclude_from_sim no)
 		(at 20 20 0)
 		(effects
@@ -33,18 +33,6 @@
 			(justify left bottom)
 		)
 		(uuid "8fe438f7-e7c4-5cd9-94c6-4e8674c57d3c")
-	)
-	(junction
-		(at 196.85 50.8)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "a31292cd-33b1-5be6-ad56-79e583a853e9")
-	)
-	(junction
-		(at 201.93 55.88)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "e37d0d58-057a-5e11-9bd7-706d210460d6")
 	)
 	(wire
 		(pts
@@ -66,26 +54,6 @@
 		)
 		(uuid "0fee9929-9056-52cc-83e2-113a4b5ea482")
 	)
-	(bus
-		(pts
-			(xy 196.85 48.26) (xy 226.06 48.26)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "1e5ff8df-b319-5906-b776-193c04484c55")
-	)
-	(bus
-		(pts
-			(xy 201.93 55.88) (xy 201.93 86.36)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "24d16cd7-317c-53cc-8f3c-a0766bf5bcf5")
-	)
 	(wire
 		(pts
 			(xy 86.36 71.12) (xy 116.84 71.12)
@@ -95,26 +63,6 @@
 			(type default)
 		)
 		(uuid "38a6bcb4-23df-5c79-b26d-37d196e414e1")
-	)
-	(bus
-		(pts
-			(xy 171.45 50.8) (xy 196.85 50.8)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "3d8de87b-902b-50bc-9952-d646987c5a9f")
-	)
-	(bus
-		(pts
-			(xy 201.93 53.34) (xy 201.93 55.88)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "6c92ed19-a1e2-50bd-a2b5-988eec74aa61")
 	)
 	(wire
 		(pts
@@ -136,16 +84,6 @@
 		)
 		(uuid "826a60ed-7825-50e7-826d-10623afa64b7")
 	)
-	(bus
-		(pts
-			(xy 196.85 81.28) (xy 226.06 81.28)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "8c47f20f-eb81-5dcc-adf3-39b0675d3a65")
-	)
 	(wire
 		(pts
 			(xy 86.36 58.42) (xy 116.84 58.42)
@@ -155,16 +93,6 @@
 			(type default)
 		)
 		(uuid "96d8b4e1-8829-553e-b529-b7f855d44997")
-	)
-	(bus
-		(pts
-			(xy 171.45 55.88) (xy 201.93 55.88)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "a106e44c-21bb-5cfa-9686-1aa0d4d6cdd4")
 	)
 	(wire
 		(pts
@@ -176,26 +104,6 @@
 		)
 		(uuid "a1c9453a-23fe-5f03-a216-243d081901f7")
 	)
-	(bus
-		(pts
-			(xy 196.85 50.8) (xy 196.85 81.28)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "ab0c4f6c-915f-5bdc-aad7-faa33c3ae7a3")
-	)
-	(bus
-		(pts
-			(xy 201.93 53.34) (xy 226.06 53.34)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "ac1e5527-de43-5ab6-96ef-72debf8e9bda")
-	)
 	(wire
 		(pts
 			(xy 86.36 73.66) (xy 116.84 73.66)
@@ -205,16 +113,6 @@
 			(type default)
 		)
 		(uuid "c0264f43-b2fc-57e4-a43c-fed9a3bbe5ec")
-	)
-	(bus
-		(pts
-			(xy 201.93 86.36) (xy 226.06 86.36)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "d7b44f26-1425-5de8-ab96-c07ba3e9b7d7")
 	)
 	(wire
 		(pts
@@ -226,16 +124,6 @@
 		)
 		(uuid "e8fdf2cb-d7a3-5d00-b409-0dad8fc20fdb")
 	)
-	(bus
-		(pts
-			(xy 196.85 48.26) (xy 196.85 50.8)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "ec408c40-e77b-5eb1-ad74-9f8e783b6d7d")
-	)
 	(wire
 		(pts
 			(xy 86.36 68.58) (xy 116.84 68.58)
@@ -245,70 +133,6 @@
 			(type default)
 		)
 		(uuid "f8742a39-0d71-54ed-9543-4998472b6740")
-	)
-	(sheet
-		(at 226.06 40.64)
-		(size 54.61 17.78)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(stroke
-			(width 0.1524)
-			(type solid)
-		)
-		(fill
-			(color 0 0 0 0)
-		)
-		(uuid "21a5dc5e-fee8-5aea-a778-7aeac2970a33")
-		(property "Sheetname" "Relay channels 1-7"
-			(at 226.06 38.64 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Sheetfile" "schematic/relays_a.kicad_sch"
-			(at 226.06 60.42 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "RST_DRV[1..14]" input
-			(at 226.06 48.26 180)
-			(uuid "c93785e8-3f5e-5470-968f-872ed3e4e5fe")
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(pin "PWR_DRV[1..14]" input
-			(at 226.06 53.34 180)
-			(uuid "d41beb3b-166c-5fa9-8642-b4e48fa142a2")
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(instances
-			(project "granite_controller"
-				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149"
-					(page "4")
-				)
-			)
-		)
 	)
 	(sheet
 		(at 31.75 40.64)
@@ -590,94 +414,10 @@
 				(justify left)
 			)
 		)
-		(pin "RST_DRV[1..14]" output
-			(at 171.45 50.8 0)
-			(uuid "8c88d52b-9105-545e-ad10-fd6638bd87e5")
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-			)
-		)
-		(pin "PWR_DRV[1..14]" output
-			(at 171.45 55.88 0)
-			(uuid "2cb0061d-b2bf-5358-936d-f9607ad14bb0")
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-			)
-		)
 		(instances
 			(project "granite_controller"
 				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149"
 					(page "3")
-				)
-			)
-		)
-	)
-	(sheet
-		(at 226.06 73.66)
-		(size 54.61 17.78)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(stroke
-			(width 0.1524)
-			(type solid)
-		)
-		(fill
-			(color 0 0 0 0)
-		)
-		(uuid "a9b73d11-6063-59c2-9527-16598518c570")
-		(property "Sheetname" "Relay channels 8-14"
-			(at 226.06 71.66 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Sheetfile" "schematic/relays_b.kicad_sch"
-			(at 226.06 93.44 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "RST_DRV[1..14]" input
-			(at 226.06 81.28 180)
-			(uuid "610a1cb7-c963-5100-b30a-c66b3d677dd4")
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(pin "PWR_DRV[1..14]" input
-			(at 226.06 86.36 180)
-			(uuid "8882333b-5965-553d-b40a-333d0f321dfd")
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(instances
-			(project "granite_controller"
-				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149"
-					(page "5")
 				)
 			)
 		)
@@ -723,7 +463,53 @@
 		(instances
 			(project "granite_controller"
 				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149"
-					(page "6")
+					(page "5")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 226.06 40.64)
+		(size 54.61 17.78)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "523e2405-760a-59f0-a9bd-26a6a2afbbb8")
+		(property "Sheetname" "Relay channels"
+			(at 226.06 39.9284 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "schematic/relays.kicad_sch"
+			(at 226.06 59.0084 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149"
+					(page "4")
 				)
 			)
 		)
