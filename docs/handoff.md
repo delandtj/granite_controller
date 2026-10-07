@@ -16,13 +16,15 @@ Read this first, then docs/controller.md and docs/power-board.md.
 
 ## What the board is now (rev C)
 
-PoE-powered controller for one frame of 8 Strix Halo motherboards,
-fully submerged in dielectric fluid (single-phase now, maybe
+19 V-powered controller (PoE until 2026-10-07) for one frame of 8 Strix
+Halo motherboards, fully submerged in dielectric fluid (single-phase now, maybe
 two-phase later; materials chosen for two-phase). Details and pin
 map: docs/controller.md.
 
 - ESP32-C6-MINI-1-N4 + W5500 SPI Ethernet (replaced STM32H563 +
-  LAN8742A). ARJP11A magjack + Ag9905MT PoE + TLV62569 3V3 unchanged.
+  LAN8742A). PoE dropped: J3 19 V input -> PTC/TVS/Schottky ->
+  LMR51430 buck -> 5 V, HR911105A plain magjack; TLV62569 3V3 unchanged.
+  All parts carry LCSC numbers for JLC assembly.
 - 8 relay channels: 16 TLP176AM photoMOS (RST + PWR per node), driven
   by MCP23017 U14 @0x20 on the internal I2C bus, held in reset by
   default (all buttons released if the MCU is not driving it).
@@ -40,7 +42,7 @@ map: docs/controller.md.
 layers), board rules for PCBWay, net classes with widths, diff pairs
 (ETH 100R: 0.18/0.15, USB 90R: 0.22/0.15 - computed for air, must be
 recomputed with the fluid's Er), granite_controller.kicad_dru
-(PoE clearance, USB-C NPTH exception).
+(USB-C NPTH exception; the PoE clearance rule is gone with PoE).
 
 ## Decisions made with the user
 
@@ -58,8 +60,8 @@ recomputed with the fluid's Er), granite_controller.kicad_dru
 ## Open items
 
 Controller (docs/controller.md "Open items"):
-1. Ag9905MT potting (epoxy vs silicone) and soak tests (magjack, JST).
-2. C1/C2 (KEMET T520 220 uF) ripple check vs Ag9905MT datasheet.
+1. Soak tests (HR911105A magjack, JST housings, J8 header housing).
+2. 19 V tap location and fuse on the power board side.
 3. ESP32-C6 LP I2C usable from the HP core? (else software I2C stays).
 4. ESP32-C6-MINI-1-N4 stock/price.
 5. Layout: board outline, connector edges (8 node connectors, 4 probe

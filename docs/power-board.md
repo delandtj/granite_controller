@@ -20,14 +20,16 @@ measurement.
                         + monitoring
                              ^
                              | I2C1, EXP_INT, 3V3 ref, GND (from J8)
-                     [ granite controller ] --(PoE/Ethernet)--> network
+                     [ granite controller ] --(Ethernet)--> network
 ```
 
 - One 8-channel board per frame.
 - Two 3 kW 19 V supplies feed one common bus. Either supply alone
   carries the full load (8 x 200 W = 1.6 kW), so the pair gives
   redundancy, not extra capacity.
-- The controller stays PoE-powered and independent of this board.
+- The controller runs from the same 19 V bus (its J3), tapped upstream of
+  the hot-swap channels with its own fuse, so no channel fault or
+  channel disable can take the controller down.
 
 ## Requirements
 
@@ -102,7 +104,7 @@ These are the critical requirements.
   or power-good change. Shared with other modules.
 - Grounds: board GND (the 19 V bus return) connects to controller GND
   through the cable. The controller's Ethernet side stays isolated by
-  its PoE module; node front-panel contacts stay floating (photoMOS).
+  its magjack; node front-panel contacts stay floating (photoMOS).
 
 ### PCB and mechanics
 
@@ -138,7 +140,7 @@ These are the critical requirements.
   channel fuse is damaged.
 - Thermal: all 8 channels at 10.5 A for 1 h; MOSFET, sense R, fuse
   and connector temperatures logged.
-- Controller loss: reboot the controller, pull its PoE, unplug the
+- Controller loss: reboot the controller, pull its 19 V feed, unplug the
   cable; no node loses power. Repeat during a power-cycle in progress.
 - Monitoring accuracy against a bench meter at 1, 5 and 10 A.
 - I2C robustness over the cable with all channels loaded.

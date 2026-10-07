@@ -8,15 +8,16 @@ are listed at the end; everything else is a requirement.
 ## Purpose
 
 Remote reset/power control and monitoring for one frame of 8
-motherboards (nodes), immersion-cooled. One PoE Ethernet cable powers
-and controls the board. It presses each node's front-panel RESET and
+motherboards (nodes), immersion-cooled. The frame's redundant 19 V
+bus powers the board; one Ethernet cable controls it. It presses each node's front-panel RESET and
 PWR buttons, reads temperature probes, and talks to optional add-on
 modules and the power distribution board (docs/power-board.md).
 
 ## Context
 
 ```
- network/PoE ==RJ45==> [ controller ] --8x JST-PH 4p--> node front panels
+ network ==RJ45==> [ controller ] --8x JST-PH 4p--> node front panels
+ 19 V bus --J3 JST-PH 2p--^
                           |   |   \--4x JST-PH 3p--> DS18B20 probes
                           |   \--J8 expansion header (I2C ext) --> power board,
                           |                                         add-on expanders
@@ -54,22 +55,31 @@ later. Choose materials for the harsher case now.
 
 ### Power
 
-- PoE 802.3af PD, Class 0, via the ARJP11A magjack (integrated
-  rectifier) and the Silvertel Ag9905MT module -> 5 V -> TLV62569 buck
-  -> 3V3 (unchanged from the current design).
+- Input: J3 (JST PH 2p, pin 1 = +19 V, pin 2 = GND) from the frame's
+  redundant 19 V bus. Tap it upstream of the per-node LTC4282 hot-swap
+  channels, with its own fuse: a node channel that trips or is disabled
+  must not take the controller down with it. PoE is gone (the Ag9905MT
+  module and the PoE magjack were the two most expensive parts and the
+  module was not stocked at JLC).
+- Input protection: F3 PTC (1206L050/33NR, 0.5 A hold, 33 V), D1 TVS
+  (SMAJ22A, 22 V standoff, 35.5 V clamp, below the buck's 38 V abs
+  max), D8 SS34 series Schottky for reverse polarity (with a reversed
+  input D1 conducts forward and trips F3).
+- U8 LMR51430YDDCR (TI, 4.5-36 V in, 3 A, 1.1 MHz PFM) -> BUCK_5V.
+  Datasheet table 9-2 values: L3 3.3 uH (FXL0630-3R3-M, molded, 8.5 A
+  sat), CIN 2x 4.7 uF/50 V X7R + 100 nF, COUT 2x 22 uF/25 V, CBOOT
+  100 nF, EN tied to VIN. Feedback 100k / 13k: 0.6 V x (1 + 100/13) =
+  5.22 V, so +5V is about 4.85 V after the D2 Schottky.
+- 5 V rail: BUCK_5V or USB-C VBUS (bench service), OR-ed by D2/D3, then
+  TLV62569 buck -> 3V3 (unchanged).
+- 5 V budget: 3V3 load (below) plus up to 0.5 A to J8 through F2: about
+  1.2 A worst case, about 0.4 A at 19 V.
 - 3V3 budget: ESP32-C6 module up to ~0.4 A peak (radio TX; normally
   off), W5500 ~0.13 A, relay expander plus LEDs ~0.1 A, rest < 0.05 A.
   Total under 0.7 A against the 2 A buck.
-- The Ag9905MT potting must be confirmed epoxy (requirement 2) or the
-  module soak-tested.
-- C1/C2 (220 uF aluminium-polymer, rubber seal) are replaced with
-  KEMET T520D227M010ATE018 (220 uF / 10 V molded tantalum-polymer,
-  18 mOhm, D case): 5 V is 50 % of rating, well within KEMET's polymer
-  derating. The 6.3 V / 15 mOhm M006ATE015 was dropped because LCSC
-  does not stock it. Check ripple rating against the Ag9905MT output
-  requirement.
-- PS1 (Ag9905MT) is DNP in the schematic: not stocked at JLC/LCSC, so
-  it is bought separately and hand-soldered after assembly.
+- C2 (220 uF bulk on +5V) is a KEMET T520D227M010ATE018 molded
+  tantalum-polymer (10 V, 18 mOhm, D case) instead of a rubber-sealed
+  aluminium-polymer can: 5 V is 50 % of rating.
 - Every other part carries an LCSC field (JLC assembly). Generic
   passives use JLC basic parts with equal or better voltage, dielectric
   and tolerance than the original MPNs.
@@ -119,10 +129,12 @@ Pin map:
 - EXRES1 12.4k 1 %; TOCAP 4.7 uF; 1V2O 10 nF; VBG open; RSVD pins
   to GND; PMODE pins open (all-capable autonegotiation).
 - Supplies: see the AVDD line below; 100 nF on VDD.
-- Magjack: ARJP11A keeps its role (1CT:1CT magnetics, PoE rectifier,
-  Bob Smith termination on pin 7). Its LEDs are driven by the W5500
-  (active-low sink): LINK on one, ACT on the other. LED anodes are
-  pins 11/13 and cathodes 12/14, as in the colleague's rev A wiring.
+- Magjack: HanRun HR911105A (LCSC C12074; replaces the PoE ARJP11A).
+  1CT:1CT magnetics, internal Bob Smith termination (75R + 1 nF/2 kV)
+  to pin 8, which goes to GND. The shield (SH) goes to ETH_SHLD (1M ||
+  1 nF/2 kV to GND, R28/C36). LEDs are driven by the W5500 (active-low
+  sink): green (anode 9, cathode 10) = LINK, yellow (anode 12, cathode
+  11) = ACT.
 - PHY-side network, copied from WIZnet's W5500 Ethernet Shield
   reference schematic (github.com/Wiznet/W5500_Ethernet_Shield,
   Schematic/W5500_Ethernet_shield.sch):
@@ -198,9 +210,11 @@ the 28-pin GPIO expansion header (replaced by the 2x8 header above).
 
 ## Open items and verification
 
-1. Ag9905MT potting material; soak test plan for the magjack (LED
-   lenses, internal potting) and the JST housings.
-2. C1/C2 ripple current check against the Ag9905MT datasheet.
+1. Soak test plan for the HR911105A magjack (LED lenses, internal
+   potting), the JST housings and the J8 header housing (Megastar,
+   material not confirmed).
+2. 19 V bus details from the power board: where the controller tap
+   sits relative to the hot-swap channels, and its fuse.
 3. LP I2C from the HP core: if ESP-IDF supports it, use it instead of
    software I2C for the external bus (same pins 6/7).
 4. ESP32-C6-MINI-1-N4 stock and price.
