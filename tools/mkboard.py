@@ -79,7 +79,7 @@ for c in root.find("components"):
     col = sheet_col.setdefault(sheet, len(sheet_col))
     i = sheet_count.get(sheet, 0)
     sheet_count[sheet] = i + 1
-    x = -400 + col * 90 + (i % 6) * 14
+    x = -560 + col * 90 + (i % 6) * 14   # stays left of the outline at x = 0
     y = (i // 6) * 14
     fp.SetPosition(pcbnew.VECTOR2I_MM(x, y))
 

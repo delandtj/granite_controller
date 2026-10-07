@@ -42,7 +42,8 @@ map: docs/controller.md.
   Generated, then tidied by hand-style layout; netlist verified
   identical across the tidy. ERC 0. PCB regenerated from scratch after
   the 19 V change (162 footprints, 0 parity issues); nothing placed,
-  no outline: all footprints sit in a parking grid off-board.
+  outline 180 x 40 mm with 4 corner M3 holes; all footprints still
+  parked left of the board.
 
 ## PCB setup already done
 
@@ -102,6 +103,11 @@ Power board: PSU model (paralleling, PMBus), node 19 V input connector
   class patterns.
 - `tools/setrules.py <pcb> <pro>`: applies the stackup, board rules
   and net class values. Run after mkboard.
+- `tools/outline.py <in.pcb> <out.pcb> [L] [H]`: Edge.Cuts rectangle
+  (default 180 x 40 mm, 1 mm corner radius) plus H1-H4 M3 NPTH holes
+  4 mm in from each corner, board-only. Idempotent; re-run after
+  mkboard (which parks parts at x < 0, left of the outline). Same
+  scratch-dir rule as mkboard. Order: mkboard -> outline -> setrules.
 - Check after any change: `kicad-cli sch erc --severity-all`,
   `kicad-cli pcb drc --schematic-parity`. Expect 0 parity issues.
 - kicad-cli occasionally re-serializes granite_controller.kicad_pro;
