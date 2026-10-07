@@ -145,7 +145,20 @@ These are the critical requirements.
 
 1. Hot-swap controller part. Needs: 17-24 V operation with margin, 15 A
    via external N-MOSFET, I2C/PMBus V/I/P (energy preferred), a way to
-   meet default-ON, enough addresses or a mux. Shortlist in progress.
+   meet default-ON, enough addresses or a mux.
+   Shortlist (first pass, datasheets not yet read in full):
+   - ADI LTC4282 (preferred): 2.9-33 V, 16-bit V/I/P plus energy
+     accumulation, +/-0.7 % total error, MOSFET power foldback for SOA,
+     fault log, config in internal EEPROM, 5x5 QFN-32, in stock.
+   - TI LM5066I (fallback): 10-80 V, V/I/P/energy (READ_EIN), temp,
+     programmable SOA power limit, retry or latch-off; lower accuracy
+     (1.75 % current, 2.5 % power), HTSSOP-28.
+   - Excluded: TPS25990 (16 V max), ADM1293 (20 V range), ADM1278
+     (likely too low a range).
+   Check in the LTC4282 datasheet before choosing: number of I2C
+   addresses from ADR0/ADR1 (else add a TCA9548A mux), ON pin / EEPROM
+   default-enable with I2C dead (requirement 1), retry vs latch-off,
+   abs max on VDD and SENSE, sense-resistor value for 15 A, price.
 2. PSU model: whether the two supplies are designed to run in parallel
    (current share or OR-ing) and whether they have PMBus.
 3. Node power input connector. A 5.5 x 2.5 mm barrel jack is not rated
