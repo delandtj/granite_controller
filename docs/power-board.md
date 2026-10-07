@@ -161,10 +161,10 @@ These are the critical requirements.
 
 ## Open decisions
 
-2. PSU model: whether the two supplies are designed to run in parallel
+1. PSU model: whether the two supplies are designed to run in parallel
    (current share or OR-ing) and whether they have PMBus.
-3. Node power input connector. A 5.5 x 2.5 mm barrel jack is not rated
+2. Node power input connector. A 5.5 x 2.5 mm barrel jack is not rated
    for 10.5 A; this decides the output connector and cabling.
-4. Fault mode: latch-off (proposed) or auto-retry.
-5. Main input fuse location and type (on board vs. in the supply cabling).
+3. Fault mode: latch-off (proposed) or auto-retry.
+4. Main input fuse location and type (on board vs. in the supply cabling).
 5. Board outline, mounting and cable routing in the frame.
