@@ -21,13 +21,20 @@ Halo motherboards, fully submerged in dielectric fluid (single-phase now, maybe
 two-phase later; materials chosen for two-phase). Details and pin
 map: docs/controller.md.
 
-- ESP32-C6-MINI-1-N4 + W5500 SPI Ethernet (replaced STM32H563 +
+- ESP32-C6-WROOM-1-N8 (8 MB, OTA headroom; N16 drop-in) + W5500 SPI Ethernet (replaced STM32H563 +
   LAN8742A). PoE dropped: J3 19 V input -> PTC/TVS/Schottky ->
   LMR51430 buck -> 5 V, HR911105A plain magjack; TLV62569 3V3 unchanged.
   All parts carry LCSC numbers for JLC assembly.
 - 8 relay channels: 16 TLP176AM photoMOS (RST + PWR per node), driven
   by MCP23017 U14 @0x20 on the internal I2C bus, held in reset by
   default (all buttons released if the MCU is not driving it).
+- Node power sensing: 5-wire node cable (PWR_SW, RST_SW, GND, PLED+,
+  PLED-), 2x TLP290-4 AC-input optos -> U15 MCP23017 @0x21 (internal
+  bus) GPA0-7. U15 GPB0-3 read 4 dry-contact inputs (J10). J9 I2C
+  sensor port (Qwiic order). VIN_SENSE divider on GPIO5.
+- Layout target (user): long strip ~30 mm high along the top of the
+  frame: power 30x30, MCU+ETH+USB 30x40 (RJ45 on the top edge, antenna
+  toward the bottom edge), probes + J8, then the 8 node connectors.
 - External I2C + EXP_nRESET + EXP_INT on a protected 2x6 header J8 for
   add-on MCP23017 modules (0x21-0x27) and the future power board
   (LTC4282 x8 @0x40-0x47).

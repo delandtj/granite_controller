@@ -16,7 +16,7 @@ modules and the power distribution board (docs/power-board.md).
 ## Context
 
 ```
- network ==RJ45==> [ controller ] --8x JST-PH 4p--> node front panels
+ network ==RJ45==> [ controller ] --8x JST-PH 5p--> node front panels
  19 V bus --J3 JST-PH 2p--^
                           |   |   \--4x JST-PH 3p--> DS18B20 probes
                           |   \--J8 expansion header (I2C ext) --> power board,
@@ -88,10 +88,15 @@ later. Choose materials for the harsher case now.
 
 ### MCU
 
-- Espressif ESP32-C6-MINI-1-N4 (RISC-V, 4 MB flash, PCB antenna).
-  Chosen over the WROOM-1U because KiCad ships its symbol and
-  footprint. The radio is unused, but keep the antenna keep-out free
-  of copper anyway (module datasheet), at a board edge.
+- Espressif ESP32-C6-WROOM-1-N8 (RISC-V, 8 MB flash, PCB antenna,
+  LCSC C5366877). 4 MB (MINI-1-N4) left only ~1.9 MB per OTA slot;
+  8 MB gives two ~3.9 MB slots. The N16 (C5445014, not stocked at JLC
+  at the time) is a drop-in on the same footprint if Global Sourcing
+  can get it. Symbol and footprint are project-local
+  (granite:ESP32-C6-WROOM-1, built from the datasheet v1.4; EPAD vias
+  0.6/0.3 mm for JLC). The radio is unused, but keep the antenna
+  keep-out free of copper anyway, antenna at (or over) a board edge.
+- The WROOM-1 does not break out GPIO14; it adds GPIO10 and GPIO11.
 - Radio off in firmware (useless submerged; the fluid detunes the
   antenna anyway).
 - EN: 10k pull-up + 1 uF. BOOT (GPIO9): weak pull-up in the chip; test
@@ -113,11 +118,13 @@ Pin map:
 | Internal I2C (HP I2C) SDA / SCL | 2 / 3 |
 | External I2C (software I2C, LP I2C pins) SDA / SCL | 6 / 7 |
 | 1-wire (UART TX open-drain + RX on the same node, 4.7k pull-up) | 16 / 17 |
-| Relay expander reset (EXP_nRESET_INT) | 14 |
+| Relay/sense expander reset (EXP_nRESET_INT, U14 + U15) | 10 |
+| 19 V bus sense (VIN_SENSE, ADC1) | 5 |
 | Header expander reset (EXP_nRESET, 10k pull-down) | 4 |
 | Shared expander interrupt (EXP_INT) | 0 |
 | Status LED | 1 |
-| Spare to J8 | 5 (lightly loaded), 8 (strapping: 10k pull-up), 15 (strapping: only signals that are high-Z at boot) |
+| Spare to J8 | 8 (strapping: 10k pull-up), 15 (strapping: only signals that are high-Z at boot) |
+| Spare, unconnected | 11 |
 
 ### Ethernet
 
@@ -150,10 +157,24 @@ Pin map:
   - Shield: 1 nF / 2 kV to GND (already present as C36).
 - No auto-MDIX in the W5500: fine for switch ports with auto-MDIX.
 
-### Relay channels (unchanged from rev B on this branch)
+### Relay channels and node power sensing
 
 - 8 channels x (RST, PWR): TLP176AM photoMOS, 330R LED resistor,
-  100R output resistor, J11-J18 JST-PH 4p, floating outputs.
+  100R output resistor, floating outputs.
+- Node connectors J11-J18, JST-PH 5p (B5B-PH-K-S): 1 PWR_SW, 2 RST_SW,
+  3 node GND (common return of both buttons: on motherboards the
+  switch returns are ground), 4 PLED+, 5 PLED-. Five wires per node.
+- PLED sense: the node's power-LED pins drive a TLP290-4 channel
+  (U16 ch1-4, U17 ch5-8; AC input, so polarity does not matter) through
+  220R in series with the board's own LED resistor. 10k pull-up on the
+  collector: NODE_ONn low = node power LED lit. Firmware uses it to
+  avoid toggling a running node off, confirm presses, and tell hung
+  from off. To check against the actual motherboard: PLED drive level
+  (expected 3.3-5 V via a resistor, 5-20 mA) and that the switch
+  returns are ground.
+- U15 MCP23017 @0x21 on the internal bus: GPA0-7 = NODE_ON1-8 (inputs),
+  GPB0-3 = DRY_IN1-4, GPB4-7 spare. INTA on the shared EXP_INT
+  (configure open-drain, IOCON.ODR), reset shared with U14.
 - U14 MCP23017 @0x20 on the internal I2C bus, sourcing the LED
   current (GPA0-7 = PWR, GPB0-7 = RST).
 - U14 has its own reset line (EXP_nRESET_INT) with a pull-down: if
@@ -164,7 +185,7 @@ Pin map:
 
 | Bus | Devices | Addresses |
 |---|---|---|
-| Internal (HP I2C, on-board only) | U14 MCP23017, U5 TMP1075 | 0x20, 0x48 |
+| Internal (HP I2C, on-board only) | U14 MCP23017 (relays), U15 MCP23017 (sense), U5 TMP1075 | 0x20, 0x21, 0x48 |
 | External (J8) | add-on MCP23017 modules, power board LTC4282 x8 | 0x21-0x27, 0x40-0x47 |
 
 A fault on the external bus (cable, add-on, power board) must not stop
@@ -183,8 +204,20 @@ as before:
 | 3 | GND | 4 | GND |
 | 5 | I2C_EXT SCL | 6 | I2C_EXT SDA |
 | 7 | EXP_nRESET | 8 | EXP_INT |
-| 9 | GPIO5 | 10 | GPIO8 |
+| 9 | unused (was GPIO5, now VIN_SENSE) | 10 | GPIO8 |
 | 11 | GPIO15 | 12 | GND |
+
+### Added inputs
+
+- VIN_SENSE: 100k/10k divider (R63/R64, 100 nF) from VIN_19V to GPIO5
+  (ADC1): 19 V -> 1.73 V, 36 V TVS clamp -> 3.27 V. Bus voltage is
+  visible without the power board.
+- J9 I2C sensor port, JST-PH 4p in Qwiic pin order (1 GND, 2 3V3,
+  3 SDA, 4 SCL) on the protected header bus (same 330R + ESD + PTC as
+  J8): fluid level, pressure, humidity sensors.
+- J10 dry-contact inputs, JST-PH 5p (1-4 IN, 5 GND): leak or level
+  float, lid switch. Contact to GND; 10k pull-up, 1k + 100 nF RC,
+  TPD4E05U06 ESD (U18) -> U15 GPB0-3.
 
 ### Other on-board functions (unchanged)
 
@@ -213,13 +246,14 @@ the 28-pin GPIO expansion header (replaced by the 2x8 header above).
 ## Open items and verification
 
 1. Soak test plan for the HR911105A magjack (LED lenses, internal
-   potting), the JST housings and the J8 header housing (Megastar,
-   material not confirmed).
+   potting), the JST housings, the J8 header housing (Megastar,
+   material not confirmed) and the WROOM-1 module (shield can, PCB).
 2. 19 V bus details from the power board: where the controller tap
    sits relative to the hot-swap channels, and its fuse.
 3. LP I2C from the HP core: if ESP-IDF supports it, use it instead of
    software I2C for the external bus (same pins 6/7).
-4. ESP32-C6-MINI-1-N4 stock and price.
+4. Motherboard front-panel pinout (board model needed): PLED drive and
+   ground switch returns, for the 5-wire node cable.
 5. Board outline, connector placement, mounting holes, assembly side,
    surface finish (carried over from the layout discussion).
 

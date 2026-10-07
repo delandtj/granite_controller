@@ -1999,6 +1999,865 @@
 			)
 			(embedded_fonts no)
 		)
+		(symbol "Connector_Generic:Conn_01x05"
+			(pin_names
+				(offset 1.016)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "J"
+				(at 0 7.62 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "Conn_01x05"
+				(at 0 -7.62 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "Generic connector, single row, 01x05, script generated (kicad-library-utils/schlib/autogen/connector/)"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "connector"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_fp_filters" "Connector*:*_1x??_*"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "Conn_01x05_1_1"
+				(rectangle
+					(start -1.27 6.35)
+					(end 1.27 -6.35)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+				(rectangle
+					(start -1.27 5.207)
+					(end 0 4.953)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -1.27 2.667)
+					(end 0 2.413)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -1.27 0.127)
+					(end 0 -0.127)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -1.27 -2.413)
+					(end 0 -2.667)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -1.27 -4.953)
+					(end 0 -5.207)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(pin passive line
+					(at -5.08 5.08 0)
+					(length 3.81)
+					(name "Pin_1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 2.54 0)
+					(length 3.81)
+					(name "Pin_2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 0 0)
+					(length 3.81)
+					(name "Pin_3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 -2.54 0)
+					(length 3.81)
+					(name "Pin_4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 -5.08 0)
+					(length 3.81)
+					(name "Pin_5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
+		(symbol "Isolator:TLP290-4"
+			(pin_names
+				(offset 1.016)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "U"
+				(at -5.08 5.08 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Value" "TLP290-4"
+				(at 0 5.08 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Footprint" "Package_SO:SOP-16_4.55x10.3mm_P1.27mm"
+				(at -21.59 -5.08 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+						(italic yes)
+					)
+					(justify left)
+				)
+			)
+			(property "Datasheet" "https://toshiba.semicon-storage.com/info/docget.jsp?did=12855&prodName=TLP290-4"
+				(at 0.635 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Description" "Quad AC/DC Phototransistor Optocoupler, Vce 80V, CTR 50-600%, SOP16"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "NPN AC DC Quad Phototransistor Optocoupler"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_fp_filters" "SOP*4.55x10.3mm*P1.27mm*"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "TLP290-4_0_1"
+				(rectangle
+					(start -5.08 3.81)
+					(end 5.08 -3.81)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+				(polyline
+					(pts
+						(xy -5.08 2.54) (xy -1.27 2.54) (xy -1.27 -0.635)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -3.81 0.635) (xy -2.54 0.635)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(circle
+					(center -3.175 2.54)
+					(radius 0.127)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -3.175 0.635) (xy -3.81 -0.635) (xy -2.54 -0.635) (xy -3.175 0.635)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -3.175 -0.635) (xy -3.175 2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -3.175 -0.635) (xy -3.175 -2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(circle
+					(center -3.175 -2.54)
+					(radius 0.127)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -1.905 -0.635) (xy -0.635 -0.635)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -1.27 -0.635) (xy -1.27 -2.54) (xy -5.08 -2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -1.27 -0.635) (xy -1.905 0.635) (xy -0.635 0.635) (xy -1.27 -0.635)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0.127 0.508) (xy 1.397 0.508) (xy 1.016 0.381) (xy 1.016 0.635) (xy 1.397 0.508)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0.127 -0.508) (xy 1.397 -0.508) (xy 1.016 -0.635) (xy 1.016 -0.381) (xy 1.397 -0.508)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 2.54 1.905) (xy 2.54 -1.905)
+					)
+					(stroke
+						(width 0.508)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 2.54 0.635) (xy 4.445 2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 3.048 -1.651) (xy 3.556 -1.143) (xy 4.064 -2.159) (xy 3.048 -1.651)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(polyline
+					(pts
+						(xy 4.445 2.54) (xy 5.08 2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 4.445 -2.54) (xy 2.54 -0.635)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(polyline
+					(pts
+						(xy 4.445 -2.54) (xy 5.08 -2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "TLP290-4_1_1"
+				(pin passive line
+					(at -7.62 2.54 0)
+					(length 2.54)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -7.62 -2.54 0)
+					(length 2.54)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 7.62 -2.54 180)
+					(length 2.54)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "15"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 7.62 2.54 180)
+					(length 2.54)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "16"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(symbol "TLP290-4_2_1"
+				(pin passive line
+					(at -7.62 2.54 0)
+					(length 2.54)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -7.62 -2.54 0)
+					(length 2.54)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 7.62 -2.54 180)
+					(length 2.54)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "13"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 7.62 2.54 180)
+					(length 2.54)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "14"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(symbol "TLP290-4_3_1"
+				(pin passive line
+					(at -7.62 2.54 0)
+					(length 2.54)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -7.62 -2.54 0)
+					(length 2.54)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "6"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 7.62 -2.54 180)
+					(length 2.54)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "11"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 7.62 2.54 180)
+					(length 2.54)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "12"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(symbol "TLP290-4_4_1"
+				(pin passive line
+					(at -7.62 2.54 0)
+					(length 2.54)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "7"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -7.62 -2.54 0)
+					(length 2.54)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "8"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 7.62 -2.54 180)
+					(length 2.54)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "9"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 7.62 2.54 180)
+					(length 2.54)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "10"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 	)
 	(symbol
 		(lib_id "Interface_Expansion:MCP23017x-x-SO")
@@ -4092,7 +4951,7 @@
 		)
 		(uuid "9647167a-0d9c-4c36-809a-d8eea79bc030")
 	)
-	(label "MB1_RST_A"
+	(label "MB1_COM"
 		(at 168.91 35.56 0)
 		(effects
 			(font
@@ -4613,7 +5472,7 @@
 		)
 		(uuid "3059be1a-46ee-4e66-9e19-07945cc49bfd")
 	)
-	(label "MB1_PWR_A"
+	(label "MB1_COM"
 		(at 168.91 48.26 0)
 		(effects
 			(font
@@ -4768,127 +5627,6 @@
 		)
 		(uuid "99f5ad6a-307f-45c5-9abb-8c0126f3e294")
 	)
-	(symbol
-		(lib_id "Connector_Generic:Conn_01x04")
-		(at 205.74 43.18 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(fields_autoplaced no)
-		(uuid "f3073d77-6cdc-4809-93ba-438fa65da4db")
-		(property "Reference" "J11"
-			(at 203.2 36.83 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "MB01_FP"
-			(at 203.2 52.07 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Connector_JST:JST_PH_B4B-PH-K_1x04_P2.00mm_Vertical"
-			(at 205.74 43.18 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 205.74 43.18 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 205.74 43.18 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MANUFACTURER" "JST"
-			(at 205.74 43.18 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MPN" "B4B-PH-K-S(LF)(SN)"
-			(at 205.74 43.18 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C131334"
-			(at 205.74 43.18 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "28320a2c-b42b-45d2-9a31-277d6674c698")
-		)
-		(pin "2"
-			(uuid "557f9f55-2f60-495a-b3ef-afbcd3845c8e")
-		)
-		(pin "3"
-			(uuid "f391b1b8-e475-4506-a87f-b825cb0bafd9")
-		)
-		(pin "4"
-			(uuid "78dbe6c4-72af-4a78-ab37-0cb6c646f20d")
-		)
-		(instances
-			(project "granite_controller"
-				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
-					(reference "J11")
-					(unit 1)
-				)
-			)
-		)
-	)
 	(wire
 		(pts
 			(xy 200.66 40.64) (xy 198.12 40.64)
@@ -4899,7 +5637,7 @@
 		)
 		(uuid "9f649dce-dda1-4d98-a584-e26cd3311307")
 	)
-	(label "MB1_RST_A"
+	(label "MB1_PWR_B"
 		(at 198.12 40.64 180)
 		(effects
 			(font
@@ -4939,7 +5677,7 @@
 		)
 		(uuid "57060e18-a699-49fb-85a2-52174c0d55e4")
 	)
-	(label "MB1_PWR_A"
+	(label "MB1_COM"
 		(at 198.12 45.72 180)
 		(effects
 			(font
@@ -4959,7 +5697,7 @@
 		)
 		(uuid "bccc5624-3cef-4e79-ad11-092325e0ff7e")
 	)
-	(label "MB1_PWR_B"
+	(label "MB1_PLED_P"
 		(at 198.12 48.26 180)
 		(effects
 			(font
@@ -5335,7 +6073,7 @@
 		)
 		(uuid "8da1887f-7c37-499f-944c-beb5e6102577")
 	)
-	(label "MB2_RST_A"
+	(label "MB2_COM"
 		(at 168.91 66.04 0)
 		(effects
 			(font
@@ -5856,7 +6594,7 @@
 		)
 		(uuid "8c1952d0-d5a9-44a4-88fe-eff294af9f98")
 	)
-	(label "MB2_PWR_A"
+	(label "MB2_COM"
 		(at 168.91 78.74 0)
 		(effects
 			(font
@@ -6011,127 +6749,6 @@
 		)
 		(uuid "f7a0c5ad-dc07-4160-931e-4812ae79d6ba")
 	)
-	(symbol
-		(lib_id "Connector_Generic:Conn_01x04")
-		(at 205.74 73.66 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(fields_autoplaced no)
-		(uuid "3d12ff94-6730-4fb7-9e32-5f6ce45e82b9")
-		(property "Reference" "J12"
-			(at 203.2 67.31 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "MB02_FP"
-			(at 203.2 82.55 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Connector_JST:JST_PH_B4B-PH-K_1x04_P2.00mm_Vertical"
-			(at 205.74 73.66 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 205.74 73.66 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 205.74 73.66 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MANUFACTURER" "JST"
-			(at 205.74 73.66 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MPN" "B4B-PH-K-S(LF)(SN)"
-			(at 205.74 73.66 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C131334"
-			(at 205.74 73.66 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "47ddac11-ab88-4b86-9c97-bb9cb9d29789")
-		)
-		(pin "2"
-			(uuid "cc2f2394-c1b5-4ec5-ad26-28584009e93d")
-		)
-		(pin "3"
-			(uuid "b5879fbb-9c8d-4a4b-b92b-bf7619530b6d")
-		)
-		(pin "4"
-			(uuid "efba7e42-4c08-4587-81ce-748d96abff99")
-		)
-		(instances
-			(project "granite_controller"
-				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
-					(reference "J12")
-					(unit 1)
-				)
-			)
-		)
-	)
 	(wire
 		(pts
 			(xy 200.66 71.12) (xy 198.12 71.12)
@@ -6142,7 +6759,7 @@
 		)
 		(uuid "266e7e5b-3b38-4301-bc22-5d0a014130ba")
 	)
-	(label "MB2_RST_A"
+	(label "MB2_PWR_B"
 		(at 198.12 71.12 180)
 		(effects
 			(font
@@ -6182,7 +6799,7 @@
 		)
 		(uuid "77432eae-559a-4563-818c-7d81f8e656bf")
 	)
-	(label "MB2_PWR_A"
+	(label "MB2_COM"
 		(at 198.12 76.2 180)
 		(effects
 			(font
@@ -6202,7 +6819,7 @@
 		)
 		(uuid "e9690a2f-daeb-4a6c-bf00-7a937c05e69f")
 	)
-	(label "MB2_PWR_B"
+	(label "MB2_PLED_P"
 		(at 198.12 78.74 180)
 		(effects
 			(font
@@ -6578,7 +7195,7 @@
 		)
 		(uuid "b95c3577-0f91-4b18-809b-68050b946a84")
 	)
-	(label "MB3_RST_A"
+	(label "MB3_COM"
 		(at 168.91 96.52 0)
 		(effects
 			(font
@@ -7099,7 +7716,7 @@
 		)
 		(uuid "96c4e3d6-4582-4f14-beee-350d538f9528")
 	)
-	(label "MB3_PWR_A"
+	(label "MB3_COM"
 		(at 168.91 109.22 0)
 		(effects
 			(font
@@ -7254,127 +7871,6 @@
 		)
 		(uuid "d34b36b0-ee57-4868-b7c3-acdfe9fcc560")
 	)
-	(symbol
-		(lib_id "Connector_Generic:Conn_01x04")
-		(at 205.74 104.14 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(fields_autoplaced no)
-		(uuid "0488bb00-1993-4917-adcc-53d6fe30f2ca")
-		(property "Reference" "J13"
-			(at 203.2 97.79 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "MB03_FP"
-			(at 203.2 113.03 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Connector_JST:JST_PH_B4B-PH-K_1x04_P2.00mm_Vertical"
-			(at 205.74 104.14 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 205.74 104.14 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 205.74 104.14 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MANUFACTURER" "JST"
-			(at 205.74 104.14 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MPN" "B4B-PH-K-S(LF)(SN)"
-			(at 205.74 104.14 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C131334"
-			(at 205.74 104.14 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "e58eda61-4184-4f6b-ab72-0d3fb137ff96")
-		)
-		(pin "2"
-			(uuid "6513ba3c-c3fa-4dd3-9834-876bc90174ba")
-		)
-		(pin "3"
-			(uuid "4656cfd1-9ce5-43a5-9045-84b0b6ee3b9f")
-		)
-		(pin "4"
-			(uuid "9fdff921-5ac2-46ca-b502-dd7547089dfe")
-		)
-		(instances
-			(project "granite_controller"
-				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
-					(reference "J13")
-					(unit 1)
-				)
-			)
-		)
-	)
 	(wire
 		(pts
 			(xy 200.66 101.6) (xy 198.12 101.6)
@@ -7385,7 +7881,7 @@
 		)
 		(uuid "204375b2-ecf3-4c23-852d-947b4e15749c")
 	)
-	(label "MB3_RST_A"
+	(label "MB3_PWR_B"
 		(at 198.12 101.6 180)
 		(effects
 			(font
@@ -7425,7 +7921,7 @@
 		)
 		(uuid "a9e7e230-fd8b-4bc3-9626-841a4041aa05")
 	)
-	(label "MB3_PWR_A"
+	(label "MB3_COM"
 		(at 198.12 106.68 180)
 		(effects
 			(font
@@ -7445,7 +7941,7 @@
 		)
 		(uuid "dbeb11ae-e58f-4d20-98e4-be881205e6f9")
 	)
-	(label "MB3_PWR_B"
+	(label "MB3_PLED_P"
 		(at 198.12 109.22 180)
 		(effects
 			(font
@@ -7821,7 +8317,7 @@
 		)
 		(uuid "6a52704c-e0ff-4394-8961-4f5f1e939ac9")
 	)
-	(label "MB4_RST_A"
+	(label "MB4_COM"
 		(at 168.91 127 0)
 		(effects
 			(font
@@ -8342,7 +8838,7 @@
 		)
 		(uuid "497646be-26da-4d29-81d6-06f77731ab60")
 	)
-	(label "MB4_PWR_A"
+	(label "MB4_COM"
 		(at 168.91 139.7 0)
 		(effects
 			(font
@@ -8497,127 +8993,6 @@
 		)
 		(uuid "335f4b2f-62ec-4bbd-b721-380ce2a8f1cf")
 	)
-	(symbol
-		(lib_id "Connector_Generic:Conn_01x04")
-		(at 205.74 134.62 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(fields_autoplaced no)
-		(uuid "d696e97e-85fe-4d06-b5dd-843bc80786ea")
-		(property "Reference" "J14"
-			(at 203.2 128.27 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "MB04_FP"
-			(at 203.2 143.51 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Connector_JST:JST_PH_B4B-PH-K_1x04_P2.00mm_Vertical"
-			(at 205.74 134.62 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 205.74 134.62 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 205.74 134.62 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MANUFACTURER" "JST"
-			(at 205.74 134.62 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MPN" "B4B-PH-K-S(LF)(SN)"
-			(at 205.74 134.62 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C131334"
-			(at 205.74 134.62 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "4865da9e-d9fb-45c9-8817-24e2053a5bbc")
-		)
-		(pin "2"
-			(uuid "a8acbf13-a4b5-4c56-b648-9cb50c2c4a51")
-		)
-		(pin "3"
-			(uuid "5b101c5d-0435-42a7-a512-12492d5b1b53")
-		)
-		(pin "4"
-			(uuid "82121296-5c39-4680-b8df-be7c17ed1464")
-		)
-		(instances
-			(project "granite_controller"
-				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
-					(reference "J14")
-					(unit 1)
-				)
-			)
-		)
-	)
 	(wire
 		(pts
 			(xy 200.66 132.08) (xy 198.12 132.08)
@@ -8628,7 +9003,7 @@
 		)
 		(uuid "3ed7931d-dd4b-4563-bc83-6b2445d98800")
 	)
-	(label "MB4_RST_A"
+	(label "MB4_PWR_B"
 		(at 198.12 132.08 180)
 		(effects
 			(font
@@ -8668,7 +9043,7 @@
 		)
 		(uuid "e2f01f01-9263-4869-be75-b8125eca7b36")
 	)
-	(label "MB4_PWR_A"
+	(label "MB4_COM"
 		(at 198.12 137.16 180)
 		(effects
 			(font
@@ -8688,7 +9063,7 @@
 		)
 		(uuid "bd42b029-83c5-493f-bd67-fe3ffcf02284")
 	)
-	(label "MB4_PWR_B"
+	(label "MB4_PLED_P"
 		(at 198.12 139.7 180)
 		(effects
 			(font
@@ -9064,7 +9439,7 @@
 		)
 		(uuid "8f6146db-a5b2-4cf4-9e7c-55284735eb58")
 	)
-	(label "MB5_RST_A"
+	(label "MB5_COM"
 		(at 168.91 157.48 0)
 		(effects
 			(font
@@ -9585,7 +9960,7 @@
 		)
 		(uuid "fa309747-42f5-4e05-b60f-1010da489966")
 	)
-	(label "MB5_PWR_A"
+	(label "MB5_COM"
 		(at 168.91 170.18 0)
 		(effects
 			(font
@@ -9740,127 +10115,6 @@
 		)
 		(uuid "63b4e6a3-9049-40fe-91d8-439a39f99a13")
 	)
-	(symbol
-		(lib_id "Connector_Generic:Conn_01x04")
-		(at 205.74 165.1 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(fields_autoplaced no)
-		(uuid "3901eb6b-eb43-4dc4-94b0-0ce11b0e6b94")
-		(property "Reference" "J15"
-			(at 203.2 158.75 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "MB05_FP"
-			(at 203.2 173.99 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Connector_JST:JST_PH_B4B-PH-K_1x04_P2.00mm_Vertical"
-			(at 205.74 165.1 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 205.74 165.1 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 205.74 165.1 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MANUFACTURER" "JST"
-			(at 205.74 165.1 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MPN" "B4B-PH-K-S(LF)(SN)"
-			(at 205.74 165.1 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C131334"
-			(at 205.74 165.1 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "939c05e9-c897-45cd-81b4-6aaf44ad33c9")
-		)
-		(pin "2"
-			(uuid "7d18d55f-96b9-45b1-905a-a73025f5fe45")
-		)
-		(pin "3"
-			(uuid "902b8623-f46e-4d44-aa6e-1557ddc9832b")
-		)
-		(pin "4"
-			(uuid "a85e0a50-d74a-4e7d-bfe0-7a91e9d73338")
-		)
-		(instances
-			(project "granite_controller"
-				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
-					(reference "J15")
-					(unit 1)
-				)
-			)
-		)
-	)
 	(wire
 		(pts
 			(xy 200.66 162.56) (xy 198.12 162.56)
@@ -9871,7 +10125,7 @@
 		)
 		(uuid "92355936-da81-4d13-a463-5ce52fcdd299")
 	)
-	(label "MB5_RST_A"
+	(label "MB5_PWR_B"
 		(at 198.12 162.56 180)
 		(effects
 			(font
@@ -9911,7 +10165,7 @@
 		)
 		(uuid "14b720ce-8585-4c70-abdd-d3319c4b85f0")
 	)
-	(label "MB5_PWR_A"
+	(label "MB5_COM"
 		(at 198.12 167.64 180)
 		(effects
 			(font
@@ -9931,7 +10185,7 @@
 		)
 		(uuid "33589ddf-c3d9-47d5-bf6e-3d36bbd3a79d")
 	)
-	(label "MB5_PWR_B"
+	(label "MB5_PLED_P"
 		(at 198.12 170.18 180)
 		(effects
 			(font
@@ -10307,7 +10561,7 @@
 		)
 		(uuid "064b21ca-c534-4bb7-a773-9bb71e075eb2")
 	)
-	(label "MB6_RST_A"
+	(label "MB6_COM"
 		(at 168.91 187.96 0)
 		(effects
 			(font
@@ -10828,7 +11082,7 @@
 		)
 		(uuid "da7cafe3-64ed-48b5-8d02-f58399e89ac2")
 	)
-	(label "MB6_PWR_A"
+	(label "MB6_COM"
 		(at 168.91 200.66 0)
 		(effects
 			(font
@@ -10983,127 +11237,6 @@
 		)
 		(uuid "2577187a-ec9e-413a-9ba5-f54755ae3bd3")
 	)
-	(symbol
-		(lib_id "Connector_Generic:Conn_01x04")
-		(at 205.74 195.58 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(fields_autoplaced no)
-		(uuid "f143158e-2783-402d-8e02-c218a64d0f9c")
-		(property "Reference" "J16"
-			(at 203.2 189.23 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "MB06_FP"
-			(at 203.2 204.47 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Connector_JST:JST_PH_B4B-PH-K_1x04_P2.00mm_Vertical"
-			(at 205.74 195.58 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 205.74 195.58 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 205.74 195.58 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MANUFACTURER" "JST"
-			(at 205.74 195.58 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MPN" "B4B-PH-K-S(LF)(SN)"
-			(at 205.74 195.58 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C131334"
-			(at 205.74 195.58 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "d6a1cb02-8ed6-4f95-9822-9f4d65dabdaf")
-		)
-		(pin "2"
-			(uuid "9011d068-feb9-4a33-9e00-2ee24ec9b346")
-		)
-		(pin "3"
-			(uuid "b441c3aa-e930-4e59-8873-375f29483075")
-		)
-		(pin "4"
-			(uuid "629a5db2-1b28-45ff-ba11-7ee028efb0ce")
-		)
-		(instances
-			(project "granite_controller"
-				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
-					(reference "J16")
-					(unit 1)
-				)
-			)
-		)
-	)
 	(wire
 		(pts
 			(xy 200.66 193.04) (xy 198.12 193.04)
@@ -11114,7 +11247,7 @@
 		)
 		(uuid "f5205081-6055-4b79-b686-2972abcf1643")
 	)
-	(label "MB6_RST_A"
+	(label "MB6_PWR_B"
 		(at 198.12 193.04 180)
 		(effects
 			(font
@@ -11154,7 +11287,7 @@
 		)
 		(uuid "aab48446-b663-4bb0-9fbb-35b713de5c2b")
 	)
-	(label "MB6_PWR_A"
+	(label "MB6_COM"
 		(at 198.12 198.12 180)
 		(effects
 			(font
@@ -11174,7 +11307,7 @@
 		)
 		(uuid "dc98de81-d11e-457c-b9a3-1b7912498bdb")
 	)
-	(label "MB6_PWR_B"
+	(label "MB6_PLED_P"
 		(at 198.12 200.66 180)
 		(effects
 			(font
@@ -11550,7 +11683,7 @@
 		)
 		(uuid "71b5d777-f929-4423-a4da-976e80d0331d")
 	)
-	(label "MB7_RST_A"
+	(label "MB7_COM"
 		(at 168.91 218.44 0)
 		(effects
 			(font
@@ -12071,7 +12204,7 @@
 		)
 		(uuid "57a4f25f-9695-4327-9c7e-80c7e13e2b64")
 	)
-	(label "MB7_PWR_A"
+	(label "MB7_COM"
 		(at 168.91 231.14 0)
 		(effects
 			(font
@@ -12226,127 +12359,6 @@
 		)
 		(uuid "cb25c47d-3c85-4b69-a9fa-3e275801d6d5")
 	)
-	(symbol
-		(lib_id "Connector_Generic:Conn_01x04")
-		(at 205.74 226.06 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(fields_autoplaced no)
-		(uuid "d4ac9385-2375-471b-a68b-1f3d76cd4923")
-		(property "Reference" "J17"
-			(at 203.2 219.71 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "MB07_FP"
-			(at 203.2 234.95 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Connector_JST:JST_PH_B4B-PH-K_1x04_P2.00mm_Vertical"
-			(at 205.74 226.06 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 205.74 226.06 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 205.74 226.06 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MANUFACTURER" "JST"
-			(at 205.74 226.06 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MPN" "B4B-PH-K-S(LF)(SN)"
-			(at 205.74 226.06 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C131334"
-			(at 205.74 226.06 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "21be86e4-2a8c-43ce-8852-22949af3464c")
-		)
-		(pin "2"
-			(uuid "080247cb-e302-430f-9439-9d846bde92ac")
-		)
-		(pin "3"
-			(uuid "f5507362-14eb-4290-b9f5-667a9f53cc6b")
-		)
-		(pin "4"
-			(uuid "b42e795b-f5ae-4fe0-a08f-944702452494")
-		)
-		(instances
-			(project "granite_controller"
-				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
-					(reference "J17")
-					(unit 1)
-				)
-			)
-		)
-	)
 	(wire
 		(pts
 			(xy 200.66 223.52) (xy 198.12 223.52)
@@ -12357,7 +12369,7 @@
 		)
 		(uuid "5daf6a73-2210-4259-bed0-7c1b1b49dc6b")
 	)
-	(label "MB7_RST_A"
+	(label "MB7_PWR_B"
 		(at 198.12 223.52 180)
 		(effects
 			(font
@@ -12397,7 +12409,7 @@
 		)
 		(uuid "3be16cc2-fb31-4cbc-9c56-057b66b3bf59")
 	)
-	(label "MB7_PWR_A"
+	(label "MB7_COM"
 		(at 198.12 228.6 180)
 		(effects
 			(font
@@ -12417,7 +12429,7 @@
 		)
 		(uuid "d873b91b-561a-4cdf-be1b-b5ea0d10fb42")
 	)
-	(label "MB7_PWR_B"
+	(label "MB7_PLED_P"
 		(at 198.12 231.14 180)
 		(effects
 			(font
@@ -12793,7 +12805,7 @@
 		)
 		(uuid "7fd98983-e160-47bb-bf3a-143932b06530")
 	)
-	(label "MB8_RST_A"
+	(label "MB8_COM"
 		(at 168.91 248.92 0)
 		(effects
 			(font
@@ -13314,7 +13326,7 @@
 		)
 		(uuid "8192aa60-321b-4dfd-9f62-c74f80de860b")
 	)
-	(label "MB8_PWR_A"
+	(label "MB8_COM"
 		(at 168.91 261.62 0)
 		(effects
 			(font
@@ -13469,127 +13481,6 @@
 		)
 		(uuid "933f5883-2acc-4c3b-ac07-d8538f86cd26")
 	)
-	(symbol
-		(lib_id "Connector_Generic:Conn_01x04")
-		(at 205.74 256.54 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(fields_autoplaced no)
-		(uuid "8ae98cd0-5e6f-4620-8d38-a6c6ff707dc3")
-		(property "Reference" "J18"
-			(at 203.2 250.19 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "MB08_FP"
-			(at 203.2 265.43 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Connector_JST:JST_PH_B4B-PH-K_1x04_P2.00mm_Vertical"
-			(at 205.74 256.54 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 205.74 256.54 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 205.74 256.54 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MANUFACTURER" "JST"
-			(at 205.74 256.54 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MPN" "B4B-PH-K-S(LF)(SN)"
-			(at 205.74 256.54 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C131334"
-			(at 205.74 256.54 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "204c8470-fd58-4131-bf34-3317fbf598b9")
-		)
-		(pin "2"
-			(uuid "50274783-cbaa-489d-a800-b2b1c492dd52")
-		)
-		(pin "3"
-			(uuid "401fe177-2e58-45da-855a-1d9556684fb9")
-		)
-		(pin "4"
-			(uuid "fd7c9f99-3b7b-4c92-8c9d-95d46e5ae989")
-		)
-		(instances
-			(project "granite_controller"
-				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
-					(reference "J18")
-					(unit 1)
-				)
-			)
-		)
-	)
 	(wire
 		(pts
 			(xy 200.66 254) (xy 198.12 254)
@@ -13600,7 +13491,7 @@
 		)
 		(uuid "e855a93b-bd76-409a-8f2d-51123151f9ba")
 	)
-	(label "MB8_RST_A"
+	(label "MB8_PWR_B"
 		(at 198.12 254 180)
 		(effects
 			(font
@@ -13640,7 +13531,7 @@
 		)
 		(uuid "3c796c16-f8fb-481a-93d7-a9193583eb47")
 	)
-	(label "MB8_PWR_A"
+	(label "MB8_COM"
 		(at 198.12 259.08 180)
 		(effects
 			(font
@@ -13660,7 +13551,7 @@
 		)
 		(uuid "c5db2856-cff0-49ec-a427-5f0573c36080")
 	)
-	(label "MB8_PWR_B"
+	(label "MB8_PLED_P"
 		(at 198.12 261.62 180)
 		(effects
 			(font
@@ -13670,16 +13561,7385 @@
 		)
 		(uuid "3106a357-d5fe-4bc6-a506-6c21e72087cf")
 	)
-	(text "Channels 1-8: 2x photoMOS contact closure (RESET, PWR BTN) per motherboard front-panel header. Floating outputs.\nTLP176AM: 3mA max trigger, ~6mA drive. U14 MCP23017 @0x20 sources the LED current: GPA0-7 = PWR_DRV1-8, GPB0-7 = RST_DRV1-8 (GPA7/GPB7 are output-only).\nR32 holds U14 in reset unless the MCU drives EXP_nRESET_INT high: MCU reset/hang -> all GPIO Hi-Z -> all buttons released.\nU14 is on the internal I2C bus with its own reset line; EXP_INT is shared with add-on modules on the expansion header (INT open-drain, mirrored)."
+	(embedded_fonts no)
+	(symbol
+		(lib_id "Connector_Generic:Conn_01x05")
+		(at 205.74 45.72 0)
+		(unit 1)
+		(body_style 1)
 		(exclude_from_sim no)
-		(at 228.6 50.8 0)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "2902e7b0-0ba6-44be-beb8-d738f95028e2")
+		(property "Reference" "J11"
+			(at 205.74 38.1 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "MB01_FP"
+			(at 205.74 53.34 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Connector_JST:JST_PH_B5B-PH-K_1x05_P2.00mm_Vertical"
+			(at 205.74 45.72 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 205.74 45.72 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 205.74 45.72 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "JST"
+			(at 205.74 45.72 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "B5B-PH-K-S(LF)(SN)"
+			(at 205.74 45.72 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C157993"
+			(at 205.74 45.72 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "ffab53ea-60aa-444e-832e-eeebb281b0f1")
+		)
+		(pin "2"
+			(uuid "8a6b62c4-f0af-49ef-a327-4850970cc8d5")
+		)
+		(pin "3"
+			(uuid "8ba3f915-921a-484a-80c0-79e2728ee9e4")
+		)
+		(pin "4"
+			(uuid "1865ad2d-5631-4322-8292-2a387cacd622")
+		)
+		(pin "5"
+			(uuid "badd3f7c-c7e8-427d-93c6-65b04ed3d7f2")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "J11")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 200.66 50.8) (xy 198.12 50.8)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d3e4e344-9ded-4a12-988d-bf4e00ca41de")
+	)
+	(label "MB1_PLED_N"
+		(at 198.12 50.8 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "3a9ef081-4e04-4831-bd35-937db0d851d0")
+	)
+	(symbol
+		(lib_id "Isolator:TLP290-4")
+		(at 248.92 45.72 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "16de0c7a-2094-4816-9ed4-5530876fc049")
+		(property "Reference" "U16"
+			(at 248.92 39.37 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "TLP290-4"
+			(at 248.92 52.07 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Package_SO:SOP-16_4.55x10.3mm_P1.27mm"
+			(at 248.92 45.72 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 248.92 45.72 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 248.92 45.72 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "Toshiba"
+			(at 248.92 45.72 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "TLP290-4(GB-TP,E)"
+			(at 248.92 45.72 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C39031"
+			(at 248.92 45.72 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "67377463-a32b-4b2c-a381-8bfb16365fb6")
+		)
+		(pin "2"
+			(uuid "647bdb8f-5559-40ef-96a4-46fee366ddb0")
+		)
+		(pin "15"
+			(uuid "88fe7f29-df1d-44a6-af26-42eaed7747e4")
+		)
+		(pin "16"
+			(uuid "72c2098d-4171-4081-b509-bfca455f3072")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "U16")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 233.68 43.18 90)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "2f914d5c-146d-4450-84d8-34e1c96d9733")
+		(property "Reference" "R47"
+			(at 233.68 40.64 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "220"
+			(at 233.68 45.72 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 233.68 43.18 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 233.68 43.18 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 233.68 43.18 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "UNI-ROYAL"
+			(at 233.68 43.18 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "0402WGF2200TCE"
+			(at 233.68 43.18 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25091"
+			(at 233.68 43.18 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "4e6c1242-c7b6-4286-97b4-6e2413ca7725")
+		)
+		(pin "2"
+			(uuid "1b43c6b1-886e-44fd-b5e0-d55dc46d64f9")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "R47")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 237.49 43.18) (xy 241.3 43.18)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a0d586be-08b2-4d96-bc6e-d146b230127c")
+	)
+	(wire
+		(pts
+			(xy 229.87 43.18) (xy 227.33 43.18)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "803c199a-9a3e-49dd-a6dc-23c1e60eaa98")
+	)
+	(label "MB1_PLED_P"
+		(at 227.33 43.18 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "8c14ed12-2e7b-40d5-941f-a861ddd3aaec")
+	)
+	(wire
+		(pts
+			(xy 241.3 48.26) (xy 227.33 48.26)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b592e0e1-08de-4e31-bdf7-2c7d481e1c53")
+	)
+	(label "MB1_PLED_N"
+		(at 227.33 48.26 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "d70c1c69-5f1a-48ab-ad17-f3905cf43074")
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 264.16 39.37 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "a7eba7b5-2d3c-404a-87fe-5a42d5767ee2")
+		(property "Reference" "R39"
+			(at 265.43 38.1 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "10k"
+			(at 265.43 40.64 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 264.16 39.37 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 264.16 39.37 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 264.16 39.37 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "UNI-ROYAL"
+			(at 264.16 39.37 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "0402WGF1002TCE"
+			(at 264.16 39.37 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25744"
+			(at 264.16 39.37 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "5948785f-4c7f-4aa5-b268-d29c9d4c8e4e")
+		)
+		(pin "2"
+			(uuid "b993aeff-bae1-40f4-9279-6eb91b1d7799")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "R39")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+3V3")
+		(at 264.16 35.56 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "3518b61d-00d3-4455-9174-06cbad9d33a3")
+		(property "Reference" "#PWR600"
+			(at 264.16 39.37 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "+3V3"
+			(at 262.89 31.75 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 264.16 35.56 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 264.16 35.56 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 264.16 35.56 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "210bca0f-ecc4-4745-a2e8-aaf33ecdf859")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "#PWR600")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 256.54 43.18) (xy 264.16 43.18)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "c0c64665-9f57-41c9-a158-d7ea50424d01")
+	)
+	(wire
+		(pts
+			(xy 264.16 43.18) (xy 269.24 43.18)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b8f94792-0c52-4517-a48d-a6398a395f2c")
+	)
+	(junction
+		(at 264.16 43.18)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "a3497de9-7348-41bd-a565-b96f7a2d056c")
+	)
+	(label "NODE_ON1"
+		(at 269.24 43.18 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
 			(justify left bottom)
 		)
-		(uuid "d2750ddd-0c96-4b64-bf8a-99e9e75058e7")
+		(uuid "4fa96792-ac31-4be3-8258-802e6690a0f0")
 	)
-	(embedded_fonts no)
+	(wire
+		(pts
+			(xy 256.54 48.26) (xy 261.62 48.26)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0148c4ae-9ba0-4b30-82c2-3958ff12e088")
+	)
+	(wire
+		(pts
+			(xy 261.62 48.26) (xy 261.62 50.8)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "80fce784-92f2-42ea-a1a1-36164f491266")
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 261.62 50.8 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "01c4369f-c955-4669-bcba-8bb09ab9fc45")
+		(property "Reference" "#PWR601"
+			(at 261.62 44.45 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "GND"
+			(at 260.35 55.88 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 261.62 50.8 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 261.62 50.8 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 261.62 50.8 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "57908bb0-a050-48a2-9214-e2d45f7bf637")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "#PWR601")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Connector_Generic:Conn_01x05")
+		(at 205.74 76.2 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "4fe10d36-d54f-43d8-a77c-a1a72119b6d0")
+		(property "Reference" "J12"
+			(at 205.74 68.58 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "MB02_FP"
+			(at 205.74 83.82 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Connector_JST:JST_PH_B5B-PH-K_1x05_P2.00mm_Vertical"
+			(at 205.74 76.2 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 205.74 76.2 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 205.74 76.2 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "JST"
+			(at 205.74 76.2 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "B5B-PH-K-S(LF)(SN)"
+			(at 205.74 76.2 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C157993"
+			(at 205.74 76.2 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "98aaa04d-d4f8-4bdb-8145-0aaaa4e1c6a2")
+		)
+		(pin "2"
+			(uuid "bb34ecf7-94bf-424e-ab74-b568dc95c642")
+		)
+		(pin "3"
+			(uuid "755e6f10-c999-4bcd-ac99-699d19b4d162")
+		)
+		(pin "4"
+			(uuid "0ba8db7a-9dc2-4e79-89b7-668aeaf605ab")
+		)
+		(pin "5"
+			(uuid "85bc75fb-2442-4557-bf52-458f7a1397ca")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "J12")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 200.66 81.28) (xy 198.12 81.28)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "413dd369-1174-4712-9c8f-13d0a4bfde6a")
+	)
+	(label "MB2_PLED_N"
+		(at 198.12 81.28 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "6198d101-ba92-438e-a576-fb37c0057e60")
+	)
+	(symbol
+		(lib_id "Isolator:TLP290-4")
+		(at 248.92 76.2 0)
+		(unit 2)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "90754221-00b7-4d16-ba7f-dbba133e9767")
+		(property "Reference" "U16"
+			(at 248.92 69.85 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "TLP290-4"
+			(at 248.92 82.55 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Package_SO:SOP-16_4.55x10.3mm_P1.27mm"
+			(at 248.92 76.2 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 248.92 76.2 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 248.92 76.2 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "Toshiba"
+			(at 248.92 76.2 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "TLP290-4(GB-TP,E)"
+			(at 248.92 76.2 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C39031"
+			(at 248.92 76.2 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "3"
+			(uuid "818c096d-1a60-4e43-bf58-0e56e4ebf825")
+		)
+		(pin "4"
+			(uuid "6d5dff5d-49aa-4461-b8f5-a72c11a855dc")
+		)
+		(pin "13"
+			(uuid "010589fa-5962-4ffa-a225-8e94c972177c")
+		)
+		(pin "14"
+			(uuid "06eb752e-a1d5-4ebc-b62b-88c90b7fdba5")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "U16")
+					(unit 2)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 233.68 73.66 90)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "962a90ef-6ac9-443a-b56a-395acf59264e")
+		(property "Reference" "R48"
+			(at 233.68 71.12 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "220"
+			(at 233.68 76.2 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 233.68 73.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 233.68 73.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 233.68 73.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "UNI-ROYAL"
+			(at 233.68 73.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "0402WGF2200TCE"
+			(at 233.68 73.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25091"
+			(at 233.68 73.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "8e48f0f9-e1a6-4dc7-8bec-497b05ae6e3a")
+		)
+		(pin "2"
+			(uuid "2d56c1ec-870c-4d6e-8b45-6198edf1478a")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "R48")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 237.49 73.66) (xy 241.3 73.66)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d690710d-3d76-4931-a643-613694af4947")
+	)
+	(wire
+		(pts
+			(xy 229.87 73.66) (xy 227.33 73.66)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "71df0372-8419-4007-8ef4-742572827f13")
+	)
+	(label "MB2_PLED_P"
+		(at 227.33 73.66 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "ca7aa168-b151-448d-88cf-068687cf8057")
+	)
+	(wire
+		(pts
+			(xy 241.3 78.74) (xy 227.33 78.74)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "c718d9af-e071-49a9-9f17-db79685dd916")
+	)
+	(label "MB2_PLED_N"
+		(at 227.33 78.74 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "041f8a09-8b79-46e0-97ac-9c3320877c77")
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 264.16 69.85 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "4f60739f-fe3f-4be1-817e-727aa87168fd")
+		(property "Reference" "R40"
+			(at 265.43 68.58 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "10k"
+			(at 265.43 71.12 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 264.16 69.85 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 264.16 69.85 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 264.16 69.85 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "UNI-ROYAL"
+			(at 264.16 69.85 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "0402WGF1002TCE"
+			(at 264.16 69.85 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25744"
+			(at 264.16 69.85 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "99708016-44d7-49bd-b3fb-51b749373a85")
+		)
+		(pin "2"
+			(uuid "96c67589-301a-4462-8522-072a1264b504")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "R40")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+3V3")
+		(at 264.16 66.04 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "55177a39-73c2-4574-9975-3976bf92cd85")
+		(property "Reference" "#PWR602"
+			(at 264.16 69.85 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "+3V3"
+			(at 262.89 62.23 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 264.16 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 264.16 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 264.16 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "05030699-1736-4c1a-a1b5-18035a0806aa")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "#PWR602")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 256.54 73.66) (xy 264.16 73.66)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4d606395-0e74-4ede-9cb1-3644a8374ca2")
+	)
+	(wire
+		(pts
+			(xy 264.16 73.66) (xy 269.24 73.66)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d06ecbfd-be9a-4048-a101-b745b093530d")
+	)
+	(junction
+		(at 264.16 73.66)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "f7af3b1d-3ac0-484d-b307-00da5af73eb6")
+	)
+	(label "NODE_ON2"
+		(at 269.24 73.66 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "c028e023-ad92-413a-ab61-298ee000ec58")
+	)
+	(wire
+		(pts
+			(xy 256.54 78.74) (xy 261.62 78.74)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "15ebdefb-7de3-4486-ade4-0f4d25eeaef0")
+	)
+	(wire
+		(pts
+			(xy 261.62 78.74) (xy 261.62 81.28)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "c65a2443-1b5c-4e3b-b394-9857a94be81f")
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 261.62 81.28 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "7fee3ab5-c3c6-4d46-b3d8-1b6358d9c64c")
+		(property "Reference" "#PWR603"
+			(at 261.62 74.93 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "GND"
+			(at 260.35 86.36 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 261.62 81.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 261.62 81.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 261.62 81.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "3c071a8c-eeed-4c7e-8c27-5088bc1a4505")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "#PWR603")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Connector_Generic:Conn_01x05")
+		(at 205.74 106.68 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "fd982118-873a-48e8-8771-aec847d25026")
+		(property "Reference" "J13"
+			(at 205.74 99.06 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "MB03_FP"
+			(at 205.74 114.3 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Connector_JST:JST_PH_B5B-PH-K_1x05_P2.00mm_Vertical"
+			(at 205.74 106.68 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 205.74 106.68 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 205.74 106.68 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "JST"
+			(at 205.74 106.68 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "B5B-PH-K-S(LF)(SN)"
+			(at 205.74 106.68 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C157993"
+			(at 205.74 106.68 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "d09985a1-749f-4657-95a1-0643470addea")
+		)
+		(pin "2"
+			(uuid "b0e04e8d-9733-4712-8947-24709c8124cb")
+		)
+		(pin "3"
+			(uuid "13e7eab6-6ad4-41f7-8b91-6e697a33dc4d")
+		)
+		(pin "4"
+			(uuid "373dc0cb-2b58-43a8-bfb4-799699bad0ee")
+		)
+		(pin "5"
+			(uuid "faa0cb7c-c9f3-42c6-a42c-c0d3a320ad21")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "J13")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 200.66 111.76) (xy 198.12 111.76)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6480c7ea-e3db-4419-8c4c-4e6bfa4ba2c4")
+	)
+	(label "MB3_PLED_N"
+		(at 198.12 111.76 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "f8d6d4e7-97a8-446c-81b6-ee0c12e7497e")
+	)
+	(symbol
+		(lib_id "Isolator:TLP290-4")
+		(at 248.92 106.68 0)
+		(unit 3)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "b60fa4df-a4a8-48cf-b134-f92eefc3e554")
+		(property "Reference" "U16"
+			(at 248.92 100.33 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "TLP290-4"
+			(at 248.92 113.03 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Package_SO:SOP-16_4.55x10.3mm_P1.27mm"
+			(at 248.92 106.68 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 248.92 106.68 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 248.92 106.68 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "Toshiba"
+			(at 248.92 106.68 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "TLP290-4(GB-TP,E)"
+			(at 248.92 106.68 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C39031"
+			(at 248.92 106.68 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "5"
+			(uuid "7a7c387d-86dd-4b9e-b01a-c48a81dda2bd")
+		)
+		(pin "6"
+			(uuid "34c1796a-1bb4-40b9-827d-337aaeef7d2a")
+		)
+		(pin "11"
+			(uuid "85fa6de5-6428-479c-885d-3619b0d3bdf9")
+		)
+		(pin "12"
+			(uuid "c77ca36d-ccd1-45e8-8185-fa74093897b9")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "U16")
+					(unit 3)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 233.68 104.14 90)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "85073e9a-29e2-4aa6-983d-e9393b257329")
+		(property "Reference" "R49"
+			(at 233.68 101.6 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "220"
+			(at 233.68 106.68 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 233.68 104.14 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 233.68 104.14 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 233.68 104.14 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "UNI-ROYAL"
+			(at 233.68 104.14 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "0402WGF2200TCE"
+			(at 233.68 104.14 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25091"
+			(at 233.68 104.14 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "111da465-172f-473c-8902-2edd206136ac")
+		)
+		(pin "2"
+			(uuid "057c1f72-7afe-4f5d-a9b8-4a33eba7d76a")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "R49")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 237.49 104.14) (xy 241.3 104.14)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "53d37575-3158-4774-b3e0-64867560cbd9")
+	)
+	(wire
+		(pts
+			(xy 229.87 104.14) (xy 227.33 104.14)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "42952325-2fe9-48f7-9e75-2d49801add0c")
+	)
+	(label "MB3_PLED_P"
+		(at 227.33 104.14 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "d2a6567f-b970-4630-af67-409f5c328dfc")
+	)
+	(wire
+		(pts
+			(xy 241.3 109.22) (xy 227.33 109.22)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d075d383-870c-4e8f-9986-817f78386976")
+	)
+	(label "MB3_PLED_N"
+		(at 227.33 109.22 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "f2286e6c-4cc9-44ee-bd0d-aed68ad903f8")
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 264.16 100.33 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "3ea8adc0-951b-4cb4-bf70-29199d4f65e9")
+		(property "Reference" "R41"
+			(at 265.43 99.06 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "10k"
+			(at 265.43 101.6 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 264.16 100.33 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 264.16 100.33 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 264.16 100.33 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "UNI-ROYAL"
+			(at 264.16 100.33 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "0402WGF1002TCE"
+			(at 264.16 100.33 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25744"
+			(at 264.16 100.33 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "f2e88151-5927-4dec-b91d-aa0981be3b60")
+		)
+		(pin "2"
+			(uuid "2dbfff4c-5a12-43a9-9c8a-d64c2b4b3c86")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "R41")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+3V3")
+		(at 264.16 96.52 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "af3180b0-d71c-431f-8e30-cc4755dd0a47")
+		(property "Reference" "#PWR604"
+			(at 264.16 100.33 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "+3V3"
+			(at 262.89 92.71 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 264.16 96.52 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 264.16 96.52 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 264.16 96.52 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "2052f97d-8dd5-4122-a765-a914ef4972be")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "#PWR604")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 256.54 104.14) (xy 264.16 104.14)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ecc01e08-4cd9-4619-a282-b948e8223b27")
+	)
+	(wire
+		(pts
+			(xy 264.16 104.14) (xy 269.24 104.14)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6faea288-64bf-41e4-8747-42cf8676d84e")
+	)
+	(junction
+		(at 264.16 104.14)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "0751b9a1-aeec-48d7-97ea-832ca7d5d029")
+	)
+	(label "NODE_ON3"
+		(at 269.24 104.14 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "ba7b6cbf-c515-4838-9b19-4caebf600ffc")
+	)
+	(wire
+		(pts
+			(xy 256.54 109.22) (xy 261.62 109.22)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e4f8c11e-0b83-4bb1-9650-1ed1b560dbd7")
+	)
+	(wire
+		(pts
+			(xy 261.62 109.22) (xy 261.62 111.76)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "08c90682-1597-429f-be2d-c4be5803bfc6")
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 261.62 111.76 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "8e7d036f-0a90-49db-bde0-7cca002bbf1f")
+		(property "Reference" "#PWR605"
+			(at 261.62 105.41 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "GND"
+			(at 260.35 116.84 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 261.62 111.76 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 261.62 111.76 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 261.62 111.76 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "44b0cb4e-caa8-4fc3-ab7e-77b4cbe4c4fe")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "#PWR605")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Connector_Generic:Conn_01x05")
+		(at 205.74 137.16 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "5711fc9c-4b50-4533-81ca-f26d81fc2fe3")
+		(property "Reference" "J14"
+			(at 205.74 129.54 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "MB04_FP"
+			(at 205.74 144.78 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Connector_JST:JST_PH_B5B-PH-K_1x05_P2.00mm_Vertical"
+			(at 205.74 137.16 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 205.74 137.16 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 205.74 137.16 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "JST"
+			(at 205.74 137.16 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "B5B-PH-K-S(LF)(SN)"
+			(at 205.74 137.16 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C157993"
+			(at 205.74 137.16 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "45c44b93-99e3-4748-ba74-4fb2a5ec9a6e")
+		)
+		(pin "2"
+			(uuid "bba43db9-80a7-44e8-a0f8-65ae9dc5689a")
+		)
+		(pin "3"
+			(uuid "86915e0d-923d-4ec1-bc11-708f708a9b25")
+		)
+		(pin "4"
+			(uuid "abcc2c1a-0a54-44cc-9e55-cfe88e2da19e")
+		)
+		(pin "5"
+			(uuid "573f5130-94d2-4984-8198-61a518aa27b1")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "J14")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 200.66 142.24) (xy 198.12 142.24)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "654ea422-592c-4515-bc41-db8c1c51b4c6")
+	)
+	(label "MB4_PLED_N"
+		(at 198.12 142.24 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "e78b946b-93b7-44be-82be-e130af7d4b39")
+	)
+	(symbol
+		(lib_id "Isolator:TLP290-4")
+		(at 248.92 137.16 0)
+		(unit 4)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "ce1f4eff-90fa-4458-87bf-8b43b393c50f")
+		(property "Reference" "U16"
+			(at 248.92 130.81 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "TLP290-4"
+			(at 248.92 143.51 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Package_SO:SOP-16_4.55x10.3mm_P1.27mm"
+			(at 248.92 137.16 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 248.92 137.16 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 248.92 137.16 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "Toshiba"
+			(at 248.92 137.16 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "TLP290-4(GB-TP,E)"
+			(at 248.92 137.16 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C39031"
+			(at 248.92 137.16 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "7"
+			(uuid "57e0331a-bbbf-4ce6-adfc-0ceeb7cc6c33")
+		)
+		(pin "8"
+			(uuid "bf0b89bd-f0f0-4ade-996c-8a0e15d918d3")
+		)
+		(pin "9"
+			(uuid "b6fa3577-2288-4b1a-82cb-8668d37ca3d7")
+		)
+		(pin "10"
+			(uuid "dbf6ce05-bfd0-40b0-97ed-82b1483d684c")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "U16")
+					(unit 4)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 233.68 134.62 90)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "4cd9a25c-de02-4239-93f5-5e2b1adcfd7d")
+		(property "Reference" "R50"
+			(at 233.68 132.08 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "220"
+			(at 233.68 137.16 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 233.68 134.62 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 233.68 134.62 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 233.68 134.62 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "UNI-ROYAL"
+			(at 233.68 134.62 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "0402WGF2200TCE"
+			(at 233.68 134.62 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25091"
+			(at 233.68 134.62 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "34f26935-68f7-4ff8-9f00-42344adaadfc")
+		)
+		(pin "2"
+			(uuid "02e945d9-ca42-421b-adee-7eb612dd312f")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "R50")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 237.49 134.62) (xy 241.3 134.62)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "58c2888e-b01b-4443-a44f-a2ca20306a56")
+	)
+	(wire
+		(pts
+			(xy 229.87 134.62) (xy 227.33 134.62)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "50854cc5-7e11-4d7f-aae3-6ea4e359d402")
+	)
+	(label "MB4_PLED_P"
+		(at 227.33 134.62 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "96e35cbb-6e74-4bd5-82f6-ee4a4a4cc642")
+	)
+	(wire
+		(pts
+			(xy 241.3 139.7) (xy 227.33 139.7)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e9349eff-0863-4f01-b011-86c538a03bac")
+	)
+	(label "MB4_PLED_N"
+		(at 227.33 139.7 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "64caf54f-b030-4b7a-8527-b152c187a269")
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 264.16 130.81 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "a712ceb9-7ca5-498c-b452-a9e93cd9a7e8")
+		(property "Reference" "R42"
+			(at 265.43 129.54 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "10k"
+			(at 265.43 132.08 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 264.16 130.81 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 264.16 130.81 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 264.16 130.81 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "UNI-ROYAL"
+			(at 264.16 130.81 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "0402WGF1002TCE"
+			(at 264.16 130.81 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25744"
+			(at 264.16 130.81 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "4cc82b92-1463-430c-872e-e91e8687a86c")
+		)
+		(pin "2"
+			(uuid "28f18b32-0bd5-42e4-9800-109469e19a1a")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "R42")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+3V3")
+		(at 264.16 127 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "d131082f-6b9b-47b6-825b-2872234a0243")
+		(property "Reference" "#PWR606"
+			(at 264.16 130.81 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "+3V3"
+			(at 262.89 123.19 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 264.16 127 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 264.16 127 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 264.16 127 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "2ce55f61-cde7-440e-8e3f-3fb40429df85")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "#PWR606")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 256.54 134.62) (xy 264.16 134.62)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6d8dff17-4e10-423a-917c-c0e9e3c3b81c")
+	)
+	(wire
+		(pts
+			(xy 264.16 134.62) (xy 269.24 134.62)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6268a7e0-5119-4ce2-a458-065deae1f092")
+	)
+	(junction
+		(at 264.16 134.62)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "f815f8c8-4e0e-4dd0-99a8-c8d25630f39f")
+	)
+	(label "NODE_ON4"
+		(at 269.24 134.62 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "e3f332f4-d4c4-4ea9-b673-43cfe4d72257")
+	)
+	(wire
+		(pts
+			(xy 256.54 139.7) (xy 261.62 139.7)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "33c8c36b-24aa-45ab-9669-565eb8c57a14")
+	)
+	(wire
+		(pts
+			(xy 261.62 139.7) (xy 261.62 142.24)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0978b046-eccc-4bde-9867-338d82023080")
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 261.62 142.24 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "c9cd69d0-4074-4afb-9fdb-ef29e9f16e35")
+		(property "Reference" "#PWR607"
+			(at 261.62 135.89 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "GND"
+			(at 260.35 147.32 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 261.62 142.24 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 261.62 142.24 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 261.62 142.24 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "b57ee0c9-c0db-4cca-b050-0dacb62c1255")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "#PWR607")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Connector_Generic:Conn_01x05")
+		(at 205.74 167.64 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "e97893fb-6fe6-4613-b068-3bd4f6eaf05e")
+		(property "Reference" "J15"
+			(at 205.74 160.02 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "MB05_FP"
+			(at 205.74 175.26 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Connector_JST:JST_PH_B5B-PH-K_1x05_P2.00mm_Vertical"
+			(at 205.74 167.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 205.74 167.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 205.74 167.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "JST"
+			(at 205.74 167.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "B5B-PH-K-S(LF)(SN)"
+			(at 205.74 167.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C157993"
+			(at 205.74 167.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "897e812b-225e-4154-a0cf-bb5120b19546")
+		)
+		(pin "2"
+			(uuid "ad59780f-60a7-4ccd-92fb-305337669400")
+		)
+		(pin "3"
+			(uuid "a8f14741-9144-44f0-bd2a-86e74db35a3a")
+		)
+		(pin "4"
+			(uuid "36f0f61d-e3d4-408e-a54c-1b1f39ff9c39")
+		)
+		(pin "5"
+			(uuid "91c44c76-83d4-46ee-a357-daafa6c63317")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "J15")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 200.66 172.72) (xy 198.12 172.72)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0230ff38-abb0-41b5-a812-d92ac461a7ca")
+	)
+	(label "MB5_PLED_N"
+		(at 198.12 172.72 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "bb2f2002-e998-46b0-b292-e84ef2f65f8c")
+	)
+	(symbol
+		(lib_id "Isolator:TLP290-4")
+		(at 248.92 167.64 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "0d2c8559-eaed-45fd-b19f-6d9a7da85839")
+		(property "Reference" "U17"
+			(at 248.92 161.29 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "TLP290-4"
+			(at 248.92 173.99 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Package_SO:SOP-16_4.55x10.3mm_P1.27mm"
+			(at 248.92 167.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 248.92 167.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 248.92 167.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "Toshiba"
+			(at 248.92 167.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "TLP290-4(GB-TP,E)"
+			(at 248.92 167.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C39031"
+			(at 248.92 167.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "f8090210-55a4-4860-90a3-0565c3b7f104")
+		)
+		(pin "2"
+			(uuid "3d535138-8575-445e-baa9-a969ce1de726")
+		)
+		(pin "15"
+			(uuid "58ef5b92-e77b-4656-85d7-8da97c8678aa")
+		)
+		(pin "16"
+			(uuid "af54f39b-4d3e-4fa6-8d02-198dc025cdb7")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "U17")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 233.68 165.1 90)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "b454ab50-dc95-4bf8-a509-0c7ea78ea89e")
+		(property "Reference" "R51"
+			(at 233.68 162.56 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "220"
+			(at 233.68 167.64 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 233.68 165.1 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 233.68 165.1 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 233.68 165.1 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "UNI-ROYAL"
+			(at 233.68 165.1 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "0402WGF2200TCE"
+			(at 233.68 165.1 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25091"
+			(at 233.68 165.1 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "68cd41ea-b1ee-4636-92d3-35e660385506")
+		)
+		(pin "2"
+			(uuid "061b9c05-d648-4378-9ded-f123316b506e")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "R51")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 237.49 165.1) (xy 241.3 165.1)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "74417a36-0cf4-4abd-beeb-d9a3b3eb89cf")
+	)
+	(wire
+		(pts
+			(xy 229.87 165.1) (xy 227.33 165.1)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "02f2fa36-468d-4902-b16c-0fd3bea36413")
+	)
+	(label "MB5_PLED_P"
+		(at 227.33 165.1 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "a0a1b9d6-e2d3-4a4a-bb2d-b6c934156c2d")
+	)
+	(wire
+		(pts
+			(xy 241.3 170.18) (xy 227.33 170.18)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "dd2af388-b6e5-4281-80e6-96fe000c82b8")
+	)
+	(label "MB5_PLED_N"
+		(at 227.33 170.18 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "8e242359-6e35-45ef-922c-ccc49a746483")
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 264.16 161.29 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "7fde40f0-5ab4-405f-b12e-427527649713")
+		(property "Reference" "R43"
+			(at 265.43 160.02 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "10k"
+			(at 265.43 162.56 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 264.16 161.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 264.16 161.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 264.16 161.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "UNI-ROYAL"
+			(at 264.16 161.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "0402WGF1002TCE"
+			(at 264.16 161.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25744"
+			(at 264.16 161.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "c9e81eb8-8378-4796-a2ec-91beb777f601")
+		)
+		(pin "2"
+			(uuid "3cbaf9c2-dc52-44c5-bc4b-de38b0c6f38b")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "R43")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+3V3")
+		(at 264.16 157.48 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "feeebee2-de02-4025-8779-9c76f3eed687")
+		(property "Reference" "#PWR608"
+			(at 264.16 161.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "+3V3"
+			(at 262.89 153.67 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 264.16 157.48 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 264.16 157.48 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 264.16 157.48 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "5ac5102f-4098-4d72-9a9a-ffef9c2157f4")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "#PWR608")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 256.54 165.1) (xy 264.16 165.1)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "5bed23d6-36aa-46fd-adbd-9ba6a15bf4be")
+	)
+	(wire
+		(pts
+			(xy 264.16 165.1) (xy 269.24 165.1)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "5fdb86dd-f861-4395-b9d6-69fc94b99b86")
+	)
+	(junction
+		(at 264.16 165.1)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "277a2820-1059-40e6-b034-1912b5491fc7")
+	)
+	(label "NODE_ON5"
+		(at 269.24 165.1 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "afb0f5fd-6a65-43a4-bfa1-be69173b716b")
+	)
+	(wire
+		(pts
+			(xy 256.54 170.18) (xy 261.62 170.18)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a7f2e380-50c0-49a2-b92f-b7d12baee2c9")
+	)
+	(wire
+		(pts
+			(xy 261.62 170.18) (xy 261.62 172.72)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "c8e6184e-1e10-4cfa-ad42-1ca7b40406c6")
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 261.62 172.72 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "b6f2d1d9-a1c3-4e95-8928-6558009b53cb")
+		(property "Reference" "#PWR609"
+			(at 261.62 166.37 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "GND"
+			(at 260.35 177.8 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 261.62 172.72 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 261.62 172.72 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 261.62 172.72 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "d78d0d3e-f96f-494c-8734-9278b811509a")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "#PWR609")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Connector_Generic:Conn_01x05")
+		(at 205.74 198.12 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "68e12d8e-25eb-4194-acb1-b0a8059f6d4a")
+		(property "Reference" "J16"
+			(at 205.74 190.5 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "MB06_FP"
+			(at 205.74 205.74 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Connector_JST:JST_PH_B5B-PH-K_1x05_P2.00mm_Vertical"
+			(at 205.74 198.12 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 205.74 198.12 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 205.74 198.12 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "JST"
+			(at 205.74 198.12 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "B5B-PH-K-S(LF)(SN)"
+			(at 205.74 198.12 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C157993"
+			(at 205.74 198.12 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "3c03d37b-d14b-4556-b779-3d46c55d4bfb")
+		)
+		(pin "2"
+			(uuid "e5538650-9c9d-47ad-8c1d-139aada614e3")
+		)
+		(pin "3"
+			(uuid "d92215dd-c4ed-4df4-bdf9-9f02b6a9fffc")
+		)
+		(pin "4"
+			(uuid "5130cb7f-968e-4866-9d55-964ee784ec1a")
+		)
+		(pin "5"
+			(uuid "cc24a6ad-166b-441a-a44e-0af0d9cb68b8")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "J16")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 200.66 203.2) (xy 198.12 203.2)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "cdb187f3-bb18-48b2-95c2-495f45d0c9d3")
+	)
+	(label "MB6_PLED_N"
+		(at 198.12 203.2 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "af616807-4bea-4b94-bb9b-6fe49294dde5")
+	)
+	(symbol
+		(lib_id "Isolator:TLP290-4")
+		(at 248.92 198.12 0)
+		(unit 2)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "df5744f3-65b2-4168-8755-865f7cbda618")
+		(property "Reference" "U17"
+			(at 248.92 191.77 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "TLP290-4"
+			(at 248.92 204.47 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Package_SO:SOP-16_4.55x10.3mm_P1.27mm"
+			(at 248.92 198.12 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 248.92 198.12 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 248.92 198.12 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "Toshiba"
+			(at 248.92 198.12 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "TLP290-4(GB-TP,E)"
+			(at 248.92 198.12 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C39031"
+			(at 248.92 198.12 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "3"
+			(uuid "6cd8bc60-0464-4f32-8c3e-0f65e964610f")
+		)
+		(pin "4"
+			(uuid "845dcc96-3486-4b7f-8b11-0359979fb9e8")
+		)
+		(pin "13"
+			(uuid "ac4ce696-818e-4344-a7b2-c9438e00c135")
+		)
+		(pin "14"
+			(uuid "318076c9-70f3-4a48-bf0c-36ed34c0faf3")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "U17")
+					(unit 2)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 233.68 195.58 90)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "77cb517f-f39f-4115-be7b-d86f18e89aa2")
+		(property "Reference" "R52"
+			(at 233.68 193.04 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "220"
+			(at 233.68 198.12 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 233.68 195.58 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 233.68 195.58 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 233.68 195.58 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "UNI-ROYAL"
+			(at 233.68 195.58 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "0402WGF2200TCE"
+			(at 233.68 195.58 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25091"
+			(at 233.68 195.58 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "27d7adb0-9963-4daf-bbce-6ffef3bd90f9")
+		)
+		(pin "2"
+			(uuid "d5c273c9-6ba6-4405-a45f-919378747d1c")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "R52")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 237.49 195.58) (xy 241.3 195.58)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "96eadc6f-2406-4d66-8f99-cc0c09c2af73")
+	)
+	(wire
+		(pts
+			(xy 229.87 195.58) (xy 227.33 195.58)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "21d818d0-e3be-4d3a-af61-da5bc36ed8b7")
+	)
+	(label "MB6_PLED_P"
+		(at 227.33 195.58 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "fac5fed9-d1cb-47e9-ba80-5113572028ba")
+	)
+	(wire
+		(pts
+			(xy 241.3 200.66) (xy 227.33 200.66)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7e6ae02d-05b6-434b-afde-b557338c5c2d")
+	)
+	(label "MB6_PLED_N"
+		(at 227.33 200.66 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "357e4517-6e0c-48e3-ad52-57c831ce7ee6")
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 264.16 191.77 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "2277a67e-19ae-424d-ad01-d10806e13e0c")
+		(property "Reference" "R44"
+			(at 265.43 190.5 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "10k"
+			(at 265.43 193.04 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 264.16 191.77 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 264.16 191.77 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 264.16 191.77 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "UNI-ROYAL"
+			(at 264.16 191.77 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "0402WGF1002TCE"
+			(at 264.16 191.77 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25744"
+			(at 264.16 191.77 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "9ea472fd-6204-4bb6-b339-66d589c3720b")
+		)
+		(pin "2"
+			(uuid "4737ac85-59a1-4f5b-906d-9465b6c5e281")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "R44")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+3V3")
+		(at 264.16 187.96 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "675fe684-9139-4584-b323-8a33032ca39b")
+		(property "Reference" "#PWR610"
+			(at 264.16 191.77 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "+3V3"
+			(at 262.89 184.15 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 264.16 187.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 264.16 187.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 264.16 187.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "714d401b-67d9-4c0b-a548-f358b05c5682")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "#PWR610")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 256.54 195.58) (xy 264.16 195.58)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "eacc393f-2ffe-4e1a-b30f-2bcf1d96d3e4")
+	)
+	(wire
+		(pts
+			(xy 264.16 195.58) (xy 269.24 195.58)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "8a82699e-21f0-4134-b3d0-3c8dbe22fc72")
+	)
+	(junction
+		(at 264.16 195.58)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "0bd5d140-2662-4f45-9886-f7c6007cd782")
+	)
+	(label "NODE_ON6"
+		(at 269.24 195.58 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "719a4102-f835-47e1-a9a3-d2da8901d06d")
+	)
+	(wire
+		(pts
+			(xy 256.54 200.66) (xy 261.62 200.66)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6b8b709e-eca3-4230-b450-73d55572ff15")
+	)
+	(wire
+		(pts
+			(xy 261.62 200.66) (xy 261.62 203.2)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "00a20f84-1779-490c-9bfb-332ed8416eec")
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 261.62 203.2 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "61a8b16a-0fc5-492b-904f-e37ec2d849ed")
+		(property "Reference" "#PWR611"
+			(at 261.62 196.85 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "GND"
+			(at 260.35 208.28 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 261.62 203.2 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 261.62 203.2 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 261.62 203.2 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "05dc003b-27c6-4e3e-b529-4b38eb42deb3")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "#PWR611")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Connector_Generic:Conn_01x05")
+		(at 205.74 228.6 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "92787d7b-3805-4618-ad7c-ecf67b644960")
+		(property "Reference" "J17"
+			(at 205.74 220.98 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "MB07_FP"
+			(at 205.74 236.22 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Connector_JST:JST_PH_B5B-PH-K_1x05_P2.00mm_Vertical"
+			(at 205.74 228.6 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 205.74 228.6 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 205.74 228.6 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "JST"
+			(at 205.74 228.6 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "B5B-PH-K-S(LF)(SN)"
+			(at 205.74 228.6 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C157993"
+			(at 205.74 228.6 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "532fadad-8baa-449c-be4a-8ea4a2e0df7e")
+		)
+		(pin "2"
+			(uuid "68ef249f-85a5-4894-a0e8-1c31d8dc0ae0")
+		)
+		(pin "3"
+			(uuid "86531001-bebd-4b31-81d4-fca4432758f2")
+		)
+		(pin "4"
+			(uuid "99da3ef0-a47b-44a1-976f-f85228812b4c")
+		)
+		(pin "5"
+			(uuid "b5916410-44eb-4b54-b104-4d3b78c40dad")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "J17")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 200.66 233.68) (xy 198.12 233.68)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0e90e6c4-2dda-48d1-abc3-b5150fe3688a")
+	)
+	(label "MB7_PLED_N"
+		(at 198.12 233.68 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "d1bad12e-4a44-4899-9d52-1ce7bfdabbd7")
+	)
+	(symbol
+		(lib_id "Isolator:TLP290-4")
+		(at 248.92 228.6 0)
+		(unit 3)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "a39ca19d-ebc0-4634-91ba-c4bd5690d051")
+		(property "Reference" "U17"
+			(at 248.92 222.25 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "TLP290-4"
+			(at 248.92 234.95 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Package_SO:SOP-16_4.55x10.3mm_P1.27mm"
+			(at 248.92 228.6 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 248.92 228.6 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 248.92 228.6 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "Toshiba"
+			(at 248.92 228.6 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "TLP290-4(GB-TP,E)"
+			(at 248.92 228.6 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C39031"
+			(at 248.92 228.6 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "5"
+			(uuid "6c93c2dc-b79a-4620-b70d-6f74cc07d7c8")
+		)
+		(pin "6"
+			(uuid "cebb1155-8fcc-4688-a65c-c4f42b65c964")
+		)
+		(pin "11"
+			(uuid "e9960e15-6f81-446c-aade-e0bbeb75623d")
+		)
+		(pin "12"
+			(uuid "dcbdb671-e5bf-407d-8c4d-86dd67437bfd")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "U17")
+					(unit 3)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 233.68 226.06 90)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "90a35ab6-dac9-4e69-8bac-db1f6b69bbb9")
+		(property "Reference" "R53"
+			(at 233.68 223.52 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "220"
+			(at 233.68 228.6 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 233.68 226.06 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 233.68 226.06 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 233.68 226.06 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "UNI-ROYAL"
+			(at 233.68 226.06 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "0402WGF2200TCE"
+			(at 233.68 226.06 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25091"
+			(at 233.68 226.06 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "f6b8af59-121f-404b-ae73-7187a2d00a8a")
+		)
+		(pin "2"
+			(uuid "8cf7646e-73dc-4827-8907-d03df1fdc979")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "R53")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 237.49 226.06) (xy 241.3 226.06)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0d8c5a58-85e7-4dc7-a6fa-4cf35dc2e2d8")
+	)
+	(wire
+		(pts
+			(xy 229.87 226.06) (xy 227.33 226.06)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7d6d4864-8b94-4962-bd10-00f7d4ec5595")
+	)
+	(label "MB7_PLED_P"
+		(at 227.33 226.06 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "5e8a5d60-c02e-4e1a-9a35-5e271a56dadc")
+	)
+	(wire
+		(pts
+			(xy 241.3 231.14) (xy 227.33 231.14)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2435b5da-870f-46d2-830c-ad2a5dc48a2b")
+	)
+	(label "MB7_PLED_N"
+		(at 227.33 231.14 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "c7e7717b-6711-4f6c-b2c6-9799091ad671")
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 264.16 222.25 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "dcd15b81-813d-4c6f-9bd1-e8e02676a57b")
+		(property "Reference" "R45"
+			(at 265.43 220.98 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "10k"
+			(at 265.43 223.52 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 264.16 222.25 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 264.16 222.25 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 264.16 222.25 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "UNI-ROYAL"
+			(at 264.16 222.25 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "0402WGF1002TCE"
+			(at 264.16 222.25 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25744"
+			(at 264.16 222.25 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "909edd93-ddfe-44b2-bea2-e29c3d4365d8")
+		)
+		(pin "2"
+			(uuid "f75ec5d8-1a34-45d2-af1c-8fa38540f2df")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "R45")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+3V3")
+		(at 264.16 218.44 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "32fa93af-ac09-468d-960c-719dc070d47b")
+		(property "Reference" "#PWR612"
+			(at 264.16 222.25 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "+3V3"
+			(at 262.89 214.63 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 264.16 218.44 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 264.16 218.44 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 264.16 218.44 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "fea7284a-7562-4663-86ae-b6e8c23aaa0f")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "#PWR612")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 256.54 226.06) (xy 264.16 226.06)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "bd211449-8755-4b03-97b8-c49f22afb0ff")
+	)
+	(wire
+		(pts
+			(xy 264.16 226.06) (xy 269.24 226.06)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e1956632-524a-4e56-a202-4a2cf9439704")
+	)
+	(junction
+		(at 264.16 226.06)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "1cf12bcd-7e72-4aed-8568-2a38f2621da0")
+	)
+	(label "NODE_ON7"
+		(at 269.24 226.06 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "f1853a41-7feb-4041-b7f9-f4c5058d2f98")
+	)
+	(wire
+		(pts
+			(xy 256.54 231.14) (xy 261.62 231.14)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "c6df47da-9dbf-4f5d-a8b8-2b28cea897d6")
+	)
+	(wire
+		(pts
+			(xy 261.62 231.14) (xy 261.62 233.68)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "de8fbbf2-64ae-45db-896f-8299197c7d9e")
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 261.62 233.68 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "71438332-c1c6-448e-ab7c-7d239097d091")
+		(property "Reference" "#PWR613"
+			(at 261.62 227.33 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "GND"
+			(at 260.35 238.76 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 261.62 233.68 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 261.62 233.68 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 261.62 233.68 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "257f8e7a-8347-4c31-9c0b-e2992c8d329a")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "#PWR613")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Connector_Generic:Conn_01x05")
+		(at 205.74 259.08 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "83cff586-7962-44e3-9641-e310de7565f2")
+		(property "Reference" "J18"
+			(at 205.74 251.46 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "MB08_FP"
+			(at 205.74 266.7 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Connector_JST:JST_PH_B5B-PH-K_1x05_P2.00mm_Vertical"
+			(at 205.74 259.08 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 205.74 259.08 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 205.74 259.08 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "JST"
+			(at 205.74 259.08 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "B5B-PH-K-S(LF)(SN)"
+			(at 205.74 259.08 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C157993"
+			(at 205.74 259.08 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "7484cb60-eee2-4894-a730-f9b26ba12aad")
+		)
+		(pin "2"
+			(uuid "c54ce74e-1609-44e9-bc8b-d38c95795ea3")
+		)
+		(pin "3"
+			(uuid "42f3a032-b4a1-4f2d-a773-fa8645ae8111")
+		)
+		(pin "4"
+			(uuid "0312981d-f619-4a23-88d0-4f5c6892a556")
+		)
+		(pin "5"
+			(uuid "188fa613-a686-4c2a-9a8f-4acaa4f9ffb7")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "J18")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 200.66 264.16) (xy 198.12 264.16)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "044b3d2a-f963-4cf4-83f2-f4cf377f70a7")
+	)
+	(label "MB8_PLED_N"
+		(at 198.12 264.16 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "ecb8804a-8d8c-488e-b888-cecb777afee5")
+	)
+	(symbol
+		(lib_id "Isolator:TLP290-4")
+		(at 248.92 259.08 0)
+		(unit 4)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "440d102c-ec17-4f64-aa94-b1da864d6cb5")
+		(property "Reference" "U17"
+			(at 248.92 252.73 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "TLP290-4"
+			(at 248.92 265.43 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Package_SO:SOP-16_4.55x10.3mm_P1.27mm"
+			(at 248.92 259.08 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 248.92 259.08 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 248.92 259.08 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "Toshiba"
+			(at 248.92 259.08 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "TLP290-4(GB-TP,E)"
+			(at 248.92 259.08 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C39031"
+			(at 248.92 259.08 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "7"
+			(uuid "21d7522b-d367-486f-9a23-f0c03955a1ad")
+		)
+		(pin "8"
+			(uuid "915bc17e-8ab1-4072-867d-23b30b164b50")
+		)
+		(pin "9"
+			(uuid "0a30e683-7ce6-4187-a73c-3dc20a49bc58")
+		)
+		(pin "10"
+			(uuid "61cd8926-f692-4a4a-b9aa-c1d2736e073d")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "U17")
+					(unit 4)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 233.68 256.54 90)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "a5ee5145-ad87-4fbc-8130-22132305a52c")
+		(property "Reference" "R54"
+			(at 233.68 254 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "220"
+			(at 233.68 259.08 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 233.68 256.54 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 233.68 256.54 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 233.68 256.54 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "UNI-ROYAL"
+			(at 233.68 256.54 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "0402WGF2200TCE"
+			(at 233.68 256.54 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25091"
+			(at 233.68 256.54 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "48bc486b-c317-4fbe-806c-0a4853c49eab")
+		)
+		(pin "2"
+			(uuid "c36463b1-156c-4bbf-8bb4-ccda24b9ab68")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "R54")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 237.49 256.54) (xy 241.3 256.54)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "fff12985-1c23-4778-a14a-bc635644fbb0")
+	)
+	(wire
+		(pts
+			(xy 229.87 256.54) (xy 227.33 256.54)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "76d31b32-e0b7-429e-82f0-a91fd729a0f3")
+	)
+	(label "MB8_PLED_P"
+		(at 227.33 256.54 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "d4c6dd5c-bde7-4d2e-8afc-4b7504cddf07")
+	)
+	(wire
+		(pts
+			(xy 241.3 261.62) (xy 227.33 261.62)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b53e67d3-0809-4aa6-a1b3-0bf606b07d82")
+	)
+	(label "MB8_PLED_N"
+		(at 227.33 261.62 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "979f860a-0930-41b2-bc6d-4a3a86d4e5a3")
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 264.16 252.73 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "7f5a5342-8b40-4649-a2bb-e800fadc0279")
+		(property "Reference" "R46"
+			(at 265.43 251.46 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "10k"
+			(at 265.43 254 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 264.16 252.73 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 264.16 252.73 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 264.16 252.73 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "UNI-ROYAL"
+			(at 264.16 252.73 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "0402WGF1002TCE"
+			(at 264.16 252.73 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25744"
+			(at 264.16 252.73 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "cb08fe04-7cb7-47fb-bd4a-760d0286701e")
+		)
+		(pin "2"
+			(uuid "297eaf60-51fb-42ec-9b59-7ec90a0cd3b8")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "R46")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+3V3")
+		(at 264.16 248.92 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "3f036cd5-8c18-40a2-8000-fcc81306c2b2")
+		(property "Reference" "#PWR614"
+			(at 264.16 252.73 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "+3V3"
+			(at 262.89 245.11 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 264.16 248.92 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 264.16 248.92 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 264.16 248.92 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "afc0a8d7-f0ab-43f3-a79d-5fcd2068338f")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "#PWR614")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 256.54 256.54) (xy 264.16 256.54)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3a16f18b-ed47-4640-9547-9af19a723301")
+	)
+	(wire
+		(pts
+			(xy 264.16 256.54) (xy 269.24 256.54)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "803e88e8-43f0-4003-b065-bddfd8e026e0")
+	)
+	(junction
+		(at 264.16 256.54)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "ac5c7e83-437c-4c8b-9f65-423155d6fb94")
+	)
+	(label "NODE_ON8"
+		(at 269.24 256.54 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "523fe19f-ffc1-44ce-bf8c-436f0acccf23")
+	)
+	(wire
+		(pts
+			(xy 256.54 261.62) (xy 261.62 261.62)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "feb2cf63-9ab4-4114-81cb-c2d70e1d9b24")
+	)
+	(wire
+		(pts
+			(xy 261.62 261.62) (xy 261.62 264.16)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "34e1322f-478e-4d8b-90a4-ab23bbec75cc")
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 261.62 264.16 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "e2f64bcc-bd78-4b00-8bc1-b1607d7de9bc")
+		(property "Reference" "#PWR615"
+			(at 261.62 257.81 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "GND"
+			(at 260.35 269.24 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 261.62 264.16 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 261.62 264.16 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 261.62 264.16 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "0c582d20-01af-47f2-8e5c-165b19f28da5")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "#PWR615")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Interface_Expansion:MCP23017x-x-SO")
+		(at 60.96 236.22 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "c650db5b-dc60-4202-9643-e110cc5e59ab")
+		(property "Reference" "U15"
+			(at 63.5 208.28 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "MCP23017-E/SO"
+			(at 63.5 265.43 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Package_SO:SOIC-28W_7.5x17.9mm_P1.27mm"
+			(at 60.96 236.22 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 60.96 236.22 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 60.96 236.22 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "Microchip"
+			(at 60.96 236.22 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "MCP23017-E/SO"
+			(at 60.96 236.22 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C47023"
+			(at 60.96 236.22 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "9946fb99-17c1-465b-bf11-d74859660b02")
+		)
+		(pin "2"
+			(uuid "fac24ba6-45d9-4652-a235-272473eb5d57")
+		)
+		(pin "3"
+			(uuid "af2c7588-9564-4f40-b132-4303d5bfe80e")
+		)
+		(pin "4"
+			(uuid "efd8b37e-dea3-4c5d-b504-92d5d862e18f")
+		)
+		(pin "5"
+			(uuid "66ca9bf0-3053-4e29-8965-bd69a527b7d7")
+		)
+		(pin "6"
+			(uuid "161797bc-df6b-4328-81b2-29ab8d7d19f8")
+		)
+		(pin "7"
+			(uuid "eb2283f1-301c-4d67-aa28-8c19a43f8e39")
+		)
+		(pin "8"
+			(uuid "d5337665-03df-4845-84f8-b6ae42c12f99")
+		)
+		(pin "9"
+			(uuid "3fcccf5c-75f6-4808-9662-e20535e51d4d")
+		)
+		(pin "10"
+			(uuid "a6a9f5a7-00b3-4bfc-914f-f2943b9659e8")
+		)
+		(pin "11"
+			(uuid "6d10de63-02d5-47b7-a669-8c5d5c2ce4ba")
+		)
+		(pin "12"
+			(uuid "3add6832-9ca2-4a56-ae0b-e7ef89535271")
+		)
+		(pin "13"
+			(uuid "3157c76f-3f17-4462-8514-1410205d8d1d")
+		)
+		(pin "14"
+			(uuid "57ba0270-c2b4-43bd-bffe-ad1e0a0207e9")
+		)
+		(pin "15"
+			(uuid "61baf5b2-8b60-4b12-8e7f-ab13505e42ef")
+		)
+		(pin "16"
+			(uuid "8e1346c7-f094-4f26-aace-91eb94060df7")
+		)
+		(pin "17"
+			(uuid "a9620831-ebf0-4606-b48a-19ac442c1cfd")
+		)
+		(pin "18"
+			(uuid "74fa8930-c23c-4290-92de-b3e71e7b5c1b")
+		)
+		(pin "19"
+			(uuid "cf04e3e9-f08f-4b30-a212-aa8d2530b675")
+		)
+		(pin "20"
+			(uuid "c601a7be-8874-49ed-9589-8f9944ea5d80")
+		)
+		(pin "21"
+			(uuid "94ba5b1a-4758-43da-8aeb-d26ba7ebe300")
+		)
+		(pin "22"
+			(uuid "a1c665d5-bd11-4874-819b-3b928248ba67")
+		)
+		(pin "23"
+			(uuid "e23fd360-0899-46ae-ae43-ff627d67b9f2")
+		)
+		(pin "24"
+			(uuid "dfc89f90-d93d-4f00-8116-b8296f2bd035")
+		)
+		(pin "25"
+			(uuid "29f1df12-ed49-4adf-80f8-93c2ec49ce53")
+		)
+		(pin "26"
+			(uuid "697b6def-52b7-4060-b46d-2541c061762d")
+		)
+		(pin "27"
+			(uuid "60321ff4-58da-48a4-800b-91cf0e8b7387")
+		)
+		(pin "28"
+			(uuid "30fd084c-259f-4eda-908f-960e2353d1eb")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "U15")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 48.26 215.9) (xy 45.72 215.9)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "fb5b1610-65dd-4a73-ab65-3c952aab5ada")
+	)
+	(global_label "I2C_INT_SCL"
+		(shape bidirectional)
+		(at 45.72 215.9 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "481c7496-ccfb-4dba-b647-d7e3b432a1cb")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 45.72 215.9 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 48.26 218.44) (xy 45.72 218.44)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "fc1a25d9-c49e-406a-9d4c-668bba50f1bd")
+	)
+	(global_label "I2C_INT_SDA"
+		(shape bidirectional)
+		(at 45.72 218.44 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "460bc216-3761-4110-9026-3474f8d1605f")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 45.72 218.44 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 48.26 231.14) (xy 45.72 231.14)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "fb423995-7ce0-405c-a472-24b103162354")
+	)
+	(global_label "EXP_INT"
+		(shape bidirectional)
+		(at 45.72 231.14 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "c7020117-b412-47eb-b7b7-e694f470220f")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 45.72 231.14 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 48.26 238.76) (xy 45.72 238.76)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ff13a034-b189-4f5a-9e09-d09fa0d58dfd")
+	)
+	(global_label "EXP_nRESET_INT"
+		(shape bidirectional)
+		(at 45.72 238.76 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "d0b06ee9-24ae-4521-baa0-bc2f8b143fd3")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 45.72 238.76 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(no_connect
+		(at 48.26 233.68)
+		(uuid "a09d52db-226b-4ffe-9e23-f5e762c24057")
+	)
+	(no_connect
+		(at 50.8 220.98)
+		(uuid "e8b62ee4-5883-477c-8547-b6279415cf64")
+	)
+	(no_connect
+		(at 50.8 223.52)
+		(uuid "4ec2a006-9618-4e80-9b16-0fd30a73e627")
+	)
+	(symbol
+		(lib_id "power:+3V3")
+		(at 60.96 208.28 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "161a7535-6ca2-4d47-a66e-d29a6610e68e")
+		(property "Reference" "#PWR616"
+			(at 60.96 212.09 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "+3V3"
+			(at 59.69 204.47 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 60.96 208.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 60.96 208.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 60.96 208.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "9bd3d6ab-4967-4257-9345-356e7908b302")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "#PWR616")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 60.96 210.82) (xy 60.96 208.28)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b15852ae-4f5e-47fd-b349-404981c6a8e4")
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 60.96 264.16 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "51da55c8-9ae4-4a38-9206-731a3b39c2dd")
+		(property "Reference" "#PWR617"
+			(at 60.96 257.81 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "GND"
+			(at 59.69 269.24 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 60.96 264.16 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 60.96 264.16 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 60.96 264.16 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "3b6061bf-84bb-455c-b972-beb47866f289")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "#PWR617")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 60.96 261.62) (xy 60.96 264.16)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a391045b-b7bd-4169-ae38-6cef15bea29b")
+	)
+	(symbol
+		(lib_id "power:+3V3")
+		(at 43.18 248.92 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "71d1d7a7-a845-4c5c-a4f6-a2dd49d3f62c")
+		(property "Reference" "#PWR618"
+			(at 43.18 252.73 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "+3V3"
+			(at 41.91 245.11 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 43.18 248.92 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 43.18 248.92 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 43.18 248.92 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "cb784284-5639-43a9-99a6-394909cfc140")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "#PWR618")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 48.26 251.46) (xy 43.18 251.46)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "eb5cd072-2f61-4d2d-9a7a-4f18ef534e8d")
+	)
+	(wire
+		(pts
+			(xy 43.18 251.46) (xy 43.18 248.92)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4d604d31-a693-42dd-b214-31de8dbfa0a0")
+	)
+	(wire
+		(pts
+			(xy 48.26 254) (xy 45.72 254)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ae275e46-87bf-4c9b-9105-206e6cd683ae")
+	)
+	(wire
+		(pts
+			(xy 45.72 254) (xy 45.72 256.54)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "18a56a3d-3262-4c18-b723-645279272e01")
+	)
+	(wire
+		(pts
+			(xy 45.72 256.54) (xy 48.26 256.54)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3c2dac73-d03e-4483-b7f4-27ea3258e9aa")
+	)
+	(junction
+		(at 45.72 254)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "22151e7b-9eb2-44bc-91e2-5d7907564005")
+	)
+	(wire
+		(pts
+			(xy 45.72 256.54) (xy 45.72 261.62)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "1bcd7ec7-e26f-452f-891b-943f16268125")
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 45.72 261.62 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "fa96b6c0-ca55-4a5c-8d04-440e6364712c")
+		(property "Reference" "#PWR619"
+			(at 45.72 255.27 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "GND"
+			(at 44.45 266.7 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 45.72 261.62 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 45.72 261.62 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 45.72 261.62 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "bcc39e70-ae87-424c-b743-6f9c86b9e5b2")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "#PWR619")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 73.66 215.9) (xy 76.2 215.9)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7482ece7-662c-4eb9-bd84-42f8c6555dce")
+	)
+	(label "NODE_ON1"
+		(at 76.2 215.9 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "3d0c656c-a2fd-4444-9e89-77c43a61d048")
+	)
+	(wire
+		(pts
+			(xy 73.66 218.44) (xy 76.2 218.44)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "c0bd6066-2f56-4f6b-826b-a94786ff72f3")
+	)
+	(label "NODE_ON2"
+		(at 76.2 218.44 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "5809119e-e39f-4abe-b48b-34256dd3f4cb")
+	)
+	(wire
+		(pts
+			(xy 73.66 220.98) (xy 76.2 220.98)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "75548a19-b8a8-422d-a277-c8621263fbe8")
+	)
+	(label "NODE_ON3"
+		(at 76.2 220.98 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "50cda5d2-e105-42c2-8811-0e2792d46150")
+	)
+	(wire
+		(pts
+			(xy 73.66 223.52) (xy 76.2 223.52)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e38bfefe-5ba2-4aca-ba62-55e116296004")
+	)
+	(label "NODE_ON4"
+		(at 76.2 223.52 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "b9804920-a536-4a09-aabf-5c344fe0f508")
+	)
+	(wire
+		(pts
+			(xy 73.66 226.06) (xy 76.2 226.06)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ba76e6c3-b1c5-47db-86d4-31f39b080c55")
+	)
+	(label "NODE_ON5"
+		(at 76.2 226.06 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "8ab04918-7a6e-46d6-b082-25280b1ae0f7")
+	)
+	(wire
+		(pts
+			(xy 73.66 228.6) (xy 76.2 228.6)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "bc4d7ed4-8869-4ed7-9ba5-b764bf666796")
+	)
+	(label "NODE_ON6"
+		(at 76.2 228.6 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "6cccd915-c332-4ab1-afcb-70803bb9108c")
+	)
+	(wire
+		(pts
+			(xy 73.66 231.14) (xy 76.2 231.14)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "62c72396-1c8b-4076-a7c3-3de1b19c5878")
+	)
+	(label "NODE_ON7"
+		(at 76.2 231.14 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "9ddfb6f0-fb8c-4854-8fbd-d9d84f124aec")
+	)
+	(wire
+		(pts
+			(xy 73.66 233.68) (xy 76.2 233.68)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6a28d6a6-58fa-46fa-9463-b2dd62905104")
+	)
+	(label "NODE_ON8"
+		(at 76.2 233.68 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "8693b7f4-01f7-4114-bc20-d2f9752da2e7")
+	)
+	(wire
+		(pts
+			(xy 73.66 238.76) (xy 76.2 238.76)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7e347a79-dca1-4e65-b920-c437aea9135f")
+	)
+	(global_label "DRY_IN1"
+		(shape bidirectional)
+		(at 76.2 238.76 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "36ffbe47-f404-45ed-875f-fcb0e590eb4a")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 76.2 238.76 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 73.66 241.3) (xy 76.2 241.3)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b2ee620e-11c4-47fa-b8fc-3902ae37863d")
+	)
+	(global_label "DRY_IN2"
+		(shape bidirectional)
+		(at 76.2 241.3 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "303e241f-a001-487d-b9c1-10253661d33b")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 76.2 241.3 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 73.66 243.84) (xy 76.2 243.84)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d3e7897a-2951-40c1-b00f-12e382c7b1c0")
+	)
+	(global_label "DRY_IN3"
+		(shape bidirectional)
+		(at 76.2 243.84 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "2a2f49ca-0466-47d2-a60b-e0f2d53b61a9")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 76.2 243.84 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 73.66 246.38) (xy 76.2 246.38)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "32139f50-760c-4c71-a698-353812698f96")
+	)
+	(global_label "DRY_IN4"
+		(shape bidirectional)
+		(at 76.2 246.38 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "a7d9e40b-6419-4471-bc1e-9b74d2a33581")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 76.2 246.38 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(no_connect
+		(at 73.66 248.92)
+		(uuid "4142f668-49e9-47e5-a94b-62911c09027a")
+	)
+	(no_connect
+		(at 73.66 251.46)
+		(uuid "1f296a6a-e42a-440e-aff0-67cc3e8669c6")
+	)
+	(no_connect
+		(at 73.66 254)
+		(uuid "c8eef8a4-f135-4a94-bd86-8f4d26af2757")
+	)
+	(no_connect
+		(at 73.66 256.54)
+		(uuid "aa0818f1-c951-41b7-a64e-d2c0770b11f0")
+	)
+	(symbol
+		(lib_id "Device:C")
+		(at 25.4 210.82 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "417bcf39-bd90-4a04-b7c3-dcf264bac9eb")
+		(property "Reference" "C46"
+			(at 26.67 209.55 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "100n"
+			(at 26.67 212.09 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
+			(at 25.4 210.82 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 25.4 210.82 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 25.4 210.82 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "Samsung Electro-Mechanics"
+			(at 25.4 210.82 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "CL05B104KO5NNNC"
+			(at 25.4 210.82 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C1525"
+			(at 25.4 210.82 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "0697a73a-c0e0-4e2b-8a38-301aed552f52")
+		)
+		(pin "2"
+			(uuid "a4962dde-4252-4e9c-bd9c-cbc1af099ea2")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "C46")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+3V3")
+		(at 25.4 207.01 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "b64ebc27-50f0-430b-8a6f-21a3e4e1b0b1")
+		(property "Reference" "#PWR620"
+			(at 25.4 210.82 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "+3V3"
+			(at 24.13 203.2 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 25.4 207.01 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 25.4 207.01 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 25.4 207.01 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "97404e43-b8c0-4881-9cf6-7203c82a9d1b")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "#PWR620")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 25.4 214.63 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "cc0a4d4f-a95f-4a88-ae04-9f2211b5793d")
+		(property "Reference" "#PWR621"
+			(at 25.4 208.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "GND"
+			(at 24.13 219.71 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 25.4 214.63 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 25.4 214.63 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 25.4 214.63 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "4c3d5d10-bf61-4480-8617-ef6810a17548")
+		)
+		(instances
+			(project "granite_controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/523e2405-760a-59f0-a9bd-26a6a2afbbb8"
+					(reference "#PWR621")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(text "Channels 1-8: 2x photoMOS contact closure (RESET, PWR BTN) per motherboard front-panel header. Floating outputs.\nTLP176AM: 3mA max trigger, ~6mA drive. U14 MCP23017 @0x20 sources the LED current: GPA0-7 = PWR_DRV1-8, GPB0-7 = RST_DRV1-8 (GPA7/GPB7 are output-only).\nR32 holds U14 and U15 in reset unless the MCU drives EXP_nRESET_INT high: MCU reset/hang -> all GPIO Hi-Z -> all buttons released.\nU14/U15 are on the internal I2C bus; EXP_INT is shared with add-on modules on the expansion header (INT open-drain, mirrored)."
+		(exclude_from_sim no)
+		(at 228.6 25.4 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "d42135b5-6198-4a0f-b9a2-2f232278c836")
+	)
+	(text "Node connector J11-J18 (JST PH 5p): 1 PWR_SW, 2 RST_SW, 3 node GND (common return of both buttons), 4 PLED+, 5 PLED-.\nPLED sense: TLP290-4 (AC input, either polarity), 220R in series with the node's own LED resistor, 10k pull-up -> NODE_ONn low = node power LED lit.\nU15 MCP23017 @0x21: GPA0-7 = NODE_ON1-8, GPB0-3 = DRY_IN1-4 (expansion sheet), GPB4-7 spare."
+		(exclude_from_sim no)
+		(at 20.32 285.75 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "50a2943c-fd6e-4d5f-9290-f26508e1866c")
+	)
 )
