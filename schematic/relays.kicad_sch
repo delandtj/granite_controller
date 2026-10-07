@@ -7,7 +7,7 @@
 	(title_block
 		(title "Granite Controller - Relay channels")
 		(date "2026-10-07")
-		(rev "B")
+		(rev "C")
 	)
 	(lib_symbols
 		(symbol "power:GND"
@@ -2192,7 +2192,7 @@
 		)
 		(uuid "ea20ad06-ae68-48c1-9bd1-17e3a1154b88")
 	)
-	(global_label "I2C1_SCL"
+	(global_label "I2C_INT_SCL"
 		(shape bidirectional)
 		(at 45.72 111.76 180)
 		(fields_autoplaced yes)
@@ -2224,7 +2224,7 @@
 		)
 		(uuid "efa44f8f-329f-4a5e-9be4-6905a84909f0")
 	)
-	(global_label "I2C1_SDA"
+	(global_label "I2C_INT_SDA"
 		(shape bidirectional)
 		(at 45.72 114.3 180)
 		(fields_autoplaced yes)
@@ -2256,7 +2256,7 @@
 		)
 		(uuid "e4528867-fefb-4991-9c2b-583bf2470341")
 	)
-	(global_label "EXP_nRESET"
+	(global_label "EXP_nRESET_INT"
 		(shape bidirectional)
 		(at 45.72 134.62 180)
 		(fields_autoplaced yes)
@@ -3344,7 +3344,7 @@
 		)
 		(uuid "d220d713-5bc7-4f72-b770-dbb028a71e14")
 	)
-	(global_label "EXP_nRESET"
+	(global_label "EXP_nRESET_INT"
 		(shape bidirectional)
 		(at 25.4 158.75 90)
 		(fields_autoplaced yes)
@@ -13010,7 +13010,7 @@
 		)
 		(uuid "3106a357-d5fe-4bc6-a506-6c21e72087cf")
 	)
-	(text "Channels 1-8: 2x photoMOS contact closure (RESET, PWR BTN) per motherboard front-panel header. Floating outputs.\nTLP176AM: 3mA max trigger, ~6mA drive. U14 MCP23017 @0x20 sources the LED current: GPA0-7 = PWR_DRV1-8, GPB0-7 = RST_DRV1-8 (GPA7/GPB7 are output-only).\nR32 holds U14 in reset unless the MCU drives EXP_nRESET high: MCU reset/hang -> all GPIO Hi-Z -> all buttons released.\nEXP_nRESET / EXP_INT are shared with extra MCP23017 modules on the expansion header (INT open-drain, mirrored)."
+	(text "Channels 1-8: 2x photoMOS contact closure (RESET, PWR BTN) per motherboard front-panel header. Floating outputs.\nTLP176AM: 3mA max trigger, ~6mA drive. U14 MCP23017 @0x20 sources the LED current: GPA0-7 = PWR_DRV1-8, GPB0-7 = RST_DRV1-8 (GPA7/GPB7 are output-only).\nR32 holds U14 in reset unless the MCU drives EXP_nRESET_INT high: MCU reset/hang -> all GPIO Hi-Z -> all buttons released.\nU14 is on the internal I2C bus with its own reset line; EXP_INT is shared with add-on modules on the expansion header (INT open-drain, mirrored)."
 		(exclude_from_sim no)
 		(at 228.6 50.8 0)
 		(effects

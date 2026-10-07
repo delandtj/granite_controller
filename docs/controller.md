@@ -1,7 +1,8 @@
 # Granite controller - component spec
 
-Status: draft, 2026-10-07. Supersedes the STM32H563 + LAN8742A design
-on this branch; the schematic has not been reworked yet. Open items
+Status: draft, 2026-10-07. Supersedes the STM32H563 + LAN8742A design.
+Captured in the schematic as rev C (sheets Power, Ethernet, MCU, Relay
+channels, Expansion header). Open items
 are listed at the end; everything else is a requirement.
 
 ## Purpose
@@ -62,16 +63,18 @@ later. Choose materials for the harsher case now.
 - The Ag9905MT potting must be confirmed epoxy (requirement 2) or the
   module soak-tested.
 - C1/C2 (220 uF aluminium-polymer, rubber seal) are replaced with
-  MLCC or molded tantalum-polymer of equivalent capacitance and ripple
-  rating.
+  KEMET T520D227M006ATE015 (220 uF / 6.3 V molded tantalum-polymer,
+  D case): 5 V is 79 % of rating, within KEMET's polymer derating.
+  Check ripple rating against the Ag9905MT output requirement.
 - USB-C VBUS can power the board for bench service (existing D2/D3
   OR-ing kept).
 
 ### MCU
 
-- Espressif ESP32-C6-WROOM-1U-N8 (RISC-V, 8 MB flash, U.FL antenna
-  connector left unused). Fallback ESP32-C6-WROOM-1-N8 (PCB antenna;
-  then keep its antenna keep-out free of copper).
+- Espressif ESP32-C6-MINI-1-N4 (RISC-V, 4 MB flash, PCB antenna).
+  Chosen over the WROOM-1U because KiCad ships its symbol and
+  footprint. The radio is unused, but keep the antenna keep-out free
+  of copper anyway (module datasheet), at a board edge.
 - Radio off in firmware (useless submerged; the fluid detunes the
   antenna anyway).
 - EN: 10k pull-up + 1 uF. BOOT (GPIO9): weak pull-up in the chip; test
@@ -81,8 +84,6 @@ later. Choose materials for the harsher case now.
 - Firmware updates over the network (OTA) in normal operation; USB
   Serial/JTAG over USB-C for bench flashing, console and debug. The
   Tag-Connect SWD footprint (J3) goes away.
-- KiCad has no symbol/footprint for the WROOM-1/-1U: create both from
-  the Espressif datasheet (28 pads + ground pad).
 
 Pin map:
 
@@ -95,11 +96,11 @@ Pin map:
 | Internal I2C (HP I2C) SDA / SCL | 2 / 3 |
 | External I2C (software I2C, LP I2C pins) SDA / SCL | 6 / 7 |
 | 1-wire (UART TX open-drain + RX on the same node, 4.7k pull-up) | 16 / 17 |
-| Relay expander reset (EXP_nRESET_INT) | 10 |
-| Header expander reset (EXP_nRESET) | 11 |
+| Relay expander reset (EXP_nRESET_INT) | 14 |
+| Header expander reset (EXP_nRESET, 10k pull-down) | 4 |
 | Shared expander interrupt (EXP_INT) | 0 |
 | Status LED | 1 |
-| Spare to J8 | 4, 5 (lightly loaded, strapping-sensitive), 8, 15 (strapping pins: only signals that are high-Z at boot) |
+| Spare to J8 | 5 (lightly loaded), 8 (strapping: 10k pull-up), 15 (strapping: only signals that are high-Z at boot) |
 
 ### Ethernet
 
@@ -113,7 +114,8 @@ Pin map:
 - Supplies: see the AVDD line below; 100 nF on VDD.
 - Magjack: ARJP11A keeps its role (1CT:1CT magnetics, PoE rectifier,
   Bob Smith termination on pin 7). Its LEDs are driven by the W5500
-  (active-low sink): LINK on one, ACT on the other.
+  (active-low sink): LINK on one, ACT on the other. LED anodes are
+  pins 11/13 and cathodes 12/14, as in the colleague's rev A wiring.
 - PHY-side network, copied from WIZnet's W5500 Ethernet Shield
   reference schematic (github.com/Wiznet/W5500_Ethernet_Shield,
   Schematic/W5500_Ethernet_shield.sch):
@@ -153,12 +155,17 @@ expander does not use the header's reset line.
 ### Expansion header J8
 
 Smaller than rev B's 2x20 now that the MCU has few spare pins. A
-2x8 2.54 mm header (DNP), every signal through 330R + TPD4E05U06 ESD
+2x6 2.54 mm header (DNP), every signal through 330R + TPD4E05U06 ESD
 as before:
 
-- External I2C SDA/SCL, EXP_nRESET, EXP_INT
-- Spare GPIO4, 5, 8, 15
-- 3V3 and 5V (each with PTC fuse + TVS), GND x4
+| Pin | Signal | Pin | Signal |
+|---|---|---|---|
+| 1 | 3V3 (PTC + TVS) | 2 | 5V (PTC + TVS) |
+| 3 | GND | 4 | GND |
+| 5 | I2C_EXT SCL | 6 | I2C_EXT SDA |
+| 7 | EXP_nRESET | 8 | EXP_INT |
+| 9 | GPIO5 | 10 | GPIO8 |
+| 11 | GPIO15 | 12 | GND |
 
 ### Other on-board functions (unchanged)
 
@@ -184,13 +191,15 @@ the 28-pin GPIO expansion header (replaced by the 2x8 header above).
 
 ## Open items and verification
 
-1. ARJP11A LED polarity and pin mapping (pins 11-14) against its
-   datasheet drawing.
-2. Ag9905MT potting material; soak test plan for the magjack (LED
+1. Ag9905MT potting material; soak test plan for the magjack (LED
    lenses, internal potting) and the JST housings.
-3. Replacement part for C1/C2 (bulk on the PoE 5 V output).
-4. LP I2C from the HP core: if ESP-IDF supports it, use it instead of
+2. C1/C2 ripple current check against the Ag9905MT datasheet.
+3. LP I2C from the HP core: if ESP-IDF supports it, use it instead of
    software I2C for the external bus (same pins 6/7).
-5. ESP32-C6-WROOM-1U-N8 stock and price (Digi-Key lists ~$5.60).
-6. Board outline, connector placement, mounting holes, assembly side,
+4. ESP32-C6-MINI-1-N4 stock and price.
+5. Board outline, connector placement, mounting holes, assembly side,
    surface finish (carried over from the layout discussion).
+
+Also to review: the rev C sheets are generated (one label per pin,
+parts in rows). Electrically checked (ERC clean, netlist traced);
+placement and readability can be tidied by hand in KiCad.

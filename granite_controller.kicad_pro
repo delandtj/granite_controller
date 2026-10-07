@@ -513,19 +513,6 @@
         "wire_width": 6
       },
       {
-        "name": "ETH_CTL",
-        "pcb_color": "rgba(0, 0, 0, 0.000)",
-        "priority": 1,
-        "schematic_color": "rgb(255, 143, 245)",
-        "tuning_profile": "",
-        "track_width": 0.2,
-        "clearance": 0.15,
-        "via_diameter": 0.6,
-        "via_drill": 0.3,
-        "microvia_diameter": 0.3,
-        "microvia_drill": 0.1
-      },
-      {
         "name": "ETH_Lines",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 3,
@@ -660,52 +647,11 @@
         "microvia_drill": 0.1
       },
       {
-        "name": "RMII",
-        "pcb_color": "rgba(0, 0, 0, 0.000)",
-        "priority": 4,
-        "schematic_color": "rgb(107, 0, 255)",
-        "tuning_profile": "",
-        "track_width": 0.2,
-        "clearance": 0.15,
-        "via_diameter": 0.6,
-        "via_drill": 0.3,
-        "microvia_diameter": 0.3,
-        "microvia_drill": 0.1
-      },
-      {
-        "name": "RST",
-        "pcb_color": "rgba(0, 0, 0, 0.000)",
-        "priority": 12,
-        "schematic_color": "rgb(0, 255, 217)",
-        "tuning_profile": "",
-        "wire_width": 6,
-        "track_width": 0.2,
-        "clearance": 0.15,
-        "via_diameter": 0.6,
-        "via_drill": 0.3,
-        "microvia_diameter": 0.3,
-        "microvia_drill": 0.1
-      },
-      {
         "name": "RST_DRV_BANK_0",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 9,
         "schematic_color": "rgb(170, 220, 255)",
         "tuning_profile": "",
-        "track_width": 0.2,
-        "clearance": 0.15,
-        "via_diameter": 0.6,
-        "via_drill": 0.3,
-        "microvia_diameter": 0.3,
-        "microvia_drill": 0.1
-      },
-      {
-        "name": "SWD",
-        "pcb_color": "rgba(0, 0, 0, 0.000)",
-        "priority": 14,
-        "schematic_color": "rgb(6, 255, 18)",
-        "tuning_profile": "",
-        "wire_width": 8,
         "track_width": 0.2,
         "clearance": 0.15,
         "via_diameter": 0.6,
@@ -797,68 +743,12 @@
         "pattern": "GND"
       },
       {
-        "netclass": "IC2_1",
-        "pattern": "*/I2C1*"
-      },
-      {
-        "netclass": "SWD",
-        "pattern": "*/SWCLK"
-      },
-      {
-        "netclass": "SWD",
-        "pattern": "*/SWDIO"
-      },
-      {
-        "netclass": "SWD",
-        "pattern": "*/SWO"
-      },
-      {
-        "netclass": "RST",
-        "pattern": "*/NRST"
-      },
-      {
-        "netclass": "RST",
-        "pattern": "*/BOOT0"
-      },
-      {
         "netclass": "PWR_VBUS",
         "pattern": "VBUS"
       },
       {
         "netclass": "PWR_POE_5V",
         "pattern": "*/POE_5V"
-      },
-      {
-        "netclass": "PWR_POE",
-        "pattern": "*/VPOE*"
-      },
-      {
-        "netclass": "RMII",
-        "pattern": "/MCU and USB/ETH_(CRS_DV|MDC|MDIO|RXD0|RXD1|TXD0|TXD1|TX_EN)"
-      },
-      {
-        "netclass": "ETH_Lines",
-        "pattern": "/Power and Ethernet/ETH_(RX\\+|RX-|TX\\+|TX-)"
-      },
-      {
-        "netclass": "MAGJACK_TRANSFORMERS",
-        "pattern": "/Power and Ethernet/ETH_(RCT|TCT)"
-      },
-      {
-        "netclass": "ETH_CTL",
-        "pattern": "/MCU and USB/ETH_(nRST|REF_CLK)"
-      },
-      {
-        "netclass": "TEMP_DATA",
-        "pattern": "/MCU and USB/OW_DATA"
-      },
-      {
-        "netclass": "TEMP_DATA",
-        "pattern": "/MCU and USB/OW_MCU"
-      },
-      {
-        "netclass": "IC2_1",
-        "pattern": "I2C1_*"
       },
       {
         "netclass": "PWR_3V3",
@@ -875,6 +765,34 @@
       {
         "netclass": "RST_DRV_BANK_0",
         "pattern": "/Relay channels/RST_DRV*"
+      },
+      {
+        "netclass": "ETH_Lines",
+        "pattern": "/Ethernet/ETH_(RX|TX)(\\+|-|P|N|P_T|N_T)"
+      },
+      {
+        "netclass": "MAGJACK_TRANSFORMERS",
+        "pattern": "/Ethernet/ETH_(RCT|TCT)"
+      },
+      {
+        "netclass": "TEMP_DATA",
+        "pattern": "/MCU/OW_*"
+      },
+      {
+        "netclass": "IC2_1",
+        "pattern": "I2C_*"
+      },
+      {
+        "netclass": "PWR_POE",
+        "pattern": "VPOE*"
+      },
+      {
+        "netclass": "USB",
+        "pattern": "*/C6_USB_*"
+      },
+      {
+        "netclass": "PWR_3V3",
+        "pattern": "*/+3V3A"
       }
     ]
   },
@@ -1016,12 +934,16 @@
       "granite_controller"
     ],
     [
-      "8063e2cb-b212-5b7f-a3a7-22937e0bc76b",
-      "Power and Ethernet"
+      "827be8ef-6a37-5395-8e48-6b8c9aee3791",
+      "Power"
     ],
     [
-      "88f006f1-a062-5604-ab77-5030918aaacf",
-      "MCU and USB"
+      "2ef8dae6-4cdd-56d2-b0d9-eaa0087a445f",
+      "Ethernet"
+    ],
+    [
+      "0e1bb3cd-6ff3-5424-825a-684fab3f6ce8",
+      "MCU"
     ],
     [
       "523e2405-760a-59f0-a9bd-26a6a2afbbb8",
