@@ -897,6 +897,18 @@
       {
         "netclass": "TEMP_DATA",
         "pattern": "/MCU and USB/OW_MCU"
+      },
+      {
+        "netclass": "IC2_1",
+        "pattern": "I2C1_*"
+      },
+      {
+        "netclass": "PWR_3V3",
+        "pattern": "*/HDR_3V3"
+      },
+      {
+        "netclass": "PWR_5V",
+        "pattern": "*/HDR_5V"
       }
     ]
   },
