@@ -149,15 +149,42 @@ These are the critical requirements.
   fault log, configuration in internal EEPROM, 5x5 QFN-32.
   Fallback if a check below fails: TI LM5066I (10-80 V, V/I/P/energy,
   SOA power limit, lower accuracy, HTSSOP-28).
-  To confirm from the datasheet before schematic capture:
-  - I2C addresses available from ADR0/ADR1; if fewer than 8, add a
-    TCA9548A mux on the board.
-  - ON pin / EEPROM default-enable with I2C dead (requirement 1 under
-    Control and failure behaviour).
-  - Retry vs latch-off fault modes.
-  - Abs max on VDD and SENSE pins vs 30 V bus transients.
-  - Sense resistor value for a ~14 A limit; MOSFET choice (single vs
-    dual) for SOA at 15 A.
+  Order code LTC4282AUH#PBF (-40 to 85 C), about $10-12 each
+  (distributor snippet, unconfirmed). Datasheet Rev. C checked:
+  - Addresses: ADR0-2 are 3-state, 27 addresses in 0x40-0x5A. Use
+    0x40-0x47 (pin table: datasheet Table 1). Avoid 0x48 (TMP1075 on
+    the controller) and keep in mind the mass-write address 0x5F
+    (disable via CONTROL bit 4) and SMBus alert response 0x0C.
+  - Default ON: FET_ON is loaded from EEPROM at power-up (default 1),
+    so the FET turns on with no I2C traffic once UV/OV are valid and
+    ON is high. Tie ON to VDD through a divider. Host OFF = clear
+    CONTROL bit 3 (RAM only): survives a controller reboot, and an
+    LTC4282 power loss reloads EEPROM and turns the channel back ON.
+    Meets the failure-behaviour requirements. Never program EEPROM
+    FET_ON = 0.
+  - UV/OV: external dividers required (internal windows do not fit
+    17-24 V). UV trips below ~16 V, OV above ~27 V (to be computed).
+  - Faults: default overcurrent / FET-bad is latch-off until FAULT_LOG
+    is cleared over I2C (or VDD UVLO). Auto-retry is an EEPROM option.
+  - Abs max: VDD 45 V, operating 2.9-33 V; 30 V transients are fine.
+    Input TVS per datasheet suggestion (SMCJ). MOSFETs rated >= 60 V.
+  - Current limit: 12.5-34.4 mV in 8 steps. 2.0 mOhm sense resistor
+    with ILIM code 101 (28.1 mV) gives ~14 A; 0.22 W in the resistor
+    at 10.5 A. Foldback mode set for 24 V. Single MOSFET with SENSE2-
+    grounded; SOA via TIMER capacitor (64 ms/uF) and power foldback.
+    The datasheet only shows 12 V designs: MOSFET SOA at 24 V still
+    to be checked when choosing the MOSFET.
+  - Monitoring: 12/16-bit ADC, V/I +/-0.9 %, power +/-1.0 %; energy
+    +/-5.1 % on the internal clock, +/-1.0 % with an external crystal
+    or clock - use an external clock for usable kWh figures. 48-bit
+    energy accumulator. Must be set to 24 V range (VIN_MODE = 11),
+    the 12 V default clips at 16.6 V.
+  - Production: factory EEPROM defaults are wrong for this design.
+    Each part needs a one-time I2C write before first use:
+    EE_CONTROL (24 V VIN_MODE, chosen fault mode) and EE_ILIM_ADJUST
+    (current limit code, 24 V foldback). Do it from the controller
+    firmware on first boot (check and program if different), then
+    leave WP low, or order pre-programmed parts from ADI with WP high.
 
 ## Open decisions
 
@@ -165,6 +192,7 @@ These are the critical requirements.
    (current share or OR-ing) and whether they have PMBus.
 2. Node power input connector. A 5.5 x 2.5 mm barrel jack is not rated
    for 10.5 A; this decides the output connector and cabling.
-3. Fault mode: latch-off (proposed) or auto-retry.
+3. Fault mode: latch-off (proposed, LTC4282 default) or auto-retry
+   (EEPROM option, retries at a 1:1140 duty cycle).
 4. Main input fuse location and type (on board vs. in the supply cabling).
 5. Board outline, mounting and cable routing in the frame.
