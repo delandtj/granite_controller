@@ -55,7 +55,7 @@ measurement.
 | Backup protection | ~20 A fuse per channel (covers a MOSFET that fails short) |
 | Inrush | controlled ramp (soft start); no relay contacts |
 | Path resistance | <= 10 mOhm total (sense R + MOSFET + fuse + copper), <= 1.1 W loss per channel at 10.5 A |
-| Fault behaviour | latch off after a fault, re-enable from the controller (see open decisions) |
+| Fault behaviour | auto-retry after an overcurrent / FET fault (decided); the controller logs every fault and may disable a channel that keeps retrying |
 | Output connector | rated >= 15 A, keyed; type depends on the node input (open decision) |
 
 ### Monitoring
@@ -126,7 +126,9 @@ These are the critical requirements.
   hardware default-ON applies.
 - Report per-node V/I/P/energy and fault state through the controller's
   API; log faults.
-- Clear a latched fault only on an explicit operator command.
+- Count retries per channel; after a configurable number of retries in
+  a time window, turn the channel OFF and raise an alarm (operator
+  re-enables).
 
 ## Verification
 
@@ -164,8 +166,10 @@ These are the critical requirements.
     FET_ON = 0.
   - UV/OV: external dividers required (internal windows do not fit
     17-24 V). UV trips below ~16 V, OV above ~27 V (to be computed).
-  - Faults: default overcurrent / FET-bad is latch-off until FAULT_LOG
-    is cleared over I2C (or VDD UVLO). Auto-retry is an EEPROM option.
+  - Faults: factory default is latch-off for overcurrent / FET-bad.
+    This design uses auto-retry (EEPROM CONTROL bit 2 = 1): retry after
+    256 TIMER cycles at a 1:1140 duty cycle. MOSFET SOA must survive
+    retrying into a hard short indefinitely.
   - Abs max: VDD 45 V, operating 2.9-33 V; 30 V transients are fine.
     Input TVS per datasheet suggestion (SMCJ). MOSFETs rated >= 60 V.
   - Current limit: 12.5-34.4 mV in 8 steps. 2.0 mOhm sense resistor
@@ -191,7 +195,7 @@ On every controller boot, for each LTC4282 at 0x40-0x47:
 
 1. Read the EEPROM registers (EE_CONTROL, EE_ILIM_ADJUST).
 2. Compare with the expected image: VIN_MODE 24 V, ILIM code,
-   FOLDBACK_MODE 24 V, fault mode, FET_ON = 1.
+   FOLDBACK_MODE 24 V, overcurrent auto-retry = 1, FET_ON = 1.
 3. Match: do nothing (normal case).
 4. Mismatch: write the image, wait >= 2 ms per write, read back.
 5. Apply the same settings to the RAM registers so they take effect
@@ -214,7 +218,5 @@ Rules:
    (current share or OR-ing) and whether they have PMBus.
 2. Node power input connector. A 5.5 x 2.5 mm barrel jack is not rated
    for 10.5 A; this decides the output connector and cabling.
-3. Fault mode: latch-off (proposed, LTC4282 default) or auto-retry
-   (EEPROM option, retries at a 1:1140 duty cycle).
-4. Main input fuse location and type (on board vs. in the supply cabling).
-5. Board outline, mounting and cable routing in the frame.
+3. Main input fuse location and type (on board vs. in the supply cabling).
+4. Board outline, mounting and cable routing in the frame.
