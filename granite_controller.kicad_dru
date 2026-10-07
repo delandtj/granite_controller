@@ -1,0 +1,13 @@
+(version 1)
+
+# Board setup allows 0.15 mm hole clearance only so the GCT USB4105
+# land pattern (J2: GND pads 0.19 mm from its NPTHs) passes.
+# Everything else keeps 0.25 mm.
+(rule "Hole clearance"
+	(condition "!(A.memberOfFootprint('J2') && B.memberOfFootprint('J2'))")
+	(constraint hole_clearance (min 0.25)))
+
+# PoE input (37-57 V) keeps extra distance from everything else.
+(rule "PoE clearance"
+	(condition "A.hasNetclass('PWR_POE') && !B.hasNetclass('PWR_POE')")
+	(constraint clearance (min 0.3)))

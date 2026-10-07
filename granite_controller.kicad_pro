@@ -140,22 +140,22 @@
       },
       "rules": {
         "max_error": 0.005,
-        "min_clearance": 0.0,
+        "min_clearance": 0.127,
         "min_connection": 0.0,
-        "min_copper_edge_clearance": 0.5,
+        "min_copper_edge_clearance": 0.3,
         "min_groove_width": 0.0,
-        "min_hole_clearance": 0.25,
-        "min_hole_to_hole": 0.25,
+        "min_hole_clearance": 0.15,
+        "min_hole_to_hole": 0.4,
         "min_microvia_diameter": 0.2,
         "min_microvia_drill": 0.1,
         "min_resolved_spokes": 2,
         "min_silk_clearance": 0.0,
         "min_text_height": 0.8,
-        "min_text_thickness": 0.08,
-        "min_through_hole_diameter": 0.3,
-        "min_track_width": 0.2,
-        "min_via_annular_width": 0.1,
-        "min_via_diameter": 0.5,
+        "min_text_thickness": 0.15,
+        "min_through_hole_diameter": 0.2,
+        "min_track_width": 0.127,
+        "min_via_annular_width": 0.15,
+        "min_via_diameter": 0.45,
         "solder_mask_to_copper_clearance": 0.0,
         "use_height_for_length_calcs": true
       },
@@ -495,7 +495,7 @@
     "classes": [
       {
         "bus_width": 12,
-        "clearance": 0.2,
+        "clearance": 0.15,
         "diff_pair_gap": 0.25,
         "diff_pair_via_gap": 0.25,
         "diff_pair_width": 0.2,
@@ -517,21 +517,42 @@
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 1,
         "schematic_color": "rgb(255, 143, 245)",
-        "tuning_profile": ""
+        "tuning_profile": "",
+        "track_width": 0.2,
+        "clearance": 0.15,
+        "via_diameter": 0.6,
+        "via_drill": 0.3,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1
       },
       {
         "name": "ETH_Lines",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 3,
         "schematic_color": "rgb(255, 0, 234)",
-        "tuning_profile": ""
+        "tuning_profile": "",
+        "track_width": 0.18,
+        "clearance": 0.2,
+        "via_diameter": 0.6,
+        "via_drill": 0.3,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
+        "diff_pair_width": 0.18,
+        "diff_pair_gap": 0.15,
+        "diff_pair_via_gap": 0.25
       },
       {
         "name": "GND",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 16,
         "schematic_color": "rgb(0, 0, 0)",
-        "tuning_profile": ""
+        "tuning_profile": "",
+        "track_width": 0.4,
+        "clearance": 0.2,
+        "via_diameter": 0.6,
+        "via_drill": 0.3,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1
       },
       {
         "name": "IC2_1",
@@ -539,70 +560,130 @@
         "priority": 15,
         "schematic_color": "rgb(255, 242, 0)",
         "tuning_profile": "",
-        "wire_width": 6
+        "wire_width": 6,
+        "track_width": 0.2,
+        "clearance": 0.15,
+        "via_diameter": 0.6,
+        "via_drill": 0.3,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1
       },
       {
         "name": "MAGJACK_TRANSFORMERS",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 2,
         "schematic_color": "rgb(255, 149, 0)",
-        "tuning_profile": ""
+        "tuning_profile": "",
+        "track_width": 0.3,
+        "clearance": 0.2,
+        "via_diameter": 0.6,
+        "via_drill": 0.3,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1
       },
       {
         "name": "PWR_3V3",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 18,
         "schematic_color": "rgb(255, 0, 0)",
-        "tuning_profile": ""
+        "tuning_profile": "",
+        "track_width": 0.4,
+        "clearance": 0.2,
+        "via_diameter": 0.6,
+        "via_drill": 0.3,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1
       },
       {
         "name": "PWR_5V",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 17,
         "schematic_color": "rgb(255, 80, 0)",
-        "tuning_profile": ""
+        "tuning_profile": "",
+        "track_width": 0.5,
+        "clearance": 0.2,
+        "via_diameter": 0.6,
+        "via_drill": 0.3,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1
       },
       {
         "name": "PWR_DRV_BANK_0",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 11,
         "schematic_color": "rgb(255, 124, 193)",
-        "tuning_profile": ""
+        "tuning_profile": "",
+        "track_width": 0.2,
+        "clearance": 0.15,
+        "via_diameter": 0.6,
+        "via_drill": 0.3,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1
       },
       {
         "name": "PWR_DRV_BANK_1",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 10,
         "schematic_color": "rgb(255, 133, 161)",
-        "tuning_profile": ""
+        "tuning_profile": "",
+        "track_width": 0.2,
+        "clearance": 0.15,
+        "via_diameter": 0.6,
+        "via_drill": 0.3,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1
       },
       {
         "name": "PWR_POE",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 5,
         "schematic_color": "rgb(168, 34, 69)",
-        "tuning_profile": ""
+        "tuning_profile": "",
+        "track_width": 0.4,
+        "clearance": 0.3,
+        "via_diameter": 0.6,
+        "via_drill": 0.3,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1
       },
       {
         "name": "PWR_POE_5V",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 6,
         "schematic_color": "rgb(223, 118, 55)",
-        "tuning_profile": ""
+        "tuning_profile": "",
+        "track_width": 0.5,
+        "clearance": 0.2,
+        "via_diameter": 0.6,
+        "via_drill": 0.3,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1
       },
       {
         "name": "PWR_VBUS",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 7,
         "schematic_color": "rgb(255, 0, 118)",
-        "tuning_profile": ""
+        "tuning_profile": "",
+        "track_width": 0.5,
+        "clearance": 0.2,
+        "via_diameter": 0.6,
+        "via_drill": 0.3,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1
       },
       {
         "name": "RMII",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 4,
         "schematic_color": "rgb(107, 0, 255)",
-        "tuning_profile": ""
+        "tuning_profile": "",
+        "track_width": 0.2,
+        "clearance": 0.15,
+        "via_diameter": 0.6,
+        "via_drill": 0.3,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1
       },
       {
         "name": "RST",
@@ -610,21 +691,39 @@
         "priority": 12,
         "schematic_color": "rgb(0, 255, 217)",
         "tuning_profile": "",
-        "wire_width": 6
+        "wire_width": 6,
+        "track_width": 0.2,
+        "clearance": 0.15,
+        "via_diameter": 0.6,
+        "via_drill": 0.3,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1
       },
       {
         "name": "RST_DRV_BANK_0",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 9,
         "schematic_color": "rgb(170, 220, 255)",
-        "tuning_profile": ""
+        "tuning_profile": "",
+        "track_width": 0.2,
+        "clearance": 0.15,
+        "via_diameter": 0.6,
+        "via_drill": 0.3,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1
       },
       {
         "name": "RST_DRV_BANK_1",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 8,
         "schematic_color": "rgb(163, 180, 255)",
-        "tuning_profile": ""
+        "tuning_profile": "",
+        "track_width": 0.2,
+        "clearance": 0.15,
+        "via_diameter": 0.6,
+        "via_drill": 0.3,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1
       },
       {
         "name": "SWD",
@@ -632,21 +731,42 @@
         "priority": 14,
         "schematic_color": "rgb(6, 255, 18)",
         "tuning_profile": "",
-        "wire_width": 8
+        "wire_width": 8,
+        "track_width": 0.2,
+        "clearance": 0.15,
+        "via_diameter": 0.6,
+        "via_drill": 0.3,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1
       },
       {
         "name": "TEMP_DATA",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 0,
         "schematic_color": "rgb(22, 153, 255)",
-        "tuning_profile": ""
+        "tuning_profile": "",
+        "track_width": 0.2,
+        "clearance": 0.15,
+        "via_diameter": 0.6,
+        "via_drill": 0.3,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1
       },
       {
         "name": "USB",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 13,
         "schematic_color": "rgb(236, 6, 255)",
-        "tuning_profile": ""
+        "tuning_profile": "",
+        "track_width": 0.22,
+        "clearance": 0.2,
+        "via_diameter": 0.6,
+        "via_drill": 0.3,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
+        "diff_pair_width": 0.22,
+        "diff_pair_gap": 0.15,
+        "diff_pair_via_gap": 0.25
       }
     ],
     "meta": {
