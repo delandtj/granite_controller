@@ -182,9 +182,31 @@ These are the critical requirements.
   - Production: factory EEPROM defaults are wrong for this design.
     Each part needs a one-time I2C write before first use:
     EE_CONTROL (24 V VIN_MODE, chosen fault mode) and EE_ILIM_ADJUST
-    (current limit code, 24 V foldback). Do it from the controller
-    firmware on first boot (check and program if different), then
-    leave WP low, or order pre-programmed parts from ADI with WP high.
+    (current limit code, 24 V foldback). Decided: the controller
+    firmware does this over I2C (see "EEPROM provisioning" below).
+
+## EEPROM provisioning (controller firmware)
+
+On every controller boot, for each LTC4282 at 0x40-0x47:
+
+1. Read the EEPROM registers (EE_CONTROL, EE_ILIM_ADJUST).
+2. Compare with the expected image: VIN_MODE 24 V, ILIM code,
+   FOLDBACK_MODE 24 V, fault mode, FET_ON = 1.
+3. Match: do nothing (normal case).
+4. Mismatch: write the image, wait >= 2 ms per write, read back.
+5. Apply the same settings to the RAM registers so they take effect
+   now, preserving the channel's current FET_ON state (never switch a
+   node off as a side effect).
+6. Log the result (ok / programmed / verify failed); a verify failure
+   raises an alarm and marks the channel untrusted.
+
+Rules:
+- The write routine hard-codes EEPROM FET_ON = 1 and checks it on
+  readback; a stored 0 would break default-ON.
+- Disable mass-write (0x5F) at boot.
+- WP pin: pulled low by a resistor, with a jumper (or expander GPIO)
+  to lock the EEPROM after commissioning.
+- Only write on mismatch; EEPROM endurance is 10k cycles.
 
 ## Open decisions
 
