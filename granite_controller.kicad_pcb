@@ -5093,7 +5093,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -5105,7 +5105,7 @@
 				)
 			)
 		)
-		(property "MPN" "RC0402FR-0712K4L"
+		(property "MPN" "0402WGF1242TCE"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -5117,7 +5117,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C138060"
+		(property "LCSC" "C11692"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)

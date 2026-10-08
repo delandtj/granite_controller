@@ -9047,7 +9047,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YAGEO"
+		(property "MANUFACTURER" "UNI-ROYAL"
 			(at 152.4 130.81 0)
 			(hide yes)
 			(show_name no)
@@ -9058,7 +9058,7 @@
 				)
 			)
 		)
-		(property "MPN" "RC0402FR-0712K4L"
+		(property "MPN" "0402WGF1242TCE"
 			(at 152.4 130.81 0)
 			(hide yes)
 			(show_name no)
@@ -9069,7 +9069,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C138060"
+		(property "LCSC" "C11692"
 			(at 152.4 130.81 0)
 			(hide yes)
 			(show_name no)
