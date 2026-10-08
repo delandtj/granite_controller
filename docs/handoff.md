@@ -89,9 +89,9 @@ Power board: PSU model (paralleling, PMBus), node 19 V input connector
 
 1. Architecture is being iterated (see "Pod architecture" below): this
    board stays as the integrated controller for small (one-frame) sites.
-2. PCB: spread RN1/RN2/U7/U18 around J8 by hand (free space to the
-   right), then re-run the targeted KRT pass on the open nets (command in
-   the board-state note above; work dir ~/.cache/granite-pcb/fix).
+2. PCB: J8 area done (see board state). Two lines still open into RN2:
+   GPIO_IO8 (U1 pad 10) and GPIO_IO15 (U1 pad 23, far side of the
+   module); route by hand or nudge RN2 and re-run tools/krt_reroute.sh.
 3. User hand-routes the critical nets: Ethernet pairs + their crossover
    at the W5500 (removes the 3 undersized vias), USB, switcher loops
    (U8/L3, U2/L1), crystal Y2. Then delete the dangling vias.
@@ -153,19 +153,29 @@ architecture.md, duck-core.md, duck-protocol.md.
 - `tools/gndpour.py <in.pcb> <out.pcb>`: GND pours on F.Cu/B.Cu and
   0.6/0.3 stitching vias (group "gnd-stitch", re-runnable). Run after
   routing.
-- Board state 2026-10-08: placement by place.py + the user's hand moves
-  (whole board shifted +25/+28.6 mm on the sheet, MCU-corner parts moved),
-  routed by krt_route.sh, poured by gndpour.py, then a targeted KRT pass on
-  the open nets (rip + reroute those 16 signal nets, GND pass without rip).
+- `tools/krt_reroute.sh NET...`: targeted pass after moving a few parts.
+  Deletes all copper of the named nets, reroutes them on F.Cu/B.Cu, runs a
+  GND pass without rip, refills zones via kicad-cli and copies the board
+  back. Name every non-GND net on the moved parts plus the open nets.
+  Does not clean GND stubs left at old pad positions.
+- Board state 2026-10-08 (afternoon): placement by place.py + the user's
+  hand moves (whole board shifted +25/+28.6 mm on the sheet, MCU-corner
+  parts moved), routed by krt_route.sh, poured by gndpour.py, targeted KRT
+  passes on the open nets. J8 area spread: RN1 (132, 68.5) and RN2
+  (132, 73) rot 180 between U1 and J8, U7 (146.3, 69) beside J8 pins 9-11,
+  U18 (151.3, 68.5) above J10. U7/U18 centre GND pads 3+8 strapped on F.Cu
+  to a 0.6/0.3 GND via 1.2 mm right of pad 8 (KRT cannot reach them). 22
+  nets rerouted (all J8/RN/DRYC/EXP nets incl. EXP_nRESET_INT, which ran
+  through the RN1 spot, plus the W5500 SPI and ETH_LED_ACT).
   DRC (refill zones first: KRT does not refill, a stale fill shows as
-  hundreds of fake clearance errors): 0 parity, 18 unconnected, 27
-  violations. Open: J8 header lines (HDR_IO8/IO15/SDA, EXP_nRESET,
-  I2C_EXT_SDA, GPIO_IO8/IO15), W5500 SPI (SCLK/MOSI/MISO), ETH_LED_ACT,
-  W5500 GND pins 9/19, DRYC2/DRYC3. Blockers: neighbouring committed copper
-  (DRY_IN1 ...) and the tight RN1/RN2/U7/U18 pad field around J8.
-  Violations: 3 undersized 0.3/0.15 vias at the W5500 pair crossovers, 11
-  dangling vias, 1 dangling track, 4 starved thermals (THT GND, fine), 2
-  silk (antenna overhang, intended). Ethernet pairs mostly single-ended.
+  hundreds of fake clearance errors): 0 parity, 7 unconnected, 23
+  violations. Open: GPIO_IO8 and GPIO_IO15 into RN2, W5500 SPI
+  (SCLK/MISO), ETH_LED_ACT, W5500 GND pins 9/19. Violations: 3 undersized
+  0.3/0.15 vias at the W5500 pair crossovers (via_diameter, drill,
+  annular each), 9 dangling vias (W5500/USB area and the failed SPI
+  stubs at U1), 3 starved thermals (J2 shield, J8 GND pins 3/4), 2 silk
+  (antenna overhang, intended). No shorts, no dangling tracks. Ethernet
+  pairs mostly single-ended.
 - Check after any change: `kicad-cli sch erc --severity-all`,
   `kicad-cli pcb drc --schematic-parity`. Expect 0 parity issues.
 - kicad-cli occasionally re-serializes granite_controller.kicad_pro;
