@@ -27,7 +27,7 @@ LEGENDS = {'J3': ['+', '-'], 'J9': ['G', '3V', 'DA', 'CL'], 'J10': ['1', '2', '3
 LEGENDS.update({j: ['3V', 'DQ', 'G'] for j in ('J4', 'J5', 'J6', 'J7')})
 LEGENDS.update({'J%d' % (10 + n): NODE for n in range(1, 9)})
 
-NAME_H, LEG_H = 0.8, 0.8
+NAME_H, LEG_H = 1.0, 1.0   # JLC minimum silk text height
 CLR = 0.2          # silk-to-silk and silk-to-pad clearance (mm)
 
 # drop a previous run
@@ -78,7 +78,7 @@ def free(bb):
     return not any(x0 < b[2] and x1 > b[0] and y0 < b[3] and y1 > b[1] for b in obst)
 
 
-def text(s, x, y, h):
+def text(s, x, y, h, angle=0):
     t = pcbnew.PCB_TEXT(board)
     t.SetText(s)
     t.SetLayer(pcbnew.F_SilkS)
@@ -87,6 +87,7 @@ def text(s, x, y, h):
     t.SetPosition(pcbnew.VECTOR2I(MM(x), MM(y)))
     t.SetHorizJustify(pcbnew.GR_TEXT_H_ALIGN_CENTER)
     t.SetVertJustify(pcbnew.GR_TEXT_V_ALIGN_CENTER)
+    t.SetTextAngle(pcbnew.EDA_ANGLE(angle, pcbnew.DEGREES_T))
     return t
 
 
@@ -101,12 +102,12 @@ def add(t):
 
 
 def place(cands, s, h):
-    """First candidate (x, y) where the text fits; None if none does."""
-    for x, y in cands:
-        t = text(s, x, y, h)
+    """First candidate (x, y[, angle]) where the text fits; None if none does."""
+    for c in cands:
+        t = text(s, *c[:2], h, *c[2:])
         if free(ink(t)):
             add(t)
-            return (x, y)
+            return c
     return None
 
 
@@ -159,7 +160,10 @@ for ref, name in NAMES.items():
     far = (cy0 if side > 0 else cy1) - side * (CLR + 0.6)    # beyond the other side
     cands = [(ccx, n)] + [(ccx + dx, n) for dx in (-1, 1, -2, 2, -3, 3)] + [(ccx, n + side * 0.5), (cx0 - w, base), (cx1 + w, base),
              (cx0 - w, ccy), (cx1 + w, ccy), (ccx, n + side * 1.1), (ccx, far)]
-    if not place(cands, label, NAME_H):
+    # crowded rows: vertical beside the body, then the name alone, then the bare reference
+    vert = [(x, ccy + side * dy / 4, 90) for x in (cx1 + 0.9, cx0 - 0.9, cx1 + 1.5, cx0 - 1.5) for dy in range(0, 11)]
+    if not place(cands + vert, label, NAME_H) and not place(vert, name, NAME_H) \
+            and not place(cands + vert, ref, NAME_H):
         missing.append(ref + ' name')
 
 print('not placed:', missing or 'none')

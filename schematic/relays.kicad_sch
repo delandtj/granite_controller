@@ -4608,7 +4608,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "330"
+		(property "Value" "270"
 			(at 126.365 33.02 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4652,7 +4652,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "UNI-ROYAL"
+		(property "MANUFACTURER" "FOJAN"
 			(at 124.46 35.56 0)
 			(hide yes)
 			(show_name no)
@@ -4663,7 +4663,7 @@
 				)
 			)
 		)
-		(property "MPN" "0402WGF3300TCE"
+		(property "MPN" "FRC0402F2700TS"
 			(at 124.46 35.56 0)
 			(hide yes)
 			(show_name no)
@@ -4674,7 +4674,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25104"
+		(property "LCSC" "C2909342"
 			(at 124.46 35.56 0)
 			(hide yes)
 			(show_name no)
@@ -5129,7 +5129,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "330"
+		(property "Value" "270"
 			(at 126.365 45.72 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -5173,7 +5173,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "UNI-ROYAL"
+		(property "MANUFACTURER" "FOJAN"
 			(at 124.46 48.26 0)
 			(hide yes)
 			(show_name no)
@@ -5184,7 +5184,7 @@
 				)
 			)
 		)
-		(property "MPN" "0402WGF3300TCE"
+		(property "MPN" "FRC0402F2700TS"
 			(at 124.46 48.26 0)
 			(hide yes)
 			(show_name no)
@@ -5195,7 +5195,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25104"
+		(property "LCSC" "C2909342"
 			(at 124.46 48.26 0)
 			(hide yes)
 			(show_name no)
@@ -5730,7 +5730,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "330"
+		(property "Value" "270"
 			(at 126.365 63.5 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -5774,7 +5774,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "UNI-ROYAL"
+		(property "MANUFACTURER" "FOJAN"
 			(at 124.46 66.04 0)
 			(hide yes)
 			(show_name no)
@@ -5785,7 +5785,7 @@
 				)
 			)
 		)
-		(property "MPN" "0402WGF3300TCE"
+		(property "MPN" "FRC0402F2700TS"
 			(at 124.46 66.04 0)
 			(hide yes)
 			(show_name no)
@@ -5796,7 +5796,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25104"
+		(property "LCSC" "C2909342"
 			(at 124.46 66.04 0)
 			(hide yes)
 			(show_name no)
@@ -6251,7 +6251,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "330"
+		(property "Value" "270"
 			(at 126.365 76.2 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -6295,7 +6295,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "UNI-ROYAL"
+		(property "MANUFACTURER" "FOJAN"
 			(at 124.46 78.74 0)
 			(hide yes)
 			(show_name no)
@@ -6306,7 +6306,7 @@
 				)
 			)
 		)
-		(property "MPN" "0402WGF3300TCE"
+		(property "MPN" "FRC0402F2700TS"
 			(at 124.46 78.74 0)
 			(hide yes)
 			(show_name no)
@@ -6317,7 +6317,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25104"
+		(property "LCSC" "C2909342"
 			(at 124.46 78.74 0)
 			(hide yes)
 			(show_name no)
@@ -6852,7 +6852,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "330"
+		(property "Value" "270"
 			(at 126.365 93.98 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -6896,7 +6896,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "UNI-ROYAL"
+		(property "MANUFACTURER" "FOJAN"
 			(at 124.46 96.52 0)
 			(hide yes)
 			(show_name no)
@@ -6907,7 +6907,7 @@
 				)
 			)
 		)
-		(property "MPN" "0402WGF3300TCE"
+		(property "MPN" "FRC0402F2700TS"
 			(at 124.46 96.52 0)
 			(hide yes)
 			(show_name no)
@@ -6918,7 +6918,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25104"
+		(property "LCSC" "C2909342"
 			(at 124.46 96.52 0)
 			(hide yes)
 			(show_name no)
@@ -7373,7 +7373,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "330"
+		(property "Value" "270"
 			(at 126.365 106.68 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -7417,7 +7417,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "UNI-ROYAL"
+		(property "MANUFACTURER" "FOJAN"
 			(at 124.46 109.22 0)
 			(hide yes)
 			(show_name no)
@@ -7428,7 +7428,7 @@
 				)
 			)
 		)
-		(property "MPN" "0402WGF3300TCE"
+		(property "MPN" "FRC0402F2700TS"
 			(at 124.46 109.22 0)
 			(hide yes)
 			(show_name no)
@@ -7439,7 +7439,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25104"
+		(property "LCSC" "C2909342"
 			(at 124.46 109.22 0)
 			(hide yes)
 			(show_name no)
@@ -7974,7 +7974,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "330"
+		(property "Value" "270"
 			(at 126.365 124.46 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -8018,7 +8018,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "UNI-ROYAL"
+		(property "MANUFACTURER" "FOJAN"
 			(at 124.46 127 0)
 			(hide yes)
 			(show_name no)
@@ -8029,7 +8029,7 @@
 				)
 			)
 		)
-		(property "MPN" "0402WGF3300TCE"
+		(property "MPN" "FRC0402F2700TS"
 			(at 124.46 127 0)
 			(hide yes)
 			(show_name no)
@@ -8040,7 +8040,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25104"
+		(property "LCSC" "C2909342"
 			(at 124.46 127 0)
 			(hide yes)
 			(show_name no)
@@ -8495,7 +8495,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "330"
+		(property "Value" "270"
 			(at 126.365 137.16 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -8539,7 +8539,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "UNI-ROYAL"
+		(property "MANUFACTURER" "FOJAN"
 			(at 124.46 139.7 0)
 			(hide yes)
 			(show_name no)
@@ -8550,7 +8550,7 @@
 				)
 			)
 		)
-		(property "MPN" "0402WGF3300TCE"
+		(property "MPN" "FRC0402F2700TS"
 			(at 124.46 139.7 0)
 			(hide yes)
 			(show_name no)
@@ -8561,7 +8561,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25104"
+		(property "LCSC" "C2909342"
 			(at 124.46 139.7 0)
 			(hide yes)
 			(show_name no)
@@ -9096,7 +9096,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "330"
+		(property "Value" "270"
 			(at 126.365 154.94 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -9140,7 +9140,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "UNI-ROYAL"
+		(property "MANUFACTURER" "FOJAN"
 			(at 124.46 157.48 0)
 			(hide yes)
 			(show_name no)
@@ -9151,7 +9151,7 @@
 				)
 			)
 		)
-		(property "MPN" "0402WGF3300TCE"
+		(property "MPN" "FRC0402F2700TS"
 			(at 124.46 157.48 0)
 			(hide yes)
 			(show_name no)
@@ -9162,7 +9162,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25104"
+		(property "LCSC" "C2909342"
 			(at 124.46 157.48 0)
 			(hide yes)
 			(show_name no)
@@ -9617,7 +9617,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "330"
+		(property "Value" "270"
 			(at 126.365 167.64 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -9661,7 +9661,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "UNI-ROYAL"
+		(property "MANUFACTURER" "FOJAN"
 			(at 124.46 170.18 0)
 			(hide yes)
 			(show_name no)
@@ -9672,7 +9672,7 @@
 				)
 			)
 		)
-		(property "MPN" "0402WGF3300TCE"
+		(property "MPN" "FRC0402F2700TS"
 			(at 124.46 170.18 0)
 			(hide yes)
 			(show_name no)
@@ -9683,7 +9683,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25104"
+		(property "LCSC" "C2909342"
 			(at 124.46 170.18 0)
 			(hide yes)
 			(show_name no)
@@ -10218,7 +10218,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "330"
+		(property "Value" "270"
 			(at 126.365 185.42 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -10262,7 +10262,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "UNI-ROYAL"
+		(property "MANUFACTURER" "FOJAN"
 			(at 124.46 187.96 0)
 			(hide yes)
 			(show_name no)
@@ -10273,7 +10273,7 @@
 				)
 			)
 		)
-		(property "MPN" "0402WGF3300TCE"
+		(property "MPN" "FRC0402F2700TS"
 			(at 124.46 187.96 0)
 			(hide yes)
 			(show_name no)
@@ -10284,7 +10284,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25104"
+		(property "LCSC" "C2909342"
 			(at 124.46 187.96 0)
 			(hide yes)
 			(show_name no)
@@ -10739,7 +10739,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "330"
+		(property "Value" "270"
 			(at 126.365 198.12 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -10783,7 +10783,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "UNI-ROYAL"
+		(property "MANUFACTURER" "FOJAN"
 			(at 124.46 200.66 0)
 			(hide yes)
 			(show_name no)
@@ -10794,7 +10794,7 @@
 				)
 			)
 		)
-		(property "MPN" "0402WGF3300TCE"
+		(property "MPN" "FRC0402F2700TS"
 			(at 124.46 200.66 0)
 			(hide yes)
 			(show_name no)
@@ -10805,7 +10805,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25104"
+		(property "LCSC" "C2909342"
 			(at 124.46 200.66 0)
 			(hide yes)
 			(show_name no)
@@ -11340,7 +11340,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "330"
+		(property "Value" "270"
 			(at 126.365 215.9 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -11384,7 +11384,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "UNI-ROYAL"
+		(property "MANUFACTURER" "FOJAN"
 			(at 124.46 218.44 0)
 			(hide yes)
 			(show_name no)
@@ -11395,7 +11395,7 @@
 				)
 			)
 		)
-		(property "MPN" "0402WGF3300TCE"
+		(property "MPN" "FRC0402F2700TS"
 			(at 124.46 218.44 0)
 			(hide yes)
 			(show_name no)
@@ -11406,7 +11406,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25104"
+		(property "LCSC" "C2909342"
 			(at 124.46 218.44 0)
 			(hide yes)
 			(show_name no)
@@ -11861,7 +11861,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "330"
+		(property "Value" "270"
 			(at 126.365 228.6 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -11905,7 +11905,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "UNI-ROYAL"
+		(property "MANUFACTURER" "FOJAN"
 			(at 124.46 231.14 0)
 			(hide yes)
 			(show_name no)
@@ -11916,7 +11916,7 @@
 				)
 			)
 		)
-		(property "MPN" "0402WGF3300TCE"
+		(property "MPN" "FRC0402F2700TS"
 			(at 124.46 231.14 0)
 			(hide yes)
 			(show_name no)
@@ -11927,7 +11927,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25104"
+		(property "LCSC" "C2909342"
 			(at 124.46 231.14 0)
 			(hide yes)
 			(show_name no)
@@ -12462,7 +12462,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "330"
+		(property "Value" "270"
 			(at 126.365 246.38 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -12506,7 +12506,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "UNI-ROYAL"
+		(property "MANUFACTURER" "FOJAN"
 			(at 124.46 248.92 0)
 			(hide yes)
 			(show_name no)
@@ -12517,7 +12517,7 @@
 				)
 			)
 		)
-		(property "MPN" "0402WGF3300TCE"
+		(property "MPN" "FRC0402F2700TS"
 			(at 124.46 248.92 0)
 			(hide yes)
 			(show_name no)
@@ -12528,7 +12528,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25104"
+		(property "LCSC" "C2909342"
 			(at 124.46 248.92 0)
 			(hide yes)
 			(show_name no)
@@ -12983,7 +12983,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "330"
+		(property "Value" "270"
 			(at 126.365 259.08 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -13027,7 +13027,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "UNI-ROYAL"
+		(property "MANUFACTURER" "FOJAN"
 			(at 124.46 261.62 0)
 			(hide yes)
 			(show_name no)
@@ -13038,7 +13038,7 @@
 				)
 			)
 		)
-		(property "MPN" "0402WGF3300TCE"
+		(property "MPN" "FRC0402F2700TS"
 			(at 124.46 261.62 0)
 			(hide yes)
 			(show_name no)
@@ -13049,7 +13049,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25104"
+		(property "LCSC" "C2909342"
 			(at 124.46 261.62 0)
 			(hide yes)
 			(show_name no)
@@ -14009,7 +14009,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10k"
+		(property "Value" "47k"
 			(at 265.43 40.64 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -14064,7 +14064,7 @@
 				)
 			)
 		)
-		(property "MPN" "0402WGF1002TCE"
+		(property "MPN" "0402WGF4702TCE"
 			(at 264.16 39.37 0)
 			(hide yes)
 			(show_name no)
@@ -14075,7 +14075,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25744"
+		(property "LCSC" "C25792"
 			(at 264.16 39.37 0)
 			(hide yes)
 			(show_name no)
@@ -14764,7 +14764,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10k"
+		(property "Value" "47k"
 			(at 265.43 71.12 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -14819,7 +14819,7 @@
 				)
 			)
 		)
-		(property "MPN" "0402WGF1002TCE"
+		(property "MPN" "0402WGF4702TCE"
 			(at 264.16 69.85 0)
 			(hide yes)
 			(show_name no)
@@ -14830,7 +14830,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25744"
+		(property "LCSC" "C25792"
 			(at 264.16 69.85 0)
 			(hide yes)
 			(show_name no)
@@ -15519,7 +15519,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10k"
+		(property "Value" "47k"
 			(at 265.43 101.6 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -15574,7 +15574,7 @@
 				)
 			)
 		)
-		(property "MPN" "0402WGF1002TCE"
+		(property "MPN" "0402WGF4702TCE"
 			(at 264.16 100.33 0)
 			(hide yes)
 			(show_name no)
@@ -15585,7 +15585,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25744"
+		(property "LCSC" "C25792"
 			(at 264.16 100.33 0)
 			(hide yes)
 			(show_name no)
@@ -16274,7 +16274,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10k"
+		(property "Value" "47k"
 			(at 265.43 132.08 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -16329,7 +16329,7 @@
 				)
 			)
 		)
-		(property "MPN" "0402WGF1002TCE"
+		(property "MPN" "0402WGF4702TCE"
 			(at 264.16 130.81 0)
 			(hide yes)
 			(show_name no)
@@ -16340,7 +16340,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25744"
+		(property "LCSC" "C25792"
 			(at 264.16 130.81 0)
 			(hide yes)
 			(show_name no)
@@ -17029,7 +17029,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10k"
+		(property "Value" "47k"
 			(at 265.43 162.56 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -17084,7 +17084,7 @@
 				)
 			)
 		)
-		(property "MPN" "0402WGF1002TCE"
+		(property "MPN" "0402WGF4702TCE"
 			(at 264.16 161.29 0)
 			(hide yes)
 			(show_name no)
@@ -17095,7 +17095,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25744"
+		(property "LCSC" "C25792"
 			(at 264.16 161.29 0)
 			(hide yes)
 			(show_name no)
@@ -17784,7 +17784,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10k"
+		(property "Value" "47k"
 			(at 265.43 193.04 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -17839,7 +17839,7 @@
 				)
 			)
 		)
-		(property "MPN" "0402WGF1002TCE"
+		(property "MPN" "0402WGF4702TCE"
 			(at 264.16 191.77 0)
 			(hide yes)
 			(show_name no)
@@ -17850,7 +17850,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25744"
+		(property "LCSC" "C25792"
 			(at 264.16 191.77 0)
 			(hide yes)
 			(show_name no)
@@ -18539,7 +18539,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10k"
+		(property "Value" "47k"
 			(at 265.43 223.52 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -18594,7 +18594,7 @@
 				)
 			)
 		)
-		(property "MPN" "0402WGF1002TCE"
+		(property "MPN" "0402WGF4702TCE"
 			(at 264.16 222.25 0)
 			(hide yes)
 			(show_name no)
@@ -18605,7 +18605,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25744"
+		(property "LCSC" "C25792"
 			(at 264.16 222.25 0)
 			(hide yes)
 			(show_name no)
@@ -19294,7 +19294,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10k"
+		(property "Value" "47k"
 			(at 265.43 254 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -19349,7 +19349,7 @@
 				)
 			)
 		)
-		(property "MPN" "0402WGF1002TCE"
+		(property "MPN" "0402WGF4702TCE"
 			(at 264.16 252.73 0)
 			(hide yes)
 			(show_name no)
@@ -19360,7 +19360,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25744"
+		(property "LCSC" "C25792"
 			(at 264.16 252.73 0)
 			(hide yes)
 			(show_name no)
@@ -20483,7 +20483,7 @@
 	)
 	(wire
 		(pts
-			(xy 73.66 233.68) (xy 76.2 233.68)
+			(xy 73.66 248.92) (xy 76.2 248.92)
 		)
 		(stroke
 			(width 0)
@@ -20492,7 +20492,7 @@
 		(uuid "6a28d6a6-58fa-46fa-9463-b2dd62905104")
 	)
 	(label "NODE_ON8"
-		(at 76.2 233.68 0)
+		(at 76.2 248.92 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -20630,7 +20630,7 @@
 		)
 	)
 	(no_connect
-		(at 73.66 248.92)
+		(at 73.66 233.68)
 		(uuid "4142f668-49e9-47e5-a94b-62911c09027a")
 	)
 	(no_connect
@@ -20920,7 +20920,7 @@
 			)
 		)
 	)
-	(text "Channels 1-8: 2x photoMOS contact closure (RESET, PWR BTN) per motherboard front-panel header. Floating outputs.\nTLP176AM: 3mA max trigger, ~6mA drive. U14 MCP23017 @0x20 sources the LED current: GPA0-7 = PWR_DRV1-8, GPB0-7 = RST_DRV1-8 (GPA7/GPB7 are output-only).\nR32 holds U14 and U15 in reset unless the MCU drives EXP_nRESET_INT high: MCU reset/hang -> all GPIO Hi-Z -> all buttons released.\nU14/U15 are on the internal I2C bus; EXP_INT is shared with add-on modules on the expansion header (INT open-drain, mirrored)."
+	(text "Channels 1-8: 2x photoMOS contact closure (RESET, PWR BTN) per motherboard front-panel header. Floating outputs.\nTLP176AM: 3mA max trigger, ~6.5mA drive (270R). U14 MCP23017 @0x20 sources the LED current: GPA0-7 = PWR_DRV1-8, GPB0-7 = RST_DRV1-8 (GPA7/GPB7 are output-only).\nR32 holds U14 and U15 in reset unless the MCU drives EXP_nRESET_INT high: MCU reset/hang -> all GPIO Hi-Z -> all buttons released.\nU14/U15 are on the internal I2C bus; EXP_INT is shared with add-on modules on the expansion header (INT open-drain, mirrored)."
 		(exclude_from_sim no)
 		(at 228.6 25.4 0)
 		(effects
@@ -20931,7 +20931,7 @@
 		)
 		(uuid "d42135b5-6198-4a0f-b9a2-2f232278c836")
 	)
-	(text "Node connector J11-J18 (JST PH 5p): 1 PWR_SW, 2 RST_SW, 3 node GND (common return of both buttons), 4 PLED+, 5 PLED-.\nPLED sense: TLP290-4 (AC input, either polarity), 220R in series with the node's own LED resistor, 10k pull-up -> NODE_ONn low = node power LED lit.\nU15 MCP23017 @0x21: GPA0-7 = NODE_ON1-8, GPB0-3 = DRY_IN1-4 (expansion sheet), GPB4-7 spare."
+	(text "Node connector J11-J18 (JST PH 5p): 1 PWR_SW, 2 RST_SW, 3 node GND (common return of both buttons), 4 PLED+, 5 PLED-.\nPLED sense: TLP290-4 (AC input, either polarity), 220R in series with the node's own LED resistor, 47k pull-up -> NODE_ONn low = node power LED lit.\nU15 MCP23017 @0x21: GPA0-6 = NODE_ON1-7, GPB4 = NODE_ON8 (GPA7 is output-only), GPB0-3 = DRY_IN1-4 (expansion sheet), GPB5-7 spare."
 		(exclude_from_sim no)
 		(at 20.32 285.75 0)
 		(effects

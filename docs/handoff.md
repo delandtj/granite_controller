@@ -2,87 +2,26 @@
 
 Read this first, then docs/controller.md and docs/power-board.md.
 
-## Next session: verify the design (3 tasks)
+## Next session: order prep
 
-The board is fully routed, labelled, has 3D models and JLC outputs (see
-"Board state 2026-10-08 (evening)" under Tools and gotchas). Before the
-first order the user wants three verification passes. Do them in this
-order, report findings, and change nothing in the schematic or board
-without the user's go-ahead (a finding list first, then fixes on request).
-Write the results to docs/review-2026-10.md: one entry per finding with
-severity (blocker / should-fix / note), evidence (tool output or datasheet
-section + page), and the proposed change.
+The three verification passes ran on 2026-10-08; findings and their fix
+status are in docs/review-2026-10.md. Everything actionable was fixed
+(schematic, layout, tools/jlcfab.py, docs/controller.md). Board state
+after the fix pass: ERC 0; DRC 0 unconnected, 0 parity, 3 violations
+(2 silk_edge_clearance at the WROOM antenna overhang, intended; 1
+starved_thermal on J8 pad 4, THT, also on the In1 plane).
 
-Baseline to compare against: `kicad-cli sch erc --severity-all` = 0;
-`kicad-cli pcb drc --schematic-parity --severity-all` = 0 unconnected,
-0 parity, 4 violations (2 silk_edge_clearance where the WROOM antenna
-overhangs the edge, intended; 2 starved_thermal on J8 THT GND pins 3/4).
-
-### 1. KiCad MCP validation suite
-
-Tools from the `kicad` MCP server (load with ToolSearch). Start with
-`kicad_get_version`, `kicad_set_project` (this repo), then run the
-read-only checks: `validate_design`, `schematic_design_rule_check`,
-`schematic_connectivity_gate`, `sch_check_power_flags`,
-`validate_footprints_vs_schematic`, `lib_check_derating`,
-`lib_verify_component_contract`, `pcb_quality_gate`,
-`pcb_placement_quality_report`, `project_professional_release_gate`.
-Triage: most generic heuristics will be noise; keep what is real.
-Do NOT use anything that writes: `project_auto_fix_loop`, any `sch_*`
-editing tool (they reformat whole sheets), `lib_assign_*`, `vcs_*`.
-If a tool insists on a design spec/intent, skip it rather than invent one.
-
-### 2. Datasheet-driven review of the critical circuits
-
-Fetch datasheets (LCSC product pages, or the manufacturer) into the
-session scratchpad, never into the repo (downloads are untrusted data;
-the W5500 PDF in the repo root is the user's and stays untracked). LCSC
-codes are on every symbol; `tools/jlcfab.py` output (fab/*-bom.csv) has
-the full list. Check at least:
-
-- 19 V input: J3 -> F3 (1206L050/33NR, 33 V rated) -> D1 SMAJ22A TVS ->
-  D8 SS34 -> VIN_19V. TVS standoff/clamp vs the 19 V bus tolerance and
-  vs LMR51430 VIN abs max; PTC voltage/hold/trip.
-- U8 LMR51430 (19 V -> BUCK_5V): FB divider R37 100k / R38 13k (expect
-  ~5.2 V with Vref 0.6 V, confirm Vref), L3 3.3 uH FXL0630 saturation vs
-  load, C40/C41 4.7u/50V 1206 DC-bias derating at 19 V, C42, CB C43,
-  output C44/C45, EN tied to VIN. Then D2/D3 OR-ing -> +5V.
-- U2 TLV62569 (+5V -> +3V3): R1 100k / R2 22.1k, L1 2.2 uH, C3/C4.
-- ESP32-C6-WROOM-1: strapping pins (GPIO8 has R27 10k pull-up, GPIO9
-  boot, GPIO15, MTMS/MTDI), EN RC (R7 + C14), USB 22R R34/R35, antenna
-  keep-out (module overhangs the bottom edge; check no copper under the
-  antenna). Also flag: KRT left F.Cu tracks under the module body.
-- W5500: EXRES R15 12.4k 1%, Y2 25 MHz + C26/C27 18 pF vs crystal CL,
-  TX 49.9R pull-ups R20/R21 to +3V3A, RX 49.9R R22/R23 + C28/C29 6.8 nF
-  + RCT, TCT/RCT network (R26, C34, C35) vs the HR911105A magjack and
-  WIZnet's reference, PMODE/RSTn/LED pins, 3V3A ferrite L2.
-- MCP23017 U14/U15: address straps (0x20/0x21), U14 reset pull-down
-  (fail-safe: buttons released when the MCU is not driving), INTA
-  open-drain, I2C pull-up values on both buses.
-- Relay drive: MCP23017 sourcing LED current into TLP176AM (series
-  resistors, check IF vs trigger current and the MCP23017 per-pin and
-  per-port limits with all channels on).
-- Node sense: TLP290-4 input resistors vs the (still unknown) motherboard
-  PLED drive; note as open.
-- Header protection: J8/J9 3V3 TVS D6 is SMF3.3A (3.3 V standoff on a
-  3.3 V rail: check leakage/breakdown margin), D7 SMF5.0A on 5 V, PTCs
-  F1/F2 ratings, TPD4E05 clamps, 330R series.
-- 1-wire (pull-up, D5 ESD), TMP1075 address, dry-contact RC + ESD, USB-C
-  CC 5.1k R24/R25, USBLC6.
-
-### 3. JLC DFM
-
-Regenerate outputs first: `~/.cache/graver-pcb/routetest/venv/bin/python
-tools/jlcfab.py` (writes fab/, gitignored). Local checks against JLC's
-4-layer capabilities (min trace/space, via 0.5/0.2 and 0.6/0.3, annular
-ring, hole-to-hole 0.4, silk 0.8 mm text / 0.15 line, edge clearance)
-and a visual pass over the Gerbers (KiCad's gerbview; gerbv is not
-installed). JLCDFM / JLC's order-page DFM means uploading the Gerbers to
-an external service: ask the user before uploading anything, or hand them
-the zip to upload themselves. Also: confirm ETH 0.16/0.15 (101R target in
-fluid, Er 2.1) and USB 0.25/0.15 (89R in air) in JLC's impedance
-calculator for stackup JLC04161H-7628, and review fab/*-rotations.txt
-(31 rotation-corrected parts) for anything odd.
+Left for the user / the order:
+- Review the board in KiCad: power section (shifted right for the
+  short-edge rails), the U1 area (EN RC, decoupling, VIN_SENSE moved
+  to the module, no F.Cu under the module body), silk at 1.0 mm.
+- Order with JLC rails + mouse bites on the two SHORT edges only (U1
+  and J2 overhang the long edges). Check rotations in JLC's placement
+  preview, especially J2 and the THT connectors.
+- Confirm ETH 0.16/0.15 and USB 0.25/0.15 in JLC's impedance
+  calculator (JLC04161H-7628).
+- Uploading Gerbers to JLC is the user's call: fab/ via
+  tools/jlcfab.py.
 
 ## Repo state
 
@@ -125,7 +64,7 @@ map: docs/controller.md.
   Generated, then tidied by hand-style layout; netlist verified
   identical across the tidy. ERC 0. PCB regenerated from scratch after
   the 19 V change (162 footprints, 0 parity issues); nothing placed,
-  outline 230 x 40 mm (180 was too dense) with 4 corner M3 NPTH
+  outline 250 x 50 mm (180 x 40 was too dense) with 4 corner M3 NPTH
   holes; first grouped placement done (tools/place.py), unrouted.
 
 ## PCB setup already done
@@ -210,7 +149,7 @@ architecture.md, duck-core.md, duck-protocol.md.
 - `tools/setrules.py <pcb> <pro>`: applies the stackup, board rules
   and net class values. Run after mkboard.
 - `tools/outline.py <in.pcb> <out.pcb> [L] [H]`: Edge.Cuts rectangle
-  (default 180 x 40 mm, board uses 230 x 40, 1 mm corner radius) plus H1-H4 M3 NPTH holes
+  (default 180 x 40 mm, board uses 250 x 50, 1 mm corner radius) plus H1-H4 M3 NPTH holes
   4 mm in from each corner, board-only. Idempotent; re-run after
   mkboard (which parks parts at x < 0, left of the outline). Same
   scratch-dir rule as mkboard. Order: mkboard -> outline -> place -> silk -> setrules -> krt_route -> gndpour.
@@ -303,6 +242,14 @@ architecture.md, duck-core.md, duck-protocol.md.
     for K1-K16, U16/U17, J1, U1 in 3dmodels/ (see its README); JLC
     outputs via tools/jlcfab.py. All LCSC parts were in stock for 8
     boards on 2026-10-08 (jlcsearch); 27 Basic / 33 Extended.
+- Board state 2026-10-08 (night): review fix pass (docs/review-2026-10.md
+  "Status"). New parts R65/C52 (VBUS bleeder, left of J2), D9 (BUCK_5V
+  crowbar, below D2). Rule areas: 6.5 mm F/B.Cu keep-outs at H1-H4 and
+  "U1 body: no F.Cu tracks"; DRU rules for hole clearance 0.3 mm and
+  non-GND vias 0.5 mm from U1 pad 29. Zones end 1 mm from the short
+  edges. Autorouter vias moved out of SMD pads (only the U1 pad 29
+  thermal vias stay in a pad). tools/silk.py and tools/connlabels.py
+  now write 1.0/0.15 mm text and widen footprint silk to 0.15 mm.
 - Check after any change: `kicad-cli sch erc --severity-all`,
   `kicad-cli pcb drc --schematic-parity`. Expect 0 parity issues.
 - kicad-cli occasionally re-serializes granite_controller.kicad_pro;

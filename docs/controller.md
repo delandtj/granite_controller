@@ -61,22 +61,29 @@ later. Choose materials for the harsher case now.
   must not take the controller down with it. PoE is gone (the Ag9905MT
   module and the PoE magjack were the two most expensive parts and the
   module was not stocked at JLC).
-- Input protection: F3 PTC (1206L050/33NR, 0.5 A hold, 33 V), D1 TVS
+- Input protection: F3 PTC (1206L075/33NR, 0.75 A hold, 33 V, C49196637), D1 TVS
   (SMAJ22A, 22 V standoff, 35.5 V clamp, below the buck's 38 V abs
   max), D8 SS34 series Schottky for reverse polarity (with a reversed
-  input D1 conducts forward and trips F3).
+  input D1 conducts forward and trips F3). D9 SMAJ6.0A on BUCK_5V is a
+  crowbar: if U8's high-side FET shorts it clamps and F3 trips, which
+  keeps 19 V off USB VBUS. It does not keep the rail under the
+  TLV62569's 6 V abs max.
 - U8 LMR51430YDDCR (TI, 4.5-36 V in, 3 A, 1.1 MHz PFM) -> BUCK_5V.
   Datasheet table 9-2 values: L3 3.3 uH (FXL0630-3R3-M, molded, 8.5 A
-  sat), CIN 2x 4.7 uF/50 V X7R + 100 nF, COUT 2x 22 uF/25 V, CBOOT
-  100 nF, EN tied to VIN. Feedback 100k / 13k: 0.6 V x (1 + 100/13) =
-  5.22 V, so +5V is about 4.85 V after the D2 Schottky.
+  sat, 30 V withstand; the 75 V -MV75 variant is not at LCSC, so L3
+  stays), CIN 2x 4.7 uF/50 V X7R + 100 nF, COUT 2x 22 uF/25 V, CBOOT
+  100 nF, EN tied to VIN. Feedback 100k / 12.4k (R38): 0.6 V x (1 + 100/12.4) =
+  5.44 V, so +5V is about 5.0 V after the D2 Schottky.
 - 5 V rail: BUCK_5V or USB-C VBUS (bench service), OR-ed by D2/D3, then
-  TLV62569 buck -> 3V3 (unchanged).
+  TLV62569 buck -> 3V3 (unchanged). R65 4.7k + C52 2.2 uF on VBUS bleed
+  it down so a USB-C host sees vSafe0V and attaches when the board runs
+  on 19 V (D3 leakage would otherwise float VBUS up).
 - 5 V budget: 3V3 load (below) plus up to 0.5 A to J8 through F2: about
   1.2 A worst case, about 0.4 A at 19 V.
 - 3V3 budget: ESP32-C6 module up to ~0.4 A peak (radio TX; normally
   off), W5500 ~0.13 A, relay expander plus LEDs ~0.1 A, rest < 0.05 A.
-  Total under 0.7 A against the 2 A buck.
+  Total under 0.7 A. The TLV62569 is a 2 A part, but L1 (SWPA3015S2R2,
+  Isat 1.6 A) makes the rail good for ~1.3 A total.
 - C2 (220 uF bulk on +5V) is a KEMET T520D227M010ATE018 molded
   tantalum-polymer (10 V, 18 mOhm, D case) instead of a rubber-sealed
   aluminium-polymer can: 5 V is 50 % of rating.
@@ -84,7 +91,9 @@ later. Choose materials for the harsher case now.
   passives use JLC basic parts with equal or better voltage, dielectric
   and tolerance than the original MPNs.
 - USB-C VBUS can power the board for bench service (existing D2/D3
-  OR-ing kept).
+  OR-ing kept). From USB the worst case (1.2 A) exceeds USB 2.0 /
+  Type-C default current, and C2 behind D3 exceeds the 10 uF inrush
+  limit: bench only.
 
 ### MCU
 
@@ -126,17 +135,23 @@ Pin map:
 | Spare to J8 | 8 (strapping: 10k pull-up), 15 (strapping: only signals that are high-Z at boot) |
 | Spare, unconnected | 11 |
 
+The 1-wire bus sits on U0TXD/U0RXD, so ROM/bootloader logs appear on
+the probe bus at boot (harmless). Firmware moves the console to
+USB-Serial-JTAG.
+
 ### Ethernet
 
 - WIZnet W5500 (LQFP-48), 10/100, hardware TCP/IP not used: ESP-IDF
   drives it in MAC-raw mode so lwIP and TLS run on the C6.
-- SPI mode 0, 20-40 MHz.
-- 25 MHz crystal, CL 18 pF (load caps ~15-18 pF after strays), 1M
+- SPI mode 0, up to 33 MHz (W5500 datasheet 5.5.4 note 5; not 40).
+- 25 MHz crystal Y2 (X322525MOB4SI, CL 12 pF), C26/C27 15 pF load caps
+  (with strays ~12 pF), 1M
   feedback across XI/XO per the datasheet figure.
 - EXRES1 12.4k 1 %; TOCAP 4.7 uF; 1V2O 10 nF; VBG open; RSVD pins
   to GND; PMODE pins open (all-capable autonegotiation).
 - Supplies: see the AVDD line below; 100 nF on VDD.
-- Magjack: HanRun HR911105A (LCSC C12074; replaces the PoE ARJP11A).
+- Magjack: HanRun HR911105A (LCSC C12074; replaces the PoE ARJP11A),
+  rated 0-70 C (relevant if the fluid runs hot).
   1CT:1CT magnetics, internal Bob Smith termination (75R + 1 nF/2 kV)
   to pin 8, which goes to GND. The shield (SH) goes to ETH_SHLD (1M ||
   1 nF/2 kV to GND, R28/C36). LEDs are driven by the W5500 (active-low
@@ -159,27 +174,38 @@ Pin map:
 
 ### Relay channels and node power sensing
 
-- 8 channels x (RST, PWR): TLP176AM photoMOS, 330R LED resistor,
+- 8 channels x (RST, PWR): TLP176AM photoMOS, 270R LED resistor (R101-R116: IF ~6.5 mA typ,
+  ~4 mA worst case; all 16 on ~104 mA, under the MCP23017 VDD limit
+  of 125 mA; 220R would be 128 mA),
   100R output resistor, floating outputs.
 - Node connectors J11-J18, JST-PH 5p (B5B-PH-K-S): 1 PWR_SW, 2 RST_SW,
   3 node GND (common return of both buttons: on motherboards the
   switch returns are ground), 4 PLED+, 5 PLED-. Five wires per node.
 - PLED sense: the node's power-LED pins drive a TLP290-4 channel
   (U16 ch1-4, U17 ch5-8; AC input, so polarity does not matter) through
-  220R in series with the board's own LED resistor. 10k pull-up on the
+  220R in series with the board's own LED resistor. 47k pull-up (R39-R46) on the
   collector: NODE_ONn low = node power LED lit. Firmware uses it to
   avoid toggling a running node off, confirm presses, and tell hung
   from off. To check against the actual motherboard: PLED drive level
   (expected 3.3-5 V via a resistor, 5-20 mA) and that the switch
-  returns are ground.
-- U15 MCP23017 @0x21 on the internal bus: GPA0-7 = NODE_ON1-8 (inputs),
-  GPB0-3 = DRY_IN1-4, GPB4-7 spare. INTA on the shared EXP_INT
-  (configure open-drain, IOCON.ODR), reset shared with U14.
+  returns are ground. With 47k the sense works down to IF ~0.3 mA, with
+  IF = (V_PLED - 1.2) / (220 + R_mb); a 10k pull-up would need ~2 mA
+  and limit R_mb to ~830R at 3.3 V PLED.
+- U15 MCP23017 @0x21 on the internal bus: GPA0-6 = NODE_ON1-7, GPB4 = NODE_ON8
+  (inputs), GPB0-3 = DRY_IN1-4, GPB5-6 spare. GPA7 and GPB7 are
+  output-only on the MCP23017 (DS20001952D), so never use them as
+  inputs (also for J8 add-on modules). INTA on the shared EXP_INT,
+  reset shared with U14. Firmware: set IOCON.ODR = 1 on every expander
+  before enabling GPINTEN (INTA is push-pull after reset and EXP_INT is
+  shared); U15 also needs IOCON.MIRROR = 1 (dry contacts are on port B,
+  INTB is not wired).
 - U14 MCP23017 @0x20 on the internal I2C bus, sourcing the LED
   current (GPA0-7 = PWR, GPB0-7 = RST).
 - U14 has its own reset line (EXP_nRESET_INT) with a pull-down: if
-  the MCU is in reset, hung or not driving it, U14 is in reset and every
-  button is released.
+  the MCU is in reset or not driving it (high-Z), U14 is in reset and
+  every button is released. This covers reset and high-Z only: firmware
+  that hangs with GPIO10 high keeps the relays live, so that case relies
+  on the watchdog.
 
 ### I2C buses
 
@@ -187,6 +213,10 @@ Pin map:
 |---|---|---|
 | Internal (HP I2C, on-board only) | U14 MCP23017 (relays), U15 MCP23017 (sense), U5 TMP1075 | 0x20, 0x21, 0x48 |
 | External (J8) | add-on MCP23017 modules, power board LTC4282 x8 | 0x21-0x27, 0x40-0x47 |
+
+Run the external bus at 100 kHz (4.7k pull-ups, ~200 pF with 8 LTC4282,
+add-ons and cable; 400 kHz does not meet the rise time). The internal
+bus is fine at 400 kHz.
 
 A fault on the external bus (cable, add-on, power board) must not stop
 relay control: the two buses share no pins, and the internal
@@ -207,10 +237,12 @@ as before:
 | 9 | unused (was GPIO5, now VIN_SENSE) | 10 | GPIO8 |
 | 11 | GPIO15 | 12 | GND |
 
+Add-on expanders on J8: GPA7 and GPB7 of an MCP23017 are output-only.
+
 ### Added inputs
 
 - VIN_SENSE: 100k/10k divider (R63/R64, 100 nF) from VIN_19V to GPIO5
-  (ADC1): 19 V -> 1.73 V, 36 V TVS clamp -> 3.27 V. Bus voltage is
+  (ADC1): 19 V -> 1.73 V, 35.5 V TVS clamp -> 3.23 V. Bus voltage is
   visible without the power board.
 - J9 I2C sensor port, JST-PH 4p in Qwiic pin order (1 GND, 2 3V3,
   3 SDA, 4 SCL) on the protected header bus (same 330R + ESD + PTC as
@@ -231,6 +263,11 @@ as before:
 ### PCB
 
 - 4 layers, JLCPCB (bare board and assembly), JLC04161H-7628 stackup.
+- Outline 250 x 50 mm.
+- Panelization: JLC rails with mouse bites on the two short edges only
+  (U1's antenna and J2 overhang the long edges). Verify rotations in
+  JLC's placement preview; tools/jlcfab.py uses an explicit
+  per-footprint correction table checked against EasyEDA footprints.
 - Differential pairs: Ethernet MDI 0.16/0.15 mm = 101R with the fluid
   above the outer layers (requirement 6 under Environment); USB
   0.25/0.15 mm = 89R in air, since the service port is used out of
@@ -254,8 +291,8 @@ the 28-pin GPIO expansion header (replaced by the 2x8 header above).
    software I2C for the external bus (same pins 6/7).
 4. Motherboard front-panel pinout (board model needed): PLED drive and
    ground switch returns, for the 5-wire node cable.
-5. Board outline, connector placement, mounting holes, assembly side,
-   surface finish (carried over from the layout discussion).
+5. Connector placement, mounting holes, assembly side, surface finish
+   (carried over from the layout discussion; outline is 250 x 50 mm).
 
 Also to review: the rev C sheets are generated (one label per pin,
 parts in rows). Electrically checked (ERC clean, netlist traced);

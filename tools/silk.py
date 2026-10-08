@@ -7,7 +7,10 @@ Usage: silk.py <in.kicad_pcb> <out.kicad_pcb>
 - Small passives (courtyard < 8 mm^2: 0402/0603 R/C/L, small diodes,
   resistor arrays) get their silk reference hidden; the F.Fab
   ${REFERENCE} text stays for the assembly drawing.
-- Every other reference is set to 0.8 mm / 0.15 mm and moved to the first
+- Footprint silk lines thinner than 0.15 mm are widened to 0.15 mm (JLC
+  minimum line width; library parts use 0.12 mm).
+- Every other reference is set to 1.0 mm / 0.15 mm (JLC minimum text
+  height) and moved to the first
   spot around its courtyard (above, below, right, left), else inside its own
   courtyard, that is inside the board, off every pad and silk outline, off other
   parts'
@@ -22,7 +25,8 @@ src, out = sys.argv[1:3]
 board = pcbnew.LoadBoard(src)
 _f = board.Footprints()
 FPS = [_f[i] for i in range(len(_f))]
-SIZE, THICK, GAP = 0.8, 0.15, 0.2
+SIZE, THICK, GAP = 1.0, 0.15, 0.2
+MIN_LINE = 0.15
 
 
 def mm(v):
@@ -52,7 +56,11 @@ for fp in FPS:
     g = fp.GraphicalItems()
     for i in range(len(g)):
         it = g[i].Cast()
-        if it.GetLayer() != pcbnew.F_SilkS or not isinstance(it, pcbnew.PCB_SHAPE):
+        if it.GetLayer() not in (pcbnew.F_SilkS, pcbnew.B_SilkS) or not isinstance(it, pcbnew.PCB_SHAPE):
+            continue
+        if it.GetWidth() < pcbnew.FromMM(MIN_LINE):
+            it.SetWidth(pcbnew.FromMM(MIN_LINE))
+        if it.GetLayer() != pcbnew.F_SilkS:
             continue
         st = it.GetShape()
         if st == pcbnew.SHAPE_T_SEGMENT:

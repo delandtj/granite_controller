@@ -1,9 +1,14 @@
 (version 1)
 
 # Board setup allows 0.15 mm hole clearance only so the GCT USB4105
-# land pattern (J2: GND pads 0.19 mm from its NPTHs) passes.
-# Everything else keeps 0.25 mm.
+# land pattern (J2: GND pads 0.19 mm from its own NPTHs) passes.
+# Everything else (incl. zones at H1-H4 and the J1/J2 pegs) keeps 0.3 mm.
 (rule "Hole clearance"
 	(condition "!(A.memberOfFootprint('J2') && B.memberOfFootprint('J2'))")
-	(constraint hole_clearance (min 0.25)))
+	(constraint hole_clearance (min 0.3mm)))
 
+# Keep signal vias off the ESP32 module's exposed pad (review N8): the
+# EPAD land is GND, a foreign via under the module must stay 0.5 mm away.
+(rule "U1 EPAD foreign vias"
+	(condition "A.Type == 'Via' && A.NetName != 'GND' && B.memberOfFootprint('U1') && B.Pad_Number == '29'")
+	(constraint clearance (min 0.5mm)))
