@@ -1159,7 +1159,7 @@
 			(uuid "4fef2505-bfd7-4101-8439-8ae95d218e6b")
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Package_SO.3dshapes/SOIC-4_4.55x3.7mm_P2.54mm.step"
+		(model "${KIPRJMOD}/3dmodels/TLP176AM_SO4.step"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -1808,7 +1808,7 @@
 			(uuid "e4579b37-fa8f-46b6-b4f9-0ff3e9eaa6b2")
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Package_SO.3dshapes/SOIC-4_4.55x3.7mm_P2.54mm.step"
+		(model "${KIPRJMOD}/3dmodels/TLP176AM_SO4.step"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -3288,7 +3288,7 @@
 			(uuid "dfacc9d5-eea6-46df-b9b9-083f2e0bffbb")
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Package_SO.3dshapes/SOIC-4_4.55x3.7mm_P2.54mm.step"
+		(model "${KIPRJMOD}/3dmodels/TLP176AM_SO4.step"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -3966,6 +3966,17 @@
 			)
 		)
 		(embedded_fonts no)
+		(model "${KIPRJMOD}/3dmodels/ESP32-C6-WROOM-1.step"
+			(offset
+				(xyz -9 -12.75 0)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz 0 0 0)
+			)
+		)
 	)
 	(footprint "Connector_USB:USB_C_Receptacle_GCT_USB4105-xx-A_16P_TopMnt_Horizontal"
 		(layer "F.Cu")
@@ -9616,7 +9627,7 @@
 			(uuid "a6b7198c-6ca9-4178-97f5-a85b7d35fc89")
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Package_SO.3dshapes/SOIC-4_4.55x3.7mm_P2.54mm.step"
+		(model "${KIPRJMOD}/3dmodels/TLP176AM_SO4.step"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -15891,7 +15902,7 @@
 			(uuid "beaefe26-bd64-43a9-90e1-89b104a3463a")
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Package_SO.3dshapes/SOIC-4_4.55x3.7mm_P2.54mm.step"
+		(model "${KIPRJMOD}/3dmodels/TLP176AM_SO4.step"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -16402,9 +16413,9 @@
 			(uuid "2ffe3e18-4364-47e4-b4e7-86829bad6f6f")
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Connector_RJ.3dshapes/RJ45_Hanrun_HR911105A_Horizontal.step"
+		(model "${KIPRJMOD}/3dmodels/HR911105A.step"
 			(offset
-				(xyz 0 0 0)
+				(xyz 4.443 -4.357 0)
 			)
 			(scale
 				(xyz 1 1 1)
@@ -16865,7 +16876,7 @@
 			(uuid "8e96c4fc-6485-4dee-8cd3-510a5f7c81a4")
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Package_SO.3dshapes/SOIC-4_4.55x3.7mm_P2.54mm.step"
+		(model "${KIPRJMOD}/3dmodels/TLP176AM_SO4.step"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -20339,7 +20350,7 @@
 			(uuid "f0928f85-cd5a-410d-bc04-75f29eb01511")
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Package_SO.3dshapes/SOIC-4_4.55x3.7mm_P2.54mm.step"
+		(model "${KIPRJMOD}/3dmodels/TLP176AM_SO4.step"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -23612,7 +23623,7 @@
 			(uuid "b43f7395-83f0-40c4-bdc9-6e7b5c0aae1f")
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Package_SO.3dshapes/SOIC-4_4.55x3.7mm_P2.54mm.step"
+		(model "${KIPRJMOD}/3dmodels/TLP176AM_SO4.step"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -29650,7 +29661,7 @@
 			(uuid "3a89b8c6-c666-479b-9bbe-a5d353ee3b5c")
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Package_SO.3dshapes/SOIC-4_4.55x3.7mm_P2.54mm.step"
+		(model "${KIPRJMOD}/3dmodels/TLP176AM_SO4.step"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -30299,7 +30310,7 @@
 			(uuid "24dbc219-7ce7-41ae-a211-072d9cae63d4")
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Package_SO.3dshapes/SOIC-4_4.55x3.7mm_P2.54mm.step"
+		(model "${KIPRJMOD}/3dmodels/TLP176AM_SO4.step"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -37415,7 +37426,7 @@
 			(uuid "dbd7b696-293e-420d-8e2f-4b09e1973e2e")
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Package_SO.3dshapes/SOP-16_4.55x10.3mm_P1.27mm.step"
+		(model "${KIPRJMOD}/3dmodels/TLP290-4_SOP16.step"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -37423,7 +37434,7 @@
 				(xyz 1 1 1)
 			)
 			(rotate
-				(xyz 0 0 0)
+				(xyz 0 0 90)
 			)
 		)
 	)
@@ -43037,7 +43048,7 @@
 			(uuid "7e12b34e-790d-4e74-ba3f-71da29a92131")
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Package_SO.3dshapes/SOIC-4_4.55x3.7mm_P2.54mm.step"
+		(model "${KIPRJMOD}/3dmodels/TLP176AM_SO4.step"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -43872,7 +43883,7 @@
 			(uuid "47553be4-c359-41c6-8f97-803254cf5d12")
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Package_SO.3dshapes/SOIC-4_4.55x3.7mm_P2.54mm.step"
+		(model "${KIPRJMOD}/3dmodels/TLP176AM_SO4.step"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -45079,7 +45090,7 @@
 			(uuid "c46d6ea1-0203-4259-acd1-011caadc3e96")
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Package_SO.3dshapes/SOIC-4_4.55x3.7mm_P2.54mm.step"
+		(model "${KIPRJMOD}/3dmodels/TLP176AM_SO4.step"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -46787,7 +46798,7 @@
 			(uuid "0cbcab65-5f3a-4022-ba7c-144fee4a0450")
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Package_SO.3dshapes/SOIC-4_4.55x3.7mm_P2.54mm.step"
+		(model "${KIPRJMOD}/3dmodels/TLP176AM_SO4.step"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -47994,7 +48005,7 @@
 			(uuid "4d8951e9-31c7-41d4-aba1-2d6e10685eaf")
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Package_SO.3dshapes/SOIC-4_4.55x3.7mm_P2.54mm.step"
+		(model "${KIPRJMOD}/3dmodels/TLP176AM_SO4.step"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -48453,7 +48464,7 @@
 			(uuid "57e682b2-24c6-42d6-b36e-41e1b25c1b02")
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Package_SO.3dshapes/SOP-16_4.55x10.3mm_P1.27mm.step"
+		(model "${KIPRJMOD}/3dmodels/TLP290-4_SOP16.step"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -48461,7 +48472,7 @@
 				(xyz 1 1 1)
 			)
 			(rotate
-				(xyz 0 0 0)
+				(xyz 0 0 90)
 			)
 		)
 	)
@@ -49796,7 +49807,7 @@
 			(uuid "1e1e983c-6894-4b3c-bec7-57857086baf1")
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Package_SO.3dshapes/SOIC-4_4.55x3.7mm_P2.54mm.step"
+		(model "${KIPRJMOD}/3dmodels/TLP176AM_SO4.step"
 			(offset
 				(xyz 0 0 0)
 			)

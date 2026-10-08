@@ -577,4 +577,15 @@
 		)
 	)
 	(embedded_fonts no)
+	(model "${KIPRJMOD}/3dmodels/ESP32-C6-WROOM-1.step"
+		(offset
+			(xyz -9 -12.75 0)
+		)
+		(scale
+			(xyz 1 1 1)
+		)
+		(rotate
+			(xyz 0 0 0)
+		)
+	)
 )
