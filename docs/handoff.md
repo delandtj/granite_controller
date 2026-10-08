@@ -87,10 +87,33 @@ Power board: PSU model (paralleling, PMBus), node 19 V input connector
 
 ## Next likely steps
 
-1. User review of rev C with the colleague.
-2. PCB: outline + mounting holes + grouped placement (ESP32 antenna
-   keep-out at a board edge), then user routes critical nets.
-3. Power board schematic once its open items are answered.
+1. Architecture is being iterated (see "Pod architecture" below): this
+   board stays as the integrated controller for small (one-frame) sites.
+2. PCB: spread RN1/RN2/U7/U18 around J8 by hand (free space to the
+   right), then re-run the targeted KRT pass on the open nets (command in
+   the board-state note above; work dir ~/.cache/granite-pcb/fix).
+3. User hand-routes the critical nets: Ethernet pairs + their crossover
+   at the W5500 (removes the 3 undersized vias), USB, switcher loops
+   (U8/L3, U2/L1), crystal Y2. Then delete the dangling vias.
+4. Open hardware questions: motherboard front-panel pinout (PLED drive,
+   ground switch returns) - user waits for the board doc/STEP; J8 as the
+   power-board link (fit by default, keyed connector?); PSU remote control
+   (ON/OFF via photoMOS, current/voltage setpoint via I2C DAC with a
+   hardware-clamped range) - belongs on the power board.
+
+## Pod architecture (2026-10-08, iterating)
+
+A pod holds 4 nodes up to 9 frames x 8 plus storage, PSUs and more. Idea:
+one controller per pod outside the fluid (network, Wi-Fi, bus master) and
+a family of "ducks" near the equipment (frame duck, storage duck, PSU
+duck, more to come) on RS-485 / Modbus RTU (I2C is board-local only).
+Proposed: a common duck core as a KiCad design block (MCU, RS-485, 19 V
+front end, unique ID), self-describing ducks (identity + capability
+registers), generic channel kinds (contact, binary in, temperature,
+analog in/out, switched out). Open: controller location and bus length,
+max ducks per pod, polling vs events (CAN), ground bonding across frames,
+addressing without DIP switches. Docs to write when settled:
+architecture.md, duck-core.md, duck-protocol.md.
 
 ## Tools and gotchas
 
@@ -132,11 +155,17 @@ Power board: PSU model (paralleling, PMBus), node 19 V input connector
   routing.
 - Board state 2026-10-08: placement by place.py + the user's hand moves
   (whole board shifted +25/+28.6 mm on the sheet, MCU-corner parts moved),
-  routed by krt_route.sh, poured by gndpour.py. DRC: 0 parity, 21
-  unconnected (header/dry-contact lines, W5500 SPI and AGND pins 9/19,
-  USB_CONN_D+), 3 undersized 0.3/0.15 vias at the W5500 pair crossovers,
-  11 dangling vias. The Ethernet pairs are mostly single-ended: re-route
-  by hand.
+  routed by krt_route.sh, poured by gndpour.py, then a targeted KRT pass on
+  the open nets (rip + reroute those 16 signal nets, GND pass without rip).
+  DRC (refill zones first: KRT does not refill, a stale fill shows as
+  hundreds of fake clearance errors): 0 parity, 18 unconnected, 27
+  violations. Open: J8 header lines (HDR_IO8/IO15/SDA, EXP_nRESET,
+  I2C_EXT_SDA, GPIO_IO8/IO15), W5500 SPI (SCLK/MOSI/MISO), ETH_LED_ACT,
+  W5500 GND pins 9/19, DRYC2/DRYC3. Blockers: neighbouring committed copper
+  (DRY_IN1 ...) and the tight RN1/RN2/U7/U18 pad field around J8.
+  Violations: 3 undersized 0.3/0.15 vias at the W5500 pair crossovers, 11
+  dangling vias, 1 dangling track, 4 starved thermals (THT GND, fine), 2
+  silk (antenna overhang, intended). Ethernet pairs mostly single-ended.
 - Check after any change: `kicad-cli sch erc --severity-all`,
   `kicad-cli pcb drc --schematic-parity`. Expect 0 parity issues.
 - kicad-cli occasionally re-serializes granite_controller.kicad_pro;
