@@ -89,13 +89,12 @@ Power board: PSU model (paralleling, PMBus), node 19 V input connector
 
 1. Architecture is being iterated (see "Pod architecture" below): this
    board stays as the integrated controller for small (one-frame) sites.
-2. PCB: J8 area done (see board state). Two lines still open into RN2:
-   GPIO_IO8 (U1 pad 10) and GPIO_IO15 (U1 pad 23, far side of the
-   module); route by hand or nudge RN2 and re-run tools/krt_reroute.sh.
-3. User hand-routes the critical nets: Ethernet pairs + their crossover
-   at the W5500 (removes the 3 undersized vias), USB, switcher loops
-   (U8/L3, U2/L1), crystal Y2. Then delete the dangling vias.
-4. Open hardware questions: motherboard front-panel pinout (PLED drive,
+2. PCB is fully routed (first pass, see board state). User reviews in
+   KiCad: Ethernet crossovers, power section loops, SPI transposition,
+   and the F.Cu tracks KRT left under the ESP32 module body (Espressif
+   advises keeping the module underside clear; B.Cu under it is fine).
+   Then: JLC impedance check, fab outputs.
+3. Open hardware questions: motherboard front-panel pinout (PLED drive,
    ground switch returns) - user waits for the board doc/STEP; J8 as the
    power-board link (fit by default, keyed connector?); PSU remote control
    (ON/OFF via photoMOS, current/voltage setpoint via I2C DAC with a
@@ -158,7 +157,12 @@ architecture.md, duck-core.md, duck-protocol.md.
   GND pass without rip, refills zones via kicad-cli and copies the board
   back. Name every non-GND net on the moved parts plus the open nets.
   Does not clean GND stubs left at old pad positions.
-- Board state 2026-10-08 (afternoon): placement by place.py + the user's
+- `tools/pcbtool.py`: helpers for scripted hand routing (add tracks and
+  vias at exact coordinates, delete a net's copper in a region) and
+  render(): a region PNG with F.Cu red, B.Cu blue, highlighted nets and
+  DRC opens/violations drawn in. `tools/prune.py <pcb> <drc.rpt>` deletes
+  what DRC flags as dangling; repeat DRC + prune until clean.
+- Board state 2026-10-08 (afternoon, superseded): placement by place.py + the user's
   hand moves (whole board shifted +25/+28.6 mm on the sheet, MCU-corner
   parts moved), routed by krt_route.sh, poured by gndpour.py, targeted KRT
   passes on the open nets. J8 area spread: RN1 (132, 68.5) and RN2
@@ -167,15 +171,37 @@ architecture.md, duck-core.md, duck-protocol.md.
   to a 0.6/0.3 GND via 1.2 mm right of pad 8 (KRT cannot reach them). 22
   nets rerouted (all J8/RN/DRYC/EXP nets incl. EXP_nRESET_INT, which ran
   through the RN1 spot, plus the W5500 SPI and ETH_LED_ACT).
-  DRC (refill zones first: KRT does not refill, a stale fill shows as
-  hundreds of fake clearance errors): 0 parity, 7 unconnected, 23
-  violations. Open: GPIO_IO8 and GPIO_IO15 into RN2, W5500 SPI
-  (SCLK/MISO), ETH_LED_ACT, W5500 GND pins 9/19. Violations: 3 undersized
-  0.3/0.15 vias at the W5500 pair crossovers (via_diameter, drill,
-  annular each), 9 dangling vias (W5500/USB area and the failed SPI
-  stubs at U1), 3 starved thermals (J2 shield, J8 GND pins 3/4), 2 silk
-  (antenna overhang, intended). No shorts, no dangling tracks. Ethernet
-  pairs mostly single-ended.
+- Board state 2026-10-08 (evening): FULLY ROUTED, first pass. DRC
+  (refill zones first: KRT does not refill, a stale fill shows as
+  hundreds of fake clearance errors): 0 unconnected, 0 parity, 4
+  violations: 2 silk (antenna overhang, intended), 2 starved thermals on
+  J8 GND pins 3/4 (THT, also tied to the In1 plane). ERC 0. Hand work
+  (scripted through tools/pcbtool.py, geometry in the commit messages):
+  - Ethernet MDI: J1 -> R20/R21, C28/C29, R22/R23 -> 33R row straight;
+    TX/RX crossovers between the 33R row and U3 on 0.5/0.2 vias (N line
+    on B.Cu). W5500 AVDD pins 4-8 and 11-15 joined under the LQFP body,
+    GND pins 9/19 to inner plane vias, EXRES straight to R15.
+  - Crystal: XO on F.Cu around Y2's right, XI under Y2 on B.Cu.
+  - SPI/INT/RST: the W5500 edge order (CS SCLK MISO MOSI INT RST) is the
+    reverse of the ESP32 west column (CS SCLK MOSI MISO INT RST), so each
+    line runs east on F.Cu at its own 0.8 mm level and transposes on its
+    own B.Cu column at x 96-100; RST stays on F.Cu. Pull-ups R16/R17/R18
+    moved into the bundle (x 80-86) with +3V3 plane vias.
+  - GPIO_IO15 to RN2 under the module on B.Cu (clear of the U1 thermal
+    pad), GPIO_IO8 over to a via beside RN1; C6_EN, EXP_nRESET,
+    I2C_EXT_SCL/SDA, HDR_IO15 rerouted by KRT around them.
+  - USB: R34/R35 moved next to U1 pins 13/14, U4 -> R34/R35 routed as a
+    0.25/0.15 pair (KRT route_diff); connector side unchanged (D+/D- pad
+    joins under the receptacle, normal for USB-C).
+  - Power section re-placed for tight loops (the old one had U8's input
+    caps ~17 mm and its bootstrap cap ~20 mm away): U8 at (47.5, 62) with
+    L3 0.7 mm off SW, C42/C41/C40 on a VIN bar under pin 3, GND via under
+    the body, EN tied to VIN under the body, C43 above, R37/R38 at FB;
+    C44/C45 and D2 at L3's output. U2 at (32, 59) with L1 at SW, C3 under
+    VIN, C4 at the output, EN tied to VIN under the body. Input chain
+    J3 -> F3 -> D8 with D1 below. C51 moved left of its old spot.
+  - The rest of the board is KRT. KRT put many F.Cu tracks under the ESP32
+    module body (see next steps).
 - Check after any change: `kicad-cli sch erc --severity-all`,
   `kicad-cli pcb drc --schematic-parity`. Expect 0 parity issues.
 - kicad-cli occasionally re-serializes granite_controller.kicad_pro;
