@@ -1,4 +1,4 @@
-# Handoff - granite controller (updated 2026-10-08 evening)
+# Handoff - granite controller (updated 2026-10-08 night)
 
 Read this first, then docs/controller.md and docs/power-board.md.
 
@@ -11,6 +11,25 @@ after the fix pass: ERC 0; DRC 0 unconnected, 0 parity, 3 violations
 (2 silk_edge_clearance at the WROOM antenna overhang, intended; 1
 starved_thermal on J8 pad 4, THT, also on the In1 plane).
 
+How the fix pass was done (so the next session knows what to trust):
+all of it was scripted by subagents (schematic edited as s-expression
+text, board edited through pcbnew python and KRT reroutes), then checked
+with kicad-cli ERC/DRC and region renders. Nobody has looked at the
+result in KiCad yet. Commits: 24a0118 (review doc), 4b83edc (fixes).
+
+First job next session: an independent check of 4b83edc before
+ordering, read-only, findings first:
+- Diff the schematic sheets against 1b5ff69 and confirm each change in
+  docs/review-2026-10.md "Status" is there and nothing else changed
+  (values, LCSC/MPN fields, NODE_ON8 on U15 pin 5, pin 28 NC).
+- Re-run ERC/DRC (expect the numbers above) and the via-in-pad count
+  (only the 4 thermal vias in U1 pad 29).
+- Render and inspect: power section (x 25-55), U1 area (x 100-135),
+  U14/U15 and the relay columns, where vias were dogboned and 13 nets
+  rerouted by KRT (list in the commit message / review status).
+- Spot-check tools/jlcfab.py rotations against JLC's preview once the
+  user uploads (K*, U2, U8, JST, U1/J2 offsets were changed).
+
 Left for the user / the order:
 - Review the board in KiCad: power section (shifted right for the
   short-edge rails), the U1 area (EN RC, decoupling, VIN_SENSE moved
@@ -22,11 +41,12 @@ Left for the user / the order:
   calculator (JLC04161H-7628).
 - Uploading Gerbers to JLC is the user's call: fab/ via
   tools/jlcfab.py.
+- Decide J8: stay DNP or fitted keyed box header (power-board link).
 
 ## Repo state
 
 - Branch `eight-node-expander` holds all current work (rev C), pushed to
-  the fork (2026-10-08 evening, including the 3D models and this
+  the fork (2026-10-08 night, including the review fixes and this
   handoff). Push only when the user asks.
 - `master` = rev A (colleague's STM32 design) + PCB setup, BOM fix,
   first expansion header. Both branches are pushed to the user's fork.
@@ -111,12 +131,8 @@ Power board: PSU model (paralleling, PMBus), node 19 V input connector
 
 1. Architecture is being iterated (see "Pod architecture" below): this
    board stays as the integrated controller for small (one-frame) sites.
-2. PCB is fully routed (first pass, see board state). Next: the three
-   verification passes at the top of this file. The user also reviews in
-   KiCad: Ethernet crossovers, power section loops, SPI transposition,
-   and the F.Cu tracks KRT left under the ESP32 module body (Espressif
-   advises keeping the module underside clear; B.Cu under it is fine).
-   Decide J8: stay DNP or fitted keyed box header (power-board link).
+2. PCB: review fix pass done (see the top of this file); next is the
+   independent check, then order prep.
 3. Open hardware questions: motherboard front-panel pinout (PLED drive,
    ground switch returns) - user waits for the board doc/STEP; J8 as the
    power-board link (fit by default, keyed connector?); PSU remote control
