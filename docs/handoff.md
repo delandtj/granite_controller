@@ -157,6 +157,12 @@ architecture.md, duck-core.md, duck-protocol.md.
   GND pass without rip, refills zones via kicad-cli and copies the board
   back. Name every non-GND net on the moved parts plus the open nets.
   Does not clean GND stubs left at old pad positions.
+- `tools/jlcfab.py [pcb] [out]` (KiCad python): JLC outputs into fab/
+  (gitignored): Gerbers + Excellon zip, BOM (Comment/Designator/Footprint/
+  LCSC Part #, grouped by LCSC), CPL (absolute mm, Y flipped like the
+  Gerbers, THT parts at pad centre), and a list of rotation-corrected parts
+  (subset of matthewlai/JLCKicadTools' table) to check in JLC's preview.
+  Skips DNP (J8) and parts without LCSC (H1-H4, TP1-TP4).
 - `tools/connlabels.py <in.pcb> <out.pcb>`: connector function labels on
   F.Silkscreen ("J11 NODE 1", "J3 19V IN", ...) plus a pin legend under
   the wire-to-board connectors (node: PW RS CM L+ L-; 19 V: + -; 1-wire:
