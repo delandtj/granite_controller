@@ -87,8 +87,8 @@ calculator for stackup JLC04161H-7628, and review fab/*-rotations.txt
 ## Repo state
 
 - Branch `eight-node-expander` holds all current work (rev C), pushed to
-  the fork up to 14461e1; 404fa51 (3D models) and this handoff are local
-  until the user says push.
+  the fork (2026-10-08 evening, including the 3D models and this
+  handoff). Push only when the user asks.
 - `master` = rev A (colleague's STM32 design) + PCB setup, BOM fix,
   first expansion header. Both branches are pushed to the user's fork.
 - Remotes: `origin` = github.com/delandtj/granite_controller (fork),
