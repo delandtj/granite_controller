@@ -157,6 +157,12 @@ architecture.md, duck-core.md, duck-protocol.md.
   GND pass without rip, refills zones via kicad-cli and copies the board
   back. Name every non-GND net on the moved parts plus the open nets.
   Does not clean GND stubs left at old pad positions.
+- `tools/connlabels.py <in.pcb> <out.pcb>`: connector function labels on
+  F.Silkscreen ("J11 NODE 1", "J3 19V IN", ...) plus a pin legend under
+  the wire-to-board connectors (node: PW RS CM L+ L-; 19 V: + -; 1-wire:
+  3V DQ G; I2C: G 3V DA CL; dry in: 1 2 3 4 G). Hides those silk refs
+  (F.Fab keeps them), places around existing silk and pads, group
+  "conn-labels". Run after silk.py, which would show the refs again.
 - `tools/pcbtool.py`: helpers for scripted hand routing (add tracks and
   vias at exact coordinates, delete a net's copper in a region) and
   render(): a region PNG with F.Cu red, B.Cu blue, highlighted nets and
