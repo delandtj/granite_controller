@@ -43,8 +43,9 @@ r.update({
     "min_text_height": 0.8, "min_text_thickness": 0.15,
 })
 # name: (track, clearance, via_dia, via_drill, diff_width, diff_gap)
+# signal vias 0.5/0.2 (0.15 annular, JLC 4-layer standard); power/GND 0.6/0.3
 NC = {
-    "Default":              (0.2,  0.15, 0.6, 0.3, None, None),
+    "Default":              (0.2,  0.15, 0.5, 0.2, None, None),
     "GND":                  (0.4,  0.2,  0.6, 0.3, None, None),
     "PWR_3V3":              (0.4,  0.2,  0.6, 0.3, None, None),
     "PWR_5V":               (0.5,  0.2,  0.6, 0.3, None, None),
@@ -52,18 +53,18 @@ NC = {
     "PWR_VBUS":             (0.5,  0.2,  0.6, 0.3, None, None),
     "PWR_19V":              (0.4,  0.2,  0.6, 0.3, None, None),
     "MAGJACK_TRANSFORMERS": (0.3,  0.2,  0.6, 0.3, None, None),
-    "ETH_Lines":            (0.16, 0.2,  0.6, 0.3, 0.16, 0.15),
-    "USB":                  (0.25, 0.2,  0.6, 0.3, 0.25, 0.15),
-    "RMII":                 (0.2,  0.15, 0.6, 0.3, None, None),
-    "ETH_CTL":              (0.2,  0.15, 0.6, 0.3, None, None),
-    "SWD":                  (0.2,  0.15, 0.6, 0.3, None, None),
-    "RST":                  (0.2,  0.15, 0.6, 0.3, None, None),
-    "IC2_1":                (0.2,  0.15, 0.6, 0.3, None, None),
-    "TEMP_DATA":            (0.2,  0.15, 0.6, 0.3, None, None),
-    "PWR_DRV_BANK_0":       (0.2,  0.15, 0.6, 0.3, None, None),
-    "PWR_DRV_BANK_1":       (0.2,  0.15, 0.6, 0.3, None, None),
-    "RST_DRV_BANK_0":       (0.2,  0.15, 0.6, 0.3, None, None),
-    "RST_DRV_BANK_1":       (0.2,  0.15, 0.6, 0.3, None, None),
+    "ETH_Lines":            (0.16, 0.2,  0.5, 0.2, 0.16, 0.15),
+    "USB":                  (0.25, 0.2,  0.5, 0.2, 0.25, 0.15),
+    "RMII":                 (0.2,  0.15, 0.5, 0.2, None, None),
+    "ETH_CTL":              (0.2,  0.15, 0.5, 0.2, None, None),
+    "SWD":                  (0.2,  0.15, 0.5, 0.2, None, None),
+    "RST":                  (0.2,  0.15, 0.5, 0.2, None, None),
+    "IC2_1":                (0.2,  0.15, 0.5, 0.2, None, None),
+    "TEMP_DATA":            (0.2,  0.15, 0.5, 0.2, None, None),
+    "PWR_DRV_BANK_0":       (0.2,  0.15, 0.5, 0.2, None, None),
+    "PWR_DRV_BANK_1":       (0.2,  0.15, 0.5, 0.2, None, None),
+    "RST_DRV_BANK_0":       (0.2,  0.15, 0.5, 0.2, None, None),
+    "RST_DRV_BANK_1":       (0.2,  0.15, 0.5, 0.2, None, None),
 }
 for c in p["net_settings"]["classes"]:
     v = NC.get(c["name"])

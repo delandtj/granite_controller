@@ -572,6 +572,19 @@
         "clearance": 0.2,
         "microvia_diameter": 0.3,
         "microvia_drill": 0.1,
+        "name": "PWR_19V",
+        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "priority": 5,
+        "schematic_color": "rgb(168, 34, 69)",
+        "track_width": 0.4,
+        "tuning_profile": "",
+        "via_diameter": 0.6,
+        "via_drill": 0.3
+      },
+      {
+        "clearance": 0.2,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
         "name": "PWR_3V3",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 18,
@@ -595,32 +608,6 @@
         "via_drill": 0.3
       },
       {
-        "clearance": 0.15,
-        "microvia_diameter": 0.3,
-        "microvia_drill": 0.1,
-        "name": "PWR_DRV_BANK_0",
-        "pcb_color": "rgba(0, 0, 0, 0.000)",
-        "priority": 11,
-        "schematic_color": "rgb(255, 124, 193)",
-        "track_width": 0.2,
-        "tuning_profile": "",
-        "via_diameter": 0.6,
-        "via_drill": 0.3
-      },
-      {
-        "clearance": 0.2,
-        "microvia_diameter": 0.3,
-        "microvia_drill": 0.1,
-        "name": "PWR_19V",
-        "pcb_color": "rgba(0, 0, 0, 0.000)",
-        "priority": 5,
-        "schematic_color": "rgb(168, 34, 69)",
-        "track_width": 0.4,
-        "tuning_profile": "",
-        "via_diameter": 0.6,
-        "via_drill": 0.3
-      },
-      {
         "clearance": 0.2,
         "microvia_diameter": 0.3,
         "microvia_drill": 0.1,
@@ -629,6 +616,19 @@
         "priority": 6,
         "schematic_color": "rgb(223, 118, 55)",
         "track_width": 0.5,
+        "tuning_profile": "",
+        "via_diameter": 0.6,
+        "via_drill": 0.3
+      },
+      {
+        "clearance": 0.15,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
+        "name": "PWR_DRV_BANK_0",
+        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "priority": 11,
+        "schematic_color": "rgb(255, 124, 193)",
+        "track_width": 0.2,
         "tuning_profile": "",
         "via_diameter": 0.6,
         "via_drill": 0.3

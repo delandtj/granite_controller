@@ -107,7 +107,7 @@ Power board: PSU model (paralleling, PMBus), node 19 V input connector
   (default 180 x 40 mm, board uses 230 x 40, 1 mm corner radius) plus H1-H4 M3 NPTH holes
   4 mm in from each corner, board-only. Idempotent; re-run after
   mkboard (which parks parts at x < 0, left of the outline). Same
-  scratch-dir rule as mkboard. Order: mkboard -> outline -> place -> setrules.
+  scratch-dir rule as mkboard. Order: mkboard -> outline -> place -> silk -> setrules -> krt_route -> gndpour.
 - `tools/place.py <in.pcb> <out.pcb>`: first grouped placement for the
   230 x 40 strip (zones along x: power 0-28, Ethernet 28-60, MCU/USB
   60-100, probes + J8/J9/J10 100-130, U14/U15/U16/U17 130-160, node
@@ -120,6 +120,23 @@ Power board: PSU model (paralleling, PMBus), node 19 V input connector
   of pads, silk outlines, other courtyards and each other (connectors
   first). Run after place. Only expected silk DRC hits: U1's outline
   where the antenna overhangs the bottom edge.
+- `tools/krt_route.sh`: routes with KiCadRoutingTools (drandyhaas; checkout
+  and venv in ~/.cache/graver-pcb/routetest, rebuild the Rust core with
+  CARGO_TARGET_DIR unset). Strips old copper, then planes (GND In1, +3V3
+  In2), Ethernet and USB pairs, then everything on F.Cu/B.Cu only. Runs on
+  a copy in ~/.cache/granite-pcb/route because KRT rewrites the .kicad_pro
+  next to the board; only the .kicad_pcb comes back. Keeps hand placement.
+  Grade with kicad-cli DRC, never with KRT's own checks.
+- `tools/gndpour.py <in.pcb> <out.pcb>`: GND pours on F.Cu/B.Cu and
+  0.6/0.3 stitching vias (group "gnd-stitch", re-runnable). Run after
+  routing.
+- Board state 2026-10-08: placement by place.py + the user's hand moves
+  (whole board shifted +25/+28.6 mm on the sheet, MCU-corner parts moved),
+  routed by krt_route.sh, poured by gndpour.py. DRC: 0 parity, 21
+  unconnected (header/dry-contact lines, W5500 SPI and AGND pins 9/19,
+  USB_CONN_D+), 3 undersized 0.3/0.15 vias at the W5500 pair crossovers,
+  11 dangling vias. The Ethernet pairs are mostly single-ended: re-route
+  by hand.
 - Check after any change: `kicad-cli sch erc --severity-all`,
   `kicad-cli pcb drc --schematic-parity`. Expect 0 parity issues.
 - kicad-cli occasionally re-serializes granite_controller.kicad_pro;
