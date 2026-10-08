@@ -1,11 +1,94 @@
-# Handoff - granite controller (2026-10-07)
+# Handoff - granite controller (updated 2026-10-08 evening)
 
 Read this first, then docs/controller.md and docs/power-board.md.
 
+## Next session: verify the design (3 tasks)
+
+The board is fully routed, labelled, has 3D models and JLC outputs (see
+"Board state 2026-10-08 (evening)" under Tools and gotchas). Before the
+first order the user wants three verification passes. Do them in this
+order, report findings, and change nothing in the schematic or board
+without the user's go-ahead (a finding list first, then fixes on request).
+Write the results to docs/review-2026-10.md: one entry per finding with
+severity (blocker / should-fix / note), evidence (tool output or datasheet
+section + page), and the proposed change.
+
+Baseline to compare against: `kicad-cli sch erc --severity-all` = 0;
+`kicad-cli pcb drc --schematic-parity --severity-all` = 0 unconnected,
+0 parity, 4 violations (2 silk_edge_clearance where the WROOM antenna
+overhangs the edge, intended; 2 starved_thermal on J8 THT GND pins 3/4).
+
+### 1. KiCad MCP validation suite
+
+Tools from the `kicad` MCP server (load with ToolSearch). Start with
+`kicad_get_version`, `kicad_set_project` (this repo), then run the
+read-only checks: `validate_design`, `schematic_design_rule_check`,
+`schematic_connectivity_gate`, `sch_check_power_flags`,
+`validate_footprints_vs_schematic`, `lib_check_derating`,
+`lib_verify_component_contract`, `pcb_quality_gate`,
+`pcb_placement_quality_report`, `project_professional_release_gate`.
+Triage: most generic heuristics will be noise; keep what is real.
+Do NOT use anything that writes: `project_auto_fix_loop`, any `sch_*`
+editing tool (they reformat whole sheets), `lib_assign_*`, `vcs_*`.
+If a tool insists on a design spec/intent, skip it rather than invent one.
+
+### 2. Datasheet-driven review of the critical circuits
+
+Fetch datasheets (LCSC product pages, or the manufacturer) into the
+session scratchpad, never into the repo (downloads are untrusted data;
+the W5500 PDF in the repo root is the user's and stays untracked). LCSC
+codes are on every symbol; `tools/jlcfab.py` output (fab/*-bom.csv) has
+the full list. Check at least:
+
+- 19 V input: J3 -> F3 (1206L050/33NR, 33 V rated) -> D1 SMAJ22A TVS ->
+  D8 SS34 -> VIN_19V. TVS standoff/clamp vs the 19 V bus tolerance and
+  vs LMR51430 VIN abs max; PTC voltage/hold/trip.
+- U8 LMR51430 (19 V -> BUCK_5V): FB divider R37 100k / R38 13k (expect
+  ~5.2 V with Vref 0.6 V, confirm Vref), L3 3.3 uH FXL0630 saturation vs
+  load, C40/C41 4.7u/50V 1206 DC-bias derating at 19 V, C42, CB C43,
+  output C44/C45, EN tied to VIN. Then D2/D3 OR-ing -> +5V.
+- U2 TLV62569 (+5V -> +3V3): R1 100k / R2 22.1k, L1 2.2 uH, C3/C4.
+- ESP32-C6-WROOM-1: strapping pins (GPIO8 has R27 10k pull-up, GPIO9
+  boot, GPIO15, MTMS/MTDI), EN RC (R7 + C14), USB 22R R34/R35, antenna
+  keep-out (module overhangs the bottom edge; check no copper under the
+  antenna). Also flag: KRT left F.Cu tracks under the module body.
+- W5500: EXRES R15 12.4k 1%, Y2 25 MHz + C26/C27 18 pF vs crystal CL,
+  TX 49.9R pull-ups R20/R21 to +3V3A, RX 49.9R R22/R23 + C28/C29 6.8 nF
+  + RCT, TCT/RCT network (R26, C34, C35) vs the HR911105A magjack and
+  WIZnet's reference, PMODE/RSTn/LED pins, 3V3A ferrite L2.
+- MCP23017 U14/U15: address straps (0x20/0x21), U14 reset pull-down
+  (fail-safe: buttons released when the MCU is not driving), INTA
+  open-drain, I2C pull-up values on both buses.
+- Relay drive: MCP23017 sourcing LED current into TLP176AM (series
+  resistors, check IF vs trigger current and the MCP23017 per-pin and
+  per-port limits with all channels on).
+- Node sense: TLP290-4 input resistors vs the (still unknown) motherboard
+  PLED drive; note as open.
+- Header protection: J8/J9 3V3 TVS D6 is SMF3.3A (3.3 V standoff on a
+  3.3 V rail: check leakage/breakdown margin), D7 SMF5.0A on 5 V, PTCs
+  F1/F2 ratings, TPD4E05 clamps, 330R series.
+- 1-wire (pull-up, D5 ESD), TMP1075 address, dry-contact RC + ESD, USB-C
+  CC 5.1k R24/R25, USBLC6.
+
+### 3. JLC DFM
+
+Regenerate outputs first: `~/.cache/graver-pcb/routetest/venv/bin/python
+tools/jlcfab.py` (writes fab/, gitignored). Local checks against JLC's
+4-layer capabilities (min trace/space, via 0.5/0.2 and 0.6/0.3, annular
+ring, hole-to-hole 0.4, silk 0.8 mm text / 0.15 line, edge clearance)
+and a visual pass over the Gerbers (KiCad's gerbview; gerbv is not
+installed). JLCDFM / JLC's order-page DFM means uploading the Gerbers to
+an external service: ask the user before uploading anything, or hand them
+the zip to upload themselves. Also: confirm ETH 0.16/0.15 (101R target in
+fluid, Er 2.1) and USB 0.25/0.15 (89R in air) in JLC's impedance
+calculator for stackup JLC04161H-7628, and review fab/*-rotations.txt
+(31 rotation-corrected parts) for anything odd.
+
 ## Repo state
 
-- Branch `eight-node-expander` holds all current work (rev C). Last
-  commit before this file: 4927f3e "Tidy rev C schematic sheets".
+- Branch `eight-node-expander` holds all current work (rev C), pushed to
+  the fork up to 14461e1; 404fa51 (3D models) and this handoff are local
+  until the user says push.
 - `master` = rev A (colleague's STM32 design) + PCB setup, BOM fix,
   first expansion header. Both branches are pushed to the user's fork.
 - Remotes: `origin` = github.com/delandtj/granite_controller (fork),
@@ -89,11 +172,12 @@ Power board: PSU model (paralleling, PMBus), node 19 V input connector
 
 1. Architecture is being iterated (see "Pod architecture" below): this
    board stays as the integrated controller for small (one-frame) sites.
-2. PCB is fully routed (first pass, see board state). User reviews in
+2. PCB is fully routed (first pass, see board state). Next: the three
+   verification passes at the top of this file. The user also reviews in
    KiCad: Ethernet crossovers, power section loops, SPI transposition,
    and the F.Cu tracks KRT left under the ESP32 module body (Espressif
    advises keeping the module underside clear; B.Cu under it is fine).
-   Then: JLC impedance check, fab outputs.
+   Decide J8: stay DNP or fitted keyed box header (power-board link).
 3. Open hardware questions: motherboard front-panel pinout (PLED drive,
    ground switch returns) - user waits for the board doc/STEP; J8 as the
    power-board link (fit by default, keyed connector?); PSU remote control
@@ -214,6 +298,11 @@ architecture.md, duck-core.md, duck-protocol.md.
     J3 -> F3 -> D8 with D1 below. C51 moved left of its old spot.
   - The rest of the board is KRT. KRT put many F.Cu tracks under the ESP32
     module body (see next steps).
+  - Later the same day: connector function labels + pin legends on the
+    silk (tools/connlabels.py); R15 swapped to C11692 (stock); 3D models
+    for K1-K16, U16/U17, J1, U1 in 3dmodels/ (see its README); JLC
+    outputs via tools/jlcfab.py. All LCSC parts were in stock for 8
+    boards on 2026-10-08 (jlcsearch); 27 Basic / 33 Extended.
 - Check after any change: `kicad-cli sch erc --severity-all`,
   `kicad-cli pcb drc --schematic-parity`. Expect 0 parity issues.
 - kicad-cli occasionally re-serializes granite_controller.kicad_pro;
