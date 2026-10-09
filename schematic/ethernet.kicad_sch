@@ -9801,7 +9801,7 @@
 				)
 			)
 		)
-		(property "MPN" "C1812C102KGRACTU"
+		(property "MPN" "CC1812KKX7RDBB102"
 			(at 243.84 120.65 0)
 			(hide yes)
 			(show_name no)
@@ -9812,7 +9812,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C2167446"
+		(property "LCSC" "C118019"
 			(at 243.84 120.65 0)
 			(hide yes)
 			(show_name no)
