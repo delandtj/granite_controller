@@ -6,8 +6,9 @@ use granite_core::actuator::{ActionResult, FailReason, RefuseReason};
 use granite_core::hal::TEMP_MISSING;
 use granite_core::modbus_map::{
     Access, COIL_COUNT, DISCRETE_COUNT, FwVersion, HOLDING_COUNT, INPUT_COUNT, MAP, MAP_VERSION,
-    MapError, RegKind, ResultCode, cmd_word, coils, command_from_coil, command_from_holding,
-    discrete_inputs, entry, fault_bits, holding_registers, input_registers, render_markdown,
+    MapError, RegKind, ResultCode, check_coil, check_holding, cmd_word, coils, command_from_coil,
+    command_from_holding, discrete_inputs, entry, fault_bits, holding_registers, input_registers,
+    render_markdown,
 };
 use granite_core::msg::CommandKind;
 use granite_core::node::NodeState;
@@ -289,4 +290,72 @@ fn the_markdown_documents_every_register() {
     }
     assert!(md.contains("## Fault flags (input register 13)"));
     assert!(md.contains("expander readback mismatch"));
+}
+
+#[test]
+fn the_write_checks_agree_with_the_command_builders() {
+    // check_holding / check_coil exist so a multi-register write can be
+    // validated before any command runs; they must accept and refuse
+    // exactly what the builders do.
+    for addr in 0..12u16 {
+        for value in [0u16, 1, 5, 6, 99] {
+            assert_eq!(
+                check_holding(addr, value).is_ok(),
+                command_from_holding(addr, value, "x").is_ok(),
+                "holding {addr} = {value}"
+            );
+        }
+    }
+    for addr in 0..12u16 {
+        assert_eq!(
+            check_coil(addr).is_ok(),
+            command_from_coil(addr, true, "x").is_ok(),
+            "coil {addr}"
+        );
+    }
+    assert_eq!(
+        check_holding(0, 42),
+        Err(MapError::BadValue { addr: 0, value: 42 })
+    );
+    assert_eq!(
+        check_coil(COIL_COUNT as u16),
+        Err(MapError::UnknownRegister {
+            kind: RegKind::Coil,
+            addr: COIL_COUNT as u16
+        })
+    );
+}
+
+#[test]
+fn the_result_code_of_an_ack_follows_the_ack() {
+    use granite_core::msg::Reply;
+
+    assert_eq!(ResultCode::of_reply(&Reply::ok("1", "ok")), ResultCode::Ok);
+    assert_eq!(
+        ResultCode::of_reply(&Reply::accepted("1")),
+        ResultCode::Accepted
+    );
+    assert_eq!(
+        ResultCode::of_reply(&Reply::ok("1", "shutdown_pending")),
+        ResultCode::ShutdownPending
+    );
+    assert_eq!(
+        ResultCode::of_reply(&Reply::err("1", "refused: node state unknown")),
+        ResultCode::Refused
+    );
+    assert_eq!(
+        ResultCode::of_reply(&Reply::err("1", "failed: expander fault")),
+        ResultCode::Failed
+    );
+    // A dispatcher-level error (a bad argument, a rejected version) is a
+    // refusal: nothing was attempted.
+    assert_eq!(
+        ResultCode::of_reply(&Reply::err("1", "not an action")),
+        ResultCode::Refused
+    );
+    // The same mapping, straight from an action result.
+    assert_eq!(
+        ResultCode::of_result(&ActionResult::Ok),
+        ResultCode::of_reply(&Reply::ok("1", "ok"))
+    );
 }

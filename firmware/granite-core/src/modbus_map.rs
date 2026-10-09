@@ -17,7 +17,7 @@ use core::fmt;
 
 use crate::actuator::{ActionKind, ActionResult};
 use crate::hal::TEMP_MISSING;
-use crate::msg::{Args, Command, CommandKind};
+use crate::msg::{Args, Command, CommandKind, Reply};
 use crate::node::NodeState;
 use crate::observed::Observed;
 use crate::{DRY_COUNT, NODE_COUNT, NodeId, PROBE_SLOTS, Target};
@@ -100,6 +100,29 @@ impl ResultCode {
             ActionResult::ShutdownPending => ResultCode::ShutdownPending,
             ActionResult::Refused { .. } => ResultCode::Refused,
             ActionResult::Failed { .. } => ResultCode::Failed,
+        }
+    }
+
+    /// Map a dispatcher ack onto a code.
+    ///
+    /// The Modbus server only ever sees a [`Reply`], not an
+    /// [`ActionResult`]: the dispatcher runs in another task. The ack's
+    /// `result` string is the actuator's own ("ok", "accepted",
+    /// "shutdown_pending"); a failure carries the text in `error`, where
+    /// the actuator's "failed: ..." is a genuine failure and everything
+    /// else ("refused: ...", a bad argument, a rejected version) is a
+    /// refusal.
+    pub fn of_reply(reply: &Reply) -> Self {
+        if reply.ok {
+            return match reply.result.as_deref() {
+                Some("accepted") => ResultCode::Accepted,
+                Some("shutdown_pending") => ResultCode::ShutdownPending,
+                _ => ResultCode::Ok,
+            };
+        }
+        match reply.error.as_deref() {
+            Some(e) if e.starts_with("failed") => ResultCode::Failed,
+            _ => ResultCode::Refused,
         }
     }
 }
@@ -549,6 +572,22 @@ pub fn command_from_coil(addr: u16, on: bool, id: &str) -> Result<Option<Command
     Ok(Some(
         Command::new(id, CommandKind::of_action(kind)).with_target(Target::Node(node)),
     ))
+}
+
+/// True when a holding-register write would be accepted, without
+/// building the command.
+///
+/// A multi-register write (function 16) is validated in full before any
+/// command runs, so one bad address in the span leaves every node alone;
+/// this is the check that makes that cheap. It is
+/// [`command_from_holding`] itself, so the two cannot drift apart.
+pub fn check_holding(addr: u16, value: u16) -> Result<(), MapError> {
+    command_from_holding(addr, value, "").map(|_| ())
+}
+
+/// True when a coil write would be accepted. See [`check_holding`].
+pub fn check_coil(addr: u16) -> Result<(), MapError> {
+    command_from_coil(addr, false, "").map(|_| ())
 }
 
 /// Default args a Modbus-born command carries: none. Modbus has no room

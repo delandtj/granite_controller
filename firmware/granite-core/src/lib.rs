@@ -17,6 +17,8 @@
 //!   Modbus.
 //! - [`modbus_map`]: the register table as data, both mapping directions
 //!   and a Markdown generator.
+//! - [`modbus_server`]: the Modbus TCP frame handler over byte slices,
+//!   plus the IPv4/CIDR allow-list. No sockets.
 //! - [`dispatch`]: the one entry point every transport funnels through.
 //!
 //! The crate is `no_std` + `alloc`; the `std` feature (on by default, used
@@ -33,6 +35,7 @@ pub mod config;
 pub mod dispatch;
 pub mod hal;
 pub mod modbus_map;
+pub mod modbus_server;
 pub mod msg;
 pub mod node;
 pub mod observed;
