@@ -1,10 +1,19 @@
-# Handoff - granite controller (updated 2026-10-08 night)
+# Handoff - granite controller (updated 2026-10-09)
 
 Read this first, then docs/controller.md and docs/power-board.md.
 
-## Next session: order prep
+## Next session: boards ordered, bring-up prep
 
-State 2026-10-09 (evening), branch eight-node-expander:
+ORDERED at JLCPCB 2026-10-09 (user): rev C, 199 mm, HRO USB-C, from
+fab/ regenerated that evening (commit df7f4d1). Next: wait for the boards,
+then bring-up and ESP32 firmware.
+
+Last change before the order: C36 (1n/2kV Bob Smith cap, 1812) KEMET
+C1812C102KGRACTU C2167446 (141 left at JLC) -> Yageo CC1812KKX7RDBB102
+C118019 (26k), same footprint. Basic-part alternative if it runs out
+again: C9196 1206B102K202NT (1206, needs a footprint change).
+
+State 2026-10-09, branch eight-node-expander:
 - J2 is now HRO TYPE-C-31-M-12 (C165948; the GCT USB4105-GF-A was down to
   140 at JLC). Commit c0d9b0e. Rear fan-out re-laid (D+ join behind the
   pads, CC straight back to vias, VBUS 0.5 mm on B.Cu).
@@ -22,32 +31,17 @@ State 2026-10-09 (evening), branch eight-node-expander:
 - Silk: pin legends on all connectors except J9/J10 (no room between
   U14/U15 and the connectors; names are there).
 - The previous 250 mm board with the GCT USB is tag rev-c-usb4105.
-- fab/ regenerated from this board 2026-10-09; fab/granite_controller-jlc-order.zip
-  bundles Gerbers, BOM, CPL and the rotation list (sent to the user).
+- fab/ (gitignored) regenerated with tools/jlcfab.py after the C36 swap:
+  BOM 63 lines / 198 parts, CPL 198 placements (32 rotation-corrected).
+  fab/granite_controller-jlc-order.zip bundles Gerbers zip, BOM, CPL and
+  the rotation list; jlcfab.py does not build it, re-zip by hand.
 - J2 3D model: 3dmodels/HRO_TYPE-C-31-M-12.step (EasyEDA), board-only.
-- Branch and tag rev-c-usb4105 pushed to the fork 2026-10-09.
-
-Before ordering: look at the board in KiCad (the right region is all
-KRT), then the JLC preview/impedance steps below.
-
-Left for the user / the order:
-- Review the board in KiCad: power section (shifted right for the
-  short-edge rails), the U1 area (EN RC, decoupling, VIN_SENSE moved
-  to the module, no F.Cu under the module body), silk at 1.0 mm.
-- Order with JLC rails + mouse bites on the two SHORT edges only (U1
-  and J2 overhang the long edges). Check rotations in JLC's placement
-  preview, especially J2 and the THT connectors.
-- Confirm ETH 0.16/0.15 and USB 0.25/0.15 in JLC's impedance
-  calculator (JLC04161H-7628).
-- Uploading Gerbers to JLC is the user's call: fab/ via
-  tools/jlcfab.py.
 - J8: stays DNP (user, 2026-10-09).
 
 ## Repo state
 
 - Branch `eight-node-expander` holds all current work (rev C), pushed to
-  the fork (2026-10-08 night, including the review fixes and this
-  handoff). Push only when the user asks.
+  the fork (2026-10-09, including the C36 swap and this handoff). Push only when the user asks.
 - `master` = rev A (colleague's STM32 design) + PCB setup, BOM fix,
   first expansion header. Both branches are pushed to the user's fork.
 - Remotes: `origin` = github.com/delandtj/granite_controller (fork),
