@@ -698,3 +698,39 @@ Component specs, each independently testable:
 - [ ] Probe names: by ROM id mapping in config (spec) or by connector
       position? The bus cannot tell position; mapping needs a one-time
       "touch a probe" identification step on the page.
+
+---
+
+## What was built differently (stage 1, 2026-10-10)
+
+Reversible deviations taken during implementation, folded in here so the
+ADR keeps describing the built thing.
+
+granite-core (commit 49fb6fe):
+- The actuator calls `release_all` after every press, so GPIO10 is low
+  between the presses of a stagger instead of staying high for the whole
+  queue. One expander reconfiguration per press, strictly safer.
+- Validation ranges added: t_on 1-300 s, t_soft_off 5-900 s, t_cycle
+  1-300 s, t_stagger and t_settle 0-60 s.
+- Rule thresholds are in native units (centi-degrees, mV, 0/1, s).
+- Messages: an `accepted` event, a `data` field on Reply (config_get),
+  and a `v` field on status, state and event payloads.
+- Modbus: input register 14 = map version. Modbus cannot carry `force`,
+  so actions on a node in state Unknown are refused there.
+- `cycle` skips t_cycle when the node is already off. With
+  `sense: ignore`, `force_off` presses PWR for the full t_hold.
+
+granite-fw skeleton (commit b38c30e, firmware/README.md has the detail):
+- esp-idf-svc 0.53 / esp-idf-hal 0.47 / ESP-IDF v5.5.5, nightly +
+  build-std; the crate sits outside the firmware/ workspace because of
+  its target config.
+- The partition table is applied by espflash (`--partition-table`), not
+  by the ESP-IDF build: esp-idf-sys cannot point the build at a custom
+  CSV. The bench flash also passes `--bootloader` with the ESP-IDF-built
+  bootloader, because espflash's own bootloader has rollback disabled.
+- App signing lives in `sdkconfig.defaults.signing`, opt-in via
+  `ESP_IDF_SDKCONFIG_DEFAULTS`, since the build fails without a key.
+- `CONFIG_ESP_WIFI_ENABLED` is hidden in v5.5 and cannot be set to n;
+  the radio is simply never initialised. BT is off.
+- Dropping the SPI driver after a failed W5500 init panics inside
+  esp-idf-hal; the driver is leaked on purpose (main.rs comment).
