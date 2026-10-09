@@ -2,11 +2,49 @@
 
 Read this first, then docs/controller.md and docs/power-board.md.
 
-## Next session: boards ordered, bring-up prep
+## Next session: firmware spec
+
+Boards are ordered (below). The 2026-10-09 evening session started on
+firmware; nothing is written yet. Next step: an ADR/spec for the
+firmware (self-contained component spec, not phases) in firmware/docs/,
+then code in firmware/.
+
+Decided (user, 2026-10-09):
+- Code lives in firmware/ in this repo.
+- Node control: everything - power on/off, button press, long press
+  (forced off), reset, power cycle with delay, staggered power-on of the
+  8 nodes. Node state read back from the power LED sense.
+- Network loss / standalone: configurable default states plus local
+  rules (e.g. temperature threshold -> action), persisted on the board.
+- Security is in scope: signed firmware updates, authenticated API.
+
+Open:
+- Northbound API: who talks to the controller (management server,
+  browser, both) is not decided. Candidates: HTTP/JSON, MQTT, Modbus TCP,
+  OpenRPC (matches the user's Hero services). Keep the API layer
+  separable so the transport can be chosen later.
+
+Proposed, not yet confirmed by the user:
+- Rust on ESP-IDF (esp-idf-svc, std): ESP-IDF's W5500 MAC-raw driver +
+  lwIP, two-slot OTA with rollback (8 MB flash), NVS, HTTP server. User
+  knows ESP-IDF. Bare-metal esp-hal + Embassy (embassy-net-wiznet) was
+  the alternative; rejected for now because OTA/rollback is less mature
+  and a sealed, submerged board needs safe remote updates. Put hardware
+  access behind traits so a later move stays possible.
+- Firmware scope from docs/controller.md: 8 relay channels via MCP23017
+  (IOCON.ODR = 1 on every expander at boot, defined state while in
+  reset), power LED sense, 1-wire temperature probes, external I2C
+  (software I2C on pins 6/7 unless LP I2C works from the HP core - open
+  item 3), dry-contact inputs, radio off, console moved off the probe
+  pins, USB as service/recovery port. Later: RS-485 ducks (Modbus RTU),
+  power board via J8 (LTC4282 EEPROM provisioning, auto-retry, disable a
+  channel after repeated faults).
+
+## Boards ordered
 
 ORDERED at JLCPCB 2026-10-09 (user): rev C, 199 mm, HRO USB-C, from
-fab/ regenerated that evening (commit df7f4d1). Next: wait for the boards,
-then bring-up and ESP32 firmware.
+fab/ regenerated that evening (commit df7f4d1). Waiting for the boards;
+bring-up when they arrive.
 
 Last change before the order: C36 (1n/2kV Bob Smith cap, 1812) KEMET
 C1812C102KGRACTU C2167446 (141 left at JLC) -> Yageo CC1812KKX7RDBB102
