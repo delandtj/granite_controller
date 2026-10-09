@@ -7488,7 +7488,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "USB4105-xx-A"
+		(property "Value" "TYPE-C-31-M-12"
 			(at 45.72 191.77 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -7499,7 +7499,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Connector_USB:USB_C_Receptacle_GCT_USB4105-xx-A_16P_TopMnt_Horizontal"
+		(property "Footprint" "Connector_USB:USB_C_Receptacle_HRO_TYPE-C-31-M-12"
 			(at 40.64 165.1 0)
 			(hide yes)
 			(show_name no)
@@ -7532,7 +7532,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "Global Connector Technology"
+		(property "MANUFACTURER" "Korean Hroparts Elec"
 			(at 40.64 165.1 0)
 			(hide yes)
 			(show_name no)
@@ -7543,7 +7543,7 @@
 				)
 			)
 		)
-		(property "MPN" "USB4105-GF-A"
+		(property "MPN" "TYPE-C-31-M-12"
 			(at 40.64 165.1 0)
 			(hide yes)
 			(show_name no)
@@ -7554,7 +7554,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C3020560"
+		(property "LCSC" "C165948"
 			(at 40.64 165.1 0)
 			(hide yes)
 			(show_name no)

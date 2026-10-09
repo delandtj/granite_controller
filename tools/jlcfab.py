@@ -74,6 +74,8 @@ CORRECTIONS = [
     (r'^ESP32-C6-WROOM-1$', None, 0, 0, 2.995),
     # EasyEDA origin 1.308 mm towards the signal-pad row from KiCad's
     (r'^USB_C_Receptacle_GCT_USB4105-xx-A_16P_TopMnt_Horizontal$', None, 0, 0, -1.308),
+    # C165948: EasyEDA origin 1.424 mm towards the signal pads (shield slots)
+    (r'^USB_C_Receptacle_HRO_TYPE-C-31-M-12$', None, 0, 0, -1.424),
     (r'^RJ45_Hanrun_HR911105A_Horizontal$', None, 0, 0, 0),
     # JST PH vertical: EasyEDA pin 1 is at the +x end, origin at pad centre
     (r'^JST_PH_B\dB-PH-K_1x\d\d_P2.00mm_Vertical$', None, 180, 0, 0),
