@@ -335,6 +335,19 @@ firmware/
       page). Progress and result go out as events.
     - Core dumps to the `coredump` partition; summary published as an
       event on the next boot and shown on the Maintenance page.
+    - Prior art (user, 2026-10-10): ~/Electronics/wfi028t-controller,
+      docs/adr/0002-ota-and-console-port.md and fw/src/ota.rs. That
+      firmware is bare-metal esp-hal, so its partition writing, ed25519
+      header and TCP push port do not carry over (ESP-IDF's esp_ota_ops
+      and the app signature block do that here). What does carry over:
+      the probation model (image boots pending, confirms once on a
+      concrete readiness ladder within a deadline, otherwise resets and
+      the rollback bootloader aborts it), every step logged as an event,
+      and the host tool shape: `granite-ota push <host> [--wait]` that
+      builds, uploads over HTTPS and polls `/id` until the image reports
+      valid or a rollback shows up; signing key kept at
+      ~/.config/granite/ (mode 0600, never in the repo), key id shown by
+      the running image.
 
 12. **Console and logging** (`granite-fw/src/console.rs`)
     - `CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y`; UART0 is left alone (the
