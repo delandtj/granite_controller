@@ -31,7 +31,7 @@ State 2026-10-09, branch eight-node-expander:
 - Silk: pin legends on all connectors except J9/J10 (no room between
   U14/U15 and the connectors; names are there).
 - The previous 250 mm board with the GCT USB is tag rev-c-usb4105.
-- fab/ (gitignored) regenerated with tools/jlcfab.py after the C36 swap:
+- fab/ (gitignored) regenerated with pcbkit jlcfab after the C36 swap:
   BOM 63 lines / 198 parts, CPL 198 placements (32 rotation-corrected).
   fab/granite_controller-jlc-order.zip bundles Gerbers zip, BOM, CPL and
   the rotation list; jlcfab.py does not build it, re-zip by hand.
@@ -149,16 +149,23 @@ architecture.md, duck-core.md, duck-protocol.md.
 
 ## Tools and gotchas
 
-- `tools/mkboard.py <netlist.xml> <project_dir> <out.kicad_pcb>`:
+The generic board tools moved to ~/Electronics/pcbkit (own git repo,
+2026-10-09): `pcbkit <tool> ...`, run from the project root; settings for
+this board are in pcbkit.toml (stackup, net classes, connector legends,
+KRT paths and nets, U1 pad 29 exception). pcbkit README has the pipeline.
+Only the board-specific placement scripts stay here: tools/place.py,
+tools/compact.py.
+
+- `pcbkit mkboard <netlist.xml> <project_dir> <out.kicad_pcb>`:
   builds a fresh board from a KiCad XML netlist (footprints linked by
   symbol UUID, nets assigned, parked in a grid). Only for an unplaced
   board: it discards placement. Write `out` to a scratch directory and
   copy only the .kicad_pcb back: pcbnew's Save rewrites the
   .kicad_pro next to the board and strips schematic settings and net
   class patterns.
-- `tools/setrules.py <pcb> <pro>`: applies the stackup, board rules
+- `pcbkit setrules <pcb> <pro>`: applies the stackup, board rules
   and net class values. Run after mkboard.
-- `tools/outline.py <in.pcb> <out.pcb> [L] [H]`: Edge.Cuts rectangle
+- `pcbkit outline <in.pcb> <out.pcb> [L] [H]`: Edge.Cuts rectangle
   (default 180 x 40 mm, board uses 250 x 50, 1 mm corner radius) plus H1-H4 M3 NPTH holes
   4 mm in from each corner, board-only. Idempotent; re-run after
   mkboard (which parks parts at x < 0, left of the outline). Same
@@ -170,19 +177,19 @@ architecture.md, duck-core.md, duck-protocol.md.
   and USB-C openings on the top edge, WROOM antenna overhanging the
   bottom edge. Anchors big parts, packs the rest per sheet. A start for
   hand placement only: re-running it discards hand moves.
-- `tools/silk.py <in.pcb> <out.pcb>`: values to F.Fab, silk refs hidden
+- `pcbkit silk <in.pcb> <out.pcb>`: values to F.Fab, silk refs hidden
   on small passives (F.Fab keeps them), other refs 0.8 mm placed clear
   of pads, silk outlines, other courtyards and each other (connectors
   first). Run after place. Only expected silk DRC hits: U1's outline
   where the antenna overhangs the bottom edge.
-- `tools/krt_route.sh`: routes with KiCadRoutingTools (drandyhaas; checkout
+- `pcbkit krt-route`: routes with KiCadRoutingTools (drandyhaas; checkout
   and venv in ~/.cache/graver-pcb/routetest, rebuild the Rust core with
   CARGO_TARGET_DIR unset). Strips old copper, then planes (GND In1, +3V3
   In2), Ethernet and USB pairs, then everything on F.Cu/B.Cu only. Runs on
   a copy in ~/.cache/granite-pcb/route because KRT rewrites the .kicad_pro
   next to the board; only the .kicad_pcb comes back. Keeps hand placement.
   Grade with kicad-cli DRC, never with KRT's own checks.
-- `tools/gndpour.py <in.pcb> <out.pcb>`: GND pours on F.Cu/B.Cu (1 mm short
+- `pcbkit gndpour <in.pcb> <out.pcb>`: GND pours on F.Cu/B.Cu (1 mm short
   of the short edges for the rails) and
   0.6/0.3 stitching vias (group "gnd-stitch", re-runnable). Run after
   routing.
@@ -190,36 +197,36 @@ architecture.md, duck-core.md, duck-protocol.md.
   right of the MCU block (deletes its copper, places, moves the right edge,
   H2/H3, pours and keep-outs, lays the GND straps and escape vias KRT
   cannot find). Then silk.py, connlabels.py, refill, `KRT_EXTRA="--ordering
-  mps" krt_reroute.sh --keep "*"`, then targeted passes on what is open.
-- `tools/viaout.py <in> <out>`: moves vias out of SMD pads (KRT's plane
+  mps" pcbkit krt-reroute --keep "*"`, then targeted passes on what is open.
+- `pcbkit viaout <in> <out>`: moves vias out of SMD pads (KRT's plane
   welds) where a clear spot exists. KRT runs now pass
   --same-net-pad-clearance 0.15, which avoids most of them; check with a
   via-in-pad count after every KRT run.
-- Prune (`tools/prune.py`) only when DRC shows 0 unconnected: on an open
+- Prune (`pcbkit prune`) only when DRC shows 0 unconnected: on an open
   route both halves count as dangling and prune eats them.
 - After KRT: delete any tracks on In1/In2 (redundant, they cut the 3V3
   plane) and any vias KRT adds inside U1 pad 29 beyond the 4 thermal ones.
-- `tools/krt_reroute.sh [--keep] NET...`: targeted pass after moving a few parts.
+- `pcbkit krt-reroute [--keep] NET...`: targeted pass after moving a few parts.
   Deletes all copper of the named nets, reroutes them on F.Cu/B.Cu, runs a
   GND pass without rip, refills zones via kicad-cli and copies the board
   back. Name every non-GND net on the moved parts plus the open nets.
   Does not clean GND stubs left at old pad positions.
-- `tools/jlcfab.py [pcb] [out]` (KiCad python): JLC outputs into fab/
+- `pcbkit jlcfab [pcb] [out]` (KiCad python): JLC outputs into fab/
   (gitignored): Gerbers + Excellon zip, BOM (Comment/Designator/Footprint/
   LCSC Part #, grouped by LCSC), CPL (absolute mm, Y flipped like the
   Gerbers, THT parts at pad centre), and a list of rotation-corrected parts
   (subset of matthewlai/JLCKicadTools' table) to check in JLC's preview.
   Skips DNP (J8) and parts without LCSC (H1-H4, TP1-TP4).
-- `tools/connlabels.py <in.pcb> <out.pcb>`: connector function labels on
+- `pcbkit connlabels <in.pcb> <out.pcb>`: connector function labels on
   F.Silkscreen ("J11 NODE 1", "J3 19V IN", ...) plus a pin legend under
   the wire-to-board connectors (node: PW RS CM L+ L-; 19 V: + -; 1-wire:
   3V DQ G; I2C: G 3V DA CL; dry in: 1 2 3 4 G). Hides those silk refs
   (F.Fab keeps them), places around existing silk and pads, group
   "conn-labels". Run after silk.py, which would show the refs again.
-- `tools/pcbtool.py`: helpers for scripted hand routing (add tracks and
+- `pcbkit/pcbtool.py`: helpers for scripted hand routing (add tracks and
   vias at exact coordinates, delete a net's copper in a region) and
   render(): a region PNG with F.Cu red, B.Cu blue, highlighted nets and
-  DRC opens/violations drawn in. `tools/prune.py <pcb> <drc.rpt>` deletes
+  DRC opens/violations drawn in. `pcbkit prune <pcb> <drc.rpt>` deletes
   what DRC flags as dangling; repeat DRC + prune until clean.
 - Board state 2026-10-08 (afternoon, superseded): placement by place.py + the user's
   hand moves (whole board shifted +25/+28.6 mm on the sheet, MCU-corner

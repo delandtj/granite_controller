@@ -267,7 +267,7 @@ Add-on expanders on J8: GPA7 and GPB7 of an MCP23017 are output-only.
   MCU was re-placed denser, see tools/compact.py).
 - Panelization: JLC rails with mouse bites on the two short edges only
   (U1's antenna and J2 overhang the long edges). Verify rotations in
-  JLC's placement preview; tools/jlcfab.py uses an explicit
+  JLC's placement preview; pcbkit jlcfab uses an explicit
   per-footprint correction table checked against EasyEDA footprints.
 - Differential pairs: Ethernet MDI 0.16/0.15 mm = 101R with the fluid
   above the outer layers (requirement 6 under Environment); USB
