@@ -751,3 +751,20 @@ granite-fw hardware layer (commit 62ee599):
 - 1-wire through the espressif/onewire_bus component (RMT) with DS18B20
   commands in-tree; one CONVERT_T broadcast per 2 s cycle shared by all
   probes.
+
+granite-fw platform layer (commit 0017b32):
+- Device certificate: mbedTLS x509write through esp-idf-sys, generated on
+  first boot in about 40 ms, stored in the `secrets` namespace.
+- SNTP uses `esp_netif_sntp` directly (DHCP option 42 support); AutoIP
+  is lwIP's own (CONFIG_LWIP_AUTOIP_TRIES = 4 gives the 30 s).
+- `lwIP must be initialised before the HTTPS server even when Ethernet
+  failed` (NetifStack::initialize early), otherwise the server aborts.
+- The dispatcher keeps its own Config copy and only uses try_read /
+  try_write: the API context holds the config write guard across a
+  dispatch, so a blocking lock would deadlock. The MQTT section has its
+  own mutex for the same reason.
+- OTA writer is on raw esp_ota_* calls (EspOtaUpdate's borrow cannot
+  live inside an Arc<Mutex<dyn OtaSink>>).
+- Not built yet, marked TODO(ADR 0001 6) in the code: VLAN tagging, the
+  dead-man keeping the static address while DHCP runs alongside, live
+  apply of staged mqtt/sec sections.
