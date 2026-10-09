@@ -37,7 +37,7 @@ use serde_json::{Value, json};
 use crate::NodeId;
 use crate::Target;
 use crate::actuator::ActionKind;
-use crate::config::{ApiToken, Config, Section, Secrets};
+use crate::config::{ApiToken, Config, Secrets, Section};
 use crate::hal::BootReason;
 use crate::msg::{Args, Command, CommandKind, EventKind, PROTOCOL_VERSION, Reply, State};
 use crate::observed::Observed;
@@ -154,7 +154,10 @@ impl Auth {
     pub fn from_headers(cookie: Option<&str>, authorization: Option<&str>) -> Self {
         if let Some(a) = authorization {
             let t = a.trim();
-            if let Some(rest) = t.strip_prefix("Bearer ").or_else(|| t.strip_prefix("bearer ")) {
+            if let Some(rest) = t
+                .strip_prefix("Bearer ")
+                .or_else(|| t.strip_prefix("bearer "))
+            {
                 let rest = rest.trim();
                 if !rest.is_empty() {
                     return Auth::Bearer(String::from(rest));
@@ -253,7 +256,8 @@ impl ApiRequest {
         if self.body.is_empty() {
             return Ok(json!({}));
         }
-        let text = core::str::from_utf8(&self.body).map_err(|_| String::from("body is not UTF-8"))?;
+        let text =
+            core::str::from_utf8(&self.body).map_err(|_| String::from("body is not UTF-8"))?;
         serde_json::from_str(text).map_err(|e| e.to_string())
     }
 }
@@ -331,6 +335,17 @@ impl ApiResponse {
     /// 200 with `{"ok":true}`.
     pub fn ok_true() -> Self {
         Self::ok(json!({"ok": true}))
+    }
+
+    /// 204 with no body: a write that has nothing to report back.
+    pub fn no_content() -> Self {
+        ApiResponse {
+            status: 204,
+            content_type: "",
+            body: Body::Empty,
+            set_cookie: None,
+            headers: Vec::new(),
+        }
     }
 
     /// An error as `{"ok":false,"error":"..."}`.
@@ -962,6 +977,8 @@ pub enum Route {
     Cert,
     /// `GET`/`PUT /api/v1/security/modbus-allowlist`.
     ModbusAllowlist,
+    /// `PUT /api/v1/security/mqtt-credentials`.
+    MqttCredentials,
     /// `GET /api/v1/log/tail`.
     LogTail,
     /// Anything else: a static asset by canonical path.
@@ -1052,6 +1069,7 @@ pub fn route_of(path: &str) -> Option<Route> {
         ["security", "fleet-key"] => Route::FleetKey,
         ["security", "cert"] => Route::Cert,
         ["security", "modbus-allowlist"] => Route::ModbusAllowlist,
+        ["security", "mqtt-credentials"] => Route::MqttCredentials,
         ["log", "tail"] => Route::LogTail,
         _ => return None,
     };
@@ -1210,6 +1228,7 @@ fn dispatch_route(route: Route, req: &ApiRequest, ctx: &mut ApiCtx<'_>) -> ApiRe
             }
         }
         (Route::ModbusAllowlist, Put | Post) => set_modbus_allowlist(req, ctx),
+        (Route::MqttCredentials, Put | Post) => set_mqtt_credentials(req, ctx),
         (Route::LogTail, Get | Head) => log_tail(req, ctx),
         (Route::Asset(path), Get | Head) => asset(path),
         _ => method_not_allowed(),
@@ -1378,7 +1397,11 @@ fn login(req: &ApiRequest, ctx: &mut ApiCtx<'_>) -> ApiResponse {
         let lockout = ctx.config.sec.lockout_s;
         let locked = ctx.auth.note_fail(ctx.now_ms, max, lockout);
         ctx.platform.event(EventKind::Security {
-            what: String::from(if locked { "login_lockout" } else { "login_failed" }),
+            what: String::from(if locked {
+                "login_lockout"
+            } else {
+                "login_failed"
+            }),
             detail: locked.then(|| format!("{lockout} s")),
             peer: Some(req.peer.clone()),
         });
@@ -1959,6 +1982,127 @@ fn set_modbus_allowlist(req: &ApiRequest, ctx: &mut ApiCtx<'_>) -> ApiResponse {
         Err(e) => return ApiResponse::error(500, e.to_string()),
     };
     put_section(Section::Sec, &json, ctx)
+}
+
+/// `PUT /api/v1/security/mqtt-credentials`, body
+/// `{"username":..,"password":..,"client_cert_pem":..,"client_key_pem":..}`.
+///
+/// Every field is optional: a field that is absent is left as it is, a
+/// field that is present and empty clears the stored value. The password
+/// and the client key are secrets and never come back out, so there is no
+/// `GET` here and the answer carries no body (204).
+///
+/// The username is public material and lives in the `mqtt` config
+/// section; it is written straight through rather than staged, like the
+/// fleet key and the device certificate, because a credential change
+/// cannot cut the HTTP session. The MQTT worker reads both on its next
+/// connection attempt.
+fn set_mqtt_credentials(req: &ApiRequest, ctx: &mut ApiCtx<'_>) -> ApiResponse {
+    let body = match req.json() {
+        Ok(v) => v,
+        Err(e) => return ApiResponse::error(400, e),
+    };
+    let Some(fields) = body.as_object() else {
+        return ApiResponse::error(400, "the body must be a JSON object");
+    };
+    let field = |name: &str| -> Result<Option<String>, ApiResponse> {
+        match fields.get(name) {
+            None | Some(Value::Null) => Ok(None),
+            Some(Value::String(s)) => Ok(Some(s.clone())),
+            Some(_) => Err(ApiResponse::error(400, format!("{name} must be a string"))),
+        }
+    };
+    let username = match field("username") {
+        Ok(v) => v,
+        Err(r) => return r,
+    };
+    let password = match field("password") {
+        Ok(v) => v,
+        Err(r) => return r,
+    };
+    let cert_pem = match field("client_cert_pem") {
+        Ok(v) => v,
+        Err(r) => return r,
+    };
+    let key_pem = match field("client_key_pem") {
+        Ok(v) => v,
+        Err(r) => return r,
+    };
+    if username.is_none() && password.is_none() && cert_pem.is_none() && key_pem.is_none() {
+        return ApiResponse::error(
+            400,
+            "one of username, password, client_cert_pem, client_key_pem is required",
+        );
+    }
+    // A certificate without its key (or the other way round) is a
+    // configuration the broker can only reject, so refuse it here.
+    let pair_ok = match (&cert_pem, &key_pem) {
+        (Some(c), None) => c.trim().is_empty() || !secrets_key_missing(ctx),
+        (None, Some(k)) => k.trim().is_empty() || !secrets_cert_missing(ctx),
+        _ => true,
+    };
+    if !pair_ok {
+        return ApiResponse::error(
+            400,
+            "client_cert_pem and client_key_pem have to be set together",
+        );
+    }
+
+    let mut secrets = ctx.store.load_secrets();
+    let mut changed: Vec<&str> = Vec::new();
+    if let Some(v) = password {
+        secrets.mqtt_password = v;
+        changed.push("password");
+    }
+    if let Some(v) = cert_pem {
+        secrets.mqtt_client_cert_pem = v;
+        changed.push("client_cert_pem");
+    }
+    if let Some(v) = key_pem {
+        secrets.mqtt_client_key_pem = v;
+        changed.push("client_key_pem");
+    }
+    if !changed.is_empty()
+        && let Err(e) = ctx.store.save_secrets(&secrets)
+    {
+        return ApiResponse::error(500, e);
+    }
+    if let Some(v) = username {
+        ctx.config.mqtt.username = v;
+        changed.push("username");
+        let json = match ctx.config.section_json(Section::Mqtt) {
+            Ok(t) => t,
+            Err(e) => return ApiResponse::error(500, e.to_string()),
+        };
+        if let Err(e) = ctx.store.save_section(Section::Mqtt, &json) {
+            return ApiResponse::error(500, e);
+        }
+    }
+    ctx.platform.event(EventKind::Security {
+        what: String::from("mqtt_credentials_set"),
+        detail: Some(changed.join(", ")),
+        peer: Some(req.peer.clone()),
+    });
+    ApiResponse::no_content()
+}
+
+/// True when no client key is stored, so a lone certificate would leave
+/// the pair incomplete.
+fn secrets_key_missing(ctx: &mut ApiCtx<'_>) -> bool {
+    ctx.store
+        .load_secrets()
+        .mqtt_client_key_pem
+        .trim()
+        .is_empty()
+}
+
+/// True when no client certificate is stored.
+fn secrets_cert_missing(ctx: &mut ApiCtx<'_>) -> bool {
+    ctx.store
+        .load_secrets()
+        .mqtt_client_cert_pem
+        .trim()
+        .is_empty()
 }
 
 /// `GET /api/v1/log/tail?lines=N`.

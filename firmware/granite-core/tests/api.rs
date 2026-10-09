@@ -9,10 +9,10 @@ use std::collections::BTreeMap;
 use granite_core::actuator::{ActionKind, Actuator};
 use granite_core::api::{
     self, Access, ApiCtx, ApiRequest, Auth, AuthState, Body, Dispatcher, Identity, Method,
-    MqttStatus, NetControl, NetStatus, OtaFinish, OtaSink, OtaStatus, Platform, Route, Rng,
+    MqttStatus, NetControl, NetStatus, OtaFinish, OtaSink, OtaStatus, Platform, Rng, Route,
     SlotInfo, StagedInfo, Store, StreamKind,
 };
-use granite_core::config::{Config, Section, Secrets};
+use granite_core::config::{Config, Secrets, Section};
 use granite_core::dispatch::{DispatchCtx, SideEffect, dispatch};
 use granite_core::hal::BootReason;
 use granite_core::msg::{Command, EventKind, Reply};
@@ -388,15 +388,11 @@ impl Rig {
 
     /// Run first setup and log in; returns the session cookie value.
     fn setup(&mut self) -> String {
-        let r = self.go(
-            ApiRequest::new(Method::Post, "/api/v1/security/password")
-                .with_body(br#"{"password":"correct horse"}"#),
-        );
+        let r = self.go(ApiRequest::new(Method::Post, "/api/v1/security/password")
+            .with_body(br#"{"password":"correct horse"}"#));
         assert_eq!(r.status, 200, "{:?}", body_text(&r));
-        let r = self.go(
-            ApiRequest::new(Method::Post, "/api/v1/session")
-                .with_body(br#"{"password":"correct horse"}"#),
-        );
+        let r = self.go(ApiRequest::new(Method::Post, "/api/v1/session")
+            .with_body(br#"{"password":"correct horse"}"#));
         assert_eq!(r.status, 200, "{:?}", body_text(&r));
         let cookie = r.set_cookie.clone().expect("a session cookie");
         cookie
@@ -451,8 +447,14 @@ fn routes_match_the_table() {
         api::route_of("/api/v1/config/net"),
         Some(Route::ConfigSection(Section::Net))
     );
-    assert_eq!(api::route_of("/api/v1/config/export"), Some(Route::ConfigExport));
-    assert_eq!(api::route_of("/api/v1/rules/7/ack"), Some(Route::RuleAck(7)));
+    assert_eq!(
+        api::route_of("/api/v1/config/export"),
+        Some(Route::ConfigExport)
+    );
+    assert_eq!(
+        api::route_of("/api/v1/rules/7/ack"),
+        Some(Route::RuleAck(7))
+    );
     assert_eq!(
         api::route_of("/api/v1/firmware/mark-valid"),
         Some(Route::FirmwareMarkValid)
@@ -462,6 +464,10 @@ fn routes_match_the_table() {
         Some(Route::Token(String::from("deploy")))
     );
     assert_eq!(api::route_of("/api/v1/log/tail"), Some(Route::LogTail));
+    assert_eq!(
+        api::route_of("/api/v1/security/mqtt-credentials"),
+        Some(Route::MqttCredentials)
+    );
 
     // Unknown API paths are 404, not assets.
     assert_eq!(api::route_of("/api/v1/nope"), None);
@@ -471,7 +477,10 @@ fn routes_match_the_table() {
     assert_eq!(api::route_of("/api/v1/config/nosuch"), None);
 
     // Everything else is an asset, and traversal is stripped.
-    assert_eq!(api::route_of("/"), Some(Route::Asset(String::from("/index.html"))));
+    assert_eq!(
+        api::route_of("/"),
+        Some(Route::Asset(String::from("/index.html")))
+    );
     assert_eq!(
         api::route_of("/app.js"),
         Some(Route::Asset(String::from("/app.js")))
@@ -507,6 +516,7 @@ fn only_identity_recovery_login_and_assets_are_public() {
         "/api/v1/security/fleet-key",
         "/api/v1/security/cert",
         "/api/v1/security/modbus-allowlist",
+        "/api/v1/security/mqtt-credentials",
         "/api/v1/log/tail",
     ] {
         assert_eq!(access_of_path(path), Access::Authed, "{path}");
@@ -549,16 +559,13 @@ fn first_boot_refuses_everything_but_the_password() {
     assert_eq!(id["cert_sha256"].as_str().unwrap().len(), 64);
 
     // A short password is refused.
-    let r = rig.go(
-        ApiRequest::new(Method::Post, "/api/v1/security/password").with_body(br#"{"password":"x"}"#),
-    );
+    let r = rig.go(ApiRequest::new(Method::Post, "/api/v1/security/password")
+        .with_body(br#"{"password":"x"}"#));
     assert_eq!(r.status, 400);
 
     // Setting it returns the recovery token exactly once.
-    let r = rig.go(
-        ApiRequest::new(Method::Post, "/api/v1/security/password")
-            .with_body(br#"{"password":"correct horse"}"#),
-    );
+    let r = rig.go(ApiRequest::new(Method::Post, "/api/v1/security/password")
+        .with_body(br#"{"password":"correct horse"}"#));
     assert_eq!(r.status, 200);
     let v = body_json(&r);
     assert_eq!(v["first_boot"], true);
@@ -570,10 +577,8 @@ fn first_boot_refuses_everything_but_the_password() {
     assert_eq!(rig.store.secrets.admin_salt.len(), api::SALT_BYTES * 2);
 
     // Now the same route needs authentication, and the token is gone.
-    let r = rig.go(
-        ApiRequest::new(Method::Post, "/api/v1/security/password")
-            .with_body(br#"{"password":"another one"}"#),
-    );
+    let r = rig.go(ApiRequest::new(Method::Post, "/api/v1/security/password")
+        .with_body(br#"{"password":"another one"}"#));
     assert_eq!(r.status, 401);
 
     // And the data routes answer 401 instead of 403.
@@ -588,39 +593,31 @@ fn session_and_bearer_token_both_authenticate() {
     let mut rig = Rig::new();
     let session = rig.setup();
 
-    let r = rig.go(
-        ApiRequest::new(Method::Get, "/api/v1/status")
-            .with_auth(Auth::Session(session.clone())),
-    );
+    let r = rig
+        .go(ApiRequest::new(Method::Get, "/api/v1/status")
+            .with_auth(Auth::Session(session.clone())));
     assert_eq!(r.status, 200);
 
     // A token is returned once and stored hashed.
-    let r = rig.go(
-        ApiRequest::new(Method::Post, "/api/v1/security/tokens")
-            .with_auth(Auth::Session(session.clone()))
-            .with_body(br#"{"name":"deploy"}"#),
-    );
+    let r = rig.go(ApiRequest::new(Method::Post, "/api/v1/security/tokens")
+        .with_auth(Auth::Session(session.clone()))
+        .with_body(br#"{"name":"deploy"}"#));
     assert_eq!(r.status, 200);
     let token = body_json(&r)["token"].as_str().unwrap().to_string();
     assert_eq!(token.len(), api::TOKEN_BYTES * 2);
     assert!(rig.store.secrets.api_tokens.iter().all(|t| t.hash != token));
 
-    let r = rig.go(
-        ApiRequest::new(Method::Get, "/api/v1/state").with_auth(Auth::Bearer(token.clone())),
-    );
+    let r = rig
+        .go(ApiRequest::new(Method::Get, "/api/v1/state").with_auth(Auth::Bearer(token.clone())));
     assert_eq!(r.status, 200);
 
-    let r = rig.go(
-        ApiRequest::new(Method::Get, "/api/v1/state")
-            .with_auth(Auth::Bearer(String::from("00") + &token[2..])),
-    );
+    let r = rig.go(ApiRequest::new(Method::Get, "/api/v1/state")
+        .with_auth(Auth::Bearer(String::from("00") + &token[2..])));
     assert_eq!(r.status, 401);
 
     // The list never shows the secret.
-    let r = rig.go(
-        ApiRequest::new(Method::Get, "/api/v1/security/tokens")
-            .with_auth(Auth::Session(session.clone())),
-    );
+    let r = rig.go(ApiRequest::new(Method::Get, "/api/v1/security/tokens")
+        .with_auth(Auth::Session(session.clone())));
     let listed = body_text(&r);
     assert!(listed.contains("deploy"));
     assert!(!listed.contains(&token));
@@ -639,13 +636,12 @@ fn session_and_bearer_token_both_authenticate() {
 fn logout_drops_the_session() {
     let mut rig = Rig::new();
     let session = rig.setup();
-    let r = rig.go(
-        ApiRequest::new(Method::Delete, "/api/v1/session")
-            .with_auth(Auth::Session(session.clone())),
-    );
+    let r = rig.go(ApiRequest::new(Method::Delete, "/api/v1/session")
+        .with_auth(Auth::Session(session.clone())));
     assert_eq!(r.status, 200);
     assert!(r.set_cookie.unwrap().contains("Max-Age=0"));
-    let r = rig.go(ApiRequest::new(Method::Get, "/api/v1/status").with_auth(Auth::Session(session)));
+    let r =
+        rig.go(ApiRequest::new(Method::Get, "/api/v1/status").with_auth(Auth::Session(session)));
     assert_eq!(r.status, 401);
 }
 
@@ -656,9 +652,9 @@ fn five_bad_logins_lock_the_login_out_for_a_minute() {
     assert_eq!(rig.config.sec.max_login_fails, 5);
 
     for attempt in 1..=4 {
-        let r = rig.go(
-            ApiRequest::new(Method::Post, "/api/v1/session").with_body(br#"{"password":"wrong"}"#),
-        );
+        let r = rig
+            .go(ApiRequest::new(Method::Post, "/api/v1/session")
+                .with_body(br#"{"password":"wrong"}"#));
         assert_eq!(r.status, 401, "attempt {attempt}");
     }
     let r = rig
@@ -666,19 +662,15 @@ fn five_bad_logins_lock_the_login_out_for_a_minute() {
     assert_eq!(r.status, 401);
 
     // Locked out now, even with the right password.
-    let r = rig.go(
-        ApiRequest::new(Method::Post, "/api/v1/session")
-            .with_body(br#"{"password":"correct horse"}"#),
-    );
+    let r = rig.go(ApiRequest::new(Method::Post, "/api/v1/session")
+        .with_body(br#"{"password":"correct horse"}"#));
     assert_eq!(r.status, 429);
     assert!(body_text(&r).contains("locked out"));
 
     // The lockout expires after sec.lockout_s.
     rig.now_ms += u64::from(rig.config.sec.lockout_s) * 1000 + 1;
-    let r = rig.go(
-        ApiRequest::new(Method::Post, "/api/v1/session")
-            .with_body(br#"{"password":"correct horse"}"#),
-    );
+    let r = rig.go(ApiRequest::new(Method::Post, "/api/v1/session")
+        .with_body(br#"{"password":"correct horse"}"#));
     assert_eq!(r.status, 200);
 
     let events = rig.platform.security_events();
@@ -695,11 +687,9 @@ fn a_node_action_becomes_the_same_command_mqtt_takes() {
     let mut rig = Rig::new();
     let session = rig.setup();
 
-    let r = rig.go(
-        ApiRequest::new(Method::Post, "/api/v1/nodes/3/press")
-            .with_auth(Auth::Session(session.clone()))
-            .with_body(br#"{"switch":"rst","duration_ms":250}"#),
-    );
+    let r = rig.go(ApiRequest::new(Method::Post, "/api/v1/nodes/3/press")
+        .with_auth(Auth::Session(session.clone()))
+        .with_body(br#"{"switch":"rst","duration_ms":250}"#));
     assert_eq!(r.status, 200, "{}", body_text(&r));
     let cmd = rig.commands.seen.last().unwrap().clone();
     assert_eq!(cmd.action.as_str(), "press");
@@ -708,20 +698,16 @@ fn a_node_action_becomes_the_same_command_mqtt_takes() {
     assert_eq!(body_json(&r)["ok"], true);
 
     // The raw command route takes the MQTT payload byte for byte.
-    let r = rig.go(
-        ApiRequest::new(Method::Post, "/api/v1/cmd")
-            .with_auth(Auth::Session(session.clone()))
-            .with_body(br#"{"v":1,"id":"c-7","action":"on","target":2,"args":{}}"#),
-    );
+    let r = rig.go(ApiRequest::new(Method::Post, "/api/v1/cmd")
+        .with_auth(Auth::Session(session.clone()))
+        .with_body(br#"{"v":1,"id":"c-7","action":"on","target":2,"args":{}}"#));
     assert_eq!(r.status, 200, "{}", body_text(&r));
     assert_eq!(body_json(&r)["id"], "c-7");
 
     // A refused action is a client error, with the reason in the ack.
-    let r = rig.go(
-        ApiRequest::new(Method::Post, "/api/v1/nodes/1/reset")
-            .with_auth(Auth::Session(session.clone()))
-            .with_body(b"{}"),
-    );
+    let r = rig.go(ApiRequest::new(Method::Post, "/api/v1/nodes/1/reset")
+        .with_auth(Auth::Session(session.clone()))
+        .with_body(b"{}"));
     assert_eq!(r.status, 400);
     assert_eq!(body_json(&r)["ok"], false);
 
@@ -730,16 +716,13 @@ fn a_node_action_becomes_the_same_command_mqtt_takes() {
         ("/api/v1/reboot", SideEffect::Reboot),
         ("/api/v1/probes/scan", SideEffect::ProbeScan),
     ] {
-        let r = rig.go(
-            ApiRequest::new(Method::Post, path).with_auth(Auth::Session(session.clone())),
-        );
+        let r =
+            rig.go(ApiRequest::new(Method::Post, path).with_auth(Auth::Session(session.clone())));
         assert_eq!(r.status, 200, "{path}");
         assert!(rig.commands.effects.contains(&want), "{path}");
     }
-    let r = rig.go(
-        ApiRequest::new(Method::Post, "/api/v1/rules/1/ack")
-            .with_auth(Auth::Session(session.clone())),
-    );
+    let r = rig.go(ApiRequest::new(Method::Post, "/api/v1/rules/1/ack")
+        .with_auth(Auth::Session(session.clone())));
     assert_eq!(r.status, 200);
     assert_eq!(rig.commands.seen.last().unwrap().args.rule, Some(1));
 }
@@ -749,19 +732,15 @@ fn factory_reset_needs_the_device_id() {
     let mut rig = Rig::new();
     let session = rig.setup();
 
-    let r = rig.go(
-        ApiRequest::new(Method::Post, "/api/v1/factory-reset")
-            .with_auth(Auth::Session(session.clone()))
-            .with_body(br#"{"confirm":"granite-wrong"}"#),
-    );
+    let r = rig.go(ApiRequest::new(Method::Post, "/api/v1/factory-reset")
+        .with_auth(Auth::Session(session.clone()))
+        .with_body(br#"{"confirm":"granite-wrong"}"#));
     assert_eq!(r.status, 400);
     assert!(!rig.commands.effects.contains(&SideEffect::FactoryReset));
 
-    let r = rig.go(
-        ApiRequest::new(Method::Post, "/api/v1/factory-reset")
-            .with_auth(Auth::Session(session))
-            .with_body(format!(r#"{{"confirm":"{DEVICE}"}}"#)),
-    );
+    let r = rig.go(ApiRequest::new(Method::Post, "/api/v1/factory-reset")
+        .with_auth(Auth::Session(session))
+        .with_body(format!(r#"{{"confirm":"{DEVICE}"}}"#)));
     assert_eq!(r.status, 200);
     assert!(rig.commands.effects.contains(&SideEffect::FactoryReset));
 }
@@ -776,11 +755,9 @@ fn a_net_section_put_goes_through_stage_and_confirm() {
     let session = rig.setup();
 
     let body = br#"{"ip_mode":"static","address":"192.168.1.10/24","gateway":"192.168.1.1"}"#;
-    let r = rig.go(
-        ApiRequest::new(Method::Put, "/api/v1/config/net")
-            .with_auth(Auth::Session(session.clone()))
-            .with_body(body),
-    );
+    let r = rig.go(ApiRequest::new(Method::Put, "/api/v1/config/net")
+        .with_auth(Auth::Session(session.clone()))
+        .with_body(body));
     assert_eq!(r.status, 200, "{}", body_text(&r));
     let v = body_json(&r);
     assert_eq!(v["staged"], true);
@@ -792,42 +769,34 @@ fn a_net_section_put_goes_through_stage_and_confirm() {
     assert_eq!(rig.config.net.address, "192.168.1.10/24");
 
     // The status page shows what is waiting.
-    let r = rig.go(
-        ApiRequest::new(Method::Get, "/api/v1/status").with_auth(Auth::Session(session.clone())),
-    );
+    let r = rig
+        .go(ApiRequest::new(Method::Get, "/api/v1/status")
+            .with_auth(Auth::Session(session.clone())));
     assert_eq!(body_json(&r)["staged"]["seconds_left"], 300);
 
-    let r = rig.go(
-        ApiRequest::new(Method::Post, "/api/v1/config/confirm")
-            .with_auth(Auth::Session(session.clone())),
-    );
+    let r = rig.go(ApiRequest::new(Method::Post, "/api/v1/config/confirm")
+        .with_auth(Auth::Session(session.clone())));
     assert_eq!(r.status, 200);
     assert_eq!(rig.net.confirmed, 1);
 
     // A second confirm has nothing to confirm.
-    let r = rig.go(
-        ApiRequest::new(Method::Post, "/api/v1/config/confirm")
-            .with_auth(Auth::Session(session.clone())),
-    );
+    let r = rig.go(ApiRequest::new(Method::Post, "/api/v1/config/confirm")
+        .with_auth(Auth::Session(session.clone())));
     assert_eq!(r.status, 409);
 
     // A nodes section is not reachability-affecting: straight through.
-    let r = rig.go(
-        ApiRequest::new(Method::Put, "/api/v1/config/nodes")
-            .with_auth(Auth::Session(session.clone()))
-            .with_body(br#"{"t_probe_s":30}"#),
-    );
+    let r = rig.go(ApiRequest::new(Method::Put, "/api/v1/config/nodes")
+        .with_auth(Auth::Session(session.clone()))
+        .with_body(br#"{"t_probe_s":30}"#));
     assert_eq!(r.status, 200, "{}", body_text(&r));
     assert_eq!(body_json(&r)["staged"], false);
     assert!(rig.store.saves.contains(&Section::Nodes));
     assert_eq!(rig.config.nodes.t_probe_s, 30);
 
     // An invalid section is refused before anything is written.
-    let r = rig.go(
-        ApiRequest::new(Method::Put, "/api/v1/config/net")
-            .with_auth(Auth::Session(session))
-            .with_body(br#"{"ip_mode":"static","address":""}"#),
-    );
+    let r = rig.go(ApiRequest::new(Method::Put, "/api/v1/config/net")
+        .with_auth(Auth::Session(session))
+        .with_body(br#"{"ip_mode":"static","address":""}"#));
     assert_eq!(r.status, 400);
     assert!(body_text(&r).contains("net.address"));
     assert!(rig.net.staged.is_empty());
@@ -837,22 +806,24 @@ fn a_net_section_put_goes_through_stage_and_confirm() {
 fn export_contains_the_config_and_no_secrets() {
     let mut rig = Rig::new();
     let session = rig.setup();
-    let r = rig.go(
-        ApiRequest::new(Method::Post, "/api/v1/security/tokens")
-            .with_auth(Auth::Session(session.clone()))
-            .with_body(br#"{"name":"deploy"}"#),
-    );
+    let r = rig.go(ApiRequest::new(Method::Post, "/api/v1/security/tokens")
+        .with_auth(Auth::Session(session.clone()))
+        .with_body(br#"{"name":"deploy"}"#));
     let token = body_json(&r)["token"].as_str().unwrap().to_string();
     rig.store.secrets.mqtt_password = String::from("brokerpassword");
     rig.store.secrets.device_key_pem = String::from("-----BEGIN PRIVATE KEY-----");
 
-    let r = rig.go(
-        ApiRequest::new(Method::Get, "/api/v1/config/export").with_auth(Auth::Session(session)),
-    );
+    let r =
+        rig.go(
+            ApiRequest::new(Method::Get, "/api/v1/config/export").with_auth(Auth::Session(session))
+        );
     assert_eq!(r.status, 200);
     let text = body_text(&r);
-    assert!(r.headers.iter().any(|(k, v)| *k == "Content-Disposition"
-        && v.contains(DEVICE)));
+    assert!(
+        r.headers
+            .iter()
+            .any(|(k, v)| *k == "Content-Disposition" && v.contains(DEVICE))
+    );
     for secret in [
         "admin_hash",
         "admin_salt",
@@ -882,11 +853,9 @@ fn import_stages_the_reachability_sections_and_saves_the_rest() {
     next.sys.timezone = String::from("Europe/Brussels");
     let doc = next.export_json().unwrap();
 
-    let r = rig.go(
-        ApiRequest::new(Method::Post, "/api/v1/config/import")
-            .with_auth(Auth::Session(session))
-            .with_body(doc),
-    );
+    let r = rig.go(ApiRequest::new(Method::Post, "/api/v1/config/import")
+        .with_auth(Auth::Session(session))
+        .with_body(doc));
     assert_eq!(r.status, 200, "{}", body_text(&r));
     let v = body_json(&r);
     let staged: Vec<String> = serde_json::from_value(v["staged"].clone()).unwrap();
@@ -902,20 +871,19 @@ fn rules_round_trip_as_a_section_or_a_bare_array() {
     let mut rig = Rig::new();
     let session = rig.setup();
 
-    let r = rig.go(
-        ApiRequest::new(Method::Get, "/api/v1/rules").with_auth(Auth::Session(session.clone())),
-    );
+    let r =
+        rig.go(
+            ApiRequest::new(Method::Get, "/api/v1/rules").with_auth(Auth::Session(session.clone()))
+        );
     assert_eq!(r.status, 200);
     let got = body_json(&r);
     assert_eq!(got["rules"].as_array().unwrap().len(), 3);
 
     let mut rules = got["rules"].clone();
     rules[0]["enabled"] = serde_json::Value::Bool(true);
-    let r = rig.go(
-        ApiRequest::new(Method::Put, "/api/v1/rules")
-            .with_auth(Auth::Session(session.clone()))
-            .with_body(serde_json::to_vec(&rules).unwrap()),
-    );
+    let r = rig.go(ApiRequest::new(Method::Put, "/api/v1/rules")
+        .with_auth(Auth::Session(session.clone()))
+        .with_body(serde_json::to_vec(&rules).unwrap()));
     assert_eq!(r.status, 200, "{}", body_text(&r));
     assert!(rig.config.rules.rules[0].enabled);
     assert!(rig.store.saves.contains(&Section::Rules));
@@ -925,11 +893,9 @@ fn rules_round_trip_as_a_section_or_a_bare_array() {
         {"id": 1, "source": "probe_max", "op": ">", "threshold": 1, "action": "event", "target": "all"},
         {"id": 1, "source": "probe_max", "op": ">", "threshold": 2, "action": "event", "target": "all"},
     ]);
-    let r = rig.go(
-        ApiRequest::new(Method::Put, "/api/v1/rules")
-            .with_auth(Auth::Session(session))
-            .with_body(serde_json::to_vec(&dup).unwrap()),
-    );
+    let r = rig.go(ApiRequest::new(Method::Put, "/api/v1/rules")
+        .with_auth(Auth::Session(session))
+        .with_body(serde_json::to_vec(&dup).unwrap()));
     assert_eq!(r.status, 400);
     assert!(body_text(&r).contains("duplicate rule id"));
 }
@@ -971,21 +937,22 @@ fn the_fleet_key_and_the_device_cert_are_validated_before_storage() {
     let mut rig = Rig::new();
     let session = rig.setup();
 
-    let r = rig.go(
-        ApiRequest::new(Method::Put, "/api/v1/security/fleet-key")
-            .with_auth(Auth::Session(session.clone()))
-            .with_body(br#"{"pem":"garbage"}"#),
-    );
+    let r = rig.go(ApiRequest::new(Method::Put, "/api/v1/security/fleet-key")
+        .with_auth(Auth::Session(session.clone()))
+        .with_body(br#"{"pem":"garbage"}"#));
     assert_eq!(r.status, 400);
     assert!(rig.config.sec.fleet_recovery_pubkey_pem.is_empty());
 
-    let r = rig.go(
-        ApiRequest::new(Method::Put, "/api/v1/security/fleet-key")
-            .with_auth(Auth::Session(session.clone()))
-            .with_body(br#"{"pem":"-----BEGIN PUBLIC KEY-----\nxx\n-----END PUBLIC KEY-----\n"}"#),
-    );
+    let r = rig.go(ApiRequest::new(Method::Put, "/api/v1/security/fleet-key")
+        .with_auth(Auth::Session(session.clone()))
+        .with_body(br#"{"pem":"-----BEGIN PUBLIC KEY-----\nxx\n-----END PUBLIC KEY-----\n"}"#));
     assert_eq!(r.status, 200, "{}", body_text(&r));
-    assert!(rig.config.sec.fleet_recovery_pubkey_pem.contains("PUBLIC KEY"));
+    assert!(
+        rig.config
+            .sec
+            .fleet_recovery_pubkey_pem
+            .contains("PUBLIC KEY")
+    );
 
     let r = rig.go(
         ApiRequest::new(Method::Put, "/api/v1/security/cert")
@@ -999,20 +966,105 @@ fn the_fleet_key_and_the_device_cert_are_validated_before_storage() {
 }
 
 #[test]
+fn mqtt_credentials_land_in_the_secrets_and_the_username_in_the_config() {
+    let mut rig = Rig::new();
+    let session = rig.setup();
+    let auth = Auth::Session(session);
+
+    // A password and a username in one call: the password is a secret,
+    // the username is public material in the `mqtt` section.
+    let r = rig.go(
+        ApiRequest::new(Method::Put, "/api/v1/security/mqtt-credentials")
+            .with_auth(auth.clone())
+            .with_body(br#"{"username":"granite-1","password":"s3cret"}"#),
+    );
+    assert_eq!(r.status, 204, "{}", body_text(&r));
+    assert!(r.body.is_empty());
+    assert_eq!(rig.store.secrets.mqtt_password, "s3cret");
+    assert_eq!(rig.config.mqtt.username, "granite-1");
+    assert!(rig.store.saves.contains(&Section::Mqtt));
+    assert!(
+        rig.platform
+            .security_events()
+            .contains(&String::from("mqtt_credentials_set"))
+    );
+
+    // A client certificate without its key is refused; the pair is not.
+    let r = rig.go(
+        ApiRequest::new(Method::Put, "/api/v1/security/mqtt-credentials")
+            .with_auth(auth.clone())
+            .with_body(br#"{"client_cert_pem":"-----BEGIN CERTIFICATE-----x"}"#),
+    );
+    assert_eq!(r.status, 400, "{}", body_text(&r));
+    assert!(rig.store.secrets.mqtt_client_cert_pem.is_empty());
+
+    let r = rig.go(
+        ApiRequest::new(Method::Put, "/api/v1/security/mqtt-credentials")
+            .with_auth(auth.clone())
+            .with_body(
+                br#"{"client_cert_pem":"-----BEGIN CERTIFICATE-----x",
+                     "client_key_pem":"-----BEGIN PRIVATE KEY-----y"}"#,
+            ),
+    );
+    assert_eq!(r.status, 204, "{}", body_text(&r));
+    assert!(
+        rig.store
+            .secrets
+            .mqtt_client_cert_pem
+            .contains("CERTIFICATE")
+    );
+    assert!(
+        rig.store
+            .secrets
+            .mqtt_client_key_pem
+            .contains("PRIVATE KEY")
+    );
+    // The password set earlier survived a call that did not mention it.
+    assert_eq!(rig.store.secrets.mqtt_password, "s3cret");
+
+    // An empty body changes nothing, and a non-string field is a 400.
+    let r = rig.go(
+        ApiRequest::new(Method::Put, "/api/v1/security/mqtt-credentials")
+            .with_auth(auth.clone())
+            .with_body(b"{}"),
+    );
+    assert_eq!(r.status, 400, "{}", body_text(&r));
+    let r = rig.go(
+        ApiRequest::new(Method::Put, "/api/v1/security/mqtt-credentials")
+            .with_auth(auth.clone())
+            .with_body(br#"{"password":7}"#),
+    );
+    assert_eq!(r.status, 400, "{}", body_text(&r));
+
+    // An explicit empty string clears a stored secret.
+    let r = rig.go(
+        ApiRequest::new(Method::Put, "/api/v1/security/mqtt-credentials")
+            .with_auth(auth.clone())
+            .with_body(br#"{"password":""}"#),
+    );
+    assert_eq!(r.status, 204, "{}", body_text(&r));
+    assert!(rig.store.secrets.mqtt_password.is_empty());
+
+    // Unauthenticated callers get nowhere.
+    let r = rig.go(
+        ApiRequest::new(Method::Put, "/api/v1/security/mqtt-credentials")
+            .with_body(br#"{"password":"nope"}"#),
+    );
+    assert_eq!(r.status, 401);
+    assert!(rig.store.secrets.mqtt_password.is_empty());
+}
+
+#[test]
 fn recovery_takes_a_token_or_a_fleet_signature_once_a_minute() {
     let mut rig = Rig::new();
     let session = rig.setup();
-    let r = rig.go(
-        ApiRequest::new(Method::Put, "/api/v1/security/fleet-key")
-            .with_auth(Auth::Session(session))
-            .with_body(br#"{"pem":"-----BEGIN PUBLIC KEY-----\nxx\n-----END PUBLIC KEY-----\n"}"#),
-    );
+    let r = rig.go(ApiRequest::new(Method::Put, "/api/v1/security/fleet-key")
+        .with_auth(Auth::Session(session))
+        .with_body(br#"{"pem":"-----BEGIN PUBLIC KEY-----\nxx\n-----END PUBLIC KEY-----\n"}"#));
     assert_eq!(r.status, 200);
 
     // A wrong token is rejected and logged.
-    let r = rig.go(
-        ApiRequest::new(Method::Post, "/recover").with_body(br#"{"token":"NOPE"}"#),
-    );
+    let r = rig.go(ApiRequest::new(Method::Post, "/recover").with_body(br#"{"token":"NOPE"}"#));
     assert_eq!(r.status, 403);
     assert!(!rig.commands.effects.contains(&SideEffect::FactoryReset));
 
@@ -1024,9 +1076,7 @@ fn recovery_takes_a_token_or_a_fleet_signature_once_a_minute() {
     rig.now_ms += api::RECOVER_INTERVAL_MS;
     let r = rig.go(ApiRequest::new(Method::Get, "/id"));
     let nonce = body_json(&r)["nonce"].as_str().unwrap().to_string();
-    let body = format!(
-        r#"{{"device":"{DEVICE}","nonce":"{nonce}","sig":"good-signature"}}"#
-    );
+    let body = format!(r#"{{"device":"{DEVICE}","nonce":"{nonce}","sig":"good-signature"}}"#);
     let r = rig.go(ApiRequest::new(Method::Post, "/recover").with_body(body.clone()));
     assert_eq!(r.status, 200, "{}", body_text(&r));
     assert!(rig.commands.effects.contains(&SideEffect::FactoryReset));
@@ -1039,15 +1089,17 @@ fn recovery_takes_a_token_or_a_fleet_signature_once_a_minute() {
 
     // And the per-device token works.
     rig.now_ms += api::RECOVER_INTERVAL_MS;
-    let r = rig.go(
-        ApiRequest::new(Method::Post, "/recover")
-            .with_body(br#"{"token":"AAAA-BBBB-CCCC-DDDD"}"#),
-    );
+    let r = rig
+        .go(ApiRequest::new(Method::Post, "/recover")
+            .with_body(br#"{"token":"AAAA-BBBB-CCCC-DDDD"}"#));
     assert_eq!(r.status, 200, "{}", body_text(&r));
 
     let events = rig.platform.security_events();
     assert_eq!(events.iter().filter(|e| *e == "recover_failed").count(), 2);
-    assert_eq!(events.iter().filter(|e| *e == "recover_accepted").count(), 2);
+    assert_eq!(
+        events.iter().filter(|e| *e == "recover_accepted").count(),
+        2
+    );
 }
 
 #[test]
@@ -1056,11 +1108,9 @@ fn a_firmware_upload_streams_into_the_sink() {
     let session = rig.setup();
 
     // Buffered body: begin, write, finish.
-    let r = rig.go(
-        ApiRequest::new(Method::Post, "/api/v1/firmware/upload")
-            .with_auth(Auth::Session(session.clone()))
-            .with_body(b"\xe9image-bytes"),
-    );
+    let r = rig.go(ApiRequest::new(Method::Post, "/api/v1/firmware/upload")
+        .with_auth(Auth::Session(session.clone()))
+        .with_body(b"\xe9image-bytes"));
     assert_eq!(r.status, 200, "{}", body_text(&r));
     let v = body_json(&r);
     assert_eq!(v["slot"], "ota_1");
@@ -1094,28 +1144,22 @@ fn a_firmware_upload_streams_into_the_sink() {
     assert!(rig.ota.aborted);
 
     // An empty body is a client error, and the slots are readable.
-    let r = rig.go(
-        ApiRequest::new(Method::Post, "/api/v1/firmware/upload")
-            .with_auth(Auth::Session(session.clone())),
-    );
+    let r = rig.go(ApiRequest::new(Method::Post, "/api/v1/firmware/upload")
+        .with_auth(Auth::Session(session.clone())));
     assert_eq!(r.status, 400);
 
-    let r = rig.go(
-        ApiRequest::new(Method::Get, "/api/v1/firmware").with_auth(Auth::Session(session.clone())),
-    );
+    let r = rig
+        .go(ApiRequest::new(Method::Get, "/api/v1/firmware")
+            .with_auth(Auth::Session(session.clone())));
     assert_eq!(body_json(&r)["key_id"], "deadbeef");
 
-    let r = rig.go(
-        ApiRequest::new(Method::Post, "/api/v1/firmware/rollback")
-            .with_auth(Auth::Session(session.clone())),
-    );
+    let r = rig.go(ApiRequest::new(Method::Post, "/api/v1/firmware/rollback")
+        .with_auth(Auth::Session(session.clone())));
     assert_eq!(r.status, 200);
     assert!(rig.platform.rolled_back);
 
-    let r = rig.go(
-        ApiRequest::new(Method::Post, "/api/v1/firmware/mark-valid")
-            .with_auth(Auth::Session(session)),
-    );
+    let r = rig.go(ApiRequest::new(Method::Post, "/api/v1/firmware/mark-valid")
+        .with_auth(Auth::Session(session)));
     assert_eq!(r.status, 200);
     assert!(rig.platform.marked_valid);
 }
@@ -1129,13 +1173,23 @@ fn status_and_state_have_the_documented_shape() {
     let mut rig = Rig::new();
     let session = rig.setup();
 
-    let r = rig.go(
-        ApiRequest::new(Method::Get, "/api/v1/status").with_auth(Auth::Session(session.clone())),
-    );
+    let r = rig
+        .go(ApiRequest::new(Method::Get, "/api/v1/status")
+            .with_auth(Auth::Session(session.clone())));
     let v = body_json(&r);
     for key in [
-        "device", "mac", "fw", "cert_sha256", "boot_reason", "uptime_s", "free_heap", "state",
-        "net", "mqtt", "ota", "modbus",
+        "device",
+        "mac",
+        "fw",
+        "cert_sha256",
+        "boot_reason",
+        "uptime_s",
+        "free_heap",
+        "state",
+        "net",
+        "mqtt",
+        "ota",
+        "modbus",
     ] {
         assert!(v.get(key).is_some(), "status is missing {key}");
     }
@@ -1143,25 +1197,26 @@ fn status_and_state_have_the_documented_shape() {
     assert_eq!(v["state"]["nodes"].as_array().unwrap().len(), 8);
     assert_eq!(v["ota"]["slots"][0]["label"], "ota_0");
 
-    let r = rig.go(
-        ApiRequest::new(Method::Get, "/api/v1/state").with_auth(Auth::Session(session.clone())),
-    );
+    let r =
+        rig.go(
+            ApiRequest::new(Method::Get, "/api/v1/state").with_auth(Auth::Session(session.clone()))
+        );
     let v = body_json(&r);
     assert_eq!(v["v"], 1);
     assert_eq!(v["nodes"][0]["node"], 1);
     assert_eq!(v["nodes"][0]["state"], "unknown");
 
-    let r = rig
-        .go(ApiRequest::new(Method::Get, "/api/v1/nodes").with_auth(Auth::Session(session.clone())));
+    let r =
+        rig.go(
+            ApiRequest::new(Method::Get, "/api/v1/nodes").with_auth(Auth::Session(session.clone()))
+        );
     let v = body_json(&r);
     assert_eq!(v["settings"]["order"][0], 1);
     assert_eq!(v["nodes"].as_array().unwrap().len(), 8);
 
-    let r = rig.go(
-        ApiRequest::new(Method::Get, "/api/v1/log/tail")
-            .with_auth(Auth::Session(session))
-            .with_query("lines=5"),
-    );
+    let r = rig.go(ApiRequest::new(Method::Get, "/api/v1/log/tail")
+        .with_auth(Auth::Session(session))
+        .with_query("lines=5"));
     assert_eq!(r.status, 200);
     assert_eq!(r.content_type, "text/plain; charset=utf-8");
 }

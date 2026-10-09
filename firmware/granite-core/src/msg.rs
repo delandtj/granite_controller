@@ -429,8 +429,8 @@ pub enum EventKind {
     Security {
         /// `login`, `login_failed`, `login_lockout`, `password_set`,
         /// `password_changed`, `token_created`, `token_deleted`,
-        /// `fleet_key_set`, `device_cert_set`, `recover_accepted`,
-        /// `recover_failed`.
+        /// `fleet_key_set`, `device_cert_set`, `mqtt_credentials_set`,
+        /// `recover_accepted`, `recover_failed`.
         what: String,
         /// Free text.
         detail: Option<String>,
