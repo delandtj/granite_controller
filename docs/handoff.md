@@ -4,6 +4,18 @@ Read this first, then docs/controller.md and docs/power-board.md.
 
 ## Next session: order prep
 
+Independent check of 4b83edc done 2026-10-09 (read-only): every
+schematic item in docs/review-2026-10.md "Status" is present, nothing
+else changed (NODE_ON8 on U15 pin 5, pin 28 NC). ERC 0; DRC 0
+unconnected, 0 parity, the 3 known violations; via-in-pad only the 4
+U1 pad 29 thermal vias. Renders of power, U1, U14/U15, relay columns
+look sane. Leftover: three 2 mm GND tracks on In1 at (219-221.6,
+62-63.4), same net as the plane, harmless. Note: D9 (SMAJ6.0A) clamps
+at ~7-8 V, above the TLV62569 6 V abs max, so it is partial protection
+only. J8 stays DNP (decided 2026-10-09). fab/ regenerated 2026-10-09.
+Remaining: rotation check in JLC's preview, impedance check, order.
+
+
 The three verification passes ran on 2026-10-08; findings and their fix
 status are in docs/review-2026-10.md. Everything actionable was fixed
 (schematic, layout, tools/jlcfab.py, docs/controller.md). Board state
@@ -41,7 +53,7 @@ Left for the user / the order:
   calculator (JLC04161H-7628).
 - Uploading Gerbers to JLC is the user's call: fab/ via
   tools/jlcfab.py.
-- Decide J8: stay DNP or fitted keyed box header (power-board link).
+- J8: stays DNP (user, 2026-10-09).
 
 ## Repo state
 
