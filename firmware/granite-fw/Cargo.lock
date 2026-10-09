@@ -711,6 +711,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "granite-core"
+version = "0.1.0"
+dependencies = [
+ "heapless",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "granite-fw"
 version = "0.1.0"
 dependencies = [
@@ -719,6 +728,7 @@ dependencies = [
  "esp-idf-hal",
  "esp-idf-svc",
  "esp-idf-sys",
+ "granite-core",
  "log",
 ]
 

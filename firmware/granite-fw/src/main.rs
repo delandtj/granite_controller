@@ -13,6 +13,9 @@
 //!
 //! Pin map: docs/controller.md, section "MCU".
 
+#[allow(unused_imports)]
+use granite_fw as _;
+
 use std::thread;
 use std::time::Duration;
 

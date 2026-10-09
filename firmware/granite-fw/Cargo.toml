@@ -8,6 +8,7 @@ anyhow = "1.0.104"
 esp-idf-hal = "0.47.0"
 esp-idf-svc = "0.53.0"
 esp-idf-sys = "0.38.1"
+granite-core = { version = "0.1.0", path = "../granite-core" }
 log = "0.4.34"
 
 [build-dependencies]
