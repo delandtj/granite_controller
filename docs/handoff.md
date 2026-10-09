@@ -4,43 +4,28 @@ Read this first, then docs/controller.md and docs/power-board.md.
 
 ## Next session: order prep
 
-Independent check of 4b83edc done 2026-10-09 (read-only): every
-schematic item in docs/review-2026-10.md "Status" is present, nothing
-else changed (NODE_ON8 on U15 pin 5, pin 28 NC). ERC 0; DRC 0
-unconnected, 0 parity, the 3 known violations; via-in-pad only the 4
-U1 pad 29 thermal vias. Renders of power, U1, U14/U15, relay columns
-look sane. Leftover: three 2 mm GND tracks on In1 at (219-221.6,
-62-63.4), same net as the plane, harmless. Note: D9 (SMAJ6.0A) clamps
-at ~7-8 V, above the TLV62569 6 V abs max, so it is partial protection
-only. J8 stays DNP (decided 2026-10-09). fab/ regenerated 2026-10-09.
-Remaining: rotation check in JLC's preview, impedance check, order.
+State 2026-10-09 (evening), branch eight-node-expander:
+- J2 is now HRO TYPE-C-31-M-12 (C165948; the GCT USB4105-GF-A was down to
+  140 at JLC). Commit c0d9b0e. Rear fan-out re-laid (D+ join behind the
+  pads, CC straight back to vias, VBUS 0.5 mm on B.Cu).
+- Board shortened 250 -> 199 mm (tools/compact.py): power, Ethernet and
+  MCU blocks unchanged with their routing; everything right of x 134.8
+  re-placed and rerouted by KRT. Top edge J6 | J7 | J9 | J11-J14, bottom
+  J8 | J10 | J15-J18. U14 over U15 next to the relays; U16/U17 in the band
+  between the relay halves (inputs towards their connectors); relay
+  columns at 13.6 mm pitch.
+- Checks: ERC 0; DRC 0 unconnected, 0 parity, violations: 2 U1 antenna
+  silk (intended), J2 differs from library (silk dropped, GND pads solid),
+  single-spoke thermals on THT GND pins J8.4 (as before) and J5.3 (both
+  also on the In1 plane). Vias in pads: only the 4 U1 pad 29 thermal vias.
+  Inner planes carry no tracks (KRT's redundant In1/In2 tracks removed).
+- Silk: pin legends on all connectors except J9/J10 (no room between
+  U14/U15 and the connectors; names are there).
+- The previous 250 mm board with the GCT USB is tag rev-c-usb4105.
+- fab/ regenerated from this board 2026-10-09.
 
-
-The three verification passes ran on 2026-10-08; findings and their fix
-status are in docs/review-2026-10.md. Everything actionable was fixed
-(schematic, layout, tools/jlcfab.py, docs/controller.md). Board state
-after the fix pass: ERC 0; DRC 0 unconnected, 0 parity, 3 violations
-(2 silk_edge_clearance at the WROOM antenna overhang, intended; 1
-starved_thermal on J8 pad 4, THT, also on the In1 plane).
-
-How the fix pass was done (so the next session knows what to trust):
-all of it was scripted by subagents (schematic edited as s-expression
-text, board edited through pcbnew python and KRT reroutes), then checked
-with kicad-cli ERC/DRC and region renders. Nobody has looked at the
-result in KiCad yet. Commits: 24a0118 (review doc), 4b83edc (fixes).
-
-First job next session: an independent check of 4b83edc before
-ordering, read-only, findings first:
-- Diff the schematic sheets against 1b5ff69 and confirm each change in
-  docs/review-2026-10.md "Status" is there and nothing else changed
-  (values, LCSC/MPN fields, NODE_ON8 on U15 pin 5, pin 28 NC).
-- Re-run ERC/DRC (expect the numbers above) and the via-in-pad count
-  (only the 4 thermal vias in U1 pad 29).
-- Render and inspect: power section (x 25-55), U1 area (x 100-135),
-  U14/U15 and the relay columns, where vias were dogboned and 13 nets
-  rerouted by KRT (list in the commit message / review status).
-- Spot-check tools/jlcfab.py rotations against JLC's preview once the
-  user uploads (K*, U2, U8, JST, U1/J2 offsets were changed).
+Before ordering: look at the board in KiCad (the right region is all
+KRT), then the JLC preview/impedance steps below.
 
 Left for the user / the order:
 - Review the board in KiCad: power section (shifted right for the
@@ -200,10 +185,24 @@ architecture.md, duck-core.md, duck-protocol.md.
   a copy in ~/.cache/granite-pcb/route because KRT rewrites the .kicad_pro
   next to the board; only the .kicad_pcb comes back. Keeps hand placement.
   Grade with kicad-cli DRC, never with KRT's own checks.
-- `tools/gndpour.py <in.pcb> <out.pcb>`: GND pours on F.Cu/B.Cu and
+- `tools/gndpour.py <in.pcb> <out.pcb>`: GND pours on F.Cu/B.Cu (1 mm short
+  of the short edges for the rails) and
   0.6/0.3 stitching vias (group "gnd-stitch", re-runnable). Run after
   routing.
-- `tools/krt_reroute.sh NET...`: targeted pass after moving a few parts.
+- `tools/compact.py <in> <out>`: the 199 mm re-placement of the region
+  right of the MCU block (deletes its copper, places, moves the right edge,
+  H2/H3, pours and keep-outs, lays the GND straps and escape vias KRT
+  cannot find). Then silk.py, connlabels.py, refill, `KRT_EXTRA="--ordering
+  mps" krt_reroute.sh --keep "*"`, then targeted passes on what is open.
+- `tools/viaout.py <in> <out>`: moves vias out of SMD pads (KRT's plane
+  welds) where a clear spot exists. KRT runs now pass
+  --same-net-pad-clearance 0.15, which avoids most of them; check with a
+  via-in-pad count after every KRT run.
+- Prune (`tools/prune.py`) only when DRC shows 0 unconnected: on an open
+  route both halves count as dangling and prune eats them.
+- After KRT: delete any tracks on In1/In2 (redundant, they cut the 3V3
+  plane) and any vias KRT adds inside U1 pad 29 beyond the 4 thermal ones.
+- `tools/krt_reroute.sh [--keep] NET...`: targeted pass after moving a few parts.
   Deletes all copper of the named nets, reroutes them on F.Cu/B.Cu, runs a
   GND pass without rip, refills zones via kicad-cli and copies the board
   back. Name every non-GND net on the moved parts plus the open nets.

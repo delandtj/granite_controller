@@ -15,7 +15,8 @@
 # The refilled board is copied back. GND stubs left at moved pads are not
 # cleaned here; DRC shows them as track_dangling.
 #
-# Env: same as krt_route.sh (KRT_DIR, KRT_PY); KRT_WORK defaults to
+# Env: same as krt_route.sh (KRT_DIR, KRT_PY); KRT_EXTRA adds route.py flags to
+#      the signal pass (e.g. "--ordering mps"); KRT_WORK defaults to
 #      ~/.cache/granite-pcb/reroute and must be outside the repo.
 set -euo pipefail
 KEEP=0
@@ -46,13 +47,14 @@ b.Save(sys.argv[2])
 print("cleared", len(gone), "tracks/vias")
 PY
 COMMON=(--layers F.Cu B.Cu --track-width 0.2 --clearance 0.2 --via-size 0.5 --via-drill 0.2
-        --strict-sizes --escalation off --keep-input-copper)
+        --strict-sizes --escalation off --keep-input-copper
+        --same-net-pad-clearance 0.15)   # no vias in SMD pads
 POWER=(--power-nets GND +3V3 +5V "*BUCK_5V" "*VIN_19V" "*VIN_RAW" VBUS "*SW_5V" "*SW_3V3"
         --power-nets-widths 0.4 0.4 0.5 0.5 0.4 0.4 0.5 0.5 0.5)
 
 cd "$KRT_DIR"
 rc=0
-"$KRT_PY" py_router/route.py "$B" "$WORK/1-sig.kicad_pcb" --nets "$@" "${COMMON[@]}" "${POWER[@]}" \
+"$KRT_PY" py_router/route.py "$B" "$WORK/1-sig.kicad_pcb" --nets "$@" "${COMMON[@]}" "${POWER[@]}" ${KRT_EXTRA:-} \
     --json-out "$WORK/sig.json" > "$WORK/sig.log" 2>&1 || rc=$?
 [ "$rc" -eq 0 ] || [ "$rc" -eq 3 ] || { echo "signal pass failed ($rc), see $WORK/sig.log" >&2; exit "$rc"; }
 rc=0

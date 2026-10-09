@@ -257,13 +257,14 @@ Add-on expanders on J8: GPA7 and GPB7 of an MCP23017 are output-only.
 - TMP1075 board temperature sensor (now on the internal I2C bus).
 - Heartbeat LED (visibility in fluid is not guaranteed; also report
   status over the network).
-- USB-C with USBLC6-2 ESD and 5.1k CC pull-downs, now wired to the
-  C6's USB pins.
+- USB-C (HRO TYPE-C-31-M-12, C165948; GCT USB4105 until 2026-10-09)
+  with USBLC6-2 ESD and 5.1k CC pull-downs, wired to the C6's USB pins.
 
 ### PCB
 
 - 4 layers, JLCPCB (bare board and assembly), JLC04161H-7628 stackup.
-- Outline 250 x 50 mm.
+- Outline 199 x 50 mm (250 x 50 until 2026-10-09; the region right of the
+  MCU was re-placed denser, see tools/compact.py).
 - Panelization: JLC rails with mouse bites on the two short edges only
   (U1's antenna and J2 overhang the long edges). Verify rotations in
   JLC's placement preview; tools/jlcfab.py uses an explicit
@@ -292,7 +293,7 @@ the 28-pin GPIO expansion header (replaced by the 2x8 header above).
 4. Motherboard front-panel pinout (board model needed): PLED drive and
    ground switch returns, for the 5-wire node cable.
 5. Connector placement, mounting holes, assembly side, surface finish
-   (carried over from the layout discussion; outline is 250 x 50 mm).
+   (carried over from the layout discussion; outline is 199 x 50 mm).
 
 Also to review: the rev C sheets are generated (one label per pin,
 parts in rows). Electrically checked (ERC clean, netlist traced);

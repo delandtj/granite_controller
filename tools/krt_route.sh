@@ -39,7 +39,8 @@ for it in [t[i] for i in range(len(t))] + [z[i] for i in range(len(z))]:
 b.Save(sys.argv[1])
 print("stripped old copper")
 PY
-COMMON=(--clearance 0.2 --via-size 0.5 --via-drill 0.2 --strict-sizes)
+COMMON=(--clearance 0.2 --via-size 0.5 --via-drill 0.2 --strict-sizes
+        --same-net-pad-clearance 0.15)   # no vias in SMD pads
 
 cd "$KRT_DIR"
 echo "== planes: GND on In1.Cu, +3V3 on In2.Cu"

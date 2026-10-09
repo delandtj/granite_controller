@@ -3,8 +3,10 @@
 
 Usage: gndpour.py <in.kicad_pcb> <out.kicad_pcb>
 
-- Replaces any F.Cu/B.Cu GND zone with one over the whole outline
-  (0.25 mm clearance, 0.2 mm min width, thermal reliefs, islands removed).
+- Replaces any F.Cu/B.Cu GND zone with one over the outline, stopping
+  SHORT_IN mm short of the two short edges (JLC rails with mouse bites go
+  there; 0.25 mm clearance, 0.2 mm min width, thermal reliefs, islands
+  removed).
   Footprint keep-outs (the WROOM antenna) still apply.
 - Stitching vias 0.6/0.3, kept in a group "gnd-stitch" so a re-run replaces
   them: a row 1.5 mm in from the board edge every 4 mm, and a 5 mm grid over
@@ -20,6 +22,7 @@ import pcbnew
 src, out = sys.argv[1:3]
 VIA_D, VIA_H, CLR = 0.6, 0.3, 0.3
 EDGE_IN, EDGE_PITCH, GRID = 1.5, 4.0, 5.0
+SHORT_IN = 1.0      # pour inset from the short (left/right) edges
 
 board = pcbnew.LoadBoard(src)
 gnd = board.GetNetcodeFromNetname("GND")
@@ -56,8 +59,8 @@ def pour(layer):
     z.SetNetCode(gnd)
     o = z.Outline()
     o.NewOutline()
-    for x, y in ((eb.GetLeft(), eb.GetTop()), (eb.GetRight(), eb.GetTop()),
-                 (eb.GetRight(), eb.GetBottom()), (eb.GetLeft(), eb.GetBottom())):
+    x0, x1 = eb.GetLeft() + pcbnew.FromMM(SHORT_IN), eb.GetRight() - pcbnew.FromMM(SHORT_IN)
+    for x, y in ((x0, eb.GetTop()), (x1, eb.GetTop()), (x1, eb.GetBottom()), (x0, eb.GetBottom())):
         o.Append(x, y)
     z.SetAssignedPriority(1)
     z.SetPadConnection(pcbnew.ZONE_CONNECTION_THERMAL)
