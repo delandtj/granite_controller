@@ -10,9 +10,33 @@ esp-idf-svc = "0.53.0"
 esp-idf-sys = "0.38.1"
 granite-core = { version = "0.1.0", path = "../granite-core" }
 log = "0.4.34"
+serde = { version = "1.0.229", default-features = false, features = ["derive", "alloc"] }
+serde_json = { version = "1.0.151", default-features = false, features = ["alloc"] }
+
+[features]
+# Devboard bring-up exercise for the hardware layer (src/hw/hwtest.rs,
+# examples/hwtest.rs). Off in a shipped image.
+hwtest = []
+
+[[example]]
+name = "hwtest"
+path = "examples/hwtest.rs"
+required-features = ["hwtest"]
 
 [build-dependencies]
 embuild = "0.33.5"
+
+# DS18B20 probes: the Espressif managed component that does 1-wire over
+# RMT (ADR 0001 component 4). esp-idf-hal's `onewire` module appears only
+# when this component is in the build.
+[[package.metadata.esp-idf-sys.extra_components]]
+remote_component = { name = "espressif/onewire_bus", version = "^1.0.2" }
+
+# mDNS: an external ESP-IDF component since v5, needed by
+# esp_idf_svc::mdns (ADR 0001 component 6, `_https._tcp` and
+# `_granite._tcp`).
+[[package.metadata.esp-idf-sys.extra_components]]
+remote_component = { name = "espressif/mdns", version = "^1.8.2" }
 
 # Size matters: two 2.5 MB OTA slots must hold TLS, MQTT, HTTP assets and
 # lwIP (ADR 0001, "Two OTA slots of 2.5 MB each").

@@ -45,9 +45,17 @@ CONFIG_LWIP_AUTOIP=y
 # With AUTOIP on, the simple ARP check is unavailable (it depends on
 # !LWIP_AUTOIP); use Address Conflict Detection instead.
 CONFIG_LWIP_DHCP_DOES_ACD_CHECK=y
-CONFIG_LWIP_AUTOIP_TRIES=2
+# lwIP starts AUTOIP alongside DHCP after this many failed DISCOVERs, and
+# keeps retrying DHCP underneath (LWIP_DHCP_AUTOIP_COOP). lwIP doubles the
+# DISCOVER timeout, so 4 tries is 2 + 4 + 8 + 16 = 30 s, which is the
+# "no lease within 30 s" of ADR 0001 component 6. The firmware only
+# reports the resulting 169.254/16 address; it does not drive AutoIP.
+CONFIG_LWIP_AUTOIP_TRIES=4
 CONFIG_LWIP_NETIF_LOOPBACK=y
 CONFIG_LWIP_SO_RCVBUF=y
+# SNTP server from DHCP option 42 (ADR component 6). Without this,
+# esp_sntp_config_t::server_from_dhcp has nothing to read.
+CONFIG_LWIP_DHCP_GET_NTP_SRV=y
 
 # --- boot safety ---------------------------------------------------------
 CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y
@@ -58,6 +66,12 @@ CONFIG_ESP_TASK_WDT_PANIC=y
 CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH=y
 CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF=y
 
+# --- HTTP server ---------------------------------------------------------
+# The setup page and the JSON API are HTTPS only (ADR 0001 component 8);
+# without this symbol esp-idf-svc does not even expose the certificate
+# fields of its server Configuration. Added by the HTTP/API task.
+CONFIG_ESP_HTTPS_SERVER_ENABLE=y
+
 # --- TLS -----------------------------------------------------------------
 # ECDSA P-256 for the device certificate and for app signature checks.
 CONFIG_MBEDTLS_ECP_C=y
@@ -65,8 +79,27 @@ CONFIG_MBEDTLS_ECDH_C=y
 CONFIG_MBEDTLS_ECDSA_C=y
 CONFIG_MBEDTLS_ECP_DP_SECP256R1_ENABLED=y
 CONFIG_MBEDTLS_HARDWARE_SHA=y
+# Writing the self-signed device certificate (ADR component 13) needs
+# PEM output. MBEDTLS_X509_CREATE_C and MBEDTLS_X509_CRT_WRITE_C have no
+# Kconfig symbol in ESP-IDF v5.5.5: they are defined unconditionally in
+# components/mbedtls/port/include/mbedtls/esp_config.h, so this one line
+# is all the certificate writer needs.
+CONFIG_MBEDTLS_PEM_WRITE_C=y
 
 # --- runtime -------------------------------------------------------------
 CONFIG_ESP_MAIN_TASK_STACK_SIZE=12288
 CONFIG_PTHREAD_TASK_STACK_SIZE_DEFAULT=8192
 CONFIG_COMPILER_OPTIMIZATION_SIZE=y
+
+# --- I2C -----------------------------------------------------------------
+# Both buses use the ESP-IDF v5 I2C master driver (driver/i2c_master.h):
+# the external bus is the LP I2C instance on GPIO6/7, which the legacy
+# driver (driver/i2c.h) cannot address at all (see src/hw/ext_i2c.rs).
+# The legacy driver is still *linked* into the image, because esp-idf-hal's
+# i2c module references i2c_driver_delete whether or not the firmware calls
+# it, and the legacy driver's startup constructor aborts the firmware when
+# it finds the new driver linked alongside it. Nothing in the firmware
+# calls the legacy API, so there is no real conflict and the check is
+# skipped. If you ever do use esp_idf_hal::i2c::I2cDriver, remove this
+# line again: the check would then be telling the truth.
+CONFIG_I2C_SKIP_LEGACY_CONFLICT_CHECK=y
