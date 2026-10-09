@@ -1,0 +1,21 @@
+[build]
+target = "riscv32imac-esp-espidf"
+
+[target.riscv32imac-esp-espidf]
+linker = "ldproxy"
+runner = "espflash flash --monitor"
+rustflags = ["--cfg", "espidf_time64"]
+
+[unstable]
+build-std = ["std", "panic_abort"]
+
+[env]
+MCU = "esp32c6"
+# ESP-IDF release that esp-idf-sys defaults to for this crate version.
+ESP_IDF_VERSION = "v5.5.5"
+
+# esp-idf-sys resolves sdkconfig.defaults and partitions.csv relative to
+# the cargo workspace dir, which embuild derives from the target dir. With
+# CARGO_TARGET_DIR pointed somewhere else (common), that guess is wrong,
+# so pin it to this crate.
+CARGO_WORKSPACE_DIR = { value = ".", relative = true }

@@ -1,0 +1,11 @@
+# Granite controller, ESP32-C6-WROOM-1-N8 (8 MB flash).
+# Partition table itself lives at 0x8000 (0x1000 long), so the first
+# partition starts at 0x9000. App partitions need 64 KB alignment, which
+# leaves a 20 KB hole between "coredump" and "factory".
+# Name,     Type, SubType,  Offset,   Size,     Flags
+nvs,        data, nvs,      0x9000,   0x30000,
+otadata,    data, ota,      0x39000,  0x2000,
+coredump,   data, coredump, 0x3B000,  0x10000,
+factory,    app,  factory,  0x50000,  0x280000,
+ota_0,      app,  ota_0,    0x2D0000, 0x280000,
+ota_1,      app,  ota_1,    0x550000, 0x280000,

@@ -1,0 +1,72 @@
+# Granite controller - ESP-IDF configuration defaults.
+# Target is the ESP32-C6-WROOM-1-N8 (RISC-V, 8 MB flash).
+# Signing/OTA-verification options are NOT here: see
+# sdkconfig.defaults.signing (opt-in, needs a private key).
+
+# --- flash ---------------------------------------------------------------
+CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y
+CONFIG_ESPTOOLPY_FLASHMODE_DIO=y
+CONFIG_ESPTOOLPY_FLASHFREQ_80M=y
+
+# --- partition table -----------------------------------------------------
+# esp-idf-sys cannot point the ESP-IDF build at a partition CSV outside its
+# own project dir (see its README, "Known limitations"), so the real table
+# (partitions.csv) is applied by espflash at flash time with
+# --partition-table. Pick the large single-app table here purely so the
+# build-time size check has 1.5 MB of headroom.
+CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y
+CONFIG_PARTITION_TABLE_OFFSET=0x8000
+
+# --- console -------------------------------------------------------------
+# UART0 carries the 1-wire probe bus, so the console moves to the
+# USB Serial/JTAG peripheral on the USB-C connector.
+CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
+CONFIG_ESP_CONSOLE_UART_DEFAULT=n
+CONFIG_ESP_CONSOLE_SECONDARY_NONE=y
+
+# --- radios off ----------------------------------------------------------
+# The board is submerged; Wi-Fi and BT are useless and only cost flash.
+# CONFIG_ESP_WIFI_ENABLED is a hidden symbol in ESP-IDF v5.5 (it follows
+# SOC_WIFI_SUPPORTED), so it cannot be turned off here. The radio is simply
+# never initialised by the firmware; dropping the esp_wifi component from
+# the build is a later flash-size optimisation.
+CONFIG_BT_ENABLED=n
+
+# --- Ethernet (W5500 over SPI) -------------------------------------------
+CONFIG_ETH_USE_SPI_ETHERNET=y
+CONFIG_ETH_SPI_ETHERNET_W5500=y
+CONFIG_ETH_SPI_ETHERNET_DM9051=n
+CONFIG_ETH_SPI_ETHERNET_KSZ8851SNL=n
+
+# --- lwIP ----------------------------------------------------------------
+CONFIG_LWIP_IPV4=y
+CONFIG_LWIP_IPV6=y
+CONFIG_LWIP_AUTOIP=y
+# With AUTOIP on, the simple ARP check is unavailable (it depends on
+# !LWIP_AUTOIP); use Address Conflict Detection instead.
+CONFIG_LWIP_DHCP_DOES_ACD_CHECK=y
+CONFIG_LWIP_AUTOIP_TRIES=2
+CONFIG_LWIP_NETIF_LOOPBACK=y
+CONFIG_LWIP_SO_RCVBUF=y
+
+# --- boot safety ---------------------------------------------------------
+CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y
+CONFIG_ESP_TASK_WDT_EN=y
+CONFIG_ESP_TASK_WDT_INIT=y
+CONFIG_ESP_TASK_WDT_TIMEOUT_S=10
+CONFIG_ESP_TASK_WDT_PANIC=y
+CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH=y
+CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF=y
+
+# --- TLS -----------------------------------------------------------------
+# ECDSA P-256 for the device certificate and for app signature checks.
+CONFIG_MBEDTLS_ECP_C=y
+CONFIG_MBEDTLS_ECDH_C=y
+CONFIG_MBEDTLS_ECDSA_C=y
+CONFIG_MBEDTLS_ECP_DP_SECP256R1_ENABLED=y
+CONFIG_MBEDTLS_HARDWARE_SHA=y
+
+# --- runtime -------------------------------------------------------------
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=12288
+CONFIG_PTHREAD_TASK_STACK_SIZE_DEFAULT=8192
+CONFIG_COMPILER_OPTIMIZATION_SIZE=y

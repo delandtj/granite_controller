@@ -1,0 +1,18 @@
+# Opt-in: signed app images with OTA signature verification, no Secure Boot
+# and no eFuse burning (ADR 0001, "Firmware update and boot safety").
+#
+# Enabling this REQUIRES a private key; the build fails without one.
+#   espsecure.py generate_signing_key --version 2 --scheme ecdsa256 \
+#       firmware/granite-fw/signing_key.pem
+# Then build with:
+#   env ESP_IDF_SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.signing" \
+#       cargo build --release
+#
+# Symbol names verified against ESP-IDF v5.5.5 Kconfig for esp32c6:
+#   components/bootloader/Kconfig.projbuild
+CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT=y
+CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME=y
+CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT=y
+CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES=y
+CONFIG_SECURE_BOOT_SIGNING_KEY="signing_key.pem"
+CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_256_BITS=y

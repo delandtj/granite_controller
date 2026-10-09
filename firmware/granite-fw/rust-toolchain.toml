@@ -1,0 +1,5 @@
+# RISC-V ESP32 targets (esp32c6) build on upstream nightly with build-std.
+# The Xtensa-only "esp" toolchain is NOT used here.
+[toolchain]
+channel = "nightly"
+components = ["rust-src", "clippy"]
