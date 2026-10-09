@@ -22,7 +22,10 @@ State 2026-10-09 (evening), branch eight-node-expander:
 - Silk: pin legends on all connectors except J9/J10 (no room between
   U14/U15 and the connectors; names are there).
 - The previous 250 mm board with the GCT USB is tag rev-c-usb4105.
-- fab/ regenerated from this board 2026-10-09.
+- fab/ regenerated from this board 2026-10-09; fab/granite_controller-jlc-order.zip
+  bundles Gerbers, BOM, CPL and the rotation list (sent to the user).
+- J2 3D model: 3dmodels/HRO_TYPE-C-31-M-12.step (EasyEDA), board-only.
+- Branch and tag rev-c-usb4105 pushed to the fork 2026-10-09.
 
 Before ordering: look at the board in KiCad (the right region is all
 KRT), then the JLC preview/impedance steps below.
