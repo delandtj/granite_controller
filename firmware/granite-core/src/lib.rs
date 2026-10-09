@@ -3,6 +3,8 @@
 //! See `firmware/docs/adr/0001-firmware-architecture.md`. This crate holds
 //! everything that can be reasoned about and tested without hardware:
 //!
+//! - [`api`]: the HTTP route table, transport-agnostic, with the traits
+//!   the platform fills in (network, identity, OTA, randomness).
 //! - [`hal`]: the traits the ESP-IDF binary (and the host simulator)
 //!   implement. No ESP-IDF, embedded-hal or vendor types leak in here.
 //! - [`node`]: per-node state, LED debounce, names, boot policy.
@@ -26,6 +28,7 @@
 extern crate alloc;
 
 pub mod actuator;
+pub mod api;
 pub mod config;
 pub mod dispatch;
 pub mod hal;

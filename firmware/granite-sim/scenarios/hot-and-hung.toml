@@ -1,0 +1,43 @@
+# A frame with trouble: node 2 is hung (its LED never answers a press),
+# node 5 is powered but its LED wire is broken (it reads dark), the inlet
+# probe climbs 2 C a minute
+# so the over-temperature rule can be made to fire, and the leak float on
+# dry input 1 is open.
+device_id = "granite-510002"
+mac = "02:00:00:51:00:02"
+
+[hardware]
+vin_mv = 18600
+board_temp_c = 38.0
+dry_in = [false, false, false, false]
+link_up = true
+vin_ramp_mv_per_min = -200
+
+[[probes]]
+rom = "28ff000000000001"
+name = "inlet"
+temp_c = 62.0
+ramp_c_per_min = 2.0
+
+[[probes]]
+rom = "28ff000000000002"
+name = "outlet"
+temp_c = 55.0
+
+[[nodes]]
+node = 1
+powered = true
+
+[[nodes]]
+node = 2
+powered = true
+respond = "never"
+
+[[nodes]]
+node = 5
+powered = true
+sense_broken = true
+
+[[nodes]]
+node = 6
+respond = "slow"

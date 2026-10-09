@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Granite controller</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+  <h1>Granite controller</h1>
+  <div id="ident" class="ident">
+    <span id="id-device">-</span>
+    <span id="id-mac" class="dim">-</span>
+    <span id="id-fw" class="dim">-</span>
+  </div>
+  <button id="logout" class="link" hidden>log out</button>
+</header>
+
+<div id="banner" class="banner" hidden></div>
+
+<!-- First boot: nothing but the admin password. -->
+<main id="setup" hidden>
+  <section class="card">
+    <h2>First setup</h2>
+    <p>
+      This controller has no admin password yet. Set one now; until then the
+      API refuses every other request.
+    </p>
+    <form id="setup-form" autocomplete="off">
+      <label>New admin password
+        <input id="setup-pw" type="password" minlength="8" required>
+      </label>
+      <label>Repeat
+        <input id="setup-pw2" type="password" minlength="8" required>
+      </label>
+      <p class="dim">At least 8 characters. There is no default password and
+        no way to read it back.</p>
+      <button type="submit">Set password</button>
+    </form>
+  </section>
+  <section id="token-card" class="card warn" hidden>
+    <h2>Recovery token</h2>
+    <p>
+      Write this down together with the MAC address, on paper, before the
+      board is sealed. It is shown once. With it, a factory reset over the
+      network is possible without the admin password.
+    </p>
+    <pre id="token-value" class="token"></pre>
+    <button id="token-ack">I have written it down</button>
+  </section>
+</main>
+
+<!-- Login. -->
+<main id="login" hidden>
+  <section class="card">
+    <h2>Log in</h2>
+    <form id="login-form" autocomplete="off">
+      <label>Admin password
+        <input id="login-pw" type="password" required>
+      </label>
+      <button type="submit">Log in</button>
+    </form>
+    <p class="dim">
+      Lost the password? Use the recovery token or the fleet recovery key
+      with <code>granite-sim recover</code>; both factory reset the board.
+    </p>
+  </section>
+</main>
+
+<!-- The application. -->
+<main id="app" hidden>
+  <nav id="tabs">
+    <button data-tab="status" class="active">Status</button>
+    <button data-tab="network">Network</button>
+    <button data-tab="mqtt">MQTT</button>
+    <button data-tab="nodes">Nodes</button>
+    <button data-tab="rules">Rules</button>
+    <button data-tab="security">Security</button>
+    <button data-tab="firmware">Firmware</button>
+    <button data-tab="maint">Maintenance</button>
+  </nav>
+
+  <section id="tab-status" class="tab">
+    <div class="card">
+      <h2>Nodes</h2>
+      <table id="node-table">
+        <thead><tr><th>#</th><th>Name</th><th>State</th><th>LED</th>
+          <th>Last action</th><th>Actions</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <button id="on-all">Power on all (staggered)</button>
+    </div>
+    <div class="grid">
+      <div class="card"><h2>Sensors</h2><table id="sensor-table"><tbody></tbody></table></div>
+      <div class="card"><h2>Network</h2><table id="net-table"><tbody></tbody></table></div>
+      <div class="card"><h2>MQTT</h2><table id="mqtt-table"><tbody></tbody></table></div>
+      <div class="card"><h2>Firmware</h2><table id="fw-table"><tbody></tbody></table></div>
+    </div>
+  </section>
+
+  <section id="tab-network" class="tab" hidden>
+    <div class="card">
+      <h2>Network</h2>
+      <p class="dim">
+        A change that can cut this session is staged and applied, then
+        reverted automatically unless it is confirmed from the new address.
+      </p>
+      <form id="net-form">
+        <label>Address mode
+          <select id="net-ip_mode"><option value="dhcp">DHCP</option>
+            <option value="static">Static</option></select></label>
+        <label>Address (CIDR) <input id="net-address" placeholder="192.168.1.10/24"></label>
+        <label>Gateway <input id="net-gateway" placeholder="192.168.1.1"></label>
+        <label>DNS (comma separated) <input id="net-dns"></label>
+        <label>Hostname <input id="net-hostname" placeholder="granite-xxxxxx"></label>
+        <label>VLAN id (empty = untagged) <input id="net-vlan" type="number" min="1" max="4094"></label>
+        <label>SNTP server <input id="net-sntp"></label>
+        <label>Confirm window (s) <input id="net-t_confirm_s" type="number" min="30" max="3600"></label>
+        <label>Static dead-man (s, 0 = off) <input id="net-t_deadman_s" type="number" min="0"></label>
+        <label class="check"><input id="net-mdns" type="checkbox"> advertise over mDNS</label>
+        <button type="submit">Stage and apply</button>
+      </form>
+    </div>
+  </section>
+
+  <section id="tab-mqtt" class="tab" hidden>
+    <div class="card">
+      <h2>MQTT</h2>
+      <form id="mqtt-form">
+        <label class="check"><input id="mqtt-enabled" type="checkbox"> enabled</label>
+        <label>Broker host <input id="mqtt-host"></label>
+        <label>Port <input id="mqtt-port" type="number" min="1" max="65535"></label>
+        <label class="check"><input id="mqtt-tls" type="checkbox"> TLS</label>
+        <label>Username <input id="mqtt-username"></label>
+        <label>Client id (empty = device id) <input id="mqtt-client_id"></label>
+        <label>Site <input id="mqtt-site"></label>
+        <label>Topic root <input id="mqtt-topic_root"></label>
+        <label>QoS <input id="mqtt-qos" type="number" min="0" max="2"></label>
+        <label>Keepalive (s) <input id="mqtt-keepalive_s" type="number" min="5" max="600"></label>
+        <label>State republish (s) <input id="mqtt-t_state_s" type="number" min="5"></label>
+        <label class="check"><input id="mqtt-auto_confirm_on_connect" type="checkbox">
+          auto-confirm a broker change on a successful connection</label>
+        <label class="check"><input id="mqtt-skip_time_check" type="checkbox">
+          skip the TLS not-before check (no SNTP)</label>
+        <label>Broker CA (PEM)<textarea id="mqtt-ca_pem" rows="6"></textarea></label>
+        <button type="submit">Stage and apply</button>
+      </form>
+      <p class="dim" id="mqtt-topics"></p>
+    </div>
+  </section>
+
+  <section id="tab-nodes" class="tab" hidden>
+    <div class="card">
+      <h2>Nodes</h2>
+      <table id="nodecfg-table">
+        <thead><tr><th>#</th><th>Name</th><th>Boot policy</th><th>Sense</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <label>Order (comma separated node ids) <input id="nodes-order"></label>
+      <h3>Timings (ms unless noted)</h3>
+      <div id="timings" class="grid-form"></div>
+      <label>Probe read period (s) <input id="nodes-t_probe_s" type="number" min="1"></label>
+      <label>VIN trim factor <input id="nodes-vin_trim" type="number" step="0.001"></label>
+      <h3>Probes</h3>
+      <table id="probe-table">
+        <thead><tr><th>Slot</th><th>ROM id</th><th>Name</th><th>Reading</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <button id="probe-scan">Scan the 1-wire bus</button>
+      <button id="nodes-save">Save</button>
+    </div>
+  </section>
+
+  <section id="tab-rules" class="tab" hidden>
+    <div class="card">
+      <h2>Rules</h2>
+      <p class="dim">
+        Evaluated once a second against the sensor snapshot, with or without
+        a broker. Thresholds are in the source unit: centi-degrees C,
+        millivolts, 0/1 for booleans, seconds for uptime.
+      </p>
+      <table id="rule-table">
+        <thead><tr><th>On</th><th>Id</th><th>Name</th><th>Source</th><th>n</th>
+          <th>Op</th><th>Threshold</th><th>Hyst.</th><th>Hold s</th>
+          <th>Action</th><th>Target</th><th>Rearm</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <button id="rule-add">Add rule</button>
+      <button id="rules-save">Save</button>
+    </div>
+  </section>
+
+  <section id="tab-security" class="tab" hidden>
+    <div class="card">
+      <h2>Admin password</h2>
+      <form id="pw-form" autocomplete="off">
+        <label>Current <input id="pw-current" type="password"></label>
+        <label>New <input id="pw-new" type="password" minlength="8"></label>
+        <button type="submit">Change password</button>
+      </form>
+    </div>
+    <div class="card">
+      <h2>API tokens</h2>
+      <table id="token-table"><thead><tr><th>Name</th><th>Created</th><th></th></tr></thead><tbody></tbody></table>
+      <form id="token-form"><label>New token name <input id="token-name"></label>
+        <button type="submit">Create</button></form>
+      <pre id="token-new" class="token" hidden></pre>
+    </div>
+    <div class="card">
+      <h2>Device certificate</h2>
+      <p class="dim">SHA-256 fingerprint: <code id="cert-sha">-</code></p>
+      <form id="cert-form">
+        <label>Certificate (PEM)<textarea id="cert-pem" rows="5"></textarea></label>
+        <label>Private key (PEM)<textarea id="cert-key" rows="5"></textarea></label>
+        <button type="submit">Upload pair</button>
+      </form>
+    </div>
+    <div class="card">
+      <h2>Fleet recovery key</h2>
+      <p class="dim">
+        ECDSA P-256 public key. With it, a host holding the private key can
+        factory reset this board without the admin password.
+      </p>
+      <form id="fleet-form">
+        <label>Public key (PEM)<textarea id="fleet-pem" rows="4"></textarea></label>
+        <button type="submit">Set fleet key</button>
+      </form>
+    </div>
+    <div class="card">
+      <h2>Modbus TCP allow-list</h2>
+      <p class="dim">Modbus has no authentication. The server refuses to
+        start without at least one allowed peer.</p>
+      <form id="modbus-form">
+        <label class="check"><input id="modbus-enabled" type="checkbox"> enabled</label>
+        <label>Port <input id="modbus-port" type="number" min="1" max="65535"></label>
+        <label>Unit id <input id="modbus-unit_id" type="number" min="1" max="247"></label>
+        <label>Max connections <input id="modbus-max_conn" type="number" min="1" max="8"></label>
+        <label>Allowed peers (addresses or CIDRs, comma separated)
+          <input id="modbus-allow"></label>
+        <button type="submit">Save</button>
+      </form>
+    </div>
+  </section>
+
+  <section id="tab-firmware" class="tab" hidden>
+    <div class="card">
+      <h2>Firmware</h2>
+      <table id="slot-table">
+        <thead><tr><th>Partition</th><th>State</th><th>Version</th><th>Size</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p class="dim">Signing key id: <code id="fw-key">-</code></p>
+      <div id="fw-pending" class="warn" hidden>
+        This image is on probation. It marks itself valid once it has link,
+        an address and a broker or an authenticated request.
+      </div>
+      <form id="upload-form">
+        <label>Signed image (.bin) <input id="upload-file" type="file" accept=".bin"></label>
+        <button type="submit">Upload</button>
+      </form>
+      <progress id="upload-progress" max="100" value="0" hidden></progress>
+      <div class="row">
+        <button id="fw-mark-valid">Mark running image valid</button>
+        <button id="fw-rollback" class="danger">Roll back to the previous image</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-maint" class="tab" hidden>
+    <div class="card">
+      <h2>Configuration</h2>
+      <div class="row">
+        <button id="cfg-export">Export JSON</button>
+        <label class="file">Import JSON <input id="cfg-import" type="file" accept=".json"></label>
+      </div>
+      <p class="dim">An export carries no secrets: no password hash, no
+        tokens, no private keys.</p>
+    </div>
+    <div class="card">
+      <h2>Log</h2>
+      <div class="row">
+        <button id="log-refresh">Refresh</button>
+        <label>Lines <input id="log-lines" type="number" value="100" min="1" max="500"></label>
+      </div>
+      <pre id="log-view" class="log"></pre>
+    </div>
+    <div class="card">
+      <h2>Reboot</h2>
+      <p class="dim">Node power is not touched by a controller restart unless
+        a per-node boot policy says so.</p>
+      <button id="reboot" class="danger">Reboot the controller</button>
+    </div>
+    <div class="card warn">
+      <h2>Factory reset</h2>
+      <p>Erases the configuration, the admin password and the tokens. The
+        recovery token and the device certificate survive. Type the device id
+        to confirm.</p>
+      <form id="reset-form">
+        <label>Device id <input id="reset-confirm" placeholder="granite-xxxxxx"></label>
+        <button type="submit" class="danger">Factory reset</button>
+      </form>
+    </div>
+  </section>
+</main>
+
+<script src="/app.js"></script>
+</body>
+</html>

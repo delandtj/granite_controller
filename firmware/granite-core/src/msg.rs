@@ -423,6 +423,20 @@ pub enum EventKind {
         /// Free text.
         detail: Option<String>,
     },
+    /// Something the HTTP API wants on the record: a login, a failed
+    /// login, a lockout, a recovery attempt, a password or key change
+    /// (ADR components 8 and 13).
+    Security {
+        /// `login`, `login_failed`, `login_lockout`, `password_set`,
+        /// `password_changed`, `token_created`, `token_deleted`,
+        /// `fleet_key_set`, `device_cert_set`, `recover_accepted`,
+        /// `recover_failed`.
+        what: String,
+        /// Free text.
+        detail: Option<String>,
+        /// Peer address, when the transport knows it.
+        peer: Option<String>,
+    },
     /// Configuration changed, or a section fell back to defaults.
     Config {
         /// Which section, when it is about one.

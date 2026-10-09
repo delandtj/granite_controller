@@ -1,0 +1,149 @@
+/* Granite controller setup page. No framework, no web fonts: the board is
+   on an isolated network and serves these three files only. */
+:root {
+  --bg: #12151a;
+  --card: #1b1f27;
+  --line: #2b313d;
+  --text: #dfe3ea;
+  --dim: #8d97a8;
+  --accent: #5aa9e6;
+  --ok: #4caf7d;
+  --warn: #e0a33e;
+  --bad: #d9534f;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+header {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--card);
+}
+h1 { font-size: 1.1rem; margin: 0; }
+h2 { font-size: 1rem; margin: 0 0 0.6rem; }
+h3 { font-size: 0.9rem; margin: 1rem 0 0.4rem; color: var(--dim); }
+.ident { display: flex; gap: 0.8rem; font-family: ui-monospace, monospace; }
+.dim { color: var(--dim); }
+code, pre, .token { font-family: ui-monospace, monospace; }
+main { padding: 1rem; max-width: 70rem; }
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-bottom: 1rem;
+}
+nav button {
+  background: var(--card);
+  border: 1px solid var(--line);
+  color: var(--dim);
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+nav button.active { color: var(--text); border-color: var(--accent); }
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+.card.warn { border-color: var(--warn); }
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 1rem;
+}
+.grid-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 0.5rem;
+}
+.row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+label { display: block; margin: 0.5rem 0; color: var(--dim); }
+label.check, label.file { display: flex; align-items: center; gap: 0.4rem; }
+input, select, textarea {
+  display: block;
+  width: 100%;
+  margin-top: 0.2rem;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 0.35rem 0.5rem;
+  font: inherit;
+}
+label.check input, label.file input { width: auto; margin: 0; }
+input[type="number"] { max-width: 10rem; }
+textarea { font-family: ui-monospace, monospace; font-size: 0.85em; }
+button {
+  background: var(--accent);
+  color: #0b0e12;
+  border: 0;
+  border-radius: 4px;
+  padding: 0.4rem 0.9rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+button.danger { background: var(--bad); color: #fff; }
+button.small { padding: 0.2rem 0.5rem; font-weight: 400; }
+button.link {
+  background: none;
+  color: var(--accent);
+  margin-left: auto;
+  font-weight: 400;
+}
+button:disabled { opacity: 0.5; cursor: default; }
+table { width: 100%; border-collapse: collapse; }
+th, td {
+  text-align: left;
+  padding: 0.3rem 0.4rem;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+th { color: var(--dim); font-weight: 600; font-size: 0.85em; }
+td input, td select { margin: 0; min-width: 4rem; }
+.state-on { color: var(--ok); font-weight: 600; }
+.state-off { color: var(--dim); }
+.state-busy { color: var(--warn); }
+.state-unknown { color: var(--bad); }
+.banner {
+  padding: 0.6rem 1rem;
+  background: var(--warn);
+  color: #1b1f27;
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+}
+.banner.err { background: var(--bad); color: #fff; }
+.banner.ok { background: var(--ok); color: #0b0e12; }
+.banner button { background: #0b0e12; color: #fff; }
+.token {
+  font-size: 1.1rem;
+  letter-spacing: 0.08em;
+  background: var(--bg);
+  padding: 0.6rem;
+  border: 1px dashed var(--warn);
+  border-radius: 4px;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+.log {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.5rem;
+  max-height: 22rem;
+  overflow: auto;
+  font-size: 0.85em;
+  white-space: pre-wrap;
+}
+progress { width: 100%; height: 1rem; }
