@@ -1,0 +1,15 @@
+[package]
+name = "granite-core"
+description = "Host-testable core of the Granite controller firmware: HAL traits, node actuator, rule engine, config, message and Modbus models"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+heapless = "0.9.3"
+serde = { version = "1.0.229", default-features = false, features = ["derive", "alloc"] }
+serde_json = { version = "1.0.151", default-features = false, features = ["alloc"] }
+
+[features]
+default = ["std"]
+std = ["serde/std", "serde_json/std"]

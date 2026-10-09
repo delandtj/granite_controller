@@ -1,0 +1,15 @@
+# Granite controller firmware workspace.
+#
+# granite-core is host-testable (no_std + alloc, no ESP-IDF).
+# granite-fw is excluded on purpose: it is an ESP-IDF crate with its own
+# target, linker and .cargo/config.toml, and must not share this
+# workspace's build settings.
+[workspace]
+members = ["granite-core"]
+exclude = ["granite-fw"]
+resolver = "3"
+
+[workspace.package]
+edition = "2024"
+version = "0.1.0"
+license = "MIT"
