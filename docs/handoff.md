@@ -1,13 +1,14 @@
-# Handoff - granite controller (updated 2026-10-09)
+# Handoff - granite controller (updated 2026-10-10)
 
 Read this first, then docs/controller.md and docs/power-board.md.
 
 ## Next session: firmware spec
 
-Boards are ordered (below). The 2026-10-09 evening session started on
-firmware; nothing is written yet. Next step: an ADR/spec for the
-firmware (self-contained component spec, not phases) in firmware/docs/,
-then code in firmware/.
+Boards are ordered (below). The firmware spec is written:
+firmware/docs/adr/0001-firmware-architecture.md (Proposed, 2026-10-09),
+waiting for the user's review; its "Review asks" and "Open Questions"
+list what to settle. Next: review -> mark Accepted -> workspace in
+firmware/ (granite-core, granite-fw, granite-sim) per the ADR.
 
 Decided (user, 2026-10-09):
 - Code lives in firmware/ in this repo.
@@ -18,13 +19,17 @@ Decided (user, 2026-10-09):
   rules (e.g. temperature threshold -> action), persisted on the board.
 - Security is in scope: signed firmware updates, authenticated API.
 
-Open:
-- Northbound API: who talks to the controller (management server,
-  browser, both) is not decided. Candidates: HTTP/JSON, MQTT, Modbus TCP,
-  OpenRPC (matches the user's Hero services). Keep the API layer
-  separable so the transport can be chosen later.
+Decided (user, 2026-10-10):
+- Rust on ESP-IDF confirmed.
+- Northbound: MQTT (logging, monitoring, control) + HTTPS setup page.
+  Modbus is required too (Modbus TCP on the controller, RTU to ducks
+  later; "maybe in some way over that" is an open question in the ADR).
+- Boards are submerged after configuration: preconfiguration and full
+  reset must work with only network access; the user notes each
+  board's MAC. The ADR covers this (commit-confirmed network changes,
+  OTA self-validation + factory partition, per-device recovery token).
 
-Proposed, not yet confirmed by the user:
+Background on the ESP-IDF choice:
 - Rust on ESP-IDF (esp-idf-svc, std): ESP-IDF's W5500 MAC-raw driver +
   lwIP, two-slot OTA with rollback (8 MB flash), NVS, HTTP server. User
   knows ESP-IDF. Bare-metal esp-hal + Embassy (embassy-net-wiznet) was
