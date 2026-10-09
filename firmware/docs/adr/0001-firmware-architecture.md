@@ -1,7 +1,8 @@
 # Granite controller firmware
 
-**Status**: Proposed
+**Status**: Accepted
 **Date**: 2026-10-09
+**Updated**: 2026-10-10 (user review: off escalates after t_soft_off, fleet recovery key added, Modbus TCP in release 1, signed OTA without eFuses confirmed)
 
 ---
 
@@ -135,10 +136,10 @@ firmware/
      | Action | Behaviour |
      |---|---|
      | `on` | If LED off: short PWR press. Wait for LED on, timeout `t_on` (default 10 s). If already on: ok, no press. |
-     | `off` | If LED on: short PWR press (ACPI soft-off). Wait for LED off up to `t_soft_off` (default 120 s); if still on, result `shutdown_pending` (no second press). |
+     | `off` | If LED on: short PWR press (ACPI soft-off). Wait for LED off up to `t_soft_off` (default 120 s); if still on, escalate to `force_off` (user decision 2026-10-10). Event `soft_off_timeout` is emitted before the escalation. `args.no_escalate: true` keeps the old behaviour and returns `shutdown_pending`. |
      | `force_off` | If LED on: hold PWR until LED off plus 500 ms, max `t_hold` (default 8 s, range 4-10). |
      | `reset` | If LED on: short RST press. If off: rejected. |
-     | `cycle` | `off` or `force_off` (option, default `off` then `force_off` after `t_soft_off`), wait `t_cycle` (default 10 s), `on`. |
+     | `cycle` | `off` (which escalates as above) or `force_off` (`args.hard: true`), wait `t_cycle` (default 10 s), `on`. |
      | `press` | Raw press of `pwr` or `rst` for a given duration (100 ms-10 s) regardless of LED state. For odd BIOS behaviour; always logged as an event. |
      | `on_all` | Staggered `on` in the configured node order with `t_stagger` between presses (default 5 s). Skips nodes already on. |
 
@@ -349,12 +350,24 @@ firmware/
 13. **Identity and recovery** (`granite-fw/src/identity.rs`)
     - Device id `granite-<mac6>`; MAC and id printed on the USB console
       at every boot and on the `/id` endpoint.
-    - Recovery token: 20 random bytes (base32, grouped), generated at
-      first boot and at every factory reset, stored in the `factory`
-      namespace, shown once on the first-setup page and on the USB
-      console. `POST /recover` on HTTPS with the token (rate-limited to
-      one attempt per minute, logged) performs a factory reset without
+    - Per-device recovery token: 20 random bytes (base32, grouped),
+      generated at first boot and at every factory reset, stored in the
+      `factory` namespace, shown once on the first-setup page and on the
+      USB console. `POST /recover` on HTTPS with the token (rate-limited
+      to one attempt per minute, logged) performs a factory reset without
       the admin password. The user keeps MAC + token together per board.
+    - Fleet recovery key (user decision 2026-10-10): an ECDSA P-256
+      public key, stored in the `factory` namespace. Set at commissioning
+      on the Security page or by the USB console, and optionally baked
+      into the image at build time (`FLEET_RECOVERY_PUBKEY` env, PEM) so
+      a freshly flashed board already trusts it. `POST /recover` also
+      accepts `{"device":"granite-xxxxxx","nonce":"..","sig":".."}` where
+      `nonce` comes from `/id` (fresh per request, valid 5 min, one use)
+      and `sig` is the fleet private key's signature over
+      `device || nonce || "factory-reset"`. Same rate limit and logging.
+      The private key never touches a board; a small host tool
+      (`granite-sim recover`) produces the request. Replacing the fleet
+      key requires the admin password or the old fleet key.
     - LED: 1 Hz heartbeat when healthy; 4 Hz while an OTA image is
       pending validation; 0.25 Hz when no link; solid on during a press.
 
@@ -585,6 +598,9 @@ unreachable state because the network section's default is DHCP.
 - **Config storage as JSON blobs per section in NVS**. Alternative: one
   blob, or typed NVS keys. Cost: a migration function per schema bump;
   the schema version field makes that mechanical.
+- **Recovery**: per-device token plus a fleet ECDSA public key.
+  Alternative: fleet-wide shared secret (simpler, but a secret on every
+  board). Cost to change: the `/recover` handler and the host tool only.
 - **PBKDF2 for the admin password**. Alternative: Argon2id (memory
   cost is the problem on 512 KB). Cost: a rehash on next login.
 
@@ -634,17 +650,15 @@ Component specs, each independently testable:
   proven by a deliberately hung task -> MQTT -> OTA with rollback
   proven by a deliberately broken image -> Modbus -> rules.
 
-### Review asks
+### Review outcome (2026-10-10)
 
-1. `off` on a node that ignores soft-off: leave it `shutdown_pending`
-   (operator decides), or auto-escalate to `force_off` after
-   `t_soft_off`? Spec says leave it.
-2. Recovery token model (per-device, shown once, factory reset only)
-   acceptable, or do you want a fleet-wide recovery key as well?
-3. Modbus TCP in the first release, or only the register map frozen now
-   and the server later? Spec says first release, off by default.
-4. Signing: plain app-signature verification on OTA (no eFuses) for the
-   first batch, Secure Boot V2 as a later production step. Yes/no.
+1. `off` escalates to `force_off` after `t_soft_off`. Done above.
+2. Fleet-wide recovery key in addition to the per-device token. Done
+   above.
+3. Modbus TCP server ships in release 1, off by default (the question
+   was whether to defer the server; it is not deferred).
+4. App-signature verification on OTA without eFuses for the first batch;
+   Secure Boot V2 stays a later production step.
 
 ---
 
