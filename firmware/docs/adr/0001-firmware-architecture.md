@@ -734,3 +734,20 @@ granite-fw skeleton (commit b38c30e, firmware/README.md has the detail):
   the radio is simply never initialised. BT is off.
 - Dropping the SPI driver after a failed W5500 init panics inside
   esp-idf-hal; the driver is leaked on purpose (main.rs comment).
+
+granite-fw hardware layer (commit 62ee599):
+- GPIO10 (EXP_nRESET_INT) resets U14 AND U15, so "GPIO10 low whenever no
+  press is in progress" would also hold the sense expander in reset:
+  no EXP_INT, no LED read-back right after a press, dry contacts shorter
+  than the poll missed. Decision: the line stays high while idle
+  (`expanders::IDLE_IN_RESET = false`). Idle safety rests on U14 OLAT = 0
+  verified every second against the shadow, and on the press deadline,
+  which still resets both expanders mid-press. Boot, panic hook and
+  the deadline are the three paths that drive GPIO10 low.
+- Both I2C buses use the ESP-IDF v5 i2c_master driver; the external bus
+  is the hardware LP I2C (LP_I2C_NUM_0, GPIO6/7, 100 kHz), which closes
+  docs/controller.md open item 3. `CONFIG_I2C_SKIP_LEGACY_CONFLICT_CHECK`
+  is required because esp-idf-hal links the legacy driver.
+- 1-wire through the espressif/onewire_bus component (RMT) with DS18B20
+  commands in-tree; one CONVERT_T broadcast per 2 s cycle shared by all
+  probes.
