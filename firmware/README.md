@@ -90,6 +90,25 @@ espflash monitor --port /dev/ttyACM0 \
     --elf target/riscv32imac-esp-espidf/release/granite-fw
 ```
 
+With no `--target-app-partition`, espflash writes the app to `factory`,
+which is what the bootloader runs when `otadata` is empty. Writing to
+`ota_0` **and** erasing `otadata` in the same command leaves the
+bootloader pointing at `factory`, so it boots whatever was there before:
+
+```sh
+# bench image to factory (what the bootloader runs):
+espflash flash --port /dev/ttyACM0 --bootloader ... --partition-table partitions.csv <elf>
+# and the same image to ota_0, so the first OTA replaces ota_1:
+espflash flash --port /dev/ttyACM0 --partition-table partitions.csv \
+    --target-app-partition ota_0 <elf>
+```
+
+`nvs` is never written by `espflash flash`, so the device certificate,
+the recovery token and the configuration survive a reflash. Erase them
+on purpose with `espflash erase-parts nvs` or with the console's
+`factory-reset CONFIRM` (which keeps the `factory` namespace: the
+recovery token and the fleet key).
+
 Both extra flags matter. Without `--bootloader`, espflash flashes the
 bootloader it bundles itself (an ESP-IDF v6.1-beta build at espflash
 4.6.0) instead of the one the ESP-IDF build produced from
@@ -157,3 +176,84 @@ env ESP_IDF_SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.signing" \
 `signing_key.pem` relative to the crate root. Losing the private key
 means no more OTA for boards built with its public key, and a submerged
 board cannot be reflashed over USB - keep it backed up.
+
+How signing surfaces at runtime: the console's `status` and the status
+page print a `signing` line. On a signed build it reads `signed images
+required, key id <8 hex>`, where the key id is the first digits of the
+running app's ELF SHA-256 (`esp_app_get_elf_sha256`) - the same value
+`espflash` prints as `ELF file SHA256` at boot, so an operator can match
+a running image against the one the host tool pushed. On an unsigned
+build it says so plainly. There is no eFuse involved either way: Secure
+Boot V2 and flash encryption stay off (ADR 0001 component 11).
+
+## Console
+
+The USB-C connector carries an interactive console
+(`CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y`, driven through the
+`usb_serial_jtag` driver rather than through `stdin`). Physical access is
+full access; the console asks for no password and is not a network path.
+
+```
+granite> help
+  id                    device id, mac, firmware, cert fingerprint
+  status                net, ota slot and state, uptime, free heap
+  net                   network detail
+  set-password <pw>     set the admin password (first setup or reset)
+  recovery-token        print the per-device recovery token again
+  fleet-key             fleet recovery key fingerprint
+  factory-reset CONFIRM erase config and secrets, keep factory, reboot
+  ota-mark-valid        confirm the running image
+  reboot                restart through the planned-reboot path
+  log [n]               last n lines of the log ring (default 40)
+```
+
+`espflash monitor` does not forward keystrokes in non-interactive mode;
+use it interactively, or any serial terminal (`picocom /dev/ttyACM0`).
+
+## First boot
+
+On a board with an empty `nvs` the firmware
+
+1. writes the default configuration (DHCP, MQTT off, Modbus off, boot
+   policy `leave`, the example rules present and disabled),
+2. generates the per-device recovery token (20 random bytes, base32,
+   grouped) into the `factory` namespace and prints it **once**,
+3. generates the HTTPS device certificate (ECDSA P-256, self-signed,
+   CN = the device id, `notBefore` = the firmware build time, 10 years)
+   with mbedTLS and prints its SHA-256 fingerprint.
+
+Both are reloaded on every later boot; the token is printed again only by
+the `recovery-token` console command, and the fingerprint by `id`.
+Write the token down next to the MAC before the board is sealed.
+
+An optional fleet recovery public key (ECDSA P-256, PEM) can be baked
+into the image:
+
+```sh
+FLEET_RECOVERY_PUBKEY="$(cat fleet-recovery.pub)" cargo build --release
+```
+
+A freshly flashed board then already trusts it; otherwise it is set at
+commissioning on the Security page. The private key never touches a
+board.
+
+## Network behaviour
+
+- **AutoIP** is lwIP's, not the firmware's: `CONFIG_LWIP_AUTOIP=y` plus
+  `CONFIG_LWIP_AUTOIP_TRIES=4` makes lwIP add an IPv4 link-local address
+  after four failed DHCP DISCOVERs while DHCP keeps retrying. lwIP
+  doubles the DISCOVER timeout, so four tries is 2 + 4 + 8 + 16 = 30 s,
+  the window ADR 0001 component 6 asks for. The firmware reports the
+  result (`mode autoip` in `net`) by recognising 169.254/16.
+- **SNTP** uses `esp_netif_sntp_*` rather than esp-idf-svc's `EspSntp`,
+  because only that API can take the server from DHCP option 42
+  (`CONFIG_LWIP_DHCP_GET_NTP_SRV=y`). Until the first sync the clock is
+  set to the firmware build time, so TLS not-before checks pass.
+- **mDNS** comes from the external `espressif/mdns` component, declared
+  in `granite-fw/Cargo.toml` under
+  `[[package.metadata.esp-idf-sys.extra_components]]`. It advertises
+  `_https._tcp` and `_granite._tcp` on 443 with `id=<device id>`.
+- **Commit-confirm**: a staged `net` section is applied live while the
+  old value stays in `cfg`, so a reboot reverts by doing nothing. If the
+  confirm does not arrive within `t_confirm_s` the firmware reboots into
+  the stored configuration.

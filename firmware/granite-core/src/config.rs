@@ -691,6 +691,10 @@ pub struct Secrets {
     pub api_tokens: Vec<ApiToken>,
     /// Broker password.
     pub mqtt_password: String,
+    /// Client certificate, PEM. Public material, but it is kept here next
+    /// to its private key so the two are written and read as one pair
+    /// (ADR component 7, "username/password or client certificate").
+    pub mqtt_client_cert_pem: String,
     /// Client certificate private key, PEM.
     pub mqtt_client_key_pem: String,
     /// HTTPS device certificate private key, PEM.
@@ -707,6 +711,7 @@ impl Default for Secrets {
             admin_iters: 20_000,
             api_tokens: Vec::new(),
             mqtt_password: String::new(),
+            mqtt_client_cert_pem: String::new(),
             mqtt_client_key_pem: String::new(),
             device_key_pem: String::new(),
             recovery_token: String::new(),

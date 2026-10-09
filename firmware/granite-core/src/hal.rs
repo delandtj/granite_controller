@@ -259,6 +259,11 @@ impl fmt::Display for BootReason {
     }
 }
 
+// The sink a firmware image is streamed into is
+// [`crate::api::OtaSink`]: it is part of the HTTP API's contract
+// (begin / write / finish / abort), not of the hardware abstraction, and
+// one public `OtaSink` is enough.
+
 /// Restarting the controller.
 pub trait Reboot {
     /// Ask for a restart. Implementations may return (the caller then
