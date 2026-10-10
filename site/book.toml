@@ -1,0 +1,26 @@
+[book]
+title = "Granite controller"
+description = "Installer and operator documentation for the Granite immersion frame controller"
+authors = ["Granite Electronics"]
+language = "en"
+src = "src"
+
+[build]
+build-dir = "book"
+create-missing = false
+
+[output.html]
+default-theme = "light"
+preferred-dark-theme = "navy"
+git-repository-url = "https://github.com/delandtj/granite_controller"
+edit-url-template = "https://github.com/delandtj/granite_controller/edit/eight-node-expander/site/{path}"
+site-url = "/"
+no-section-label = false
+
+[output.html.fold]
+enable = true
+level = 1
+
+[output.html.search]
+enable = true
+limit-results = 20

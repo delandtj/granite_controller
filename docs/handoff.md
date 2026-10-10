@@ -34,6 +34,39 @@ probation ladder end to end (no image has been pushed to a slot yet).
 The PLED level on a real motherboard is still the open question of
 docs/controller.md item 4.
 
+Firmware gaps found while fact-checking the docs site (2026-10-10,
+verified in source; the site carries "Current firmware" notes for each):
+- Per-node boot policy is never applied on the board: Actuator::
+  submit_boot_policy is called only from granite-sim/src/sim.rs.
+- Target `all` is refused (bad_target) for every action except on_all
+  (actuator.rs ~795). The three shipped default rules use force_off on
+  `all`, so they fire and the action is refused. Fix the actuator or
+  the rule engine (fan out to one submission per node).
+- HTTP node actions reply `accepted` at queue time (main.rs:439); the
+  failure of a queued action reaches clients only via events / the MQTT
+  ack / last_action.
+- Staged mqtt and sec sections are not applied live and have no revert
+  timer; they take effect after confirm plus a reboot (api_impl.rs:285,
+  mqtt.rs:706). sec.modbus is the exception (config-watch thread).
+- Dead-man counts only gateway ICMP echo; net::note_connection() has no
+  callers, so "no accepted connection" never resets it. A static config
+  with an empty or ping-silent gateway falls to DHCP after t_deadman.
+- Fault bits PROBE_MISSING (2), VIN (3), CONFIG_FALLBACK (5) are never
+  set; bit 0 only at hardware init, not on a runtime press deadline.
+- OTA event phases `started` / `downloading` are never emitted.
+- mqtt.skip_time_check is ignored (esp-mqtt has no option).
+- vin_trim, probe names/ROM map and t_probe_s are read once at boot.
+- Console set-password mints a new salt and invalidates all API tokens
+  (platform/mod.rs:390); the API path keeps the salt.
+- Factory reset erases the device certificate (secrets namespace); the
+  setup page text says it survives (index.html:296).
+- The recovery-token "shown once" flag lives in the factory namespace,
+  so after a console set-password or a factory reset the page never
+  shows the token.
+- http.rs registers no HEAD handlers although the core handles HEAD.
+- No documented way to produce the OTA .bin (espflash save-image is
+  assumed; a signed build needs espsecure sign_data).
+
 Next steps:
 1. Devboard network tests with `--features wifi-dev` (Wi-Fi STA instead
   of the W5500): first setup over HTTPS, a broker session against a real
@@ -121,6 +154,12 @@ State 2026-10-09, branch eight-node-expander:
 
 ## Repo state
 
+- Documentation site (installer/operator, mdBook) in site/: `mdbook build`
+  or `mdbook serve` in site/, output site/book/ (gitignored). Written
+  2026-10-10 from README, ADR 0001, controller.md and granite-core; the
+  Modbus map and the Home Assistant page are included from firmware/docs.
+  Not hosted anywhere yet (a GitHub Pages workflow was not added; the
+  user decides on hosting).
 - Branch `eight-node-expander` holds all current work (rev C), pushed to
   the fork (2026-10-09, including the C36 swap and this handoff). Push only when the user asks.
 - `master` = rev A (colleague's STM32 design) + PCB setup, BOM fix,
