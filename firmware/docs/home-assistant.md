@@ -57,14 +57,14 @@ mqtt:
       unique_id: granite_37adc7_probe_0
       state_topic: "granite/default/granite-37adc7/state"
       value_template: "{{ value_json.probes[0].temp_c }}"
-      unit_of_measurement: "°C"
+      unit_of_measurement: "\u00b0C"
       device_class: temperature
       state_class: measurement
     - name: "Frame 1 controller board"
       unique_id: granite_37adc7_board_temp
       state_topic: "granite/default/granite-37adc7/state"
       value_template: "{{ value_json.board_temp_c }}"
-      unit_of_measurement: "°C"
+      unit_of_measurement: "\u00b0C"
       device_class: temperature
       state_class: measurement
     - name: "Frame 1 bus voltage"
