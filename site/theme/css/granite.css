@@ -1,0 +1,923 @@
+/*
+ * Granite controller documentation theme.
+ *
+ * The site is drawn in the board's own materials:
+ *   mask   - green solder mask (sidebar, table heads, dark theme ground)
+ *   silk   - silkscreen white (text on mask, connector legends)
+ *   pad    - ENIG gold (pin pads, dark theme links, focus)
+ *   copper - bare copper (strings in code)
+ *   fluid  - the pale straw of dielectric oil (search marks, selection)
+ *
+ * "Light" is the board on the bench; "Navy" (dark) is the board itself.
+ * Rust is mapped onto light, Coal and Ayu onto dark, and those three are
+ * hidden from the theme menu so a reader only meets the two designed
+ * themes plus Auto.
+ */
+
+/* ------------------------------------------------------------------ */
+/* Tokens                                                              */
+/* ------------------------------------------------------------------ */
+
+:root {
+    --font-body: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", system-ui, sans-serif;
+    --font-display: "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+    --mono-font: "Atkinson Hyperlegible Mono", ui-monospace, "DejaVu Sans Mono", monospace;
+    --code-font-size: 0.875em;
+
+    --content-max-width: 800px;
+    --sidebar-target-width: 290px;
+    --radius: 3px;
+}
+
+.light, .rust {
+    --paper: #f4f6f3;
+    --ink: #15261e;
+    --muted: #56695f;
+    --rule: #d3dcd6;
+    --rule-strong: #a9b8af;
+    --mask: #1c4a34;
+    --mask-deep: #133525;
+    --silk: #eef0e6;
+    --silk-dim: #a9c0b2;
+    --pad: #c9a04a;
+    --pad-ink: #2b2208;
+    --copper: #9a4c1c;
+    --fluid: #f1e4ad;
+    --link: #1c6a44;
+    --link-hover: #0f4a2e;
+    --focus: #1c6a44;
+    --code-bg: #e7ede8;
+    --code-inline-bg: #e3eae5;
+    --code-inline-border: #cfdad2;
+    --row-alt: #ecf0ec;
+    --row-hover: #f7efcf;
+    --note-bg: #fbf5dc;
+    --note-rule: #c9a04a;
+
+    --bg: var(--paper);
+    --fg: var(--ink);
+
+    --sidebar-bg: var(--mask);
+    --sidebar-fg: #dfe6dc;
+    --sidebar-non-existant: #7f9a8b;
+    --sidebar-active: #f0cf7c;
+    --sidebar-spacer: #2c5c45;
+    --sidebar-header-border-color: var(--pad);
+    --scrollbar: #6f8b7c;
+
+    --icons: #6b7f74;
+    --icons-hover: var(--ink);
+    --links: var(--link);
+    --inline-code-color: var(--ink);
+
+    --theme-popup-bg: #ffffff;
+    --theme-popup-border: var(--rule-strong);
+    --theme-hover: var(--row-alt);
+
+    --quote-bg: var(--note-bg);
+    --quote-border: var(--note-rule);
+    --warning-border: var(--copper);
+
+    --table-border-color: var(--rule);
+    --table-header-bg: var(--mask);
+    --table-alternate-bg: var(--row-alt);
+
+    --searchbar-border-color: var(--rule-strong);
+    --searchbar-bg: #ffffff;
+    --searchbar-fg: var(--ink);
+    --searchbar-shadow-color: var(--rule);
+    --searchresults-header-fg: var(--muted);
+    --searchresults-border-color: var(--rule);
+    --searchresults-li-bg: var(--row-alt);
+    --search-mark-bg: var(--fluid);
+
+    --footnote-highlight: var(--pad);
+    --overlay-bg: rgba(19, 53, 37, 0.35);
+
+    --blockquote-note-color: var(--link);
+    --blockquote-tip-color: var(--link);
+    --blockquote-important-color: var(--mask);
+    --blockquote-warning-color: #8a6a12;
+    --blockquote-caution-color: #a3321c;
+
+    --hl-plain: var(--ink);
+    --hl-key: #1c6a44;
+    --hl-string: var(--copper);
+    --hl-number: #7a5a00;
+    --hl-literal: #1c4a34;
+    --hl-comment: #6b7d72;
+    --hl-meta: #56695f;
+
+    --color-scheme: light;
+}
+
+.navy, .coal, .ayu {
+    --paper: #12301f;
+    --ink: #e4e9de;
+    --muted: #a0b8a9;
+    --rule: #28503c;
+    --rule-strong: #3d6a53;
+    --mask: #0b2216;
+    --mask-deep: #081a10;
+    --silk: #eef0e6;
+    --silk-dim: #8fa99a;
+    --pad: #d4af55;
+    --pad-ink: #1e1704;
+    --copper: #e5a679;
+    --fluid: #5e5120;
+    --link: #e2c06a;
+    --link-hover: #f3d88f;
+    --focus: #e2c06a;
+    --code-bg: #0c2418;
+    --code-inline-bg: #1a3d2a;
+    --code-inline-border: #2a5340;
+    --row-alt: #163825;
+    --row-hover: #2e4220;
+    --note-bg: #1c3a24;
+    --note-rule: #d4af55;
+
+    --bg: var(--paper);
+    --fg: var(--ink);
+
+    --sidebar-bg: var(--mask);
+    --sidebar-fg: #c9d4c9;
+    --sidebar-non-existant: #5d7a6b;
+    --sidebar-active: #e2c06a;
+    --sidebar-spacer: #1d3a2e;
+    --sidebar-header-border-color: var(--pad);
+    --scrollbar: #3f6455;
+
+    --icons: #7f978a;
+    --icons-hover: var(--silk);
+    --links: var(--link);
+    --inline-code-color: var(--ink);
+
+    --theme-popup-bg: #0e2719;
+    --theme-popup-border: var(--rule-strong);
+    --theme-hover: #1b3f2b;
+
+    --quote-bg: var(--note-bg);
+    --quote-border: var(--note-rule);
+    --warning-border: var(--pad);
+
+    --table-border-color: var(--rule);
+    --table-header-bg: var(--mask);
+    --table-alternate-bg: var(--row-alt);
+
+    --searchbar-border-color: var(--rule-strong);
+    --searchbar-bg: #0c2418;
+    --searchbar-fg: var(--ink);
+    --searchbar-shadow-color: #000000;
+    --searchresults-header-fg: var(--muted);
+    --searchresults-border-color: var(--rule);
+    --searchresults-li-bg: #173a27;
+    --search-mark-bg: var(--fluid);
+
+    --footnote-highlight: var(--pad);
+    --overlay-bg: rgba(0, 0, 0, 0.45);
+
+    --blockquote-note-color: var(--link);
+    --blockquote-tip-color: #9fd3b1;
+    --blockquote-important-color: var(--link);
+    --blockquote-warning-color: var(--pad);
+    --blockquote-caution-color: #f08a6c;
+
+    --hl-plain: #dfe6dc;
+    --hl-key: #9fd3b1;
+    --hl-string: var(--copper);
+    --hl-number: #e2c06a;
+    --hl-literal: #9fd3b1;
+    --hl-comment: #7f978a;
+    --hl-meta: #9ab0a3;
+
+    --color-scheme: dark;
+}
+
+/* Only Auto, Light and Navy are offered; the others alias onto them. */
+#mdbook-theme-rust, #mdbook-theme-coal, #mdbook-theme-ayu {
+    display: none;
+}
+
+/* ------------------------------------------------------------------ */
+/* Base type                                                           */
+/* ------------------------------------------------------------------ */
+
+html {
+    font-family: var(--font-body);
+    font-optical-sizing: auto;
+    -webkit-font-smoothing: antialiased;
+}
+
+body {
+    font-size: 1.65rem;
+}
+
+.content p,
+.content ol,
+.content ul {
+    line-height: 1.6;
+}
+
+.content li + li {
+    margin-block-start: 0.3em;
+}
+
+::selection {
+    background: var(--fluid);
+    color: var(--ink);
+}
+
+.content h1,
+.content h2,
+.content h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: 0.005em;
+    line-height: 1.15;
+    color: var(--ink);
+}
+
+.content h1 {
+    font-size: 3.4rem;
+    margin-block: 0.4em 0.6em;
+}
+
+.content h2 {
+    font-size: 2.5rem;
+    margin-block: 2.2em 0.6em;
+    padding-block-start: 0.6em;
+    border-block-start: 1px solid var(--rule);
+}
+
+.content h3 {
+    font-size: 1.95rem;
+    margin-block: 1.8em 0.5em;
+}
+
+.content h4,
+.content h5 {
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 1.65rem;
+}
+
+.content strong {
+    font-weight: 700;
+}
+
+/* Links: underlined, so they read as links on a grey-scale print and
+   for readers who do not separate green from the text colour. */
+.content a,
+.content a:visited {
+    color: var(--link);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
+    text-decoration-color: color-mix(in srgb, var(--link) 45%, transparent);
+}
+
+.content a:hover {
+    color: var(--link-hover);
+    text-decoration-color: currentColor;
+}
+
+/* Heading self-links stay quiet. */
+.content a.header,
+.content a.header:visited {
+    color: inherit;
+    text-decoration: none;
+}
+
+.content hr {
+    border: 0;
+    border-block-start: 1px solid var(--rule);
+}
+
+/* ------------------------------------------------------------------ */
+/* Focus                                                               */
+/* ------------------------------------------------------------------ */
+
+:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+.sidebar :focus-visible {
+    outline-color: var(--sidebar-active);
+}
+
+#mdbook-searchbar:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Chrome: menu bar and sidebar                                        */
+/* ------------------------------------------------------------------ */
+
+.menu-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 2rem;
+    letter-spacing: 0.02em;
+}
+
+#mdbook-menu-bar.bordered {
+    border-block-end-color: var(--rule);
+}
+
+.sidebar {
+    font-size: 1.45rem;
+}
+
+.sidebar .sidebar-scrollbox {
+    padding-block-start: 14px;
+}
+
+.chapter li.part-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--silk-dim);
+    margin-block: 2em 0.4em;
+}
+
+.chapter li a strong {
+    font-family: var(--mono-font);
+    font-weight: 400;
+    font-size: 0.85em;
+    color: var(--silk-dim);
+    margin-inline-end: 0.15em;
+}
+
+.chapter li a.active {
+    font-weight: 700;
+}
+
+.chapter li a.active strong {
+    color: var(--sidebar-active);
+}
+
+.chapter li.header-item {
+    font-size: 0.92em;
+}
+
+.chapter li.spacer {
+    background-color: var(--sidebar-spacer);
+}
+
+.theme-popup .theme {
+    font-family: var(--font-body);
+}
+
+/* ------------------------------------------------------------------ */
+/* Inline code                                                         */
+/* ------------------------------------------------------------------ */
+
+code {
+    font-variant-ligatures: none;
+}
+
+.content :not(pre) > code,
+.content :not(pre) > .hljs {
+    background: var(--code-inline-bg);
+    border: 1px solid var(--code-inline-border);
+    border-radius: var(--radius);
+    padding: 0.05em 0.32em;
+    font-size: 0.86em;
+    color: var(--ink);
+    white-space: nowrap;
+}
+
+/* Long values (paths, URLs, JSON) may still break inside prose. */
+.content p :not(pre) > code,
+.content li :not(pre) > code {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.content a > code,
+.content a > .hljs {
+    color: inherit;
+}
+
+.content h1 code, .content h2 code, .content h3 code {
+    font-size: 0.85em;
+}
+
+/* ------------------------------------------------------------------ */
+/* Code blocks                                                         */
+/* ------------------------------------------------------------------ */
+
+.content pre {
+    margin-block: 1.2em;
+    border-radius: var(--radius);
+}
+
+.content pre > code,
+.content pre > code.hljs {
+    display: block;
+    background: var(--code-bg);
+    color: var(--hl-plain);
+    border: 1px solid var(--rule);
+    border-inline-start: 3px solid var(--mask);
+    border-radius: var(--radius);
+    padding: 1em 1.2em;
+    font-size: 1.4rem;
+    line-height: 1.55;
+    tab-size: 4;
+}
+
+.navy .content pre > code,
+.coal .content pre > code,
+.ayu .content pre > code {
+    border-inline-start-color: var(--pad);
+}
+
+/* Syntax colours: one hue per role, drawn from the token set. */
+.hljs-attr, .hljs-attribute, .hljs-keyword, .hljs-selector-tag,
+.hljs-built_in, .hljs-name, .hljs-section, .hljs-title {
+    color: var(--hl-key);
+}
+.hljs-string, .hljs-symbol, .hljs-template-variable, .hljs-addition {
+    color: var(--hl-string);
+}
+.hljs-number, .hljs-bullet, .hljs-variable, .hljs-type {
+    color: var(--hl-number);
+}
+.hljs-literal {
+    color: var(--hl-literal);
+    font-weight: 600;
+}
+.hljs-comment, .hljs-quote {
+    color: var(--hl-comment);
+    font-style: italic;
+}
+.hljs-meta, .hljs-params, .hljs-subst, .hljs-punctuation {
+    color: var(--hl-meta);
+}
+.hljs-deletion {
+    color: var(--blockquote-caution-color);
+}
+
+/* Copy button: recoloured with a mask so it follows the tokens exactly. */
+pre > .buttons {
+    top: 6px;
+    right: 6px;
+}
+
+pre:focus-within > .buttons {
+    visibility: visible;
+    opacity: 1;
+}
+
+pre > .buttons button {
+    font-family: var(--font-body);
+    border-color: var(--rule-strong);
+    background-color: var(--code-bg);
+    color: var(--muted);
+}
+
+pre > .buttons button.clip-button {
+    padding: 4px 5px 2px;
+}
+
+pre > .buttons button.clip-button::before {
+    content: "";
+    display: block;
+    width: 18px;
+    height: 18px;
+    filter: none;
+    background-color: currentColor;
+    -webkit-mask: url('data:image/svg+xml,<svg viewBox="0 0 24 25" xmlns="http://www.w3.org/2000/svg"><path d="M18 20h2v3c0 1-1 2-2 2H2c-.998 0-2-1-2-2V5c0-.911.755-1.667 1.667-1.667h5A3.323 3.323 0 0110 0a3.323 3.323 0 013.333 3.333h5C19.245 3.333 20 4.09 20 5v8.333h-2V9H2v14h16v-3zM3 7h14c0-.911-.793-1.667-1.750-1.667H13.5c-.957 0-1.750-.755-1.750-1.666C11.750 2.755 10.957 2 10 2s-1.750.755-1.750 1.667c0 .911-.793 1.666-1.750 1.666H4.750C3.793 5.333 3 6.090 3 7z"/><path d="M4 19h6v2H4zM12 11H4v2h8zM4 17h4v-2H4zM15 15v-3l-4.500 4.500L15 21v-3l8.027-.032L23 15z"/></svg>') center / contain no-repeat;
+    mask: url('data:image/svg+xml,<svg viewBox="0 0 24 25" xmlns="http://www.w3.org/2000/svg"><path d="M18 20h2v3c0 1-1 2-2 2H2c-.998 0-2-1-2-2V5c0-.911.755-1.667 1.667-1.667h5A3.323 3.323 0 0110 0a3.323 3.323 0 013.333 3.333h5C19.245 3.333 20 4.09 20 5v8.333h-2V9H2v14h16v-3zM3 7h14c0-.911-.793-1.667-1.750-1.667H13.5c-.957 0-1.750-.755-1.750-1.666C11.750 2.755 10.957 2 10 2s-1.750.755-1.750 1.667c0 .911-.793 1.666-1.750 1.666H4.750C3.793 5.333 3 6.090 3 7z"/><path d="M4 19h6v2H4zM12 11H4v2h8zM4 17h4v-2H4zM15 15v-3l-4.500 4.500L15 21v-3l8.027-.032L23 15z"/></svg>') center / contain no-repeat;
+}
+
+pre > .buttons button.clip-button:hover::before {
+    filter: none;
+}
+
+pre > .buttons :hover,
+pre > .buttons button:hover {
+    color: var(--ink);
+    border-color: var(--ink);
+    background-color: var(--code-bg);
+}
+
+/* ------------------------------------------------------------------ */
+/* Tables                                                              */
+/* ------------------------------------------------------------------ */
+
+.content .table-wrapper {
+    margin-block: 1.2em 1.6em;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+}
+
+.content table {
+    width: 100%;
+    margin: 0;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+    font-size: 1.5rem;
+    line-height: 1.45;
+}
+
+.content table thead {
+    background: var(--mask);
+}
+
+.content table thead tr {
+    border: 0;
+}
+
+.content table thead th {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--silk);
+    text-align: start;
+    padding: 0.6em 0.9em 0.5em;
+    white-space: nowrap;
+    vertical-align: bottom;
+}
+
+.content table td {
+    border: 0;
+    border-block-start: 1px solid var(--rule);
+    padding: 0.5em 0.9em;
+    vertical-align: top;
+}
+
+.content table tbody tr:first-child td {
+    border-block-start: 0;
+}
+
+.content table tbody tr:nth-child(2n) {
+    background: var(--row-alt);
+}
+
+.content table tbody tr:hover {
+    background: var(--row-hover);
+}
+
+.content table td > code:only-child {
+    white-space: nowrap;
+}
+
+/* First column of key/value tables reads as the label. */
+.content table td:first-child {
+    font-weight: 600;
+}
+
+/* Register maps: the address is the key, right-aligned in mono so the
+   digits line up. The name never wraps; scale and access are quiet. */
+.content table.regmap td:first-child,
+.content table.regmap th:first-child {
+    text-align: end;
+    width: 1%;
+}
+.content table.regmap td:first-child {
+    font-family: var(--mono-font);
+    font-weight: 400;
+    font-size: 0.95em;
+}
+.content table.regmap td:nth-child(2) code {
+    white-space: nowrap;
+}
+.content table.regmap td:nth-child(4) {
+    color: var(--muted);
+    font-size: 0.93em;
+}
+.content table.regmap td:last-child,
+.content table.regmap th:last-child {
+    text-align: center;
+    width: 1%;
+}
+.content table.regmap td:last-child {
+    font-family: var(--mono-font);
+}
+
+/* Reference designators (J1, J11..J18) set like silkscreen. */
+.content table.refdes td:first-child {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.08em;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ */
+/* Signature: pinout tables drawn as footprints.                       */
+/* Pin cells become through-hole pads: a gold annular ring around the  */
+/* pin number, square for pin 1 as on the board, round for the rest.   */
+/* The legend column is printed as silkscreen.                         */
+/* ------------------------------------------------------------------ */
+
+.content table.pinout td.pin-cell {
+    width: 1%;
+    padding-block: 0.4em;
+    font-weight: 400;
+}
+
+.content table.pinout th.pin-head {
+    width: 1%;
+    text-align: center;
+}
+
+.pad {
+    display: inline-grid;
+    place-items: center;
+    box-sizing: border-box;
+    width: 2.5em;
+    height: 2.5em;
+    border-radius: 50%;
+    border: 0.34em solid var(--pad);
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--mono-font);
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1;
+}
+
+.pad.pad-1 {
+    border-radius: 2px;
+}
+
+.content table.pinout tbody tr:nth-child(2n) .pad {
+    background: var(--row-alt);
+}
+.content table.pinout tbody tr:hover .pad {
+    background: var(--row-hover);
+}
+
+.content table.pinout td.legend-cell {
+    width: 1%;
+    white-space: nowrap;
+}
+
+.content table.pinout td.legend-cell code {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.05em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: var(--mask);
+    color: var(--silk);
+    border-color: var(--mask);
+    border-radius: 2px;
+    padding: 0.05em 0.45em;
+}
+
+.navy .content table.pinout td.legend-cell code,
+.coal .content table.pinout td.legend-cell code,
+.ayu .content table.pinout td.legend-cell code {
+    background: transparent;
+    border-color: transparent;
+    padding-inline: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Introduction: the board outline, to scale                           */
+/* 199 x 50 mm, 1 mm corner radius, four M3 non-plated holes 4 mm in   */
+/* from each corner inside 6.5 mm copper keep-outs.                    */
+/* ------------------------------------------------------------------ */
+
+.board-hero {
+    container-type: inline-size;
+    position: relative;
+    aspect-ratio: 199 / 50;
+    margin-block: 0.6em 1.6em;
+    border-radius: 0.5% / 2%;
+    background-color: var(--mask);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 9%;
+    box-sizing: border-box;
+    color: var(--silk);
+}
+
+/* Two 8 mm strips (top and bottom edge), each carrying two holes. The
+   strip keeps the board's scale from its width, so the holes stay round
+   and 4 mm from the edges even when the band grows taller on a phone.
+   Hole 3.2 mm (40 % of the 4 mm half-tile), keep-out 6.5 mm (81 %). */
+.board-hero::before,
+.board-hero::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    aspect-ratio: 199 / 8;
+    pointer-events: none;
+    --hole: radial-gradient(circle closest-side,
+        var(--paper) 0 40%,
+        rgba(0, 0, 0, 0.22) 40% 45%,
+        rgba(255, 255, 255, 0.06) 45% 81%,
+        transparent 81%);
+    background-image: var(--hole), var(--hole);
+    background-size: calc(100% * 8 / 199) 100%;
+    background-position: left top, right top;
+    background-repeat: no-repeat;
+}
+.board-hero::before { top: 0; }
+.board-hero::after { bottom: 0; }
+
+.navy .board-hero,
+.coal .board-hero,
+.ayu .board-hero {
+    background-color: #1d5038;
+    box-shadow: 0 0 0 1px #2f6a4d;
+}
+
+.content .board-hero h1 {
+    font-size: clamp(2.4rem, 6.4cqw, 5.4rem);
+    color: var(--silk);
+    margin: 0;
+    letter-spacing: 0.01em;
+}
+
+.content .board-hero h1 a.header {
+    color: inherit;
+}
+
+.board-hero .board-legend {
+    margin: 0.5em 0 0;
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(1.05rem, 1.75cqw, 1.5rem);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    line-height: 1.5;
+    color: var(--silk-dim);
+}
+
+.board-hero .board-legend span {
+    white-space: nowrap;
+}
+
+.board-hero .board-legend span + span::before {
+    content: "/";
+    margin-inline: 0.6em;
+    color: var(--pad);
+}
+
+.board-hero + p {
+    font-size: 1.12em;
+    line-height: 1.55;
+}
+
+/* ------------------------------------------------------------------ */
+/* Notes and quotes                                                    */
+/* ------------------------------------------------------------------ */
+
+.content blockquote {
+    background: var(--note-bg);
+    border: 0;
+    border-inline-start: 3px solid var(--note-rule);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 0.4em 1.1em;
+    margin-inline: 0;
+}
+
+.content kbd {
+    font-family: var(--mono-font);
+    background: var(--code-inline-bg);
+    border: 1px solid var(--rule-strong);
+    border-block-end-width: 2px;
+    color: var(--ink);
+}
+
+/* Search results */
+ul#mdbook-searchresults li.focus {
+    background-color: var(--row-hover);
+}
+#mdbook-searchresults mark,
+.content mark {
+    background: var(--fluid);
+    color: var(--ink);
+}
+
+/* ------------------------------------------------------------------ */
+/* Narrow screens                                                      */
+/* ------------------------------------------------------------------ */
+
+@media only screen and (max-width: 620px) {
+    body {
+        font-size: 1.6rem;
+    }
+    .content h1 { font-size: 2.8rem; }
+    .content h2 { font-size: 2.2rem; }
+    .content table { font-size: 1.4rem; }
+    .content table td,
+    .content table thead th {
+        padding-inline: 0.6em;
+    }
+    .content table.regmap {
+        min-width: 38em;
+    }
+    .board-hero + p {
+        font-size: 1.04em;
+    }
+    .board-hero .board-legend {
+        display: flex;
+        flex-wrap: wrap;
+        column-gap: 1.1em;
+    }
+    .board-hero .board-legend span + span::before {
+        content: none;
+    }
+    .content pre > code {
+        font-size: 1.3rem;
+        padding: 0.8em 0.9em;
+    }
+    /* The board stays to scale but the title needs room: let the band
+       grow taller rather than shrink the type below legibility. */
+    .board-hero {
+        aspect-ratio: auto;
+        padding: 1.6em 9%;
+    }
+}
+
+/* ------------------------------------------------------------------ */
+/* Motion                                                              */
+/* ------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* ------------------------------------------------------------------ */
+/* Print: always the light palette, ink-friendly                       */
+/* ------------------------------------------------------------------ */
+
+@media print {
+    html, html.navy, html.coal, html.ayu, html.light, html.rust {
+        --paper: #ffffff;
+        --ink: #000000;
+        --muted: #444444;
+        --rule: #bbbbbb;
+        --row-alt: #ffffff;
+        --row-hover: #ffffff;
+        --code-bg: #f4f4f4;
+        --code-inline-bg: transparent;
+        --code-inline-border: #cccccc;
+        --mask: #ffffff;
+        --silk: #000000;
+        --silk-dim: #444444;
+        --pad: #777777;
+        --link: #000000;
+        --hl-plain: #000000;
+        --hl-key: #000000;
+        --hl-string: #000000;
+        --hl-number: #000000;
+        --hl-literal: #000000;
+        --hl-comment: #555555;
+        --hl-meta: #333333;
+        --bg: #ffffff;
+        --fg: #000000;
+        --color-scheme: light;
+    }
+    .content table thead {
+        border-block-end: 2px solid #000000;
+    }
+    .content table tr,
+    .content pre {
+        break-inside: avoid;
+    }
+    .content .table-wrapper {
+        overflow: visible;
+    }
+    .board-hero {
+        aspect-ratio: auto;
+        background: none;
+        border: 1px solid #000000;
+        border-radius: 4px;
+        padding: 1.2em 1.5em;
+    }
+    .board-hero::before,
+    .board-hero::after {
+        display: none;
+    }
+    .board-hero .board-legend span + span::before {
+        color: #000000;
+    }
+    .content a {
+        text-decoration: none;
+    }
+    pre > .buttons {
+        display: none;
+    }
+}

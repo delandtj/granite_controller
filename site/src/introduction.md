@@ -1,4 +1,10 @@
+<div class="board-hero">
+
 # Granite controller
+
+<p class="board-legend"><span>Rev C</span><span>199 x 50 mm</span><span>4 layers</span><span>ESP32-C6 + W5500</span><span>runs submerged</span></p>
+
+</div>
 
 The Granite controller is a small board that sits in an immersion-cooled
 frame of eight motherboards (nodes) and gives you remote hands on them:
