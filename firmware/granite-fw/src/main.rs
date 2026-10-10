@@ -14,9 +14,11 @@
 //!   5. shared state: the `Observed` snapshot, the command channel, the
 //!      event bus, and the dispatcher thread that joins them,
 //!   6. the console on USB Serial/JTAG,
-//!   7. integration points for the hardware layer and the three servers,
-//!      marked `// INTEGRATION:`,
-//!   8. heartbeat.
+//!   7. the hardware layer and the three servers, at the points marked
+//!      `// INTEGRATION:`: HTTPS and the JSON API, the MQTT worker, the
+//!      Modbus supervisor, and the config watcher that connects a saved
+//!      `sec.modbus` to the running listener,
+//!   8. one free-heap line once everything is up, then the heartbeat.
 //!
 //! Pin map: docs/controller.md, section "MCU".
 
@@ -38,12 +40,13 @@ use granite_core::dispatch::{DispatchCtx, SideEffect, dispatch};
 use granite_core::hal::{
     BoardTemp, BusVoltage, DryInputs, LedPattern, NodeSense, NodeSwitches, Probes, StatusLed,
 };
+use granite_core::modbus_map::fault_bits;
 use granite_core::msg::{Event, EventKind, event_from_actuator, event_from_rule};
 use granite_core::node::Nodes;
 use granite_core::observed::{Observed, ProbeObs, Stamped};
 use granite_core::rules::RuleEngine;
 use granite_fw::platform::{self, NullSwitches, Platform};
-use granite_fw::{http, hw};
+use granite_fw::{http, hw, modbus, mqtt};
 
 /// Heartbeat interval of the idle loop.
 const HEARTBEAT: Duration = Duration::from_secs(10);
@@ -54,6 +57,9 @@ const DISPATCH_TICK: Duration = Duration::from_millis(50);
 const RULES_PERIOD_MS: u64 = 1000;
 /// Sense tick: U15, the TMP1075 and VIN are all 1 s in the ADR.
 const SENSE_TICK: Duration = Duration::from_secs(1);
+/// How often the config watcher looks for a `sec.modbus` change and
+/// refreshes the broker state the status page reads.
+const CONFIG_WATCH: Duration = Duration::from_secs(5);
 
 /// Marks [`LED_BITS`] as carrying a real reading.
 const LED_BITS_VALID: u16 = 0x100;
@@ -93,17 +99,30 @@ fn main() -> anyhow::Result<()> {
     //          command sender and the snapshot handle.
     let observed = Arc::new(RwLock::new(Observed::new()));
     let (commands, commands_rx) = granite_fw::http::CommandChannel::new();
+    // Modbus input register 13 (granite_core::modbus_map::fault_bits).
+    // Whoever notices a fault sets its bit; the Modbus server only reads.
+    let faults = Arc::new(AtomicU16::new(0));
 
     // Kept alive: the ESP-IDF event loop outlives a failed Ethernet
     // bring-up and the network thread subscribes to it.
     let sysloop = EspSystemEventLoop::take()?;
-    let eth_pins = platform::net::EthPins {
-        sclk: pins.gpio19,
-        mosi: pins.gpio20,
-        miso: pins.gpio21,
-        cs: pins.gpio18,
-        int: pins.gpio22,
-        rst: pins.gpio23,
+    // The network hardware. With `--features wifi-dev` the network thread
+    // brings up the radio instead of the W5500 (platform::wifi_dev): a
+    // devboard has no W5500, and without a network nothing above the
+    // hardware layer can be exercised. The default image has no radio
+    // code in it at all.
+    let net_hw = platform::net::NetHw {
+        spi: peripherals.spi2,
+        pins: platform::net::EthPins {
+            sclk: pins.gpio19,
+            mosi: pins.gpio20,
+            miso: pins.gpio21,
+            cs: pins.gpio18,
+            int: pins.gpio22,
+            rst: pins.gpio23,
+        },
+        #[cfg(feature = "wifi-dev")]
+        modem: peripherals.modem,
     };
 
     // The hardware layer is in this build, so the OTA probation ladder has
@@ -112,8 +131,7 @@ fn main() -> anyhow::Result<()> {
     platform::ota::expect_expanders();
 
     let platform = platform::init(
-        peripherals.spi2,
-        eth_pins,
+        net_hw,
         sysloop.clone(),
         Arc::clone(&commands),
         Arc::clone(&observed),
@@ -185,6 +203,7 @@ fn main() -> anyhow::Result<()> {
                 probes,
                 board_temp,
                 vin,
+                Arc::clone(&faults),
             );
             start_led(Arc::clone(&platform), led);
 
@@ -198,6 +217,7 @@ fn main() -> anyhow::Result<()> {
                 "hardware layer did not come up ({e:#}); relays stay in reset and every press \
                  will be refused"
             );
+            faults.fetch_or(fault_bits::EXPANDER | fault_bits::SENSE, Ordering::Relaxed);
             thread::Builder::new()
                 .name("dispatch".into())
                 .stack_size(12288)
@@ -225,15 +245,113 @@ fn main() -> anyhow::Result<()> {
         }
     };
 
-    // INTEGRATION: mqtt::start(Arc::clone(&platform)) subscribes to
-    // platform.events, sends commands through platform.commands, and calls
-    // platform::ota::mark_broker() on its first successful connection.
+    // INTEGRATION: the MQTT client (ADR component 7). `start` returns a
+    // handle with no thread when `mqtt.enabled` is off, so this call is
+    // unconditional and the configuration decides. The handle is kept:
+    // dropping it stops the worker.
     //
-    // INTEGRATION: modbus::start(Arc::clone(&platform)) if
-    // config.sec.modbus.enabled and the allow-list is non-empty.
-    //
-    // None of the three is called yet: their modules are still stubs, and
-    // calling into them before their entry points exist would not compile.
+    // The probation ladder waits for a broker only when one is
+    // configured: an image on probation with MQTT off confirms on an
+    // authenticated HTTPS request instead. platform::init already armed
+    // that flag (it reads the config first, and the ladder has to be
+    // watching before the link comes up); the call is idempotent, and
+    // repeating it here keeps it next to the worker it is about.
+    let cfg_at_boot = platform.config();
+    if cfg_at_boot.mqtt.enabled {
+        platform::ota::expect_broker();
+    }
+    let _mqtt = match mqtt::start(mqtt::MqttCtx {
+        config: Box::new({
+            let p = Arc::clone(&platform);
+            move || p.config()
+        }),
+        secrets: Box::new({
+            let p = Arc::clone(&platform);
+            move || {
+                p.store
+                    .lock()
+                    .map(|mut s| s.load_secrets())
+                    .unwrap_or_default()
+            }
+        }),
+        observed: Arc::clone(&platform.observed),
+        events: platform.events.subscribe(),
+        // The worker applies `sys.log_level` itself, so it subscribes to
+        // everything the ring sees and filters live.
+        logs: platform::logring::subscribe(log::Level::Trace),
+        commands: Box::new({
+            let channel = Arc::clone(&platform.commands);
+            move |cmd, reply| channel.send(cmd, reply)
+        }),
+        host: Box::new({
+            let p = Arc::clone(&platform);
+            move || mqtt::HostStatus {
+                ip: p.net.status().ip,
+                uptime_s: (platform::now_ms() / 1000) as u32,
+                boot_reason: platform::boot_reason(),
+                ota_state: platform::ota::ota_state().to_string(),
+            }
+        }),
+        device_id: platform.device_id().to_string(),
+        fw_version: platform::FW_VERSION.to_string(),
+        // Probation step 3a.
+        on_connect: Some(Box::new(platform::ota::mark_broker)),
+    }) {
+        Ok(handle) => {
+            if handle.enabled() {
+                log::info!(
+                    "mqtt worker started for {}:{}",
+                    cfg_at_boot.mqtt.host,
+                    cfg_at_boot.mqtt.port
+                );
+            }
+            Some(handle)
+        }
+        Err(e) => {
+            // A broker that cannot be used must not stop the board from
+            // serving its page: the configuration is the thing to fix.
+            log::error!("mqtt worker did not start: {e:#}");
+            None
+        }
+    };
+
+    // INTEGRATION: the Modbus TCP server (ADR component 9). Started
+    // unconditionally: what `start` spawns is the supervisor, and it binds
+    // the listener only while `sec.modbus` says it may (enabled plus a
+    // usable allow-list). It logs the reason either way.
+    let modbus = match modbus::start(modbus::ModbusCtx {
+        observed: Arc::clone(&platform.observed),
+        commands: Arc::clone(&platform.commands),
+        config: cfg_at_boot.sec.modbus.clone(),
+        fw: modbus::fw_version(),
+        faults: Arc::clone(&faults),
+    }) {
+        Ok(handle) => Some(handle),
+        Err(e) => {
+            log::error!("modbus supervisor did not start: {e:#}");
+            None
+        }
+    };
+
+    // The config watcher: the one thing that turns a saved `sec` section
+    // into a running (or stopped) Modbus listener, and the one thing that
+    // keeps the status page's MQTT box current.
+    start_config_watch(Arc::clone(&platform), modbus.clone(), Arc::clone(&faults));
+
+    // Everything is up, so this is the heap number that matters: it is
+    // measured once, after the servers have allocated their buffers and
+    // before any traffic.
+    log::info!(
+        "boot complete: free heap {} bytes, minimum free since boot {} bytes, largest free block \
+         {} bytes",
+        unsafe { esp_idf_svc::sys::esp_get_free_heap_size() },
+        unsafe { esp_idf_svc::sys::esp_get_minimum_free_heap_size() },
+        unsafe {
+            esp_idf_svc::sys::heap_caps_get_largest_free_block(
+                esp_idf_svc::sys::MALLOC_CAP_DEFAULT,
+            )
+        }
+    );
 
     let mut ticks: u64 = 0;
     loop {
@@ -473,11 +591,15 @@ fn apply_effect(
                 // The net section is the one that can cut the session, so
                 // it is applied live with the confirm timer running.
                 Section::Net => platform.net.apply(&cfg.net, cfg.net.t_confirm_s),
-                // TODO(ADR 0001 6): the broker and security sections are
-                // staged but not applied live yet - that needs the MQTT
-                // worker's reconnect path (auto_confirm_on_connect) and the
-                // HTTP layer's certificate reload, both owned elsewhere.
-                // Until then they are promoted by an explicit confirm.
+                // The MQTT worker re-reads its own section every
+                // mqtt::CONFIG_REFRESH and the config watcher pushes
+                // sec.modbus into the Modbus supervisor, so those two
+                // follow the *stored* config. A staged value is not
+                // stored, so it still only takes effect on confirm.
+                // TODO(ADR 0001 6): broker host/credential changes want
+                // auto_confirm_on_connect (a reconnect against the staged
+                // value), and a new device certificate wants the HTTPS
+                // server to reload; neither is wired.
                 _ => log::warn!(
                     "config: {section} is staged but applying it live needs the owning task; \
                      confirm promotes it, a reboot discards it"
@@ -548,6 +670,7 @@ fn start_sense(
     mut probes: hw::probes::OneWireProbes,
     mut board_temp: hw::tmp1075::Tmp1075,
     mut vin: hw::vin::Vin,
+    faults: Arc<AtomicU16>,
 ) {
     let spawned = thread::Builder::new()
         .name("sense".into())
@@ -621,11 +744,94 @@ fn start_sense(
                     leds.map(|b| u16::from(b) | LED_BITS_VALID).unwrap_or(0),
                     Ordering::Relaxed,
                 );
+                // Modbus fault bit 1: U15 did not answer, so no node LED
+                // on the register map can be trusted.
+                if leds.is_some() {
+                    faults.fetch_and(!fault_bits::SENSE, Ordering::Relaxed);
+                } else {
+                    faults.fetch_or(fault_bits::SENSE, Ordering::Relaxed);
+                }
                 thread::sleep(SENSE_TICK);
             }
         });
     if let Err(e) = spawned {
         log::error!("sense thread could not start: {e}");
+    }
+}
+
+/// The config watcher: the one place where a saved configuration becomes
+/// a running (or stopped) server, plus the status page's MQTT box.
+///
+/// Two jobs, each too small for a thread of its own:
+///
+/// - `sec.modbus` into [`modbus::ModbusHandle::set_config`], so enabling
+///   the server or editing its allow-list takes effect within
+///   [`CONFIG_WATCH`] plus [`modbus::POLL`] and never needs a reboot.
+///   Hooking the HTTP layer's save path would have been one call site,
+///   but it would only catch the HTTP one: the same section is saved by a
+///   `config_set` over MQTT and promoted by a confirm. Polling the live
+///   config catches all of them, which is how `mqtt.rs` re-reads its own
+///   section too (`mqtt::CONFIG_REFRESH`).
+/// - the broker state the status page reads: the MQTT worker owns the
+///   session and publishes the bit through [`mqtt::connected`], but it
+///   never sees [`Platform::mqtt`], which is what `/api/v1/status`
+///   answers from.
+///
+/// It also keeps the two Modbus fault bits that belong to no single task
+/// (`mqtt_down`, `ota_pending`) current.
+///
+/// `try_config`, never `config()`: an HTTP request holds the config write
+/// guard for its whole life (see [`dispatcher`]).
+fn start_config_watch(
+    platform: Arc<Platform>,
+    modbus: Option<modbus::ModbusHandle>,
+    faults: Arc<AtomicU16>,
+) {
+    let spawned = thread::Builder::new()
+        .name("config-watch".into())
+        .stack_size(4096)
+        .spawn(move || {
+            let mut last: Option<granite_core::config::ModbusCfg> = None;
+            loop {
+                if let Some(cfg) = platform.try_config() {
+                    if last.as_ref() != Some(&cfg.sec.modbus) {
+                        if let Some(handle) = modbus.as_ref() {
+                            handle.set_config(&cfg.sec.modbus);
+                        }
+                        last = Some(cfg.sec.modbus.clone());
+                    }
+
+                    let connected = mqtt::connected();
+                    let mut status = platform.mqtt_status();
+                    status.enabled = cfg.mqtt.enabled;
+                    status.connected = connected;
+                    status.broker = if cfg.mqtt.host.is_empty() {
+                        String::new()
+                    } else {
+                        format!("{}:{}", cfg.mqtt.host, cfg.mqtt.port)
+                    };
+                    platform.set_mqtt_status(status);
+
+                    let mut set = 0u16;
+                    let mut clear = 0u16;
+                    if cfg.mqtt.enabled && !connected {
+                        set |= fault_bits::MQTT_DOWN;
+                    } else {
+                        clear |= fault_bits::MQTT_DOWN;
+                    }
+                    if platform::ota::ota_state() == platform::ota::OtaState::Pending {
+                        set |= fault_bits::OTA_PENDING;
+                    } else {
+                        clear |= fault_bits::OTA_PENDING;
+                    }
+                    faults.fetch_or(set, Ordering::Relaxed);
+                    faults.fetch_and(!clear, Ordering::Relaxed);
+                }
+                thread::sleep(CONFIG_WATCH);
+            }
+        });
+    if let Err(e) = spawned {
+        log::error!("config watch thread could not start: {e}");
     }
 }
 

@@ -17,6 +17,12 @@ serde_json = { version = "1.0.151", default-features = false, features = ["alloc
 # Devboard bring-up exercise for the hardware layer (src/hw/hwtest.rs,
 # examples/hwtest.rs). Off in a shipped image.
 hwtest = []
+# Wi-Fi STA instead of the W5500, so HTTPS, MQTT, Modbus and OTA can be
+# exercised on a bare ESP32-C6 devboard (src/platform/wifi_dev.rs).
+# Needs GRANITE_WIFI_SSID and GRANITE_WIFI_PASS at build time and fails
+# the build without them. Never in an image for a controller board: ADR
+# 0001 keeps the radio dark. Off in a shipped image.
+wifi-dev = []
 
 [[example]]
 name = "hwtest"

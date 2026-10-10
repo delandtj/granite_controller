@@ -23,6 +23,13 @@
 //! - **Addressing** is raw `esp_netif_*`: esp-idf-svc has no way to switch
 //!   a live netif between DHCP and a static address, which commit-confirm
 //!   needs.
+//!
+//! With the `wifi-dev` feature the thread brings up the Wi-Fi station
+//! interface **instead of** the W5500 ([`super::wifi_dev`]) and
+//! everything below this line - status, hostname, mDNS, SNTP,
+//! commit-confirm, the dead-man - runs on the `sta_default` netif
+//! unchanged. That feature is a devboard tool and is off in any image
+//! that goes on a board: ADR 0001 keeps the radio dark.
 
 use std::ffi::CString;
 use std::net::Ipv4Addr;
@@ -84,6 +91,24 @@ pub struct EthPins {
     pub int: Gpio22<'static>,
     /// W5500 reset.
     pub rst: Gpio23<'static>,
+}
+
+/// The network hardware the thread is handed.
+///
+/// One struct rather than loose arguments because the `wifi-dev` build
+/// needs the radio as well, and a call site that reads as a pin map is
+/// the point of [`EthPins`]. The W5500 tokens are carried in both builds:
+/// they are peripheral tokens, not drivers, and keeping them means
+/// `main.rs` has one pin map for both.
+pub struct NetHw {
+    /// SPI2, the W5500's bus.
+    pub spi: SPI2<'static>,
+    /// The W5500's pins.
+    pub pins: EthPins,
+    /// The radio. Only in a `wifi-dev` build, which uses it instead of
+    /// the W5500.
+    #[cfg(feature = "wifi-dev")]
+    pub modem: esp_idf_svc::hal::modem::Modem<'static>,
 }
 
 /// How the IPv4 address was obtained.
@@ -224,8 +249,7 @@ impl Net {
 /// `error` set, never a panic: the USB console must stay the way in.
 #[allow(clippy::too_many_arguments)]
 pub fn init(
-    spi: SPI2<'static>,
-    pins: EthPins,
+    hw: NetHw,
     mac: [u8; 6],
     device_id: String,
     cfg: NetCfg,
@@ -241,7 +265,7 @@ pub fn init(
         .name("net".into())
         .stack_size(8192)
         .spawn(move || {
-            run(spi, pins, mac, device_id, cfg, sysloop, thread_status, rx);
+            run(hw, mac, device_id, cfg, sysloop, thread_status, rx);
         });
     if let Err(e) = spawned {
         log::error!("network thread could not start: {e}");
@@ -272,8 +296,7 @@ struct Confirm {
 
 #[allow(clippy::too_many_arguments)]
 fn run(
-    spi: SPI2<'static>,
-    pins: EthPins,
+    hw: NetHw,
     mac: [u8; 6],
     device_id: String,
     mut cfg: NetCfg,
@@ -286,22 +309,23 @@ fn run(
     set_clock_to_build_time();
 
     let hostname = hostname_of(&cfg, &device_id);
-    let eth = match bring_up(spi, pins, &mac, &hostname, &cfg, sysloop) {
-        Ok(eth) => Some(eth),
+    #[allow(unused_mut)]
+    let mut link = match bring_up_link(hw, &mac, &hostname, &cfg, sysloop) {
+        Ok(link) => link,
         Err(e) => {
-            log::error!("ethernet bring-up failed: {e:#}");
+            log::error!("{LINK_KIND} bring-up failed: {e:#}");
             if let Ok(mut s) = status.write() {
                 s.error = Some(format!("{e:#}"));
             }
-            None
+            Link::Down
         }
     };
 
-    let netif_handle = eth
-        .as_ref()
-        .map(|eth| eth.eth().netif().handle())
+    let netif_handle = link
+        .netif()
+        .map(|netif| netif.handle())
         .unwrap_or(core::ptr::null_mut());
-    let netif_index = eth.as_ref().map(|eth| eth.eth().netif().get_index());
+    let netif_index = link.netif().map(|netif| netif.get_index());
 
     let mut sntp_started = false;
     let mut ip6_done = false;
@@ -310,6 +334,8 @@ fn run(
     let mut last_probe_ms = 0u64;
     let mut last_alive_ms = super::now_ms();
     let mut deadman_fired = false;
+    #[cfg(feature = "wifi-dev")]
+    let mut last_retry_ms = super::now_ms();
 
     loop {
         // -- commands ----------------------------------------------------
@@ -358,14 +384,21 @@ fn run(
             }
         }
 
+        // -- the dev radio, if this is a wifi-dev build ------------------
+        // A dropped association otherwise needs a reboot, which on a
+        // bench board in the middle of a test is the wrong answer.
+        #[cfg(feature = "wifi-dev")]
+        if !link.connected()
+            && super::now_ms().saturating_sub(last_retry_ms)
+                >= super::wifi_dev::RETRY.as_millis() as u64
+        {
+            last_retry_ms = super::now_ms();
+            link.retry();
+        }
+
         // -- status refresh ----------------------------------------------
-        let (link, ip_info) = match eth.as_ref() {
-            Some(eth) => (
-                eth.is_connected().unwrap_or(false),
-                eth.eth().netif().get_ip_info().ok(),
-            ),
-            None => (false, None),
-        };
+        let link_up = link.connected();
+        let ip_info = link.netif().and_then(|netif| netif.get_ip_info().ok());
         let ip = ip_info.map(|i| i.ip).unwrap_or(Ipv4Addr::UNSPECIFIED);
         let has_ip = ip != ipv4::Ipv4Addr::new(0, 0, 0, 0);
         let mode = if !has_ip {
@@ -379,7 +412,7 @@ fn run(
         };
 
         // IPv6 link-local once the interface is up (ADR: always on).
-        if link && has_ip && !ip6_done && !netif_handle.is_null() {
+        if link_up && has_ip && !ip6_done && !netif_handle.is_null() {
             match unsafe { esp!(esp_netif_create_ip6_linklocal(netif_handle)) } {
                 Ok(()) => ip6_done = true,
                 Err(e) => log::debug!("ipv6 link-local not ready yet: {e}"),
@@ -387,7 +420,7 @@ fn run(
         }
 
         // SNTP once there is an address to reach a server from.
-        if link && has_ip && !sntp_started {
+        if link_up && has_ip && !sntp_started {
             match start_sntp(&cfg) {
                 Ok(()) => sntp_started = true,
                 Err(e) => log::warn!("sntp could not start: {e}"),
@@ -402,7 +435,7 @@ fn run(
         }
 
         // mDNS once there is an address to answer on.
-        if link && has_ip && cfg.mdns && mdns.is_none() {
+        if link_up && has_ip && cfg.mdns && mdns.is_none() {
             match start_mdns(&hostname_of(&cfg, &device_id), &device_id) {
                 Ok(m) => mdns = Some(m),
                 Err(e) => log::warn!("mdns could not start: {e}"),
@@ -410,13 +443,13 @@ fn run(
         }
 
         if let Ok(mut s) = status.write() {
-            s.link = link;
+            s.link = link_up;
             s.mode = mode;
             s.ip = if has_ip { ip.to_string() } else { String::new() };
             s.netmask = String::new();
             s.gateway = String::new();
-            if let Some(eth) = eth.as_ref()
-                && let Ok(info) = eth.eth().netif().get_ip_info()
+            if let Some(netif) = link.netif()
+                && let Ok(info) = netif.get_ip_info()
             {
                 s.netmask = info.subnet.mask.to_string();
                 s.gateway = info.subnet.gateway.to_string();
@@ -459,7 +492,11 @@ fn run(
         // alongside. An ICMP echo to the gateway stands in for the ARP
         // reply: it is strictly stronger evidence and it is reachable from
         // Rust without an lwIP-internal call.
-        if cfg.t_deadman_s > 0 && cfg.ip_mode == IpMode::Static && link && has_ip && !deadman_fired
+        if cfg.t_deadman_s > 0
+            && cfg.ip_mode == IpMode::Static
+            && link_up
+            && has_ip
+            && !deadman_fired
         {
             let now = super::now_ms();
             let last_conn_ms = u64::from(LAST_CONN_S.load(Ordering::Relaxed)) * 1000;
@@ -532,6 +569,100 @@ fn ip6_linklocal(handle: *mut esp_netif_t) -> String {
 // Bring-up
 // ---------------------------------------------------------------------------
 
+/// What this build calls a network, for the log line that says it failed.
+#[cfg(not(feature = "wifi-dev"))]
+const LINK_KIND: &str = "ethernet";
+#[cfg(feature = "wifi-dev")]
+const LINK_KIND: &str = "wifi-dev";
+
+/// The interface the thread owns.
+///
+/// Everything above the bring-up works through [`Link::connected`] and
+/// [`Link::netif`], so the W5500 and the devboard radio are the same
+/// thing to the monitor loop, and `Down` (no W5500, no AP) is a state
+/// that keeps the loop running rather than a reason to stop.
+enum Link {
+    /// The W5500. Still compiled in a `wifi-dev` build, just never
+    /// constructed there.
+    #[cfg_attr(feature = "wifi-dev", allow(dead_code))]
+    Eth(GraniteEth),
+    /// The devboard radio (`wifi-dev`).
+    #[cfg(feature = "wifi-dev")]
+    Wifi(Box<super::wifi_dev::DevWifi>),
+    /// Nothing came up.
+    Down,
+}
+
+impl Link {
+    /// Link (or association) up.
+    fn connected(&self) -> bool {
+        match self {
+            Link::Eth(eth) => eth.is_connected().unwrap_or(false),
+            #[cfg(feature = "wifi-dev")]
+            Link::Wifi(wifi) => wifi.is_connected().unwrap_or(false),
+            Link::Down => false,
+        }
+    }
+
+    /// The netif addressing, mDNS, SNTP and IPv6 work on.
+    fn netif(&self) -> Option<&EspNetif> {
+        match self {
+            Link::Eth(eth) => Some(eth.eth().netif()),
+            #[cfg(feature = "wifi-dev")]
+            Link::Wifi(wifi) => Some(wifi.wifi().sta_netif()),
+            Link::Down => None,
+        }
+    }
+
+    /// Re-associate a dropped devboard link. Never called for Ethernet:
+    /// the W5500 reconnects in hardware.
+    #[cfg(feature = "wifi-dev")]
+    fn retry(&mut self) {
+        if let Link::Wifi(wifi) = self
+            && let Err(e) = wifi.connect()
+        {
+            log::warn!("wifi-dev: re-association failed: {e}");
+        }
+    }
+}
+
+/// Bring up whatever this build calls a network.
+#[cfg(not(feature = "wifi-dev"))]
+fn bring_up_link(
+    hw: NetHw,
+    mac: &[u8; 6],
+    hostname: &str,
+    cfg: &NetCfg,
+    sysloop: EspSystemEventLoop,
+) -> anyhow::Result<Link> {
+    bring_up(hw.spi, hw.pins, mac, hostname, cfg, sysloop).map(Link::Eth)
+}
+
+/// The devboard variant: the radio instead of the W5500, whose SPI bus
+/// and pins are left untouched (there is no W5500 on a devboard, and on a
+/// board this build has no business running).
+#[cfg(feature = "wifi-dev")]
+fn bring_up_link(
+    hw: NetHw,
+    _mac: &[u8; 6],
+    hostname: &str,
+    cfg: &NetCfg,
+    sysloop: EspSystemEventLoop,
+) -> anyhow::Result<Link> {
+    // The W5500's bus and pins are taken and dropped: peripheral tokens,
+    // no driver, nothing to release.
+    let NetHw {
+        spi: _spi,
+        pins: _pins,
+        modem,
+    } = hw;
+    super::wifi_dev::bring_up(modem, hostname, cfg, sysloop)
+        .map(|wifi| Link::Wifi(Box::new(wifi)))
+}
+
+/// The W5500. Compiled in both builds (the [`Link::Eth`] variant needs
+/// it), called only when `wifi-dev` is off.
+#[cfg_attr(feature = "wifi-dev", allow(dead_code))]
 fn bring_up(
     spi: SPI2<'static>,
     pins: EthPins,
@@ -675,7 +806,7 @@ fn to_esp_ip4(addr: Ipv4Addr) -> esp_ip4_addr_t {
     }
 }
 
-fn set_hostname(handle: *mut esp_netif_t, hostname: &str) -> anyhow::Result<()> {
+pub(super) fn set_hostname(handle: *mut esp_netif_t, hostname: &str) -> anyhow::Result<()> {
     let c = CString::new(hostname)?;
     unsafe { esp!(esp_netif_set_hostname(handle, c.as_ptr()))? };
     Ok(())
@@ -686,7 +817,7 @@ fn set_hostname(handle: *mut esp_netif_t, hostname: &str) -> anyhow::Result<()> 
 /// esp-idf-svc can only set this at netif construction, and commit-confirm
 /// has to change it on a running interface, so this goes to `esp_netif_*`
 /// directly.
-fn apply_addressing(
+pub(super) fn apply_addressing(
     handle: *mut esp_netif_t,
     cfg: &NetCfg,
     hostname: &str,

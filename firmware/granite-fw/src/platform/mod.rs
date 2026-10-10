@@ -17,6 +17,8 @@ pub mod logring;
 pub mod net;
 pub mod ota;
 pub mod store;
+#[cfg(feature = "wifi-dev")]
+pub mod wifi_dev;
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::Sender;
@@ -24,7 +26,6 @@ use std::sync::{Arc, Mutex, OnceLock, RwLock};
 use std::time::Duration;
 
 use esp_idf_svc::eventloop::EspSystemEventLoop;
-use esp_idf_svc::hal::spi::SPI2;
 use esp_idf_svc::netif::NetifStack;
 use esp_idf_svc::sys::{
     esp_reset_reason, esp_reset_reason_t_ESP_RST_BROWNOUT, esp_reset_reason_t_ESP_RST_INT_WDT,
@@ -41,7 +42,7 @@ use granite_core::observed::Observed;
 use granite_core::NodeId;
 
 use identity::Identity;
-use net::{EthPins, Net};
+use net::{Net, NetHw};
 use store::Store;
 
 /// Firmware version, from `Cargo.toml`.
@@ -470,8 +471,7 @@ pub fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
 /// and probation, then the network thread. The console is started by
 /// `main.rs` once the `Arc<Platform>` exists.
 pub fn init(
-    spi: SPI2<'static>,
-    eth_pins: EthPins,
+    net_hw: NetHw,
     sysloop: EspSystemEventLoop,
     commands: Arc<CommandChannel>,
     observed: Arc<RwLock<Observed>>,
@@ -554,8 +554,7 @@ pub fn init(
     ota::start(config.sys.t_validate_s, Some(events.sender()));
 
     let net = net::init(
-        spi,
-        eth_pins,
+        net_hw,
         identity.mac,
         identity.device_id.clone(),
         config.net.clone(),

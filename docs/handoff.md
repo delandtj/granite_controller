@@ -2,13 +2,51 @@
 
 Read this first, then docs/controller.md and docs/power-board.md.
 
-## Next session: firmware spec
+## Next session: firmware
 
-Boards are ordered (below). The firmware spec is written:
-firmware/docs/adr/0001-firmware-architecture.md (Proposed, 2026-10-09),
-waiting for the user's review; its "Review asks" and "Open Questions"
-list what to settle. Next: review -> mark Accepted -> workspace in
-firmware/ (granite-core, granite-fw, granite-sim) per the ADR.
+Boards are ordered (below). The firmware is written and integrated:
+firmware/docs/adr/0001-firmware-architecture.md (Accepted, with a "What
+was built differently" section at the end that tracks the deviations),
+firmware/README.md for build, flash, console, OTA and the devboard
+features.
+
+Implemented, and the parts that do not need the board are verified on a
+bare ESP32-C6 devboard (2026-10-10):
+- granite-core, host-tested: node state machine, actuator queue with the
+  press deadline, rule engine, config, messages, dispatcher, the HTTP API
+  handlers, the Modbus frame handler and register map.
+- granite-fw: hardware layer, platform layer (NVS, identity and
+  recovery, W5500 net with commit-confirm, SNTP, mDNS, USB console, OTA
+  with probation, log ring), HTTPS page plus /api/v1, MQTT client,
+  Modbus TCP server, all three wired into main.rs.
+- Verified on the devboard: boot order (relay resets low first), absent
+  expanders logged as a fault instead of a panic, HTTPS on 443 and /id on
+  80 listening, MQTT off means no broker thread, Modbus off means no
+  listener and a logged reason, console id/status/net, 280 KB free heap
+  after boot, heartbeat and no panic over 95 s. Release image 1.72 MB of
+  the 2.5 MB slot.
+
+Untested on hardware, because it needs the real board: everything on the
+W5500 (link, DHCP, AutoIP, commit-confirm, dead-man), the expanders
+(relay presses, the press deadline dropping GPIO10, LED sense, dry
+contacts), DS18B20 probes, TMP1075, VIN, the LTC4282 path, and the OTA
+probation ladder end to end (no image has been pushed to a slot yet).
+The PLED level on a real motherboard is still the open question of
+docs/controller.md item 4.
+
+Next steps:
+1. Devboard network tests with `--features wifi-dev` (Wi-Fi STA instead
+  of the W5500): first setup over HTTPS, a broker session against a real
+  mosquitto, a Modbus client against the map, an OTA push and a
+  deliberately failing image to see the probation reset.
+2. Bring-up checklist when rev C arrives: ADR 0001, "Bring-up order on
+  hardware" - console and identity, expanders held in reset with
+  readback, link and DHCP and /id, HTTPS first setup, sense, actuator
+  with the deadline proven by a hung task, MQTT, OTA rollback, Modbus,
+  rules. `cargo build --release --features hwtest --example hwtest` is
+  the first half of that on the bench.
+3. Setup-page and client work needs no board: `cargo run -p granite-sim
+  -- serve` runs the real core and the real page over fakes.
 
 Decided (user, 2026-10-09):
 - Code lives in firmware/ in this repo.

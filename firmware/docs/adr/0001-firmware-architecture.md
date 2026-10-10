@@ -768,3 +768,39 @@ granite-fw platform layer (commit 0017b32):
 - Not built yet, marked TODO(ADR 0001 6) in the code: VLAN tagging, the
   dead-man keeping the static address while DHCP runs alongside, live
   apply of staged mqtt/sec sections.
+
+integration (commit after 984010d):
+- `main.rs` now starts all three servers. MQTT gets the event bus
+  receiver, a log-ring subscription, a config and a secrets accessor, the
+  shared command channel (a new non-blocking `CommandChannel::send`, so
+  the worker resolves an ack against the `action_done` event instead of
+  blocking on the broker thread) and `on_connect = ota::mark_broker`.
+  `ota::expect_broker` is called only when `mqtt.enabled`, so an image on
+  probation with no broker configured confirms on an authenticated HTTPS
+  request instead of rolling back. Modbus gets `Observed`, the same
+  command channel, the `sec.modbus` section and a shared fault bitmap
+  (input register 13; `main` sets expander, sense, mqtt_down and
+  ota_pending).
+- A 5 s `config-watch` thread is what turns a saved `sec.modbus` into a
+  running listener (`ModbusHandle::set_config`) and keeps the status
+  page's MQTT box current. The alternative - hooking the HTTP layer's
+  save path - would have caught only the HTTP writer; the same section is
+  also written by `config_set` over MQTT and by a staging promote, and
+  `mqtt.rs` already re-reads its own section the same way. Staged values
+  still only take effect on confirm.
+- Still not wired: `auto_confirm_on_connect` for a staged broker change,
+  the HTTPS certificate reload, and `probe_scan` reaching the 1-wire bus.
+- `main` logs one `boot complete: free heap ...` line once everything is
+  up. On a bare C6 devboard (no W5500, no expanders, MQTT and Modbus off)
+  that reads 280 KB free of the 409 KB the heap starts with.
+- New cargo feature `wifi-dev` (`granite-fw/src/platform/wifi_dev.rs`):
+  the network thread brings up a Wi-Fi station interface **instead of**
+  the W5500, with SSID and PSK from `GRANITE_WIFI_SSID` /
+  `GRANITE_WIFI_PASS` at build time (a missing one fails the build). It
+  exists so HTTPS, MQTT, Modbus and OTA can be exercised on a devboard
+  before rev C arrives. It is off by default and compiles to nothing
+  without the feature, so "Wi-Fi and BLE stay off" still describes every
+  image that goes on a board. Everything above the netif (NetStatus,
+  hostname, mDNS, SNTP, commit-confirm, dead-man) works on
+  `sta_default` unchanged; the W5500's bus and pins are carried through
+  `net::NetHw` and dropped.

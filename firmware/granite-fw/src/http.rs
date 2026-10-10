@@ -147,6 +147,20 @@ impl CommandChannel {
         )
     }
 
+    /// Hand one command to the dispatcher without waiting for the ack,
+    /// with the channel the reply goes back on. Returns false when the
+    /// dispatcher is gone.
+    ///
+    /// This is the MQTT worker's way in: it has to keep draining the
+    /// broker while an action runs, so it resolves the ack against the
+    /// matching `action_done` event instead of blocking on [`call`].
+    pub fn send(&self, cmd: Command, reply: Sender<Reply>) -> bool {
+        match self.tx.lock() {
+            Ok(tx) => tx.send((cmd, reply)).is_ok(),
+            Err(_) => false,
+        }
+    }
+
     /// Send one command and wait for its ack.
     pub fn call(&self, cmd: &Command) -> Reply {
         let (reply_tx, reply_rx) = channel();
