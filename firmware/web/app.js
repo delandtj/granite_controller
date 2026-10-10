@@ -215,12 +215,42 @@ function renderNodes() {
   }
 }
 
+// A node action is queued, so the reply is `accepted` and the outcome
+// lands in state.nodes[i].last_action once the actuator is done (an `off`
+// can take t_soft_off_ms, two minutes by default). Poll that instead of
+// pretending the ack was the result. Scripts can ask for the outcome in
+// the reply itself with ?wait=1 (30 s cap).
+const ACTION_POLL_MS = 1000;
+const ACTION_POLL_MAX_MS = 150000;
+
 async function nodeAction(node, action) {
   const r = await api('POST', `/api/v1/nodes/${node}/${action}`, {});
-  if (r.ok) {
-    banner(`node ${node}: ${action} -> ${(r.data && r.data.result) || 'ok'}`, 'ok');
+  if (!r.ok) { return; }
+  const id = r.data && r.data.id;
+  const result = r.data && r.data.result;
+  if (result !== 'accepted' || !id) {
+    banner(`node ${node}: ${action} -> ${result || 'ok'}`, 'ok');
     refreshStatus();
+    return;
   }
+  banner(`node ${node}: ${action} queued (${id}), waiting for the outcome`, 'ok');
+  refreshStatus();
+  const until = Date.now() + ACTION_POLL_MAX_MS;
+  while (Date.now() < until) {
+    await new Promise((done) => setTimeout(done, ACTION_POLL_MS));
+    const s = await api('GET', '/api/v1/state', null, { quiet: true });
+    if (!s.ok) { return; }
+    const n = (s.data.nodes || []).find((x) => x.node === node);
+    const last = n && n.last_action;
+    if (!last || last.id !== id) { continue; }
+    if (last.finished_ms === undefined || last.finished_ms === null) { continue; }
+    const outcome = last.result || 'done';
+    banner(`node ${node}: ${action} -> ${outcome}`,
+      outcome.startsWith('failed') || outcome.startsWith('refused') ? 'err' : 'ok');
+    refreshStatus();
+    return;
+  }
+  banner(`node ${node}: ${action} has not finished yet; see the node table`, 'err');
 }
 
 $('on-all').onclick = async () => {
@@ -366,7 +396,7 @@ function fillMqtt() {
   const m = config.mqtt;
   for (const k of ['enabled', 'host', 'port', 'tls', 'username', 'client_id', 'site',
     'topic_root', 'qos', 'keepalive_s', 't_state_s', 'auto_confirm_on_connect',
-    'skip_time_check', 'ca_pem']) { val('mqtt-' + k, m[k]); }
+    'ca_pem']) { val('mqtt-' + k, m[k]); }
   const base = `${m.topic_root}/${m.site}/${ident.device}`;
   $('mqtt-topics').textContent =
     `Topics: ${base}/{status,state,event,log}, commands on ${base}/cmd, ` +
@@ -389,11 +419,15 @@ $('mqtt-form').onsubmit = async (e) => {
     keepalive_s: num('mqtt-keepalive_s'),
     t_state_s: num('mqtt-t_state_s'),
     auto_confirm_on_connect: $('mqtt-auto_confirm_on_connect').checked,
-    skip_time_check: $('mqtt-skip_time_check').checked,
   };
   const r = await api('PUT', '/api/v1/config/mqtt', section);
-  if (r.ok) { banner('Broker settings staged. Confirm once it connects.', '',
-    { label: 'Confirm', run: confirmStaged }); loadConfig(); }
+  if (r.ok) {
+    banner('Broker settings staged and applied live: the controller connects ' +
+      'with them within a few seconds. Confirm (or tick auto-confirm) before ' +
+      `${r.data.confirm_s} s or the stored settings come back. No reboot either way.`, '',
+      { label: 'Confirm', run: confirmStaged });
+    loadConfig();
+  }
 };
 
 const POLICIES = ['leave', 'on', 'off'];
@@ -431,6 +465,8 @@ function fillNodes() {
   val('nodes-order', config.nodes.order.join(', '));
   val('nodes-t_probe_s', config.nodes.t_probe_s);
   val('nodes-vin_trim', config.nodes.vin_trim);
+  val('nodes-vin_min_mv', config.nodes.vin_min_mv);
+  val('nodes-vin_max_mv', config.nodes.vin_max_mv);
   const t = $('timings');
   t.textContent = '';
   for (const [k, v] of Object.entries(config.nodes.timings)) {
@@ -493,6 +529,8 @@ $('nodes-save').onclick = async () => {
     probes: roms.map((rom, i) => ({ rom, name: pnames[i] })).filter((p) => p.rom),
     t_probe_s: num('nodes-t_probe_s'),
     vin_trim: Number($('nodes-vin_trim').value),
+    vin_min_mv: num('nodes-vin_min_mv'),
+    vin_max_mv: num('nodes-vin_max_mv'),
   };
   const r = await api('PUT', '/api/v1/config/nodes', section);
   if (r.ok) { banner('Nodes saved.', 'ok'); loadConfig(); }
@@ -657,8 +695,9 @@ $('cert-form').onsubmit = async (e) => {
     cert_pem: $('cert-pem').value, key_pem: $('cert-key').value,
   });
   if (r.ok) {
-    banner('Certificate replaced; reconnect over HTTPS. Fingerprint ' +
-      r.data.cert_sha256, 'ok');
+    banner('Certificate stored. The HTTPS server cannot swap its TLS ' +
+      'configuration while it runs, so reboot the controller and reconnect ' +
+      'to start using it. Fingerprint ' + r.data.cert_sha256, 'ok');
   }
 };
 

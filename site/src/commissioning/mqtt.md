@@ -3,11 +3,13 @@
 MQTT is the intended day-to-day control path: the controller publishes
 retained status and state, streams events and logs, and takes commands.
 It is off by default. The MQTT page edits the `mqtt` section, which is
-**staged** like the network section, but unlike the network section it
-is not applied live: the sequence is stage, confirm, **reboot**, then
-check the broker session. The MQTT worker is started at boot only when
-the saved section has it enabled, and a changed broker is only logged
-until the next restart.
+**staged** like the network section and, like it, applied live: the
+controller connects with the staged settings within about 5 s, so you
+can see whether they work before you commit to them. Confirm within the
+window (or tick auto-confirm on connect) and the section is stored;
+let the window pass and the stored settings come back, also within
+about 5 s. Nothing here reboots the controller, and nothing here
+touches node power.
 
 ## Broker side
 
@@ -19,7 +21,8 @@ Before touching the board:
    inverse.
 2. Have the broker's CA certificate in PEM form. The controller
    verifies the broker with it; there is no "accept any certificate"
-   switch other than the time check.
+   switch. Until SNTP has synced the clock runs from the firmware build
+   time, which is what makes the certificate's not-before check pass.
 3. Make port 8883 reachable from the controller's subnet.
 
 For a bench, `firmware/tools/mqtt-smoke.sh` starts a throwaway
@@ -41,8 +44,7 @@ anonymous mosquitto on 1883 and prints every `granite/#` message.
 | QoS | 1 | 0..2 |
 | Keepalive | 30 s | 5..600 |
 | State republish | 60 s | Retained state is re-sent at this interval even without a change. |
-| Auto-confirm on connect | off | Shown in the UI; **not yet wired**. Confirm by hand. |
-| Skip TLS time check | off | Shown in the UI; **ignored** by the current firmware. |
+| Auto-confirm on connect | off | When set, a session with the staged broker confirms the `mqtt` section by itself. A `net` or `sec` change staged at the same time still needs its own confirm. |
 
 The password or client certificate and key go through a separate
 credentials call so they never appear in an export:
@@ -53,20 +55,25 @@ curl -sk -H "Authorization: Bearer $T" -X PUT \
   https://granite-37adc7.local/api/v1/security/mqtt-credentials
 ```
 
-Then stage the section, confirm, and reboot:
+Then stage the section and confirm once the broker session is up:
 
 ```sh
 curl -sk -H "Authorization: Bearer $T" -X PUT \
   -d '{"enabled":true,"host":"broker.site.example","port":8883,"tls":true,"ca_pem":"-----BEGIN CERTIFICATE-----\n...","username":"granite-37adc7","site":"pod1"}' \
   https://granite-37adc7.local/api/v1/config/mqtt
 curl -sk -H "Authorization: Bearer $T" -X POST https://granite-37adc7.local/api/v1/config/confirm
-curl -sk -H "Authorization: Bearer $T" -X POST https://granite-37adc7.local/api/v1/reboot
 ```
 
-A reboot does not touch node power. After it, the Status page's MQTT
-box should read connected; if not, `last_error` in that box and the
-Maintenance log say why (CA mismatch and a clock before the
-certificate's not-before are the usual ones).
+Between those two calls the Status page's MQTT box should go to
+connected; if it does not, `last_error` in that box and the Maintenance
+log say why (CA mismatch and a clock before the certificate's
+not-before are the usual ones). Fix the section and PUT it again - the
+window restarts - or let it pass and the board goes back to what was
+stored.
+
+Nothing on this page needs a reboot. The one commit-confirm change that
+still does is the device certificate on the Security page: the HTTPS
+server can only pick a new one up at start-up.
 
 ## Check it
 

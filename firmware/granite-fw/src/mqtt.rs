@@ -48,6 +48,28 @@
 //! `esp_mqtt_client_reconnect` on an exponential ladder of 1, 2, 4 ... 60
 //! seconds (ADR component 7). The ladder resets on a successful connect.
 //!
+//! ### Reconfigure, and commit-confirm
+//!
+//! The thread starts whatever `mqtt.enabled` says and idles on the
+//! configuration when there is no broker to talk to, so enabling MQTT, or
+//! pointing it at another broker, needs no reboot: [`supervise`] notices
+//! that the live section no longer matches the client it built
+//! ([`connection_differs`]), tears that client down and builds the new
+//! one. The live section is what the HTTP API wrote at PUT time, staged or
+//! not, which is what gives a staged broker a real connection attempt
+//! inside its confirm window. Two consequences worth knowing:
+//!
+//! - With `mqtt.auto_confirm_on_connect` set, a session that comes up
+//!   while the section is staged confirms it through
+//!   [`MqttCtx::confirm_staged`] - the same promote the API's `confirm`
+//!   does, for the `mqtt` section only (ADR component 6).
+//! - Without it, the config-watch thread puts the stored section back when
+//!   the window passes, and this worker sees that as another reconfigure.
+//!   Nothing reboots for a broker change.
+//!
+//! A reconfigure costs the QoS 1 outbox and the acks of any command still
+//! in flight; both are logged.
+//!
 //! ### Integration
 //!
 //! `main.rs` builds the context as a struct literal and keeps the handle
@@ -89,6 +111,12 @@
 //!     device_id: platform.device_id().to_string(),
 //!     fw_version: platform::FW_VERSION.to_string(),
 //!     on_connect: Some(Box::new(platform::ota::mark_broker)),
+//!     confirm_staged: Some(Box::new({
+//!         let p = Arc::clone(&platform);
+//!         move || {
+//!             platform::api_impl::auto_confirm_mqtt(&p);
+//!         }
+//!     })),
 //! })?;
 //! ```
 //!
@@ -135,8 +163,13 @@ pub const STATUS_PERIOD: Duration = Duration::from_secs(60);
 pub const STATE_COALESCE: Duration = Duration::from_millis(200);
 
 /// Re-read the configuration this often: the log level, the QoS and
-/// `t_state_s` are applied live.
+/// `t_state_s` are applied live, and a changed broker is picked up within
+/// this long (see the reconfigure note above).
 pub const CONFIG_REFRESH: Duration = Duration::from_secs(5);
+
+/// After a session that ended in an error, wait this many
+/// [`CONFIG_REFRESH`] periods before building another client.
+const ERROR_IDLE_PASSES: usize = 12;
 
 /// Longest the worker waits for the dispatcher to answer a command.
 pub const REPLY_TIMEOUT: Duration = Duration::from_secs(20);
@@ -263,6 +296,12 @@ pub struct MqttCtx {
     pub fw_version: String,
     /// Called on every successful connect.
     pub on_connect: Option<ConnectHook>,
+    /// Called when the session comes up while
+    /// `mqtt.auto_confirm_on_connect` is set: the platform promotes the
+    /// staged `mqtt` section, which is the confirm the API would have done
+    /// (ADR component 6). It does nothing when nothing is staged, so the
+    /// worker does not have to know what commit-confirm is.
+    pub confirm_staged: Option<ConnectHook>,
 }
 
 /// The running worker. Dropping it stops the thread, so `main` keeps it.
@@ -278,8 +317,10 @@ impl MqttHandle {
         connected()
     }
 
-    /// False when `mqtt.enabled` was off at start: no thread was spawned.
-    pub const fn enabled(&self) -> bool {
+    /// False when `mqtt.enabled` was off at start. The worker thread runs
+    /// either way: it idles on the configuration and connects as soon as
+    /// the section says it may.
+    pub const fn enabled_at_start(&self) -> bool {
         self.enabled
     }
 
@@ -308,41 +349,112 @@ impl Drop for MqttHandle {
 
 /// Start the MQTT worker.
 ///
-/// Returns a handle that reports `enabled() == false` and holds no thread
-/// when `mqtt.enabled` is off; an error only when the configuration says
-/// MQTT is on but cannot be used (no host, or a PEM with a NUL byte).
+/// The thread is started whatever the configuration says: with
+/// `mqtt.enabled` off it idles on the configuration and connects as soon
+/// as the section says it may, which is what makes a staged broker change
+/// testable before it is confirmed (ADR component 6). An error only when
+/// the thread itself cannot be spawned.
 pub fn start(ctx: MqttCtx) -> anyhow::Result<MqttHandle> {
-    let cfg = (ctx.config)();
+    let enabled = (ctx.config)().mqtt.enabled;
     let stop = Arc::new(AtomicBool::new(false));
-
-    if !cfg.mqtt.enabled {
-        log::info!("mqtt is disabled in the configuration; no broker session");
-        return Ok(MqttHandle {
-            stop,
-            join: None,
-            enabled: false,
-        });
-    }
-    if cfg.mqtt.host.trim().is_empty() {
-        anyhow::bail!("mqtt.enabled is set but mqtt.host is empty");
-    }
-
     let worker_stop = Arc::clone(&stop);
     let join = thread::Builder::new()
         .name("mqtt".into())
         .stack_size(WORKER_STACK)
-        .spawn(move || {
-            if let Err(e) = run(ctx, &worker_stop) {
-                log::error!("mqtt worker stopped: {e:#}");
-            }
-            CONNECTED.store(false, Ordering::Relaxed);
-        })?;
+        .spawn(move || supervise(ctx, &worker_stop))?;
 
     Ok(MqttHandle {
         stop,
         join: Some(join),
-        enabled: true,
+        enabled,
     })
+}
+
+// ---------------------------------------------------------------------
+// The supervisor
+// ---------------------------------------------------------------------
+
+/// Why a session loop returned.
+enum Outcome {
+    /// The live `mqtt` section no longer matches the client that is
+    /// running: tear it down and build a new one.
+    Reconfigure,
+    /// The handle was dropped or `stop` was set.
+    Stopped,
+}
+
+/// Why no client can be built from `cfg`, when that is the case.
+fn unusable(cfg: &Config) -> Option<&'static str> {
+    if !cfg.mqtt.enabled {
+        Some("mqtt is disabled in the configuration")
+    } else if cfg.mqtt.host.trim().is_empty() {
+        Some("mqtt.enabled is set but mqtt.host is empty")
+    } else {
+        None
+    }
+}
+
+/// The worker thread: own one client at a time and rebuild it whenever the
+/// live `mqtt` section stops matching it.
+///
+/// This is the reconfigure path the ADR's commit-confirm needs. The staged
+/// section is already in the live configuration (the API writes it there
+/// at PUT time), so a staged broker gets a real connection attempt inside
+/// the confirm window, and the config-watch thread putting the stored
+/// section back on a timeout brings the worker here again.
+fn supervise(mut ctx: MqttCtx, stop: &AtomicBool) {
+    let mut announced: Option<&'static str> = None;
+    let mut last_error: Option<String> = None;
+    while !stop.load(Ordering::Relaxed) {
+        let cfg = (ctx.config)();
+        if let Some(why) = unusable(&cfg) {
+            if announced != Some(why) {
+                log::info!("mqtt: no broker session ({why}); watching the configuration");
+                announced = Some(why);
+            }
+            idle(&mut ctx, stop);
+            continue;
+        }
+        announced = None;
+        match run(&mut ctx, stop) {
+            Ok(Outcome::Stopped) => break,
+            Ok(Outcome::Reconfigure) => last_error = None,
+            Err(e) => {
+                // A client that cannot be built at all is a configuration
+                // to fix, not something to spin on: say it once and try
+                // again slowly, so a PEM with a NUL byte does not fill the
+                // log ring.
+                let text = format!("{e:#}");
+                if last_error.as_deref() != Some(text.as_str()) {
+                    log::error!("mqtt session ended: {text}");
+                    last_error = Some(text);
+                }
+                for _ in 0..ERROR_IDLE_PASSES {
+                    if stop.load(Ordering::Relaxed) {
+                        break;
+                    }
+                    idle(&mut ctx, stop);
+                }
+            }
+        }
+    }
+    CONNECTED.store(false, Ordering::Relaxed);
+    note_connected(&ctx.observed, false);
+    log::info!("mqtt worker stopping");
+}
+
+/// Wait one [`CONFIG_REFRESH`] without a client, keeping the channels
+/// empty: the event bus and the log ring hand out unbounded queues, so a
+/// subscriber that stops reading is a slow leak of the heap.
+fn idle(ctx: &mut MqttCtx, stop: &AtomicBool) {
+    CONNECTED.store(false, Ordering::Relaxed);
+    note_connected(&ctx.observed, false);
+    let until = now_ms() + CONFIG_REFRESH.as_millis() as u64;
+    while !stop.load(Ordering::Relaxed) && now_ms() < until {
+        while ctx.events.try_recv().is_ok() {}
+        while ctx.logs.try_recv().is_ok() {}
+        thread::sleep(TICK);
+    }
 }
 
 // ---------------------------------------------------------------------
@@ -433,23 +545,16 @@ impl Pending {
 // The worker
 // ---------------------------------------------------------------------
 
+/// One client, from connect to teardown.
+///
+/// Takes `ctx` by reference because the supervisor calls it again for the
+/// next client: the event-bus and log-ring receivers must outlive any one
+/// session.
 #[allow(clippy::too_many_lines)]
-fn run(ctx: MqttCtx, stop: &AtomicBool) -> anyhow::Result<()> {
-    let MqttCtx {
-        config,
-        secrets,
-        observed,
-        events,
-        logs,
-        mut commands,
-        host,
-        device_id,
-        fw_version,
-        on_connect,
-    } = ctx;
-
-    let mut cfg = config();
-    let secrets = secrets();
+fn run(ctx: &mut MqttCtx, stop: &AtomicBool) -> anyhow::Result<Outcome> {
+    let mut cfg = (ctx.config)();
+    let secrets = (ctx.secrets)();
+    let device_id = ctx.device_id.clone();
     let client_id = if cfg.mqtt.client_id.trim().is_empty() {
         device_id.clone()
     } else {
@@ -478,11 +583,6 @@ fn run(ctx: MqttCtx, stop: &AtomicBool) -> anyhow::Result<()> {
         log::warn!("only half of the MQTT client certificate pair is stored; ignoring both");
     }
     let pair = client_cert.is_some() && client_key.is_some();
-    if cfg.mqtt.skip_time_check {
-        log::warn!(
-            "mqtt.skip_time_check is set, but esp-mqtt has no option for it; the clock starts at the build time instead (ADR component 6)"
-        );
-    }
 
     // Owned copies: the configuration struct borrows these, and `cfg` is
     // replaced on every refresh further down.
@@ -540,6 +640,7 @@ fn run(ctx: MqttCtx, stop: &AtomicBool) -> anyhow::Result<()> {
     let mut next_config = now_ms() + CONFIG_REFRESH.as_millis() as u64;
     let mut dirty_since: Option<u64> = None;
     let mut last_state: Option<State> = None;
+    let mut outcome = Outcome::Stopped;
 
     while !stop.load(Ordering::Relaxed) {
         // 1. The wire. recv_timeout is the loop's only sleep, so a
@@ -554,13 +655,25 @@ fn run(ctx: MqttCtx, stop: &AtomicBool) -> anyhow::Result<()> {
                             backoff_s = BACKOFF_MIN_S;
                             retry_at = None;
                             CONNECTED.store(true, Ordering::Relaxed);
-                            note_connected(&observed, true);
+                            note_connected(&ctx.observed, true);
+                            // A broker session is also proof of
+                            // reachability for the static-config dead-man
+                            // (ADR component 6).
+                            crate::platform::net::note_connection();
                             if let Err(e) = client.subscribe(&cmd_topic, qos) {
                                 log::error!("mqtt: cannot subscribe to {cmd_topic}: {e}");
                             }
                             log::info!("mqtt: connected to {url}");
-                            if let Some(hook) = on_connect.as_ref() {
+                            if let Some(hook) = ctx.on_connect.as_ref() {
                                 hook();
+                            }
+                            // A session on the staged section is the
+                            // confirmation the ADR asks for, when the
+                            // operator ticked the box.
+                            if cfg.mqtt.auto_confirm_on_connect
+                                && let Some(confirm) = ctx.confirm_staged.as_ref()
+                            {
+                                confirm();
                             }
                             // Retained status and state, straight away.
                             next_status = 0;
@@ -573,7 +686,7 @@ fn run(ctx: MqttCtx, stop: &AtomicBool) -> anyhow::Result<()> {
                             }
                             session = false;
                             CONNECTED.store(false, Ordering::Relaxed);
-                            note_connected(&observed, false);
+                            note_connected(&ctx.observed, false);
                             if retry_at.is_none() {
                                 retry_at = Some(now_ms() + backoff_s * 1000);
                             }
@@ -594,7 +707,7 @@ fn run(ctx: MqttCtx, stop: &AtomicBool) -> anyhow::Result<()> {
                                     &mut client,
                                     &topics,
                                     qos,
-                                    &mut commands,
+                                    &mut ctx.commands,
                                     &mut pending,
                                 );
                             } else {
@@ -615,7 +728,7 @@ fn run(ctx: MqttCtx, stop: &AtomicBool) -> anyhow::Result<()> {
 
         // 2. Events: every one goes out, and one may finish a pending ack.
         for _ in 0..DRAIN_PER_TICK {
-            match events.try_recv() {
+            match ctx.events.try_recv() {
                 Ok(event) => {
                     if session {
                         publish_json(&mut client, &topics.event(), qos, false, &event);
@@ -631,7 +744,7 @@ fn run(ctx: MqttCtx, stop: &AtomicBool) -> anyhow::Result<()> {
 
         // 3. Log records at or above sys.log_level.
         for _ in 0..DRAIN_PER_TICK {
-            match logs.try_recv() {
+            match ctx.logs.try_recv() {
                 Ok(rec) => {
                     if session && rec.level <= crate::platform::logring::level_of(log_level) {
                         publish(
@@ -656,13 +769,13 @@ fn run(ctx: MqttCtx, stop: &AtomicBool) -> anyhow::Result<()> {
         // 5. Retained status.
         if session && now >= next_status {
             next_status = now + STATUS_PERIOD.as_millis() as u64;
-            let payload = status_json(&host(), &fw_version);
+            let payload = status_json(&(ctx.host)(), &ctx.fw_version);
             publish(&mut client, &status_topic, qos, true, &payload);
         }
 
         // 6. Retained state: on change, coalesced, and every t_state.
         if session {
-            let state = build_state(&observed, &cfg, now);
+            let state = build_state(&ctx.observed, &cfg, now);
             let changed = last_state
                 .as_ref()
                 .is_none_or(|last| !same_state(last, &state));
@@ -700,11 +813,29 @@ fn run(ctx: MqttCtx, stop: &AtomicBool) -> anyhow::Result<()> {
         // 8. The parts of the configuration that can change under us.
         if now >= next_config {
             next_config = now + CONFIG_REFRESH.as_millis() as u64;
-            let next = config();
+            let next = (ctx.config)();
             if connection_differs(&cfg, &next) {
+                // Everything in `connection_differs` is fixed when the
+                // client is built, so the only way to apply it is to build
+                // another one. The supervisor does that; this loop ends.
                 log::warn!(
-                    "the mqtt section changed; the new broker settings are applied on the next restart (commit-confirm reboots for them)"
+                    "mqtt: the live section changed (broker {}:{} enabled {} -> {}:{} enabled \
+                     {}); tearing the client down and rebuilding it",
+                    cfg.mqtt.host,
+                    cfg.mqtt.port,
+                    cfg.mqtt.enabled,
+                    next.mqtt.host,
+                    next.mqtt.port,
+                    next.mqtt.enabled
                 );
+                if !pending.is_empty() {
+                    log::warn!(
+                        "mqtt: {} command(s) lose their ack to the reconfigure",
+                        pending.len()
+                    );
+                }
+                outcome = Outcome::Reconfigure;
+                break;
             }
             qos = qos_of(next.mqtt.qos);
             log_level = next.sys.log_level;
@@ -713,8 +844,9 @@ fn run(ctx: MqttCtx, stop: &AtomicBool) -> anyhow::Result<()> {
         }
     }
 
-    // A clean stop is not a crash: say so on the retained topic rather
-    // than leaving the last will to do it.
+    // A clean stop is not a crash, and neither is a reconfigure: say so on
+    // the retained topic of the broker being left rather than leaving the
+    // last will to do it.
     if session {
         publish(
             &mut client,
@@ -725,9 +857,8 @@ fn run(ctx: MqttCtx, stop: &AtomicBool) -> anyhow::Result<()> {
         );
     }
     CONNECTED.store(false, Ordering::Relaxed);
-    note_connected(&observed, false);
-    log::info!("mqtt worker stopping");
-    Ok(())
+    note_connected(&ctx.observed, false);
+    Ok(outcome)
 }
 
 /// The esp-mqtt callback: copy and hand over, never block. A full channel

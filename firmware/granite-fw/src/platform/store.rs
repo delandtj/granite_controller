@@ -6,8 +6,14 @@
 //! |---|---|---|---|
 //! | `cfg` | one JSON blob per [`Section`] | yes | erased |
 //! | `stage` | the staged value of a reachability section, until it is confirmed | no | erased |
-//! | `secrets` | password hash, API tokens, MQTT credentials, device key and cert | never | erased |
-//! | `factory` | recovery token, fleet recovery public key | never | kept |
+//! | `secrets` | password hash, API tokens, MQTT credentials | never | erased |
+//! | `factory` | recovery token, fleet recovery public key, device key and cert | never | kept |
+//!
+//! The device key and certificate live in `factory` so the HTTPS
+//! fingerprint survives a factory reset and stays pinnable (ADR
+//! component 10, "device cert if kept"). Boards written by an older
+//! firmware kept them in `secrets`; [`Store::migrate_identity_to_factory`]
+//! moves them on the next boot.
 //!
 //! A section that does not parse loses only itself: [`Store::load_config`]
 //! hands every blob to [`Config::from_sections`], which falls back per
@@ -33,13 +39,20 @@ pub const STAGE_NAMESPACE: &str = "stage";
 
 /// Key in [`SECRETS_NAMESPACE`] holding the serialised [`Secrets`].
 pub const SECRETS_KEY: &str = "secrets";
-/// Key in [`SECRETS_NAMESPACE`] holding the device certificate, PEM.
+/// Key holding the device certificate, PEM. In [`FACTORY_NAMESPACE`]
+/// since 2026-10-10; older boards have it in [`SECRETS_NAMESPACE`] and
+/// the Security page's upload still writes it there.
 pub const DEVICE_CERT_KEY: &str = "devcert";
 
 /// Key in [`FACTORY_NAMESPACE`] holding the recovery token, base32.
 pub const RECOVERY_TOKEN_KEY: &str = "rtok";
 /// Key in [`FACTORY_NAMESPACE`] holding the fleet recovery public key, PEM.
 pub const FLEET_PUBKEY_KEY: &str = "fleetpub";
+/// Key in [`FACTORY_NAMESPACE`] holding the device private key, PEM.
+pub const DEVICE_KEY_KEY: &str = "devkey";
+/// Key in [`FACTORY_NAMESPACE`] marking the recovery token as shown once.
+/// Cleared by a factory reset so the next first setup shows it again.
+pub const TOKEN_SHOWN_KEY: &str = "rtokshown";
 
 /// Namespaces a factory reset erases. `factory` is deliberately absent.
 const WIPED_ON_RESET: [&str; 3] = [CONFIG_NAMESPACE, STAGE_NAMESPACE, SECRETS_NAMESPACE];
@@ -219,14 +232,56 @@ impl Store {
         self.set_str(SECRETS_NAMESPACE, SECRETS_KEY, &json)
     }
 
-    /// The device certificate, PEM.
+    /// The device certificate, PEM, from the namespace a factory reset
+    /// keeps.
     pub fn device_cert(&mut self) -> HalResult<Option<String>> {
-        self.get_str(SECRETS_NAMESPACE, DEVICE_CERT_KEY)
+        self.get_str(FACTORY_NAMESPACE, DEVICE_CERT_KEY)
     }
 
     /// Store the device certificate, PEM.
     pub fn save_device_cert(&mut self, pem: &str) -> HalResult<()> {
-        self.set_str(SECRETS_NAMESPACE, DEVICE_CERT_KEY, pem)
+        self.set_str(FACTORY_NAMESPACE, DEVICE_CERT_KEY, pem)
+    }
+
+    /// The device private key, PEM, from the namespace a factory reset
+    /// keeps.
+    pub fn device_key(&mut self) -> HalResult<Option<String>> {
+        self.get_str(FACTORY_NAMESPACE, DEVICE_KEY_KEY)
+    }
+
+    /// Store the device private key, PEM.
+    pub fn save_device_key(&mut self, pem: &str) -> HalResult<()> {
+        self.set_str(FACTORY_NAMESPACE, DEVICE_KEY_KEY, pem)
+    }
+
+    /// Move a device key and certificate left in `secrets` into `factory`.
+    ///
+    /// Only a board written by a firmware older than 2026-10-10 has them
+    /// there (the Security page's certificate upload writes `factory`
+    /// directly). The `secrets` copy is removed afterwards, so this is a
+    /// no-op on every later boot. A `secrets` copy wins over a `factory`
+    /// one: it is the identity the board was actually using.
+    pub fn migrate_identity_to_factory(&mut self) -> HalResult<bool> {
+        let mut moved = false;
+        let legacy_cert = self
+            .get_str(SECRETS_NAMESPACE, DEVICE_CERT_KEY)?
+            .filter(|p| !p.trim().is_empty());
+        if let Some(pem) = legacy_cert {
+            self.save_device_cert(&pem)?;
+            self.remove(SECRETS_NAMESPACE, DEVICE_CERT_KEY)?;
+            moved = true;
+        }
+        let mut secrets = self.load_secrets();
+        if !secrets.device_key_pem.trim().is_empty() {
+            let pem = core::mem::take(&mut secrets.device_key_pem);
+            self.save_device_key(&pem)?;
+            self.save_secrets(&secrets)?;
+            moved = true;
+        }
+        if moved {
+            log::warn!("device key and certificate moved from secrets to the factory namespace");
+        }
+        Ok(moved)
     }
 
     // -- factory namespace ------------------------------------------------
@@ -249,6 +304,10 @@ impl Store {
         for namespace in WIPED_ON_RESET {
             self.erase_namespace(namespace)?;
         }
+        // The recovery token itself is kept, but the "already shown"
+        // flag is not: whoever does the first setup after a reset may
+        // not be the person who wrote the token down.
+        self.remove(FACTORY_NAMESPACE, TOKEN_SHOWN_KEY)?;
         Ok(())
     }
 
@@ -258,7 +317,10 @@ impl Store {
     /// before the restart.
     pub fn factory_reset(&mut self) -> ! {
         match self.wipe() {
-            Ok(()) => log::warn!("factory reset: cfg, stage and secrets erased, factory kept"),
+            Ok(()) => log::warn!(
+                "factory reset: cfg, stage and secrets erased; recovery token, fleet key and \
+                 device certificate kept"
+            ),
             Err(e) => log::error!("factory reset: erase failed ({e}), rebooting anyway"),
         }
         super::planned_reboot("factory_reset")

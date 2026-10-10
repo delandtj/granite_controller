@@ -30,9 +30,11 @@ when it was last reset.
 | `press` | Raw press of `pwr` or `rst` for 100..10000 ms, regardless of the LED. For motherboards that need something unusual. Always logged. | as given |
 | `on_all` | `on` for every node that is off, in the configured order, `t_stagger` (5 s) apart. | about 35 s for 8 nodes |
 
-Targets are a node number 1..8, or `all` for `on_all` only. **Current
-firmware:** every other action with target `all` is refused with
-`bad_target`; send one command per node.
+Targets are a node number 1..8, or `all`. With `all` the actuator
+walks `nodes.order` one press at a time: `on` and `cycle` keep the
+stagger interval between nodes, `off`, `force_off` and `reset` use no
+stagger and skip nodes that are already off. `press` with `all` is
+refused with `bad_target`.
 
 ## Refusals and failures
 

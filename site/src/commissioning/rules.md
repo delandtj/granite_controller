@@ -18,13 +18,6 @@ Three rules come with the default configuration, all **disabled**:
 Review them, change thresholds and targets to your frame, and enable
 the ones you want. Rule 2 assumes your leak float is on dry input 1.
 
-**Current firmware:** the actuator accepts target `all` only for
-`on_all`; every other action needs one node. A rule with
-`force_off` on `all` therefore fires, publishes `rule_fired`, and the
-action is refused. Until that is fixed, write one rule per node (eight
-rules for a frame-wide force-off), or use `on_all` where that is the
-intent.
-
 ## Anatomy of a rule
 
 | Field | Values | Meaning |
@@ -39,7 +32,7 @@ intent.
 | `hysteresis` | integer | How far the value must come back before an `auto` rule can fire again. |
 | `hold_s` | seconds | The condition must be true continuously this long. |
 | `action` | `act` with a `kind`, or `event` | `act` runs a node action (`on`, `off`, `force_off`, `reset`, `cycle`, `press`, `on_all`); `event` only publishes `rule_fired`. |
-| `target` | 1..8 or `all` | `all` works only with `on_all` in the current firmware; see above. |
+| `target` | 1..8 or `all` | `all` fans the action out over `nodes.order`, one press at a time: `off`, `force_off` and `reset` take only the nodes that are on and run back to back, `on` skips the nodes already on and `cycle` takes every node, both with the stagger interval between them. A raw `press` needs one node. |
 | `rearm` | `auto` (default) or `manual` | `manual` stays fired until acknowledged. |
 
 Sources and their units:

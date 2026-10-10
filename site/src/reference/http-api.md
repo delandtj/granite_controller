@@ -36,7 +36,7 @@ request bodies are limited to 64 KiB except the firmware upload.
 | GET | `/api/v1/status` | yes | Status page data: identity, `boot_reason`, `uptime_s`, `free_heap`, `state`, `net`, `mqtt`, `ota`, `staged`, `modbus` |
 | GET | `/api/v1/state` | yes | The state snapshot (same as the MQTT `state` payload) |
 | GET | `/api/v1/nodes` | yes | `{settings: <nodes section>, nodes: [...]}` |
-| POST | `/api/v1/nodes/<1-8 or all>/<action>` | yes | Queue an action; body is the `args` object (optional). 200 with `accepted` when queued, 400 when refused. `all` only for `on_all` |
+| POST | `/api/v1/nodes/<1-8 or all>/<action>` | yes | Queue an action; body is the `args` object (optional). 200 with `accepted` when queued, 400 when refused. `all` is accepted for `on`, `off`, `force_off`, `reset`, `cycle` and `on_all` (one press at a time, in `nodes.order`); `press` is per node |
 | POST | `/api/v1/cmd` | yes | A raw command, identical to the MQTT `cmd` payload |
 | GET | `/api/v1/config` | yes | Full export (no secrets) |
 | PUT | `/api/v1/config` | yes | Import a full document |

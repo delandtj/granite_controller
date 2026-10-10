@@ -18,13 +18,17 @@ you use.
   within the confirm window the board reverts, so a typo cannot lock
   you out. See [Network configuration](../commissioning/network.md).
 - **Dead-man**: a static address whose configured gateway has not
-  answered a ping for a configurable time (default one hour, 0
-  disables it) makes the controller drop the static address and start
-  DHCP. This is the safety net for a submerged board whose static
-  network was renumbered under it. **Current firmware:** only the
-  gateway ping counts; accepted connections do not reset the timer.
-  A static configuration therefore needs a gateway that answers ICMP
-  echo, or the dead-man set to 0.
+  answered a ping **and** which has accepted no connection for a
+  configurable time (default one hour, 0 disables it) makes the
+  controller start DHCP. An HTTPS request, a Modbus client that passes
+  the allow-list and a broker session all count as an accepted
+  connection, so a board somebody is working on never loses its
+  address. This is the safety net for a submerged board whose static
+  network was renumbered under it. Note that DHCP *replaces* the static
+  address rather than running beside it (esp_netif has no second-address
+  mode); the static address is back after a reboot, because it is what
+  is stored. With `gateway` left empty there is nothing to probe, so
+  the dead-man stays disarmed and the boot log says so.
 - **mDNS**: the board advertises `granite-xxxxxx.local` with the
   services `_https._tcp` and `_granite._tcp` on port 443 (the TXT record carries `id=<device id>`). On a flat
   subnet `http://granite-xxxxxx.local/id` finds it without any server.

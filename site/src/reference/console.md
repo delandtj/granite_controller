@@ -30,7 +30,7 @@ commands:
 | `set-password <pw>` | `ok: admin password set`, or an error below 8 characters |
 | `recovery-token` | `recovery <token>` and a reminder to keep it with the MAC |
 | `fleet-key` | `fleet-key sha256 <fingerprint>` or `fleet-key none configured` |
-| `factory-reset CONFIRM` | Erases config and secrets, keeps the `factory` namespace (recovery token, fleet key), reboots. Without the literal `CONFIRM` it refuses. |
+| `factory-reset CONFIRM` | Erases config and secrets, keeps the `factory` namespace (recovery token, fleet key, device key and certificate), reboots. Without the literal `CONFIRM` it refuses. |
 | `ota-mark-valid` | Ends probation of the running image |
 | `reboot` | Planned reboot; node power untouched |
 | `log [n]` | Last `n` lines of the 16 KB log ring, then `-- N lines kept` |

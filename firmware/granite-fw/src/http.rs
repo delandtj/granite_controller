@@ -319,6 +319,9 @@ fn register_api(server: &mut EspHttpServer<'static>, ctx: &HttpCtx) -> Result<()
         HttpMethod::Post,
         HttpMethod::Put,
         HttpMethod::Delete,
+        // The core route table answers HEAD for every GET; a monitoring
+        // tool that probes with HEAD gets the headers and no body.
+        HttpMethod::Head,
     ] {
         let ctx = ctx.clone();
         server.fn_handler("/*", method, move |request| serve(&ctx, request))?;
@@ -380,6 +383,13 @@ fn now_ms() -> u64 {
 }
 
 fn serve(ctx: &HttpCtx, mut request: Request<&mut EspHttpConnection>) -> Result<(), EspIOError> {
+    // An accepted request is proof the board is reachable, which is half
+    // of the static-config dead-man (ADR component 6: no gateway answer
+    // *and* no accepted connection for t_deadman). Counted before
+    // authentication: the TCP connection is the evidence, not the
+    // password, and an operator staring at the login page must not lose
+    // the address under them.
+    crate::platform::net::note_connection();
     let now = now_ms();
     let uri = request.uri().to_string();
     let (path, query) = match uri.split_once('?') {
@@ -668,8 +678,13 @@ fn write_response(
     header_list.push(("X-Frame-Options", "DENY"));
     header_list.push(("Referrer-Policy", "no-referrer"));
 
+    // HEAD is a GET without the body (RFC 9110 9.3.2). The core route
+    // table answers it with the body a GET would return, so the headers
+    // above are the right ones - Content-Length included - and only the
+    // bytes are dropped here.
+    let head_only = request.method() == HttpMethod::Head;
     let mut out = request.into_response(status, None, &header_list)?;
-    if !bytes.is_empty() {
+    if !head_only && !bytes.is_empty() {
         out.write_all(bytes)?;
     }
     out.flush()?;

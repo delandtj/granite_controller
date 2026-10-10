@@ -12,6 +12,8 @@ use granite_core::actuator::{
 };
 use granite_core::hal::{HalError, Switch};
 use granite_core::node::SenseMode;
+use granite_core::observed::ProbeObs;
+use granite_core::rules::{Rule, RuleAction, RuleEngine, default_rules};
 
 /// Compressed timings: the same shape as the defaults, short enough to
 /// run a soft-off escalation in a few thousand ticks. Each value is still
@@ -674,6 +676,198 @@ fn on_all_reports_partial_when_a_node_is_unknown() {
     );
 }
 
+/// Drop the LED of every node that is being held, 100 ms into its press,
+/// so a `force_off` group runs to completion the way a cooperative board
+/// would. Returns at `until_ms` at the latest.
+fn run_dropping_held_leds(rig: &mut Rig, until_ms: u64) {
+    while rig.now < until_ms {
+        rig.run_for(100);
+        let held: Vec<u8> = rig
+            .press_starts()
+            .into_iter()
+            .filter(|(_, sw, ..)| *sw == Switch::Pwr)
+            .map(|(n, ..)| n)
+            .collect();
+        for n in held {
+            if rig.obs.node_led(n) == Some(true) {
+                rig.set_led(n, Some(false));
+            }
+        }
+    }
+}
+
+#[test]
+fn force_off_all_presses_every_node_that_is_on_in_order() {
+    let mut rig = Rig::new();
+    rig.set_timings(fast());
+    rig.set_all_leds(Some(false));
+    for n in [1, 2, 3] {
+        rig.set_led(n, Some(true));
+    }
+
+    let req = ActionRequest::new("c-fo", ActionKind::ForceOff, Target::All);
+    assert_eq!(rig.submit(&req), Submission::Accepted { jobs: 3 });
+
+    run_dropping_held_leds(&mut rig, 20_000);
+
+    let order: Vec<u8> = rig.press_starts().into_iter().map(|(n, ..)| n).collect();
+    assert_eq!(order, vec![1, 2, 3], "only the nodes that were on, in order");
+    assert!(
+        rig.act.switches_mut().max_concurrent <= 1,
+        "still one press at a time"
+    );
+    for n in [1, 2, 3] {
+        assert_eq!(rig.result_of(n), Some(ActionResult::Ok), "node {n}");
+    }
+    for n in 4..=8 {
+        assert!(rig.result_of(n).is_none(), "node {n} was off and untouched");
+    }
+    assert_eq!(
+        rig.group_result("c-fo"),
+        Some(ActionResult::Ok),
+        "one aggregate ack for the group"
+    );
+}
+
+#[test]
+fn reset_all_skips_the_nodes_that_are_off_and_does_not_stagger() {
+    let mut rig = Rig::new();
+    rig.set_timings(fast());
+    rig.set_all_leds(Some(false));
+    for n in [1, 2, 3] {
+        rig.set_led(n, Some(true));
+    }
+
+    let req = ActionRequest::new("c-rst", ActionKind::Reset, Target::All);
+    assert_eq!(rig.submit(&req), Submission::Accepted { jobs: 3 });
+
+    // Three back-to-back 250 ms presses fit in 900 ms; with the 500 ms
+    // t_stagger of `fast()` the third one could not have started yet.
+    rig.run_to(900);
+
+    let starts = rig.press_starts();
+    assert_eq!(
+        starts,
+        vec![
+            (1, Switch::Rst, 250, deadline_for(250)),
+            (2, Switch::Rst, 250, deadline_for(250)),
+            (3, Switch::Rst, 250, deadline_for(250)),
+        ],
+        "off/force_off/reset on all run without a stagger"
+    );
+    for n in [1, 2, 3] {
+        assert_eq!(rig.result_of(n), Some(ActionResult::Ok), "node {n}");
+    }
+    for n in 4..=8 {
+        assert!(rig.result_of(n).is_none(), "node {n} was off and untouched");
+    }
+    assert_eq!(rig.group_result("c-rst"), Some(ActionResult::Ok));
+}
+
+#[test]
+fn on_with_target_all_keeps_the_stagger() {
+    let mut rig = Rig::new();
+    rig.set_timings(fast());
+    rig.set_all_leds(Some(false));
+    rig.set_led(2, Some(true));
+    for n in 1..=8 {
+        rig.set_respond(n, Respond::OnAfter(100));
+    }
+
+    let req = ActionRequest::new("c-on", ActionKind::On, Target::All);
+    assert_eq!(rig.submit(&req), Submission::Accepted { jobs: 7 });
+
+    // One press per t_stagger (500 ms), node 2 skipped.
+    rig.run_to(400);
+    assert_eq!(rig.press_starts().len(), 1, "the stagger still applies");
+    rig.run_to(30_000);
+    let order: Vec<u8> = rig.press_starts().into_iter().map(|(n, ..)| n).collect();
+    assert_eq!(order, vec![1, 3, 4, 5, 6, 7, 8]);
+    assert_eq!(rig.group_result("c-on"), Some(ActionResult::Ok));
+}
+
+#[test]
+fn cycle_all_takes_every_node() {
+    let mut rig = Rig::new();
+    rig.set_timings(fast());
+    rig.set_all_leds(Some(true));
+    rig.set_led(5, Some(false));
+    for n in 1..=8 {
+        rig.set_respond(n, Respond::OffThenOn(0, 100));
+    }
+
+    let req = ActionRequest::new("c-cy", ActionKind::Cycle, Target::All);
+    assert_eq!(
+        rig.submit(&req),
+        Submission::Accepted { jobs: 8 },
+        "cycle takes the nodes that are off too"
+    );
+    rig.run_to(120_000);
+
+    for n in 1..=8 {
+        assert!(
+            rig.press_starts().iter().any(|(p, ..)| *p == n),
+            "node {n} was pressed"
+        );
+    }
+    assert!(rig.act.switches_mut().max_concurrent <= 1);
+}
+
+#[test]
+fn press_all_is_still_bad_target() {
+    let mut rig = Rig::new();
+    rig.set_timings(fast());
+    rig.set_all_leds(Some(true));
+    let req = ActionRequest::new("c-p", ActionKind::Press, Target::All).with_args(ActionArgs {
+        duration_ms: Some(250),
+        ..args()
+    });
+    assert_eq!(
+        rig.submit(&req),
+        Submission::Done(ActionResult::refused(RefuseReason::BadTarget)),
+        "a raw press is per-node by design"
+    );
+    rig.run_to(1_000);
+    assert!(rig.press_starts().is_empty());
+}
+
+#[test]
+fn the_shipped_force_off_all_rule_produces_presses() {
+    let mut rig = Rig::new();
+    rig.set_timings(fast());
+    rig.set_all_leds(Some(false));
+    for n in [1, 2] {
+        rig.set_led(n, Some(true));
+    }
+    rig.obs.probes.push(ProbeObs {
+        rom: 0x28_0000_0000_0001,
+        name: "inlet".into(),
+        centi_c: Some(9_000),
+        ts_ms: 0,
+    });
+
+    // Default rule 1: probe_max > 70 C for 30 s -> force_off all.
+    let mut rules: Vec<Rule> = default_rules();
+    rules[0].enabled = true;
+    let mut engine = RuleEngine::with_rules(rules);
+    assert!(engine.tick(rig.now, &rig.obs).is_empty(), "hold starts");
+    let fired = engine.tick(31_000, &rig.obs);
+    assert_eq!(fired.len(), 1);
+    assert_eq!(fired[0].target, Target::All);
+    let RuleAction::Act { kind } = fired[0].action else {
+        panic!("default rule 1 acts");
+    };
+
+    // What the dispatcher does with a fired rule.
+    let req = ActionRequest::new(format!("rule{}", fired[0].rule_id), kind, fired[0].target);
+    assert_eq!(rig.submit(&req), Submission::Accepted { jobs: 2 });
+    run_dropping_held_leds(&mut rig, 20_000);
+
+    let order: Vec<u8> = rig.press_starts().into_iter().map(|(n, ..)| n).collect();
+    assert_eq!(order, vec![1, 2], "the shipped rule really switches off");
+    assert_eq!(rig.group_result("rule1"), Some(ActionResult::Ok));
+}
+
 #[test]
 fn second_action_on_a_busy_node_is_refused() {
     let mut rig = Rig::new();
@@ -719,7 +913,8 @@ fn bad_targets_are_refused() {
         rig.submit(&req),
         Submission::Done(ActionResult::refused(RefuseReason::BadTarget))
     );
-    let req = ActionRequest::new("c-y", ActionKind::On, Target::All);
+    // `all` is a valid target for every action but a raw `press`.
+    let req = ActionRequest::new("c-y", ActionKind::Press, Target::All);
     assert_eq!(
         rig.submit(&req),
         Submission::Done(ActionResult::refused(RefuseReason::BadTarget))

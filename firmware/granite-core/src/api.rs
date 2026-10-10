@@ -621,6 +621,17 @@ pub trait Rng {
 pub trait Dispatcher {
     /// Run one command and return its ack.
     fn dispatch(&mut self, cmd: &Command) -> Reply;
+
+    /// Wait for the *final* ack of a command [`Dispatcher::dispatch`]
+    /// only queued (`result: "accepted"`), for at most `timeout_ms`.
+    ///
+    /// This is what `?wait=1` on a node action uses. `None` means "this
+    /// transport cannot wait", and the caller keeps the `accepted` reply:
+    /// an implementation that would have to block a shared server task
+    /// for longer than its own request timeout is right to say no.
+    fn wait_for(&mut self, _cmd: &Command, _timeout_ms: u32) -> Option<Reply> {
+        None
+    }
 }
 
 /// Persistence for the parts of the configuration the API writes itself.
@@ -1490,6 +1501,23 @@ fn nodes(ctx: &mut ApiCtx<'_>) -> ApiResponse {
     ApiResponse::ok(json!({"ok": true, "settings": settings, "nodes": live}))
 }
 
+/// Longest a node action may hold its HTTP reply with `?wait=1`.
+///
+/// A node action is queued, so the honest answer is `accepted` and the
+/// outcome arrives in `state.nodes[i].last_action` (which the setup page
+/// polls). `?wait=1` is the convenience for scripts: it holds the reply
+/// until the action is done. The cap is deliberately well under a
+/// `t_soft_off_ms` of two minutes, because on the board the handler runs
+/// on the one HTTPS server task and nothing else is answered while it
+/// waits.
+pub const ACTION_WAIT_MS: u32 = 30_000;
+
+/// True when the request asked for the outcome rather than the ack
+/// (`?wait=1`, `?wait=true`).
+fn wants_wait(req: &ApiRequest) -> bool {
+    matches!(req.param("wait"), Some("1" | "true" | "yes"))
+}
+
 /// `POST /api/v1/nodes/<n|all>/<action>`: the same `Command` the MQTT
 /// `cmd` topic takes, with the action and the target in the path and the
 /// optional `args` object as the body.
@@ -1516,7 +1544,21 @@ fn node_action(
         None => Target::All,
     };
     cmd.args = args;
-    reply_response(ctx.commands.dispatch(&cmd))
+    reply_response(dispatch_action(&cmd, req, ctx))
+}
+
+/// Queue one action and, with `?wait=1`, wait for its outcome instead of
+/// its ack. A transport that cannot wait, or a wait that ran out of time,
+/// leaves the `accepted` reply as it was.
+fn dispatch_action(cmd: &Command, req: &ApiRequest, ctx: &mut ApiCtx<'_>) -> Reply {
+    let reply = ctx.commands.dispatch(cmd);
+    if !wants_wait(req) || reply.result.as_deref() != Some("accepted") {
+        return reply;
+    }
+    match ctx.commands.wait_for(cmd, ACTION_WAIT_MS) {
+        Some(outcome) => outcome,
+        None => reply,
+    }
 }
 
 /// `POST /api/v1/cmd`: a raw `Command`, byte for byte what the MQTT

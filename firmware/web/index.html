@@ -140,12 +140,14 @@
         <label>Keepalive (s) <input id="mqtt-keepalive_s" type="number" min="5" max="600"></label>
         <label>State republish (s) <input id="mqtt-t_state_s" type="number" min="5"></label>
         <label class="check"><input id="mqtt-auto_confirm_on_connect" type="checkbox">
-          auto-confirm a broker change on a successful connection</label>
-        <label class="check"><input id="mqtt-skip_time_check" type="checkbox">
-          skip the TLS not-before check (no SNTP)</label>
+          auto-confirm a broker change as soon as the new broker connects</label>
         <label>Broker CA (PEM)<textarea id="mqtt-ca_pem" rows="6"></textarea></label>
         <button type="submit">Stage and apply</button>
       </form>
+      <p class="dim">A broker change is applied live: the controller connects with
+        the staged settings within a few seconds, so you can see whether they work
+        before you confirm. Without a confirm (or this box) the stored settings come
+        back when the window passes. Nothing here reboots the controller.</p>
       <p class="dim" id="mqtt-topics"></p>
     </div>
   </section>
@@ -162,6 +164,17 @@
       <div id="timings" class="grid-form"></div>
       <label>Probe read period (s) <input id="nodes-t_probe_s" type="number" min="1"></label>
       <label>VIN trim factor <input id="nodes-vin_trim" type="number" step="0.001"></label>
+      <label>VIN window low (mV, 0 = unchecked)
+        <input id="nodes-vin_min_mv" type="number" min="0" max="36000"></label>
+      <label>VIN window high (mV, 0 = unchecked)
+        <input id="nodes-vin_max_mv" type="number" min="0" max="36000"></label>
+      <p class="dim">
+        A bus voltage outside the window sets the <code>vin</code> fault bit
+        (Modbus input register 13, bit 3) and lights the fault pattern; it
+        does not switch anything off by itself. Use a rule for that.
+        The trim factor, the probe names and the probe read period apply as
+        soon as they are saved, without a reboot.
+      </p>
       <h3>Probes</h3>
       <table id="probe-table">
         <thead><tr><th>Slot</th><th>ROM id</th><th>Name</th><th>Reading</th></tr></thead>
@@ -210,6 +223,8 @@
     <div class="card">
       <h2>Device certificate</h2>
       <p class="dim">SHA-256 fingerprint: <code id="cert-sha">-</code></p>
+      <p class="dim">A new pair is stored at once but only served after a reboot:
+        the HTTPS server cannot swap its TLS configuration while it runs.</p>
       <form id="cert-form">
         <label>Certificate (PEM)<textarea id="cert-pem" rows="5"></textarea></label>
         <label>Private key (PEM)<textarea id="cert-key" rows="5"></textarea></label>

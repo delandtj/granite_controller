@@ -804,3 +804,114 @@ integration (commit after 984010d):
   hostname, mDNS, SNTP, commit-confirm, dead-man) works on
   `sta_default` unchanged; the W5500's bus and pins are carried through
   `net::NetHw` and dropped.
+
+gap fixes, items 2, 7 and 10-14 of `firmware/docs/gaps-2026-10.md`
+(2026-10-10):
+- Component 3, target `all`: an action on `all` fans out over
+  `nodes.order` through the same group machinery as `on_all`, one press
+  at a time. The ADR only puts a stagger on `on_all`; built with
+  `t_stagger_ms` between the children of `on` and `cycle` and **no**
+  stagger for `off`, `force_off` and `reset` - a leak or an over-temp
+  wants every node off as fast as one-press-at-a-time allows. `off`,
+  `force_off` and `reset` take only the nodes whose LED reads on, which
+  means a node with `sense: ignore` is not reached by a group off; use a
+  per-node action there. A raw `press` on `all` stays `bad_target`.
+- Component 10, device certificate: the device key and certificate moved
+  from the `secrets` namespace to `factory`, so a factory reset keeps
+  the HTTPS fingerprint ("device cert if kept"). A copy left in
+  `secrets` by an older firmware, or by the Security page's upload, is
+  moved on the next boot. A factory reset also clears the
+  "recovery token already shown" flag.
+- Component 11, progress events: `started` and `downloading` are emitted
+  by `OtaWriter` itself (one place for the HTTP push, the pull and the
+  console), through an event sender parked by `ota::start`, because
+  neither the sink nor `pull` carries the bus.
+- Component 11, the OTA image: the ESP-IDF build produces no app `.bin`
+  (cargo links the app), so the image comes from `espflash save-image`
+  and a signed build needs `espsecure sign_data` afterwards.
+  `firmware/README.md` has the verified commands.
+
+gap fixes, items 4, 5 and 8 of `firmware/docs/gaps-2026-10.md`
+(2026-10-10):
+- Component 6, commit-confirm for `mqtt` and `sec`: both are now applied
+  live, so "staged" no longer means "waits for a reboot". The MQTT
+  worker thread runs whatever `mqtt.enabled` says and rebuilds its
+  client whenever the live `mqtt` section stops matching the one it
+  connected with; the config watcher already pushed `sec.modbus` into
+  the Modbus supervisor. The staged list and its single deadline moved
+  out of the per-request `NetControlApi` into one registry in
+  `platform/api_impl.rs`: the HTTP API and a `config_set` command both
+  stage, and the config-watch thread and the MQTT worker both read. At
+  the deadline
+  `net` keeps the ADR's revert-and-reboot, while `mqtt` and `sec`
+  revert **without** a reboot: the config-watch thread puts the stored
+  section back into the live config and their owners reconfigure within
+  one 5 s pass. The restore is done by that thread rather than by the
+  API because an HTTP request holds the config write guard for its whole
+  lifetime.
+- Component 6, `auto_confirm_on_connect`: a session that comes up while
+  `mqtt` is staged promotes that section through the same code the API's
+  `confirm` uses. Only `mqtt` - the ADR ties auto-confirm to the broker
+  change, so a `net` or `sec` section staged at the same time still
+  waits for its own confirm.
+- Component 8, a new device certificate: the ADR has the HTTPS server
+  pick it up. `EspHttpServer` cannot swap its TLS configuration in
+  place, so the pair is stored at once and served after the next reboot.
+  The Security page and the commissioning docs say so.
+- Component 6, the static dead-man: it now counts both halves the ADR
+  asks for - the gateway probe and an accepted connection (the HTTPS
+  request path, a Modbus peer that passed the allow-list, and a broker
+  connect all call `net::note_connection`). A rejected Modbus peer
+  deliberately does not count. Added beyond the ADR: with `net.gateway`
+  empty there is nothing to probe, so the timer stays disarmed and says
+  so once per applied net config - the connection half alone would turn
+  it into "nobody logged in for an hour, drop the address". Still not
+  built, TODO kept in `net.rs`: DHCP alongside the static address;
+  `esp_netif_dhcpc_start` clears the address first, so a fired dead-man
+  replaces it and a reboot brings it back.
+- `mqtt.skip_time_check` is gone from the schema (it was accepted and
+  ignored; esp-tls has no not-before skip). Schema version stays 1:
+  every section is `#[serde(default)]` and unknown fields are ignored,
+  so a board that stored the field keeps the rest of its `mqtt`
+  section.
+
+gap fixes, items 1, 3, 6 and 9 of `firmware/docs/gaps-2026-10.md`
+(2026-10-10):
+- Component 3, boot policy: applied by the dispatcher thread, once,
+  `t_settle_ms` after that thread started, with the command id `boot`.
+  The ADR's condition is "a hardware layer that failed to initialise
+  must not run it"; built as "the **expanders** answered at boot"
+  (`hw::Hw::expanders_up`, new), because the rest of the hardware layer
+  comes up fine on a board with no MCP23017 and `hw::init` therefore
+  returns `Ok` there. Without them nothing is submitted and one warning
+  line says why.
+- Component 8, the outcome of a node action over HTTP: the reply stays
+  `accepted` at queue time (the honest reading of a queue, and the
+  ADR's own "same vocabulary as MQTT" - MQTT also acks on completion
+  through a second message). Added beyond the ADR: `?wait=1` on
+  `POST /api/v1/nodes/<n>/<action>` holds the reply until that command
+  id finishes, capped at `api::ACTION_WAIT_MS` (30 s), then falls back
+  to the `accepted` reply. The capability is a defaulted
+  `api::Dispatcher::wait_for`, so a transport that must not block says
+  so by not implementing it; the simulator implements it, the board's
+  `ChannelDispatcher` does not yet (`http.rs`, see the handback note).
+  A failed action answers 400 with the error, which is what a refused
+  action already did. The setup page polls
+  `state.nodes[i].last_action` for the outcome either way.
+- Component 9, fault word: all seven bits are maintained now.
+  `probe_missing` only ever reflects *configured* probes (a probe found
+  by the boot scan and then unplugged does not raise it: nothing was
+  promised). `vin` needed a window the ADR does not define: new
+  `nodes.vin_min_mv` / `nodes.vin_max_mv`, 16000/22000 by default, `0`
+  = that side unchecked, validated (min below max, max at most 36 V)
+  and on the Nodes page. `config_fallback` is read at boot from a second
+  `Store::load_config` (the fallback list is not kept on `Platform`) and
+  clears when the section is written. `expander` at runtime is set on an
+  actuator `Fault` and cleared by the next clean 1 s readback, which the
+  hardware layer counts in `hw::expanders::verify_ok_seq`.
+- Component 4, live settings: `vin_trim` (an atomic in `hw::vin`), the
+  probe ROM/name list, `t_probe_s` and the VIN window are pushed by the
+  dispatcher's `apply_config` and picked up by the sense thread on its
+  next tick, so none of the four needs a reboot. A `nodes` section with
+  an empty probe list falls back to the ROM ids found by the boot scan;
+  a re-scan is still boot-only (item "probe_scan").

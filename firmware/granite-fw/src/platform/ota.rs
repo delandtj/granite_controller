@@ -23,6 +23,7 @@
 //! would turn every boot into a rollback.
 
 use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
+use std::sync::Mutex;
 use std::sync::mpsc::Sender;
 use std::thread;
 use std::time::Duration;
@@ -49,6 +50,10 @@ const PROBATION_TICK: Duration = Duration::from_secs(2);
 const REBOOT_DELAY: Duration = Duration::from_secs(1);
 /// Read buffer for an HTTPS pull.
 const PULL_CHUNK: usize = 4096;
+/// With no Content-Length, a `downloading` event every this many bytes.
+const PROGRESS_STEP_BYTES: u64 = 256 * 1024;
+/// With a known length, a `downloading` event every this many percent.
+const PROGRESS_STEP_PCT: u8 = 10;
 
 /// Reported OTA state of the running image.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -284,6 +289,11 @@ pub fn mark_invalid_and_reboot() -> EspError {
 /// `events` gets one `ota` event per step, so the probation shows up in the
 /// MQTT log the same way the prior art put it in the capture log.
 pub fn start(t_validate_s: u32, events: Option<Sender<Event>>) {
+    // Park a copy for the transfer progress events (ADR component 11:
+    // `started` and `downloading` on the event topic).
+    if let Ok(mut guard) = PROGRESS_EVENTS.lock() {
+        *guard = events.clone();
+    }
     let state = match info() {
         Ok(info) => {
             log::info!(
@@ -388,6 +398,32 @@ fn emit(events: &Option<Sender<Event>>, phase: &str, detail: &str) {
                 phase: phase.to_string(),
                 progress: None,
                 detail: Some(detail.to_string()),
+            },
+        ));
+    }
+}
+
+/// Where the writer's own `started` and `downloading` events go.
+///
+/// [`OtaWriter`] is reached from three places (the HTTP upload sink, a
+/// pull, the console) and none of them carries the event bus, so the bus
+/// is parked here by [`start`], which runs once at boot before any of
+/// them can.
+static PROGRESS_EVENTS: Mutex<Option<Sender<Event>>> = Mutex::new(None);
+
+/// Publish one `ota` event on the parked bus. Silent when there is none
+/// (the host tests, or a boot that failed before the bus existed).
+fn emit_progress(phase: &str, progress: Option<u8>, detail: String) {
+    let Ok(guard) = PROGRESS_EVENTS.lock() else {
+        return;
+    };
+    if let Some(tx) = guard.as_ref() {
+        let _ = tx.send(Event::new(
+            super::now_ms(),
+            EventKind::Ota {
+                phase: phase.to_string(),
+                progress,
+                detail: Some(detail),
             },
         ));
     }
@@ -499,6 +535,11 @@ pub struct OtaWriter {
     written: u64,
     expected_sha256: Option<String>,
     slot: String,
+    /// Total image length when the caller knew it, for the progress
+    /// percentage.
+    total: Option<u64>,
+    /// `written` at the last `downloading` event.
+    progress_at: u64,
 }
 
 // The only non-Send field is a pointer into the partition table, which
@@ -521,6 +562,8 @@ impl OtaWriter {
             written: 0,
             expected_sha256: None,
             slot: String::new(),
+            total: None,
+            progress_at: 0,
         }
     }
 
@@ -568,14 +611,35 @@ impl OtaWriter {
         self.handle = Some(handle);
         self.sha = Some(Sha256Stream::new());
         self.written = 0;
-        log::warn!(
-            "ota: writing {} ({})",
-            self.slot,
-            total_len
-                .map(|n| format!("{n} bytes"))
-                .unwrap_or_else(|| String::from("size unknown"))
-        );
+        self.total = total_len.filter(|n| *n > 0);
+        self.progress_at = 0;
+        let size = total_len
+            .map(|n| format!("{n} bytes"))
+            .unwrap_or_else(|| String::from("size unknown"));
+        log::warn!("ota: writing {} ({})", self.slot, size);
+        emit_progress("started", Some(0), format!("{} ({})", self.slot, size));
         Ok(())
+    }
+
+    /// One `downloading` event per [`PROGRESS_STEP_PCT`] of a known
+    /// length, or per [`PROGRESS_STEP_BYTES`] when the length is unknown.
+    fn report_progress(&mut self) {
+        let step = match self.total {
+            Some(total) => (total * u64::from(PROGRESS_STEP_PCT) / 100).max(1),
+            None => PROGRESS_STEP_BYTES,
+        };
+        if self.written.saturating_sub(self.progress_at) < step {
+            return;
+        }
+        self.progress_at = self.written;
+        match self.total {
+            Some(total) => emit_progress(
+                "downloading",
+                Some((self.written.min(total) * 100 / total) as u8),
+                format!("{} of {total} bytes", self.written),
+            ),
+            None => emit_progress("downloading", None, format!("{} bytes", self.written)),
+        }
     }
 
     /// Append a chunk.
@@ -595,6 +659,7 @@ impl OtaWriter {
         if before / (64 * 1024) != self.written / (64 * 1024) {
             log::info!("ota: {} bytes", self.written);
         }
+        self.report_progress();
         Ok(())
     }
 
@@ -650,6 +715,8 @@ impl OtaWriter {
         self.sha = None;
         self.written = 0;
         self.expected_sha256 = None;
+        self.total = None;
+        self.progress_at = 0;
     }
 }
 

@@ -170,7 +170,7 @@ espflash flash --port /dev/ttyACM0 --partition-table partitions.csv \
 the recovery token and the configuration survive a reflash. Erase them
 on purpose with `espflash erase-parts nvs` or with the console's
 `factory-reset CONFIRM` (which keeps the `factory` namespace: the
-recovery token and the fleet key).
+recovery token, the fleet key and the device key and certificate).
 
 If the board does not enter download mode by itself, pull the BOOT test
 pad (GPIO9) to GND while powering up.
@@ -239,7 +239,14 @@ On a board with an empty `nvs` the firmware
    with mbedTLS and prints its SHA-256 fingerprint.
 
 Both are reloaded on every later boot; the token is printed again by the
-`recovery-token` console command, the fingerprint by `id`.
+`recovery-token` console command, the fingerprint by `id`. The device
+key and certificate live in the `factory` namespace next to the recovery
+token, so a factory reset keeps the fingerprint and anything pinning it
+keeps working. A board written by a firmware older than 2026-10-10 has
+them in `secrets`; the next boot moves them over and logs one line.
+A factory reset does clear the "recovery token already shown" flag, so
+the first setup after a reset shows the token again (it is the same
+token).
 
 The identity is the eFuse MAC: device id, hostname, mDNS name and the
 default MQTT client id are all `granite-<last 6 hex of the Ethernet
@@ -301,7 +308,12 @@ HTTPS on 443 with the device certificate; plain HTTP on 80 serves only
 `/id` and a redirect. One admin password (PBKDF2-HMAC-SHA256, 20k
 iterations, per-device salt), a session cookie for the page and
 `Authorization: Bearer <token>` for scripts, 5 failed logins then a 60 s
-lockout.
+lockout. The salt is minted once and then kept: API tokens are hashed
+with it too, so changing the password - over the API or with the
+console's `set-password` - leaves existing tokens working.
+
+`GET`, `HEAD`, `POST`, `PUT` and `DELETE` are registered; `HEAD` answers
+every `GET` route, for monitoring tools that probe with it.
 
 `/api/v1/...` carries the same command vocabulary as MQTT, because both
 go through one dispatcher in `granite-core`: status, config sections
@@ -337,6 +349,15 @@ payload fixtures. The worker reconnects on an exponential ladder (1 s to
 60 s) and keeps publishing `mqtt_connected` into the snapshot the rule
 engine reads, so rules that watch the broker work.
 
+The worker thread runs whatever `mqtt.enabled` says: with no broker to
+talk to it idles on the configuration, and it rebuilds its client as
+soon as the live `mqtt` section stops matching the one it connected
+with. Changing or enabling a broker therefore needs no reboot, and a
+staged section gets a real connection attempt inside its confirm window
+(ADR component 6). `mqtt.auto_confirm_on_connect` promotes the staged
+section the moment that attempt succeeds; otherwise the config-watch
+thread puts the stored section back when the window passes.
+
 ## Modbus TCP
 
 Off by default, and it refuses to listen without an IP/CIDR allow-list:
@@ -360,6 +381,67 @@ the bootloader.
 - **Pull**: the `ota` command over MQTT (or the API) takes
   `{"url":..,"sha256":..}` and the controller fetches it over HTTPS
   itself, using the MQTT CA.
+- **Progress**: both paths publish `ota` events on the event topic:
+  `started` (progress 0), `downloading` every 10 % of a known
+  Content-Length or every 256 KiB without one, then `verified`, and
+  after the reboot `pending_verify` and `valid` (or `failed` /
+  `rolled_back`).
+
+### Making the `.bin`
+
+The cargo build produces an ELF, not an image: the application `.bin`
+the two paths above want is made from it with espflash. The ESP-IDF
+build under the target directory does **not** contain one - it only
+produces `build/bootloader.bin` and `build/partition-table.bin`,
+because the app itself is linked by cargo, not by the ESP-IDF project.
+There is a `libespidf.bin` under
+`build/esp-idf-sys-*/out/build/`; it is the esp-idf-sys stub project
+(about 150 KB, no Rust code in it) and must never be pushed as an
+image.
+
+```sh
+cd firmware/granite-fw
+cargo build --release
+espflash save-image --chip esp32c6 \
+    target/riscv32imac-esp-espidf/release/granite-fw granite-fw.bin
+sha256sum granite-fw.bin      # the sha256 the pull command needs
+```
+
+Verified with espflash 4.6.0 on 2026-10-10: 1,719,488 bytes for the
+default release build, and `esptool.py --chip esp32c6 image_info
+granite-fw.bin` reports a valid checksum and validation hash. Do not
+pass `--merge`: that bundles the bootloader and the partition table and
+pads to the flash size, which is a full-flash image, not an OTA one.
+
+For a build with signing on (below), the image needs the signature
+block appended afterwards, because espflash writes the plain image and
+the signing happens in the ESP-IDF build, which never sees this app:
+
+```sh
+espsecure.py sign_data --version 2 --keyfile signing_key.pem \
+    --output granite-fw-signed.bin granite-fw.bin
+espsecure.py verify_signature --version 2 --keyfile signing_key.pem \
+    granite-fw-signed.bin
+sha256sum granite-fw-signed.bin
+```
+
+`sign_data` pads the image to the next 4 KB boundary itself ("Padding
+data contents by N bytes so signature sector aligns at sector
+boundary") and appends a 4 KB signature sector, so no `--secure-pad-v2`
+step is needed. Verified on 2026-10-10 with esptool/espsecure 5.3.1
+against an unsigned release image: sign, then `verify_signature`
+reports "Signature block 0 verification successful", and `image_info`
+still reports a valid image. ESP-IDF v5.5.5 ships its own
+`espsecure.py` in `.embuild/espressif/python_env/*/bin/`, which takes
+the same `sign_data` / `verify_signature` subcommands; standalone
+esptool 5.x prefers the dashed spelling (`sign-data`) and warns about
+the underscore one.
+
+**Unverified**: that a board built with `sdkconfig.defaults.signing`
+accepts such an image over OTA, and whether the bootloader the signing
+build produces is itself signed. That needs a signing build (a full
+ESP-IDF reconfigure) and a bench board; nothing here has been pushed to
+a board yet.
 - **Probation**: a new image boots `pending_verify` and must, within
   `sys.t_validate_s` (default 10 min), have (a) initialised the
   expanders, (b) got link and an IP, and (c) either connected to the

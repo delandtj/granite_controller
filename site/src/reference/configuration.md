@@ -13,11 +13,14 @@ and logs a `config`/`fallback` event; the other sections are
 unaffected.
 
 Sections `net`, `mqtt` and `sec` can cut you off, so writing them
-**stages** the change until `POST /api/v1/config/confirm`. Only `net`
-is applied live during the confirm window; `mqtt` and `sec` take effect
-after confirm and a reboot (except `sec.modbus`, which a watcher picks
-up within seconds). Sections `nodes`, `rules` and `sys` are saved
-directly.
+**stages** the change until `POST /api/v1/config/confirm`. All three are
+applied live during the confirm window: `net` on the interface,
+`mqtt` by rebuilding the broker session, `sec.modbus` by rebinding the
+listener. Without a confirm, `net` reverts with a reboot while `mqtt`
+and `sec` revert in place, within about 5 s of the window passing. The
+one change that does need a reboot is a new device certificate, which
+the HTTPS server can only pick up at start-up. Sections `nodes`,
+`rules` and `sys` are saved directly.
 
 ## `net`
 
@@ -50,8 +53,7 @@ directly.
 | `qos` | 0..2 | 1 | |
 | `keepalive_s` | seconds | 30 | UI: 5..600. |
 | `t_state_s` | seconds | 60 | Retained state republish interval. |
-| `auto_confirm_on_connect` | bool | `false` | Not yet wired. |
-| `skip_time_check` | bool | `false` | Ignored by the current firmware. |
+| `auto_confirm_on_connect` | bool | `false` | A session with the staged broker confirms the `mqtt` section by itself. |
 
 Topic base: `<topic_root>/<site>/<device_id>`.
 
@@ -147,8 +149,7 @@ for.
   "mqtt": {"enabled": true, "host": "broker.site.example", "port": 8883, "tls": true,
            "ca_pem": "-----BEGIN CERTIFICATE-----\n...", "username": "granite-37adc7",
            "client_id": "", "site": "pod1", "topic_root": "granite", "qos": 1,
-           "keepalive_s": 30, "t_state_s": 60, "auto_confirm_on_connect": false,
-           "skip_time_check": false},
+           "keepalive_s": 30, "t_state_s": 60, "auto_confirm_on_connect": false},
   "nodes": {"nodes": [{"name": "node1", "boot_policy": "on", "sense": "enabled"}, "..."],
             "order": [1, 2, 3, 4, 5, 6, 7, 8],
             "timings": {"t_short_ms": 250, "t_hold_ms": 8000, "t_on_ms": 10000,

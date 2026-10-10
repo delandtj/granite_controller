@@ -23,6 +23,16 @@
 //! - **Addressing** is raw `esp_netif_*`: esp-idf-svc has no way to switch
 //!   a live netif between DHCP and a static address, which commit-confirm
 //!   needs.
+//! - **The static-config dead-man** counts two kinds of evidence, as the
+//!   ADR asks: an ICMP answer from `net.gateway`, and an accepted
+//!   connection - the HTTPS request path, the Modbus accept loop and a
+//!   successful broker connect all call [`note_connection`]. With an empty
+//!   `net.gateway` there is nothing to probe, so the timer stays disarmed
+//!   and says so once. When it does fire, DHCP **replaces** the static
+//!   address rather than running alongside it: `esp_netif_dhcpc_start`
+//!   clears the address first and esp_netif has no second-address mode
+//!   (see the TODO at the firing site). The static address comes back on
+//!   the next reboot, because it is what `cfg` still holds.
 //!
 //! With the `wifi-dev` feature the thread brings up the Wi-Fi station
 //! interface **instead of** the W5500 ([`super::wifi_dev`]) and
@@ -170,14 +180,17 @@ pub struct NetStatus {
 }
 
 /// Last time a server accepted a connection, monotonic seconds since boot.
-/// Seconds, not milliseconds: riscv32imac has no 64-bit atomics. The HTTP and
-/// Modbus servers call [`note_connection`]; the dead-man reads it.
+/// Seconds, not milliseconds: riscv32imac has no 64-bit atomics. The HTTPS
+/// request path, the Modbus accept loop and the MQTT worker's connect all
+/// call [`note_connection`]; the dead-man reads it.
 static LAST_CONN_S: AtomicU32 = AtomicU32::new(0);
 /// Set once SNTP reports a sync.
 static TIME_SYNCED: AtomicBool = AtomicBool::new(false);
 
-/// Record that a server accepted a connection. Part of the static-config
-/// dead-man: a reachable board is one someone can connect to.
+/// Record that a server accepted a connection, or that the broker session
+/// came up. Part of the static-config dead-man (ADR component 6): a
+/// reachable board is one someone can connect to, so this is the half of
+/// the test the gateway probe cannot see.
 pub fn note_connection() {
     LAST_CONN_S.store((super::now_ms() / 1000) as u32, Ordering::Relaxed);
 }
@@ -333,6 +346,10 @@ fn run(
     let mut confirm: Option<Confirm> = None;
     let mut last_probe_ms = 0u64;
     let mut last_alive_ms = super::now_ms();
+    // The dead-man needs a gateway to probe. Logged once per applied net
+    // config so an operator who left the field empty finds out why the
+    // timer never fires, instead of wondering.
+    let mut deadman_logged = false;
     let mut deadman_fired = false;
     #[cfg(feature = "wifi-dev")]
     let mut last_retry_ms = super::now_ms();
@@ -362,6 +379,8 @@ fn run(
                 // The hostname and the mDNS name may have changed.
                 mdns = None;
                 ip6_done = false;
+                // A new config may have added or removed the gateway.
+                deadman_logged = false;
             }
             Ok(NetCmd::Confirm) => {
                 if confirm.take().is_some() {
@@ -492,8 +511,27 @@ fn run(
         // alongside. An ICMP echo to the gateway stands in for the ARP
         // reply: it is strictly stronger evidence and it is reachable from
         // Rust without an lwIP-internal call.
+        //
+        // It also needs something to probe. With an empty `gateway` there
+        // is no ARP (here ICMP) half of the test left, and the accepted-
+        // connection half on its own would turn the timer into "nobody
+        // logged in for an hour, drop the address", which is the opposite
+        // of a safety net. So an empty gateway disarms it, and says so.
+        let gateway = gateway_of(&cfg);
         if cfg.t_deadman_s > 0
             && cfg.ip_mode == IpMode::Static
+            && gateway.is_none()
+            && !deadman_logged
+        {
+            deadman_logged = true;
+            log::warn!(
+                "net.gateway is empty, so the static-config dead-man has nothing to probe and \
+                 stays disarmed; set a gateway, or t_deadman_s = 0 to mean it"
+            );
+        }
+        if cfg.t_deadman_s > 0
+            && cfg.ip_mode == IpMode::Static
+            && gateway.is_some()
             && link_up
             && has_ip
             && !deadman_fired
@@ -506,7 +544,7 @@ fn run(
                 last_alive_ms = now;
             } else if now.saturating_sub(last_probe_ms) >= DEADMAN_PROBE.as_millis() as u64 {
                 last_probe_ms = now;
-                if let (Some(index), Some(gw)) = (netif_index, gateway_of(&cfg)) {
+                if let (Some(index), Some(gw)) = (netif_index, gateway) {
                     let mut ping = EspPing::new(index);
                     let conf = PingConfiguration {
                         count: 2,

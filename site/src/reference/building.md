@@ -74,17 +74,45 @@ Partitions (8 MB): `nvs` 192 K, `otadata` 8 K, `coredump` 64 K,
 ## Producing an OTA image
 
 The Firmware page and the `ota` command take an application image
-(`.bin`), not the ELF. `espflash save-image --chip esp32c6 <elf>
-<out.bin>` writes one; the firmware README does not yet document this
-step, so verify the first image you produce by pushing it to a bench
-board. For a build with signature verification enabled the image must
-carry the signature block (`espsecure.py sign_data` with the signing
-key) or the running firmware will refuse it.
+(`.bin`), not the ELF. The ESP-IDF build under the target directory has
+no app image either: it produces only `build/bootloader.bin` and
+`build/partition-table.bin`, because cargo links the app. (The
+`libespidf.bin` under `build/esp-idf-sys-*/out/build/` is the
+esp-idf-sys stub project, about 150 KB with no firmware in it - never
+push that.) Make the image with espflash:
 
 ```sh
+cd firmware/granite-fw
+ELF=target/riscv32imac-esp-espidf/release/granite-fw
 espflash save-image --chip esp32c6 $ELF granite-fw-<version>.bin
-sha256sum granite-fw-<version>.bin
+sha256sum granite-fw-<version>.bin     # what the pull command needs
 ```
+
+Do not pass `--merge`: that produces a full-flash image with the
+bootloader and the partition table in it, not an OTA image. Check the
+result with `esptool.py --chip esp32c6 image_info <the .bin>`; the
+checksum and the validation hash must both say valid.
+
+For a build with signature verification enabled, append the signature
+block afterwards - espflash writes the plain image, and the ESP-IDF
+build that does the signing never sees this app:
+
+```sh
+espsecure.py sign_data --version 2 --keyfile signing_key.pem \
+    --output granite-fw-<version>-signed.bin granite-fw-<version>.bin
+espsecure.py verify_signature --version 2 --keyfile signing_key.pem \
+    granite-fw-<version>-signed.bin
+sha256sum granite-fw-<version>-signed.bin
+```
+
+`sign_data` pads the image to the next 4 KB boundary itself and appends
+a 4 KB signature sector, so there is no separate padding step. The
+commands above were verified on 2026-10-10 with espflash 4.6.0 and
+esptool/espsecure 5.3.1 on a default release build.
+
+**Unverified:** that a board built with `sdkconfig.defaults.signing`
+accepts such an image over OTA. No image has been pushed to a board
+yet; try the first one on a bench board.
 
 ## Host tests and the simulator
 

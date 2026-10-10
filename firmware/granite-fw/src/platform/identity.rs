@@ -14,8 +14,10 @@
 //!   commissioning. [`issue_nonce`] and [`verify_fleet_recovery`] are the
 //!   `/recover` half of it,
 //! - the device TLS certificate: ECDSA P-256, self-signed, generated on
-//!   first boot with mbedTLS, stored in the `secrets` namespace, with its
-//!   SHA-256 fingerprint on the console and the `/id` endpoint.
+//!   first boot with mbedTLS, stored with its key in the `factory`
+//!   namespace so the fingerprint survives a factory reset and stays
+//!   pinnable, with its SHA-256 fingerprint on the console and the `/id`
+//!   endpoint.
 //!
 //! All crypto here goes through mbedTLS via `esp-idf-sys`. ESP-IDF v5.5.5
 //! defines `MBEDTLS_X509_CREATE_C` and `MBEDTLS_X509_CRT_WRITE_C`
@@ -296,11 +298,17 @@ pub fn init(store: &mut Store, device_id_override: &str) -> Result<Identity, Esp
     };
 
     // -- device certificate ----------------------------------------------
-    let mut secrets = store.load_secrets();
+    // Key and certificate live in `factory`, so a factory reset keeps the
+    // HTTPS fingerprint. A copy left in `secrets` (an older firmware, or
+    // the Security page's upload) is moved over first.
+    if let Err(e) = store.migrate_identity_to_factory() {
+        log::error!("device key and certificate could not be moved to factory: {e}");
+    }
     let stored_cert = store.device_cert().unwrap_or(None);
-    let (cert_pem, key_pem, cert_fresh) = match (stored_cert, secrets.device_key_pem.clone()) {
+    let stored_key = store.device_key().unwrap_or(None).unwrap_or_default();
+    let (cert_pem, key_pem, cert_fresh) = match (stored_cert, stored_key) {
         (Some(cert), key) if !cert.trim().is_empty() && !key.trim().is_empty() => {
-            log::info!("device certificate loaded from nvs");
+            log::info!("device certificate loaded from nvs (factory namespace)");
             (cert, key, false)
         }
         _ => {
@@ -309,8 +317,7 @@ pub fn init(store: &mut Store, device_id_override: &str) -> Result<Identity, Esp
             if let Err(e) = store.save_device_cert(&generated.cert_pem) {
                 log::error!("device certificate could not be stored: {e}");
             }
-            secrets.device_key_pem = generated.key_pem.clone();
-            if let Err(e) = store.save_secrets(&secrets) {
+            if let Err(e) = store.save_device_key(&generated.key_pem) {
                 log::error!("device key could not be stored: {e}");
             }
             (generated.cert_pem, generated.key_pem, true)

@@ -28,9 +28,14 @@ message each.
  "args":{"url":"https://fw.site.example/granite-fw-0.2.0.bin","sha256":"<64 hex>"}}
 ```
 
-Progress arrives as `ota` events: `verified` or `failed` when the
-image has been written, then `pending_verify`, `valid` or
-`rolled_back` from the new image.
+Progress arrives as `ota` events: `started`, then `downloading` with a
+percentage every 10 % of a known image size (every 256 KiB when the
+server sends no Content-Length), `verified` or `failed` when the image
+has been written, then `pending_verify`, `valid` or `rolled_back` from
+the new image.
+
+Making the `.bin` from a build is in
+[Building and flashing](../reference/building.md#producing-an-ota-image).
 
 ## Probation
 

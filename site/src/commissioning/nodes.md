@@ -35,15 +35,15 @@ looks at the LED.
 | Setting | Values | Meaning |
 |---|---|---|
 | Name | text, default `node1`..`node8` | Shown on the page and in the state payload. |
-| Boot policy | `leave` (default), `on`, `off` | Meant to be applied once per **controller** boot, 5 s after the expanders are up, in the power-on order and with the stagger interval. `leave` never touches the node. **Current firmware:** the setting is stored and shown but not applied on the board; only the simulator runs it. |
+| Boot policy | `leave` (default), `on`, `off` | Applied once per **controller** boot, `t_settle_ms` (5 s) after the expanders are up, in the power-on order and with the stagger interval. `leave` never touches the node. A controller whose expanders did not answer applies nothing and says so in the log. |
 | Sense | `enabled` (default), `ignore` | `ignore` treats the node as if it had no LED: every action becomes a timed press with the standard durations, and `force_off` holds PWR for the full hold time. Use it only for a node whose LED cannot be wired. |
 
-Boot policy `on` is meant to bring a frame back after a site power
-loss without anyone logging in: the controller boots from the 19 V
-bus, waits for its expanders, and presses power on each node that is
-still off, staggered. Until the firmware applies it, send `on_all`
-from your automation when the controller's retained `status` comes
-back online. Boot policy `off` is rarely what you want.
+Boot policy `on` brings a frame back after a site power loss without
+anyone logging in: the controller boots from the 19 V bus, waits
+`t_settle_ms` for its expanders and the LED sense, and presses power on
+each node that is still off, staggered. The presses appear as
+`accepted` and `action_done` events with the command id `boot`. Boot
+policy `off` is rarely what you want.
 
 ## Power-on order and stagger
 
@@ -84,8 +84,17 @@ current firmware but the re-scan is not yet wired to the bus; probes
 are enumerated at boot. Plug all probes in, reboot the controller,
 and the table fills.
 
-## Bus voltage trim
+## Bus voltage trim and window
 
 `vin_trim` (default 1.0) multiplies the measured 19 V bus voltage to
 calibrate out resistor tolerance. Compare `vin_v` on the Status page
-with a meter on J3, set the ratio, and reboot for it to apply.
+with a meter on J3 and set the ratio; it applies as soon as it is
+saved, so the next status refresh already shows the corrected value.
+The probe names and the probe read period apply the same way.
+
+`vin_min_mv` and `vin_max_mv` (16000 and 22000 by default) are the
+window the bus is expected to stay in. Outside it the `vin` fault bit
+is set (Modbus input register 13, bit 3, and the fault colour on a
+board that has an RGB LED); either bound at `0` switches that side of
+the check off. The window only reports: switching nodes off on a sagging
+bus is a rule's job.

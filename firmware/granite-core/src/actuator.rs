@@ -789,10 +789,17 @@ impl<S: NodeSwitches> Actuator<S> {
                 .copied()
                 .filter(|n| observed.node_led(*n) != Some(true))
                 .collect();
-            return self.submit_group(req, ActionKind::On, &targets, now_ms, observed, out);
+            let stagger = self.timings.t_stagger_ms;
+            return self.submit_group(req, ActionKind::On, &targets, stagger, now_ms, observed, out);
         }
 
         let Some(node) = req.target.node() else {
+            // `all` on a per-node action fans out over `nodes.order`.
+            // `press` stays per-node by design (ADR component 3).
+            if let Some((targets, stagger)) = self.group_targets(req.kind, observed) {
+                return self
+                    .submit_group(req, req.kind, &targets, stagger, now_ms, observed, out);
+            }
             // Every other action needs exactly one node.
             return Submission::Done(ActionResult::refused(RefuseReason::BadTarget));
         };
@@ -878,11 +885,51 @@ impl<S: NodeSwitches> Actuator<S> {
         }
     }
 
+    /// The node list and the stagger for a per-node action on `all`.
+    /// `None` means the action cannot fan out (`press`).
+    ///
+    /// `off`, `force_off` and `reset` only touch nodes the LED reports as
+    /// on, and run back to back: a leak or an over-temp wants every node
+    /// off as fast as the one-press-at-a-time rule allows. `on` and
+    /// `cycle` keep `t_stagger_ms` between children, `on` skipping the
+    /// nodes that are already on and `cycle` taking every node.
+    fn group_targets(
+        &self,
+        kind: ActionKind,
+        observed: &Observed,
+    ) -> Option<(Vec<NodeId>, u32)> {
+        // `Some(x)`: keep the nodes whose LED reads `x`. `None`: keep all.
+        let (want_led, stagger) = match kind {
+            ActionKind::Off | ActionKind::ForceOff | ActionKind::Reset => (Some(true), 0),
+            ActionKind::On => (Some(false), self.timings.t_stagger_ms),
+            ActionKind::Cycle => (None, self.timings.t_stagger_ms),
+            // `press` is raw and per-node; `on_all` never gets here.
+            ActionKind::Press | ActionKind::OnAll => return None,
+        };
+        let targets: Vec<NodeId> = self
+            .order
+            .iter()
+            .copied()
+            .filter(|n| match want_led {
+                // `on` also takes a node whose LED is unknown, the way
+                // `on_all` does; the per-node script decides from there.
+                Some(false) => observed.node_led(*n) != Some(true),
+                // A node with `sense: ignore` has no LED and is skipped
+                // here; reach it with an explicit per-node action.
+                Some(true) => observed.node_led(*n) == Some(true),
+                _ => true,
+            })
+            .collect();
+        Some((targets, stagger))
+    }
+
+    #[allow(clippy::too_many_arguments)]
     fn submit_group(
         &mut self,
         req: &ActionRequest,
         child: ActionKind,
         targets: &[NodeId],
+        stagger_ms: u32,
         now_ms: u64,
         observed: &Observed,
         out: &mut Vec<ActuatorEvent>,
@@ -894,7 +941,7 @@ impl<S: NodeSwitches> Actuator<S> {
         let mut jobs = 0usize;
         let mut slot = 0usize;
         for node in targets {
-            let start = now_ms + (slot as u64) * self.timings.t_stagger_ms as u64;
+            let start = now_ms + (slot as u64) * stagger_ms as u64;
             match self.submit_one(req, child, *node, Some((gid, start)), now_ms, observed, out) {
                 Ok(true) => {
                     jobs += 1;

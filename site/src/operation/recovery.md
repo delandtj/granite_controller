@@ -11,18 +11,22 @@ the network (below), then set a new password. The configuration is
 lost; import the export you kept.
 
 With USB access: `set-password <new>` on the console. The
-configuration stays, but every API token is invalidated (the console
-path mints a new device salt); recreate them.
+configuration and the existing API tokens stay (the device salt is
+kept, not re-minted).
 
 ## Lost the network configuration
 
 Wait for the safety nets first:
 
 - A staged change that was never confirmed reverts by itself after the
-  confirm window (default 5 min) with a reboot.
-- A static address whose gateway has not answered a ping for the
-  dead-man interval (default 1 h) is dropped for DHCP. Look for the MAC
-  in the DHCP leases.
+  confirm window (default 5 min). A `net` change reverts with a reboot;
+  `mqtt` and `sec` revert in place, within about 5 s of the window
+  passing.
+- A static address whose gateway has not answered a ping, **and** which
+  has accepted no connection, for the dead-man interval (default 1 h)
+  is replaced by a DHCP address. Look for the MAC in the DHCP leases.
+  With an empty gateway the dead-man cannot probe and stays disarmed;
+  the boot log says so.
 
 If the board is still unreachable at any address, a factory reset over
 `POST /recover` puts it back on DHCP with no password. That endpoint
@@ -57,13 +61,13 @@ device certificate is not trusted here on purpose (it is self-signed);
 the signature is the authentication.
 
 After either call the board erases its configuration and secrets,
-keeps the `factory` namespace (recovery token and fleet key), and
-reboots into first-setup mode on DHCP. The recovery token stays the
-same, so your record stays valid. The HTTPS certificate and key are
-secrets and are erased too: the board generates a new certificate on
-the next boot, so update any pinned fingerprint. Reconnect, set a
-password, import the configuration export, re-enter the MQTT
-password, recreate API tokens.
+keeps the `factory` namespace (recovery token, fleet key, device key
+and certificate), and reboots into first-setup mode on DHCP. The
+recovery token stays the same, so your record stays valid, and the
+first setup after a reset shows it again. The HTTPS certificate and
+its fingerprint also stay the same, so anything pinning it keeps
+working. Reconnect, set a password, import the configuration export,
+re-enter the MQTT password, recreate API tokens.
 
 ## Factory reset with the password
 

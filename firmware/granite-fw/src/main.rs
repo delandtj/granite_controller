@@ -27,7 +27,7 @@ use granite_fw as _;
 
 use std::sync::atomic::{AtomicU16, Ordering};
 use std::sync::mpsc::{Receiver, RecvTimeoutError};
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 use std::time::Duration;
 
@@ -69,6 +69,36 @@ const LED_BITS_VALID: u16 = 0x100;
 /// Zero means "U15 has not answered"; [`LED_BITS_VALID`] distinguishes
 /// that from a genuine "all eight nodes off".
 static LED_BITS: AtomicU16 = AtomicU16::new(0);
+
+/// The parts of the `nodes` section the sense thread works from.
+///
+/// They used to be read once at boot, which made `vin_trim`, the probe
+/// names and `t_probe_s` reboot-only settings. [`apply_config`] now
+/// pushes them here on every `nodes` save and the sense thread picks the
+/// change up on its next tick (`generation` is what it compares).
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct SenseCfg {
+    /// Bumped on every real change.
+    generation: u32,
+    /// Configured probes as (ROM id, name). Empty means "use whatever the
+    /// bus reported at boot", which is also the boot behaviour.
+    probes: Vec<(u64, String)>,
+    /// `t_probe_s` as milliseconds.
+    probe_period_ms: u64,
+    /// `nodes.vin_min_mv`.
+    vin_min_mv: u32,
+    /// `nodes.vin_max_mv`.
+    vin_max_mv: u32,
+}
+
+/// Published by [`apply_config`], read by the sense thread.
+static SENSE_CFG: Mutex<SenseCfg> = Mutex::new(SenseCfg {
+    generation: 0,
+    probes: Vec::new(),
+    probe_period_ms: 10_000,
+    vin_min_mv: 0,
+    vin_max_mv: 0,
+});
 
 fn main() -> anyhow::Result<()> {
     // 1. Patches that the ESP-IDF build expects to find linked in.
@@ -175,6 +205,24 @@ fn main() -> anyhow::Result<()> {
     //    when the network is not.
     platform::console::start(Arc::clone(&platform));
 
+    // Modbus fault bit 5: a config section that could not be read fell
+    // back to its defaults at boot. platform::init logged and published
+    // that, but it does not keep the list, so this is a second read of
+    // the same sections (a few milliseconds of NVS, once). The bit stays
+    // set until the section is written again, which the dispatcher sees.
+    let fallback_sections: Vec<Section> = match platform.store.lock() {
+        Ok(mut store) => store
+            .load_config()
+            .1
+            .into_iter()
+            .map(|fb| fb.section)
+            .collect(),
+        Err(_) => Vec::new(),
+    };
+    if !fallback_sections.is_empty() {
+        faults.fetch_or(fault_bits::CONFIG_FALLBACK, Ordering::Relaxed);
+    }
+
     // 5b. The dispatcher: the single consumer of the command channel. It
     //     owns the relay driver, because the actuator state machine is
     //     single-threaded and this is the only thread that ticks it.
@@ -196,6 +244,13 @@ fn main() -> anyhow::Result<()> {
             let probes = hw.probes;
             let board_temp = hw.board_temp;
             let vin = hw.vin;
+            // The rest of the hardware layer comes up on a board with no
+            // MCP23017 (a devboard): only this says whether a relay can
+            // actually close, and the boot policy depends on it.
+            let expanders_up = hw.expanders_up;
+            if !expanders_up {
+                faults.fetch_or(fault_bits::EXPANDER, Ordering::Relaxed);
+            }
 
             start_sense(
                 Arc::clone(&platform),
@@ -215,10 +270,20 @@ fn main() -> anyhow::Result<()> {
                 log::error!("rgb mirror did not start: {e:#}");
             }
 
+            let dispatch_faults = Arc::clone(&faults);
             thread::Builder::new()
                 .name("dispatch".into())
                 .stack_size(12288)
-                .spawn(move || dispatcher(dispatcher_platform, commands_rx, relays))?;
+                .spawn(move || {
+                    dispatcher(
+                        dispatcher_platform,
+                        commands_rx,
+                        relays,
+                        expanders_up,
+                        dispatch_faults,
+                        fallback_sections,
+                    )
+                })?;
         }
         Err(e) => {
             log::error!(
@@ -226,10 +291,20 @@ fn main() -> anyhow::Result<()> {
                  will be refused"
             );
             faults.fetch_or(fault_bits::EXPANDER | fault_bits::SENSE, Ordering::Relaxed);
+            let dispatch_faults = Arc::clone(&faults);
             thread::Builder::new()
                 .name("dispatch".into())
                 .stack_size(12288)
-                .spawn(move || dispatcher(dispatcher_platform, commands_rx, NullSwitches))?;
+                .spawn(move || {
+                    dispatcher(
+                        dispatcher_platform,
+                        commands_rx,
+                        NullSwitches,
+                        false,
+                        dispatch_faults,
+                        fallback_sections,
+                    )
+                })?;
         }
     }
 
@@ -253,10 +328,12 @@ fn main() -> anyhow::Result<()> {
         }
     };
 
-    // INTEGRATION: the MQTT client (ADR component 7). `start` returns a
-    // handle with no thread when `mqtt.enabled` is off, so this call is
-    // unconditional and the configuration decides. The handle is kept:
-    // dropping it stops the worker.
+    // INTEGRATION: the MQTT client (ADR component 7). The worker thread is
+    // started whatever the configuration says: it idles on the config when
+    // there is no broker to talk to and connects as soon as the section
+    // says it may, so enabling MQTT or changing the broker needs no reboot
+    // (ADR component 6, commit-confirm). The handle is kept: dropping it
+    // stops the worker.
     //
     // The probation ladder waits for a broker only when one is
     // configured: an image on probation with MQTT off confirms on an
@@ -304,9 +381,18 @@ fn main() -> anyhow::Result<()> {
         fw_version: platform::FW_VERSION.to_string(),
         // Probation step 3a.
         on_connect: Some(Box::new(platform::ota::mark_broker)),
+        // mqtt.auto_confirm_on_connect: a session on the staged section is
+        // the confirm (ADR component 6). Does nothing when the section is
+        // not staged.
+        confirm_staged: Some(Box::new({
+            let p = Arc::clone(&platform);
+            move || {
+                platform::api_impl::auto_confirm_mqtt(&p);
+            }
+        })),
     }) {
         Ok(handle) => {
-            if handle.enabled() {
+            if handle.enabled_at_start() {
                 log::info!(
                     "mqtt worker started for {}:{}",
                     cfg_at_boot.mqtt.host,
@@ -397,6 +483,9 @@ fn dispatcher<S: NodeSwitches>(
     platform: Arc<Platform>,
     commands: Receiver<granite_fw::http::CommandRequest>,
     switches: S,
+    expanders_up: bool,
+    faults: Arc<AtomicU16>,
+    fallback_sections: Vec<Section>,
 ) {
     // `switches` is the hardware layer's relay driver when it came up, and
     // platform::NullSwitches (which refuses every press) when it did not.
@@ -411,6 +500,15 @@ fn dispatcher<S: NodeSwitches>(
     // Set when this thread changed `cfg` and the shared copy has not
     // caught up yet.
     let mut push_pending = false;
+    // Boot policy (ADR component 3): once, t_settle after this thread
+    // started, and never when the hardware layer did not come up.
+    let boot_ms = platform::now_ms();
+    let mut boot_policy_done = false;
+    // Modbus fault bit 0 at runtime: set on an actuator fault, cleared
+    // once the hardware layer's 1 s readback has been clean again.
+    let mut expander_fault_seq: Option<u32> = None;
+    // Sections that fell back to their defaults at boot (fault bit 5).
+    let mut fallback_pending = fallback_sections;
 
     loop {
         let now = platform::now_ms();
@@ -439,6 +537,14 @@ fn dispatcher<S: NodeSwitches>(
                 let _ = reply.send(out.reply.clone());
                 events.extend(out.events);
                 for effect in out.effects {
+                    // A section that fell back at boot is trustworthy
+                    // again the moment it is written (fault bit 5).
+                    if let SideEffect::SaveSection(section) = &effect {
+                        fallback_pending.retain(|s| s != section);
+                        if fallback_pending.is_empty() {
+                            faults.fetch_and(!fault_bits::CONFIG_FALLBACK, Ordering::Relaxed);
+                        }
+                    }
                     apply_effect(&platform, &cfg, effect);
                 }
                 if cfg != before {
@@ -463,8 +569,18 @@ fn dispatcher<S: NodeSwitches>(
         } else if let Ok(shared) = platform.config.try_read()
             && *shared != cfg
         {
-            cfg = shared.clone();
+            let next = shared.clone();
             drop(shared);
+            // The HTTP API writes a section itself (api::put_section), so
+            // this is where a fallback section stops being a fallback on
+            // that path (fault bit 5).
+            if !fallback_pending.is_empty() {
+                fallback_pending.retain(|s| cfg.section_json(*s).ok() == next.section_json(*s).ok());
+                if fallback_pending.is_empty() {
+                    faults.fetch_and(!fault_bits::CONFIG_FALLBACK, Ordering::Relaxed);
+                }
+            }
+            cfg = next;
             apply_config(&platform, &cfg, &mut actuator, &mut nodes, &mut rules);
         }
 
@@ -501,6 +617,44 @@ fn dispatcher<S: NodeSwitches>(
             }
         }
 
+        // The boot policy, once (ADR component 3): t_settle after this
+        // thread started, so the LED debounce has a trustworthy value,
+        // then `on`/`off` on the nodes that ask for it, staggered, in
+        // nodes.order. Never on a board whose expanders did not answer:
+        // every press there would be refused anyway, and a silent
+        // "policy applied" would be a lie.
+        if !boot_policy_done && now >= boot_ms + u64::from(cfg.nodes.timings.t_settle_ms) {
+            boot_policy_done = true;
+            if expanders_up {
+                let policies = cfg.nodes.boot_policies();
+                let snapshot = platform
+                    .observed
+                    .read()
+                    .map(|o| o.clone())
+                    .unwrap_or_else(|_| Observed::new());
+                let (submission, mut evs) =
+                    actuator.submit_boot_policy("boot", &policies, now, &snapshot);
+                log::info!(
+                    "boot policy after {} ms settle: {}, {:?}",
+                    cfg.nodes.timings.t_settle_ms,
+                    match submission {
+                        granite_core::actuator::Submission::Accepted { jobs } =>
+                            format!("{jobs} press job(s) queued"),
+                        granite_core::actuator::Submission::Done(ref result) =>
+                            format!("nothing queued ({})", result.as_str()),
+                    },
+                    policies
+                );
+                apply_to_nodes(&mut nodes, &evs, now);
+                events.append(&mut evs);
+            } else {
+                log::warn!(
+                    "boot policy not applied: the expanders did not answer, so no relay can \
+                     close and no node is touched"
+                );
+            }
+        }
+
         // Rules once a second, against the snapshot, broker or no broker.
         if now.saturating_sub(last_rules_ms) >= RULES_PERIOD_MS {
             last_rules_ms = now;
@@ -534,6 +688,23 @@ fn dispatcher<S: NodeSwitches>(
             if let Some(event) = event_from_actuator(ev, now) {
                 platform.publish(event);
             }
+            // Modbus fault bit 0 at runtime: a blown press deadline or an
+            // expander that did not behave. The bit is cleared again by
+            // the first clean 1 s readback after it (hw::expanders), not
+            // by the next press: a press can succeed on a chip that is
+            // still misconfigured.
+            if let granite_core::actuator::ActuatorEvent::Fault { fault, node, .. } = ev {
+                log::error!("actuator fault: {fault} (node {node:?})");
+                faults.fetch_or(fault_bits::EXPANDER, Ordering::Relaxed);
+                expander_fault_seq = Some(hw::expanders::verify_ok_seq());
+            }
+        }
+        if let Some(seq) = expander_fault_seq
+            && hw::expanders::verify_ok_seq() != seq
+        {
+            expander_fault_seq = None;
+            faults.fetch_and(!fault_bits::EXPANDER, Ordering::Relaxed);
+            log::info!("expander readback is clean again; fault bit cleared");
         }
     }
 }
@@ -542,6 +713,11 @@ fn dispatcher<S: NodeSwitches>(
 /// the state machines this thread owns, and the sense modes into the
 /// snapshot so a publisher can say "this LED is not trusted" without
 /// reading the config.
+///
+/// Also pushes what the two other threads cache: the VIN trim into the
+/// ADC reader and the probe list, probe period and VIN window into
+/// [`SENSE_CFG`]. Those four used to be read once at boot, so editing
+/// them needed a reboot; they now apply on the next sense tick.
 fn apply_config<S: NodeSwitches>(
     platform: &Arc<Platform>,
     cfg: &granite_core::config::Config,
@@ -558,6 +734,39 @@ fn apply_config<S: NodeSwitches>(
             observed.nodes[i].sense = mode;
         }
     }
+    hw::vin::set_trim(cfg.nodes.vin_trim);
+    push_sense_cfg(cfg);
+}
+
+/// Publish the sense thread's share of the `nodes` section. The
+/// generation only moves when something really changed, so the sense
+/// thread does not rebuild its probe list on every save.
+fn push_sense_cfg(cfg: &granite_core::config::Config) {
+    let probes: Vec<(u64, String)> = cfg
+        .nodes
+        .probes
+        .iter()
+        .filter_map(|p| granite_core::hal::rom_id_from_hex(&p.rom).map(|rom| (rom, p.name.clone())))
+        .collect();
+    let Ok(mut live) = SENSE_CFG.lock() else {
+        log::error!("sense config: the handoff lock is poisoned; keeping the old values");
+        return;
+    };
+    let next = SenseCfg {
+        generation: live.generation.wrapping_add(1),
+        probes,
+        probe_period_ms: u64::from(cfg.nodes.t_probe_s.max(1)) * 1000,
+        vin_min_mv: cfg.nodes.vin_min_mv,
+        vin_max_mv: cfg.nodes.vin_max_mv,
+    };
+    if next.probes == live.probes
+        && next.probe_period_ms == live.probe_period_ms
+        && next.vin_min_mv == live.vin_min_mv
+        && next.vin_max_mv == live.vin_max_mv
+    {
+        return;
+    }
+    *live = next;
 }
 
 /// Carry out one dispatcher side effect. `cfg` is the dispatcher's working
@@ -590,8 +799,7 @@ fn apply_effect(
                 return;
             }
             log::warn!(
-                "config: {section} staged; confirm within {} s or this board reboots into the \
-                 previous value",
+                "config: {section} staged; confirm within {} s or the stored value comes back",
                 cfg.net.t_confirm_s
             );
             platform.publish(config_event(section, "staged", None));
@@ -599,20 +807,24 @@ fn apply_effect(
                 // The net section is the one that can cut the session, so
                 // it is applied live with the confirm timer running.
                 Section::Net => platform.net.apply(&cfg.net, cfg.net.t_confirm_s),
-                // The MQTT worker re-reads its own section every
-                // mqtt::CONFIG_REFRESH and the config watcher pushes
-                // sec.modbus into the Modbus supervisor, so those two
-                // follow the *stored* config. A staged value is not
-                // stored, so it still only takes effect on confirm.
-                // TODO(ADR 0001 6): broker host/credential changes want
-                // auto_confirm_on_connect (a reconnect against the staged
-                // value), and a new device certificate wants the HTTPS
-                // server to reload; neither is wired.
+                // mqtt and sec are applied live by their owners: the MQTT
+                // worker rebuilds its client when the live section stops
+                // matching it (mqtt::supervise) and the config watcher
+                // pushes sec.modbus into the Modbus supervisor. This
+                // thread has the staged value in its working copy and
+                // pushes it into the live config a few lines further on,
+                // so both see it within their refresh period. A new device
+                // certificate is the exception: the HTTPS server cannot
+                // swap its TLS config, so that one waits for a reboot.
                 _ => log::warn!(
-                    "config: {section} is staged but applying it live needs the owning task; \
-                     confirm promotes it, a reboot discards it"
+                    "config: {section} is staged and applied live; confirm promotes it, the \
+                     deadline puts the stored value back (a new device certificate needs a \
+                     reboot either way)"
                 ),
             }
+            // One deadline for every staged section, enforced by the
+            // config-watch thread (ADR component 6).
+            platform::api_impl::note_staged(section, cfg.net.t_confirm_s);
         }
         SideEffect::Reboot => platform::planned_reboot("command"),
         SideEffect::FactoryReset => match platform.store.lock() {
@@ -696,23 +908,66 @@ fn start_sense(
                     granite_core::hal::rom_id_from_hex(&p.rom).map(|rom| (rom, p.name.clone()))
                 })
                 .collect();
+            // True while the list came from the configuration: only a
+            // probe an operator asked for can go missing (fault bit 2).
+            let mut configured = !roms.is_empty();
+            // What the bus reported at boot, kept so a configuration that
+            // loses its probe list falls back to it without a rescan.
+            let mut scanned: Vec<u64> = Vec::new();
             if roms.is_empty() {
                 match probes.scan() {
                     Ok(found) => {
                         log::info!("probes: {} on the bus", found.len());
-                        roms = found
-                            .into_iter()
-                            .map(|rom| (rom, granite_core::hal::rom_id_hex(rom)))
+                        scanned = found;
+                        roms = scanned
+                            .iter()
+                            .map(|rom| (*rom, granite_core::hal::rom_id_hex(*rom)))
                             .collect();
                     }
                     Err(e) => log::warn!("probes: bus scan failed: {e}"),
                 }
             }
-            let probe_period_ms = u64::from(cfg.nodes.t_probe_s.max(1)) * 1000;
+            let mut probe_period_ms = u64::from(cfg.nodes.t_probe_s.max(1)) * 1000;
+            let mut vin_min_mv = cfg.nodes.vin_min_mv;
+            let mut vin_max_mv = cfg.nodes.vin_max_mv;
+            // Where apply_config leaves a change to any of the four.
+            let mut cfg_generation = SENSE_CFG.lock().map(|c| c.generation).unwrap_or(0);
             let mut last_probe_ms = 0u64;
+            let mut vin_warned = false;
+            drop(cfg);
 
             loop {
                 let now = platform::now_ms();
+
+                // Pick up a `nodes` save: probe names and ROM ids, the
+                // probe period and the VIN window all apply here, no
+                // reboot (the trim is picked up by hw::vin itself).
+                if let Ok(live) = SENSE_CFG.lock()
+                    && live.generation != cfg_generation
+                {
+                    cfg_generation = live.generation;
+                    probe_period_ms = live.probe_period_ms;
+                    vin_min_mv = live.vin_min_mv;
+                    vin_max_mv = live.vin_max_mv;
+                    configured = !live.probes.is_empty();
+                    roms = if configured {
+                        live.probes.clone()
+                    } else {
+                        scanned
+                            .iter()
+                            .map(|rom| (*rom, granite_core::hal::rom_id_hex(*rom)))
+                            .collect()
+                    };
+                    drop(live);
+                    log::info!(
+                        "sense: {} probe(s) every {} ms, vin window {}..{} mV",
+                        roms.len(),
+                        probe_period_ms,
+                        vin_min_mv,
+                        vin_max_mv
+                    );
+                }
+
                 let leds = sense.read_leds().ok();
                 let dry = sense.read_dry().ok();
                 let temp = board_temp.read_centi_c().ok();
@@ -734,6 +989,39 @@ fn start_sense(
                 } else {
                     None
                 };
+
+                // Modbus fault bit 2: a probe the configuration names did
+                // not answer this cycle. A list that came from the bus
+                // scan cannot go missing, so it never sets the bit.
+                if let Some(list) = &probe_obs {
+                    let missing = configured && list.iter().any(|p| p.centi_c.is_none());
+                    if missing {
+                        faults.fetch_or(fault_bits::PROBE_MISSING, Ordering::Relaxed);
+                    } else {
+                        faults.fetch_and(!fault_bits::PROBE_MISSING, Ordering::Relaxed);
+                    }
+                }
+                // Modbus fault bit 3: the 19 V bus is outside the window
+                // from the `nodes` section. A VIN the ADC could not read
+                // is not "out of window"; that is bit 1's territory.
+                let vin_bad = mv.is_some_and(|mv| {
+                    granite_core::config::vin_out_of_window(mv, vin_min_mv, vin_max_mv)
+                });
+                if vin_bad {
+                    faults.fetch_or(fault_bits::VIN, Ordering::Relaxed);
+                    if !vin_warned {
+                        vin_warned = true;
+                        log::warn!(
+                            "vin {} mV is outside {}..{} mV",
+                            mv.unwrap_or(0),
+                            vin_min_mv,
+                            vin_max_mv
+                        );
+                    }
+                } else {
+                    faults.fetch_and(!fault_bits::VIN, Ordering::Relaxed);
+                    vin_warned = false;
+                }
 
                 if let Ok(mut observed) = platform.observed.write() {
                     // The LED bits are folded into the node tracker by the
@@ -797,7 +1085,10 @@ fn start_config_watch(
 ) {
     let spawned = thread::Builder::new()
         .name("config-watch".into())
-        .stack_size(4096)
+        // 8 KB, not 4: this thread now also parses a stored config section
+        // back into the live configuration when a staged one is reverted,
+        // and serde_json wants room for that.
+        .stack_size(8192)
         .spawn(move || {
             let mut last: Option<granite_core::config::ModbusCfg> = None;
             loop {
@@ -835,12 +1126,93 @@ fn start_config_watch(
                     faults.fetch_or(set, Ordering::Relaxed);
                     faults.fetch_and(!clear, Ordering::Relaxed);
                 }
+
+                // The one staged-section deadline (ADR component 6). `net`
+                // reverts by rebooting into the stored configuration -
+                // the live interface was already changed, so nothing else
+                // is sure. `mqtt` and `sec` only need their stored section
+                // back in the live config: the MQTT worker rebuilds its
+                // client and the Modbus supervisor rebinds, both within
+                // one refresh, and no node loses power for a broker typo.
+                let due = platform::api_impl::take_due_staged(platform::now_ms());
+                if !due.is_empty() {
+                    log::error!(
+                        "config: {} was not confirmed in time; putting the stored value back",
+                        section_list(&due)
+                    );
+                    platform::api_impl::revert_sections(&platform, &due);
+                }
+                // Restores queued by a revert, here because this thread
+                // holds no guard: the API cannot take the config lock it
+                // is already holding (see platform::api_impl).
+                let restore = platform::api_impl::take_restore();
+                if !restore.is_empty() && !restore_live_sections(&platform, &restore) {
+                    // The config guard was busy; try again next pass.
+                    platform::api_impl::queue_restore(&restore);
+                }
+
                 thread::sleep(CONFIG_WATCH);
             }
         });
     if let Err(e) = spawned {
         log::error!("config watch thread could not start: {e}");
     }
+}
+
+/// Section keys as one readable list for a log line.
+fn section_list(sections: &[Section]) -> String {
+    sections
+        .iter()
+        .map(|s| s.key())
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+/// Put the *stored* value of these sections back into the live
+/// configuration, which is how a `mqtt` or `sec` revert works: no reboot,
+/// the owning task notices on its next refresh (ADR component 6).
+///
+/// False when the config guard was busy, so the caller can retry. Only the
+/// config-watch thread calls this: an HTTP request holds that guard for its
+/// whole lifetime.
+fn restore_live_sections(platform: &Arc<Platform>, sections: &[Section]) -> bool {
+    // NVS first, so the config guard is held for the write and nothing
+    // else.
+    let mut stored: Vec<(Section, String)> = Vec::new();
+    match platform.store.lock() {
+        Ok(mut store) => {
+            for section in sections {
+                let json = store
+                    .get_str(granite_core::config::CONFIG_NAMESPACE, section.key())
+                    .unwrap_or(None)
+                    // Nothing stored means the default is what was
+                    // running, and every section is `#[serde(default)]`.
+                    .unwrap_or_else(|| String::from("{}"));
+                stored.push((*section, json));
+            }
+        }
+        Err(_) => return false,
+    }
+
+    let Ok(mut live) = platform.config.try_write() else {
+        return false;
+    };
+    for (section, json) in &stored {
+        match live.set_section_json(*section, json) {
+            Ok(()) => log::warn!("config: {section} restored from the stored value"),
+            Err(e) => log::error!("config: {section} could not be restored: {e}"),
+        }
+    }
+    live.normalise();
+    drop(live);
+    for (section, _) in &stored {
+        platform.publish(config_event(
+            *section,
+            "reverted",
+            Some(String::from("not confirmed in time")),
+        ));
+    }
+    true
 }
 
 /// The fault pattern, in a build that has an LED able to show one.

@@ -44,9 +44,12 @@ Topic base: `<topic_root>/<site>/<device>`, by default
 ```
 
 `id` is echoed in the ack topic and payload. `target` defaults to
-`all`, which the actuator accepts only for `on_all` (anything else is
-refused with `bad_target`); `args` may be omitted. Unknown actions and
-targets outside 1..8/`all` are rejected.
+`all`, which the actuator accepts for `on`, `off`, `force_off`,
+`reset`, `cycle` and `on_all` (serialised, one press at a time, in
+`nodes.order`; `off`, `force_off` and `reset` skip nodes that are
+already off). `press` with `all` is refused with `bad_target`; `args`
+may be omitted. Unknown actions and targets outside 1..8/`all` are
+rejected.
 
 | `action` | `target` | `args` | Notes |
 |---|---|---|---|

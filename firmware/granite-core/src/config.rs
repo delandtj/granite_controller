@@ -204,8 +204,6 @@ pub struct MqttCfg {
     pub t_state_s: u32,
     /// Treat a successful connection as the confirmation of a broker change.
     pub auto_confirm_on_connect: bool,
-    /// Skip the TLS not-before check (clock without SNTP).
-    pub skip_time_check: bool,
 }
 
 impl Default for MqttCfg {
@@ -224,7 +222,6 @@ impl Default for MqttCfg {
             keepalive_s: 30,
             t_state_s: 60,
             auto_confirm_on_connect: false,
-            skip_time_check: false,
         }
     }
 }
@@ -237,6 +234,20 @@ pub struct ProbeCfg {
     pub rom: String,
     /// User name.
     pub name: String,
+}
+
+/// Highest VIN window bound that means anything: the 110/10 divider in
+/// front of the ADC clamps at about 35 V (ADR component 4).
+pub const VIN_WINDOW_MAX_MV: u32 = 36_000;
+
+/// True when `mv` is outside the window `min_mv`..`max_mv`. A bound of
+/// `0` is not checked, so a `0`/`0` window never faults.
+///
+/// Free-standing because the firmware's sense thread holds the two bounds
+/// and not the whole section; [`NodesCfg::vin_out_of_window`] is the same
+/// test on a section.
+pub fn vin_out_of_window(mv: u32, min_mv: u32, max_mv: u32) -> bool {
+    (min_mv != 0 && mv < min_mv) || (max_mv != 0 && mv > max_mv)
 }
 
 /// The `nodes` section.
@@ -255,6 +266,13 @@ pub struct NodesCfg {
     pub t_probe_s: u32,
     /// Per-board correction for the VIN divider.
     pub vin_trim: f32,
+    /// Lower bound of the healthy VIN window, in millivolts. Below it the
+    /// `vin` fault bit is set (Modbus input register 13 bit 3). `0`
+    /// disables the check.
+    pub vin_min_mv: u32,
+    /// Upper bound of the healthy VIN window, in millivolts. Above it the
+    /// `vin` fault bit is set. `0` disables the check.
+    pub vin_max_mv: u32,
 }
 
 impl Default for NodesCfg {
@@ -266,6 +284,10 @@ impl Default for NodesCfg {
             probes: Vec::new(),
             t_probe_s: 10,
             vin_trim: 1.0,
+            // 19 V nominal, so the window is the supply plus the margin a
+            // long cable and a loaded bus eat: 16 V to 22 V.
+            vin_min_mv: 16_000,
+            vin_max_mv: 22_000,
         }
     }
 }
@@ -274,6 +296,13 @@ impl NodesCfg {
     /// Boot policies in node order (index 0 = node 1).
     pub fn boot_policies(&self) -> [BootPolicy; NODE_COUNT] {
         array::from_fn(|i| self.nodes[i].boot_policy)
+    }
+
+    /// True when `mv` is outside the configured VIN window, which is what
+    /// sets the `vin` fault bit. A bound of `0` is not checked, so a
+    /// window of `0`/`0` never faults.
+    pub fn vin_out_of_window(&self, mv: u32) -> bool {
+        vin_out_of_window(mv, self.vin_min_mv, self.vin_max_mv)
     }
 
     /// Sense flags in node order.
@@ -597,6 +626,9 @@ impl Config {
         if !self.nodes.vin_trim.is_finite() || self.nodes.vin_trim <= 0.0 {
             self.nodes.vin_trim = 1.0;
         }
+        if self.nodes.vin_max_mv > VIN_WINDOW_MAX_MV {
+            self.nodes.vin_max_mv = VIN_WINDOW_MAX_MV;
+        }
         self.rules.rules.truncate(MAX_RULES);
         if self.mqtt.qos > 2 {
             self.mqtt.qos = 1;
@@ -626,6 +658,23 @@ impl Config {
             if crate::hal::rom_id_from_hex(&p.rom).is_none() {
                 errs.push(format!("nodes.probes: \"{}\" is not a ROM id", p.rom));
             }
+        }
+        // 0 means "unchecked" on either side, so only a window with both
+        // bounds set can be the wrong way round.
+        if self.nodes.vin_min_mv != 0
+            && self.nodes.vin_max_mv != 0
+            && self.nodes.vin_min_mv >= self.nodes.vin_max_mv
+        {
+            errs.push(format!(
+                "nodes.vin_min_mv ({}) must be below nodes.vin_max_mv ({})",
+                self.nodes.vin_min_mv, self.nodes.vin_max_mv
+            ));
+        }
+        if self.nodes.vin_max_mv > VIN_WINDOW_MAX_MV {
+            errs.push(format!(
+                "nodes.vin_max_mv ({}) is above the {VIN_WINDOW_MAX_MV} mV the divider can read",
+                self.nodes.vin_max_mv
+            ));
         }
         if self.rules.rules.len() > MAX_RULES {
             errs.push(format!(

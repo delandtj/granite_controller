@@ -295,6 +295,10 @@ struct CoreDispatcher {
     observed: Observed,
     effects: Vec<SideEffect>,
     seen: Vec<Command>,
+    /// What this transport's `?wait=1` resolves to, and how often it was
+    /// asked. `None` is the default implementation: "cannot wait".
+    wait_result: Option<Result<String, String>>,
+    waits: usize,
 }
 
 impl CoreDispatcher {
@@ -315,6 +319,8 @@ impl CoreDispatcher {
             observed,
             effects: Vec::new(),
             seen: Vec::new(),
+            wait_result: None,
+            waits: 0,
         }
     }
 }
@@ -334,6 +340,15 @@ impl Dispatcher for CoreDispatcher {
         let out = dispatch(cmd, &mut ctx);
         self.effects.extend(out.effects);
         out.reply
+    }
+
+    fn wait_for(&mut self, cmd: &Command, timeout_ms: u32) -> Option<Reply> {
+        self.waits += 1;
+        assert_eq!(timeout_ms, api::ACTION_WAIT_MS);
+        match self.wait_result.clone()? {
+            Ok(result) => Some(Reply::ok(&cmd.id, result)),
+            Err(error) => Some(Reply::err(&cmd.id, error)),
+        }
     }
 }
 
@@ -681,6 +696,52 @@ fn five_bad_logins_lock_the_login_out_for_a_minute() {
 // ---------------------------------------------------------------------
 // Commands
 // ---------------------------------------------------------------------
+
+#[test]
+fn wait_one_turns_an_accepted_node_action_into_its_outcome() {
+    let mut rig = Rig::new();
+    let session = rig.setup();
+
+    // Without ?wait=1 the reply is the queue ack and nothing waits.
+    let r = rig.go(ApiRequest::new(Method::Post, "/api/v1/nodes/1/on")
+        .with_auth(Auth::Session(session.clone()))
+        .with_body(b"{}"));
+    assert_eq!(r.status, 200, "{}", body_text(&r));
+    assert_eq!(body_json(&r)["result"], "accepted");
+    assert_eq!(rig.commands.waits, 0);
+
+    // With ?wait=1 the handler asks the transport to wait, and a
+    // transport that cannot keeps the `accepted` reply.
+    let r = rig.go(ApiRequest::new(Method::Post, "/api/v1/nodes/2/on")
+        .with_query("wait=1")
+        .with_auth(Auth::Session(session.clone()))
+        .with_body(b"{}"));
+    assert_eq!(r.status, 200, "{}", body_text(&r));
+    assert_eq!(body_json(&r)["result"], "accepted");
+    assert_eq!(rig.commands.waits, 1);
+
+    // A transport that can wait answers with the outcome: a failure is
+    // the same client error a refusal already is.
+    rig.commands.wait_result = Some(Err(String::from("power_on_timeout")));
+    let r = rig.go(ApiRequest::new(Method::Post, "/api/v1/nodes/3/on")
+        .with_query("wait=1")
+        .with_auth(Auth::Session(session.clone()))
+        .with_body(b"{}"));
+    assert_eq!(r.status, 400, "{}", body_text(&r));
+    assert_eq!(body_json(&r)["ok"], false);
+    assert_eq!(body_json(&r)["error"], "power_on_timeout");
+    assert_eq!(rig.commands.waits, 2);
+
+    // And a success carries the actuator's own result string.
+    rig.commands.wait_result = Some(Ok(String::from("ok")));
+    let r = rig.go(ApiRequest::new(Method::Post, "/api/v1/nodes/4/on")
+        .with_query("wait=true")
+        .with_auth(Auth::Session(session))
+        .with_body(b"{}"));
+    assert_eq!(r.status, 200, "{}", body_text(&r));
+    assert_eq!(body_json(&r)["result"], "ok");
+    assert_eq!(rig.commands.waits, 3);
+}
 
 #[test]
 fn a_node_action_becomes_the_same_command_mqtt_takes() {

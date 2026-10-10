@@ -143,6 +143,11 @@ pub struct Hw {
     /// The expanders, for anything that needs them directly (a bus scan, a
     /// forced reset pulse, the health page).
     pub expanders: expanders::Shared,
+    /// False when the bring-up found no MCP23017 (a devboard, or a dead
+    /// internal bus). The rest of the hardware layer still works, so
+    /// `init` succeeds; a caller that must not act on a board where no
+    /// relay can close asks this.
+    pub expanders_up: bool,
     /// The two internal-bus pins, held so nothing re-claims them. The
     /// ESP-IDF I2C driver owns the IOMUX for them.
     _int_pins: (Gpio2<'static>, Gpio3<'static>),
@@ -179,6 +184,7 @@ pub fn init(cfg: HwInit) -> anyhow::Result<Hw> {
     );
 
     let (exp, bring_up) = expanders::Expanders::new(int_bus.clone(), cfg.exp_reset)?;
+    let expanders_up = bring_up.is_ok();
     if let Err(err) = bring_up {
         log::error!("hw: expander bring-up failed: {err} (relays stay in reset)");
     }
@@ -207,6 +213,7 @@ pub fn init(cfg: HwInit) -> anyhow::Result<Hw> {
         clock: clock::EspClock,
         ext_i2c,
         expanders,
+        expanders_up,
         _int_pins: (cfg.int_sda, cfg.int_scl),
     })
 }

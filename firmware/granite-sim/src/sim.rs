@@ -231,6 +231,46 @@ impl Dispatcher for SimCore {
         self.effects.extend(out.effects);
         out.reply
     }
+
+    /// `?wait=1`: keep ticking until this command's `action_done` or
+    /// `action_failed` shows up, or until `timeout_ms` of wall clock has
+    /// passed.
+    ///
+    /// The simulator's HTTP handler holds the whole `Sim` while it runs,
+    /// so nothing else can advance the clock: this loop does it itself,
+    /// sleeping a tick at a time so the fake board moves in real time
+    /// the way it does for any other request.
+    fn wait_for(&mut self, cmd: &Command, timeout_ms: u32) -> Option<Reply> {
+        let deadline = Instant::now() + std::time::Duration::from_millis(u64::from(timeout_ms));
+        loop {
+            if let Some(reply) = self.finished_reply(&cmd.id) {
+                return Some(reply);
+            }
+            if Instant::now() >= deadline {
+                return None;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(TICK_MS));
+            let now = self.now_ms + TICK_MS;
+            self.tick(now);
+        }
+    }
+}
+
+impl SimCore {
+    /// The final ack for `id`, if one of the events this tick produced is
+    /// that command finishing. Scans and does not consume: the event list
+    /// is the simulator's MQTT stream and still has to be published.
+    fn finished_reply(&self, id: &str) -> Option<Reply> {
+        self.events.iter().find_map(|kind| match kind {
+            EventKind::ActionDone {
+                id: ev_id, result, ..
+            } if ev_id == id => Some(Reply::ok(id, result.clone())),
+            EventKind::ActionFailed {
+                id: ev_id, error, ..
+            } if ev_id == id => Some(Reply::err(id, error.clone())),
+            _ => None,
+        })
+    }
 }
 
 /// The whole simulator. Every field is borrowed mutably and separately

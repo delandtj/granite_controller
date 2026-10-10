@@ -40,7 +40,7 @@
 //! chip NACKs and neither this module nor the driver says anything beyond
 //! the one error below.
 
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::thread;
 use std::time::Duration;
@@ -97,6 +97,21 @@ pub fn force_reset_low() {
 /// True if [`force_reset_low`] has run since the last reconfiguration.
 pub fn reset_was_forced() -> bool {
     RESET_FORCED.load(Ordering::Acquire)
+}
+
+/// Incremented by every 1 s readback that found both chips as they should
+/// be. See [`verify_ok_seq`].
+static VERIFY_OK_SEQ: AtomicU32 = AtomicU32::new(0);
+
+/// How many clean readbacks the 1 s verify has seen since boot.
+///
+/// The Modbus `expander` fault bit (input register 13 bit 0) is set by
+/// whoever sees an actuator `Fault` and has to be cleared by evidence
+/// that the expanders are healthy again. A reader samples this counter
+/// when it sets the bit and clears the bit once the counter has moved:
+/// that is exactly "the next good readback".
+pub fn verify_ok_seq() -> u32 {
+    VERIFY_OK_SEQ.load(Ordering::Relaxed)
 }
 
 /// U14: all 16 pins are outputs, GPA0-7 = PWR1-8, GPB0-7 = RST1-8.
@@ -335,8 +350,16 @@ impl Expanders {
             return Ok(());
         }
         let result = self.u14.verify().and_then(|()| self.u15.verify());
-        if result.is_err() {
-            let _ = self.reset_cycle();
+        match &result {
+            // Both shadows matched the chips: the evidence the fault bit
+            // waits for (only counted when the chips really answered, so
+            // an expander-less devboard never clears the bit).
+            Ok(()) => {
+                VERIFY_OK_SEQ.fetch_add(1, Ordering::Relaxed);
+            }
+            Err(_) => {
+                let _ = self.reset_cycle();
+            }
         }
         result
     }

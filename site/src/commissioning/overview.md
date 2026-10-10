@@ -30,7 +30,10 @@ lives in flash on the board and survives reboots and firmware updates.
   live but not saved until you confirm it through the new path within
   the confirm window (default 5 minutes). No confirm, and the board
   reboots into the old settings. MQTT and security changes are staged
-  the same way but take effect only after confirm **and a reboot**.
+  the same way and are also applied live, but reverting them needs no
+  reboot: the stored section simply comes back. A new device
+  certificate is the exception - the HTTPS server only picks one up at
+  start-up.
 - **Firmware updates roll back.** A new image has 10 minutes to prove
   it can drive the expanders, get an IP and reach you. If it cannot,
   the bootloader returns to the previous image, and finally to the

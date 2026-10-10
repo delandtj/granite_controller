@@ -474,6 +474,11 @@ fn accept_one(
         close(&stream);
         return;
     }
+    // A peer that got past the allow-list is proof the board is reachable:
+    // the other half of the static-config dead-man (ADR component 6). A
+    // rejected peer deliberately does not count, so a stranger scanning
+    // the subnet cannot keep a board that nobody can reach off DHCP.
+    crate::platform::net::note_connection();
 
     shared.conns.fetch_add(1, Ordering::SeqCst);
     let worker = Arc::clone(shared);

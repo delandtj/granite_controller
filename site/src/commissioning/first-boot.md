@@ -81,10 +81,9 @@ Optionally set the admin password here instead of in the browser:
 granite> set-password <at least 8 characters>
 ```
 
-Setting the password from the console also invalidates every API
-token, because it mints a new device salt; the page's password change
-does not. On a fresh board there are no tokens yet, so it does not
-matter here.
+Setting the password from the console and changing it on the page are
+the same operation: the device salt is minted once and then kept, so
+existing API tokens keep working either way.
 
 The full command list is in [Console commands](../reference/console.md).
 

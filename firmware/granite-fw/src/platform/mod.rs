@@ -384,14 +384,24 @@ impl Platform {
     }
 
     /// Set the admin password: PBKDF2-HMAC-SHA256, [`PBKDF2_ITERS`]
-    /// iterations, a fresh per-device salt, and `sec.admin_password_set`
-    /// flipped so the HTTP layer leaves first-setup mode.
+    /// iterations, the per-device salt (kept when there already is one,
+    /// so API tokens stay valid), and `sec.admin_password_set` flipped so
+    /// the HTTP layer leaves first-setup mode.
     pub fn set_admin_password(&self, password: &str) -> Result<(), String> {
-        let salt = identity::random_bytes(PBKDF2_SALT);
-        let hash = pbkdf2(password.as_bytes(), &salt).ok_or("pbkdf2 failed")?;
         let mut store = self.store.lock().map_err(|_| "store is locked")?;
         let mut secrets = store.load_secrets();
-        secrets.admin_salt = identity::hex(&salt);
+        // The salt is minted once and then kept: API tokens are hashed
+        // with it too, and rotating it would invalidate every token.
+        // The API path (granite-core api.rs, set_password) does the same.
+        let salt = match identity::from_hex(&secrets.admin_salt) {
+            Some(salt) if !salt.is_empty() => salt,
+            _ => {
+                let salt = identity::random_bytes(PBKDF2_SALT);
+                secrets.admin_salt = identity::hex(&salt);
+                salt
+            }
+        };
+        let hash = pbkdf2(password.as_bytes(), &salt).ok_or("pbkdf2 failed")?;
         secrets.admin_hash = identity::hex(&hash);
         secrets.admin_iters = PBKDF2_ITERS;
         store.save_secrets(&secrets).map_err(|e| e.to_string())?;

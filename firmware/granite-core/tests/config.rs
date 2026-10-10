@@ -215,6 +215,48 @@ fn validation_catches_the_things_normalise_cannot() {
 }
 
 #[test]
+fn the_vin_window_defaults_to_the_19_v_bus_and_zero_means_unchecked() {
+    let c = Config::default();
+    assert_eq!(c.nodes.vin_min_mv, 16_000);
+    assert_eq!(c.nodes.vin_max_mv, 22_000);
+    assert!(c.nodes.vin_out_of_window(15_999));
+    assert!(!c.nodes.vin_out_of_window(16_000));
+    assert!(!c.nodes.vin_out_of_window(19_000));
+    assert!(!c.nodes.vin_out_of_window(22_000));
+    assert!(c.nodes.vin_out_of_window(22_001));
+
+    // Either bound at 0 is "do not check that side".
+    let mut c = Config::default();
+    c.nodes.vin_min_mv = 0;
+    assert!(!c.nodes.vin_out_of_window(1), "no lower bound");
+    assert!(c.nodes.vin_out_of_window(30_000));
+    c.nodes.vin_max_mv = 0;
+    assert!(!c.nodes.vin_out_of_window(0), "an unchecked window");
+    assert!(!c.nodes.vin_out_of_window(100_000));
+    c.validate().expect("an unchecked window is valid");
+
+    // A window the wrong way round is refused, and one the divider
+    // cannot reach is clamped.
+    let mut c = Config::default();
+    c.nodes.vin_min_mv = 22_000;
+    c.nodes.vin_max_mv = 16_000;
+    assert!(
+        c.validate()
+            .unwrap_err()
+            .iter()
+            .any(|e| e.contains("vin_min_mv")),
+        "{:?}",
+        c.validate()
+    );
+    let mut c = Config::default();
+    c.nodes.vin_max_mv = 99_000;
+    assert!(c.validate().is_err());
+    c.normalise();
+    assert_eq!(c.nodes.vin_max_mv, granite_core::config::VIN_WINDOW_MAX_MV);
+    c.validate().unwrap();
+}
+
+#[test]
 fn too_many_rules_are_truncated_by_normalise() {
     let mut c = Config::default();
     let base = c.rules.rules[0].clone();
@@ -306,6 +348,43 @@ fn topic_base_follows_the_adr_tree() {
         c.topic_base("granite-aabbcc"),
         "granite/default/granite-aabbcc"
     );
+}
+
+#[test]
+fn an_mqtt_section_from_an_older_firmware_still_loads() {
+    // `mqtt.skip_time_check` was accepted and ignored (gaps-2026-10 item
+    // 8) and is gone. A board that stored it keeps its other settings, the
+    // unknown field is dropped, and the schema does not move for it.
+    let stored = r#"{"enabled":true,"host":"broker.example","port":8883,
+        "skip_time_check":true,"qos":1}"#;
+    let mut c = Config::default();
+    c.set_section_json(Section::Mqtt, stored)
+        .expect("an unknown field is ignored, not an error");
+    assert!(c.mqtt.enabled);
+    assert_eq!(c.mqtt.host, "broker.example");
+    assert_eq!(c.schema_version, SCHEMA_VERSION);
+    assert!(
+        !c.section_json(Section::Mqtt)
+            .unwrap()
+            .contains("skip_time_check"),
+        "the field must not come back on a write"
+    );
+
+    // The same through a whole-document import, which is the other way in.
+    let mut whole = Config::default();
+    whole.mqtt.enabled = true;
+    whole.mqtt.host = "broker.example".into();
+    let mut doc: serde_json::Value = serde_json::from_str(&whole.export_json().unwrap()).unwrap();
+    doc["mqtt"]["skip_time_check"] = serde_json::Value::Bool(true);
+    let imported = Config::import_json(&doc.to_string()).expect("unknown fields are ignored");
+    assert_eq!(imported.mqtt.host, "broker.example");
+    assert_eq!(imported.schema_version, SCHEMA_VERSION);
+
+    // And its absence is simply the default: nothing in `mqtt` is
+    // mandatory.
+    let mut bare = Config::default();
+    bare.set_section_json(Section::Mqtt, "{}").unwrap();
+    assert_eq!(bare.mqtt, granite_core::config::MqttCfg::default());
 }
 
 #[test]
