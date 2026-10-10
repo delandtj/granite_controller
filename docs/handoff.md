@@ -35,7 +35,8 @@ The PLED level on a real motherboard is still the open question of
 docs/controller.md item 4.
 
 Firmware gaps found while fact-checking the docs site (2026-10-10,
-verified in source; the site carries "Current firmware" notes for each):
+verified in source; the site carries "Current firmware" notes for each;
+the brief for fixing them is firmware/docs/gaps-2026-10.md):
 - Per-node boot policy is never applied on the board: Actuator::
   submit_boot_policy is called only from granite-sim/src/sim.rs.
 - Target `all` is refused (bad_target) for every action except on_all
