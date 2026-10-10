@@ -189,6 +189,14 @@ pub enum LedPattern {
     OtaPending,
     /// 0.25 Hz: no Ethernet link.
     NoLink,
+    /// 2 Hz: a hardware fault is present (an expander that does not
+    /// answer, a readback mismatch, a blown press deadline).
+    ///
+    /// Not part of the four meanings ADR 0001 fixes for the plain status
+    /// LED, and nothing in the shipped image selects it; it exists for
+    /// the devboard RGB mirror (`rgb-led`), which needs a pattern to
+    /// paint red.
+    Fault,
 }
 
 /// The single status LED.

@@ -1,5 +1,7 @@
 //! Status LED on GPIO1 (ADR 0001: 1 Hz healthy, 4 Hz OTA pending,
-//! 0.25 Hz no link, solid while a press is in progress).
+//! 0.25 Hz no link, solid while a press is in progress). A fifth
+//! pattern, 2 Hz for a fault, is only ever selected by a devboard build
+//! (the `rgb-led` feature and its `hw::rgb` mirror).
 //!
 //! One thread owns the pin and the timing; setting a pattern is a single
 //! atomic store, so any task can do it without blocking. This replaces the
@@ -28,6 +30,7 @@ fn half_period(pattern: LedPattern) -> Option<Duration> {
         LedPattern::Heartbeat => Some(Duration::from_millis(500)),
         LedPattern::OtaPending => Some(Duration::from_millis(125)),
         LedPattern::NoLink => Some(Duration::from_millis(2000)),
+        LedPattern::Fault => Some(Duration::from_millis(250)),
     }
 }
 
@@ -38,6 +41,7 @@ fn encode(pattern: LedPattern) -> u8 {
         LedPattern::Heartbeat => 2,
         LedPattern::OtaPending => 3,
         LedPattern::NoLink => 4,
+        LedPattern::Fault => 5,
     }
 }
 
@@ -47,6 +51,7 @@ fn decode(raw: u8) -> LedPattern {
         2 => LedPattern::Heartbeat,
         3 => LedPattern::OtaPending,
         4 => LedPattern::NoLink,
+        5 => LedPattern::Fault,
         _ => LedPattern::Off,
     }
 }

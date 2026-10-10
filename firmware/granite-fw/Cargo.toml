@@ -23,6 +23,13 @@ hwtest = []
 # the build without them. Never in an image for a controller board: ADR
 # 0001 keeps the radio dark. Off in a shipped image.
 wifi-dev = []
+# Mirror the status LED patterns in colour on the addressable WS2812 of
+# an ESP32-C6 devkit (src/hw/rgb.rs), on GPIO8 by default and on
+# GRANITE_RGB_GPIO when set. The controller board has no RGB LED, so
+# this is bench-only. Off in a shipped image.
+rgb-led = []
+# Everything that only makes sense on a devboard, in one flag.
+devboard = ["wifi-dev", "rgb-led"]
 
 [[example]]
 name = "hwtest"

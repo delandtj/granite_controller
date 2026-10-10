@@ -117,7 +117,7 @@ The build output is `target/riscv32imac-esp-espidf/release/granite-fw`
 directory instead - the flash commands below assume the default, so
 substitute the path.
 
-Image size, release, default features (2026-10-10): 1,719,360 bytes of
+Image size, release, default features (2026-10-10): 1,719,488 bytes of
 the 2,621,440-byte slot, 66 %. `cargo build --release` keeps
 `opt-level = "s"`; do not switch the release profile to `3` without
 checking that number again.
@@ -430,9 +430,9 @@ and flash encryption stay off (ADR 0001 component 11).
 
 ## Testing on a devboard
 
-A bare ESP32-C6 devboard has no W5500 and no expanders. Two features
-make it useful anyway; neither belongs in an image that goes on a
-board.
+A bare ESP32-C6 devboard has no W5500 and no expanders. Three features
+make it useful anyway, and `devboard` is the two network-and-LED ones
+together; none of them belongs in an image that goes on a board.
 
 **`hwtest`** - the hardware layer's bring-up exercise (ADR 0001,
 "Bring-up order on hardware"), as an example binary rather than wired
@@ -473,9 +473,63 @@ backoff and no roaming; WPA2-PSK or open only.
 
 The default build has **no radio code in it**: `platform::wifi_dev` is
 not compiled, the W5500 is the only network path, and ADR 0001's
-"Wi-Fi and BLE stay off" still describes the shipped image. For
-reference, release image sizes on 2026-10-10 were 1,719,360 bytes
-default and 2,101,680 bytes with `--features wifi-dev`.
+"Wi-Fi and BLE stay off" still describes the shipped image.
+
+**`rgb-led`** - the status LED patterns mirrored in colour on the
+addressable WS2812 that an Espressif C6 devkit carries on GPIO8
+(DevKitC-1 and DevKitM-1), *in addition to* the plain GPIO1 LED. On a
+bench it is the only LED that says which pattern is running without
+counting blinks:
+
+| pattern | colour | rate |
+|---|---|---|
+| heartbeat, healthy | green, tinted towards cyan while the broker session is up | breathing, 1 Hz |
+| no link | amber | 0.25 Hz |
+| OTA image pending validation | blue | 4 Hz |
+| press in progress | white | solid |
+| expander or sense fault | red | 2 Hz |
+
+```sh
+cd firmware/granite-fw
+cargo build --release --features rgb-led
+GRANITE_RGB_GPIO=2 cargo build --release --features rgb-led   # other devkit
+```
+
+Brightness is capped at 40/255 on purpose. `GRANITE_RGB_GPIO` moves the
+data line (the pin differs between devkit revisions); the default is 8,
+and a value that is not a decimal pin number fails the build. The bit
+stream is RMT, the same peripheral the DS18B20 probes use through the
+Espressif `onewire_bus` component: both sit on the ESP-IDF v5 RMT
+driver, so the IDF allocates the channels (the C6 has two TX channels
+and 1-wire takes one TX and one RX) and the firmware still boots with
+the probe bus up. Each pattern transition is logged once, as
+`rgb: heartbeat (green, breathing 1 Hz)`.
+
+The fault pattern is the one thing this feature adds above the LED: ADR
+0001 fixes four meanings for the plain status LED and "a fault is
+present" is not one of them, so `LedPattern::Fault` is only ever
+selected in a build that has `rgb-led`. The signal is the fault word
+Modbus input register 13 already reports (expander, sense).
+
+Which means a **bare** devkit sits on red: it has no MCP23017s, so the
+expander and sense bits are set a second after boot and stay set. That
+is the honest reading, not a bug; green breathing needs expanders that
+answer. The monitor says which pattern is on the LED either way.
+
+**`devboard`** - `wifi-dev` plus `rgb-led`, i.e. everything a bare
+devkit wants:
+
+```sh
+cd firmware/granite-fw
+GRANITE_WIFI_SSID=bench GRANITE_WIFI_PASS=hunter2 \
+    cargo build --release --features devboard
+```
+
+For reference, release image sizes on 2026-10-10 were 1,719,488 bytes
+default, 1,730,400 bytes with `--features rgb-led`, 2,101,824 bytes
+with `--features wifi-dev` and 2,112,528 bytes with
+`--features devboard` (the two Wi-Fi figures with the `bench`/`hunter2`
+credentials above; the strings are in the image).
 
 ## The simulator
 

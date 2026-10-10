@@ -205,7 +205,15 @@ fn main() -> anyhow::Result<()> {
                 vin,
                 Arc::clone(&faults),
             );
-            start_led(Arc::clone(&platform), led);
+            // The devboard RGB mirror (`rgb-led`) shares the one pattern
+            // handle, so it can never disagree with the GPIO1 LED.
+            #[cfg(feature = "rgb-led")]
+            let rgb = led.clone();
+            start_led(Arc::clone(&platform), led, Arc::clone(&faults));
+            #[cfg(feature = "rgb-led")]
+            if let Err(e) = hw::rgb::start(rgb, mqtt::connected) {
+                log::error!("rgb mirror did not start: {e:#}");
+            }
 
             thread::Builder::new()
                 .name("dispatch".into())
@@ -835,8 +843,26 @@ fn start_config_watch(
     }
 }
 
+/// The fault pattern, in a build that has an LED able to show one.
+///
+/// ADR 0001 fixes four meanings for the plain GPIO1 LED and "a fault is
+/// present" is not one of them, so the pattern is only ever selected in
+/// an image that also carries the RGB mirror, which paints it red. The
+/// signal itself is nothing new: the `faults` word is the one the sense
+/// thread and the config watcher already keep for Modbus input register
+/// 13.
+#[cfg(feature = "rgb-led")]
+fn fault_pattern(faults: &AtomicU16) -> Option<LedPattern> {
+    hw::rgb::for_faults(faults)
+}
+
+#[cfg(not(feature = "rgb-led"))]
+fn fault_pattern(_faults: &AtomicU16) -> Option<LedPattern> {
+    None
+}
+
 /// Drive the status LED from the ADR's pattern table (component 13).
-fn start_led(platform: Arc<Platform>, mut led: hw::led::LedHandle) {
+fn start_led(platform: Arc<Platform>, mut led: hw::led::LedHandle, faults: Arc<AtomicU16>) {
     let spawned = thread::Builder::new()
         .name("led-pattern".into())
         .stack_size(3072)
@@ -844,7 +870,9 @@ fn start_led(platform: Arc<Platform>, mut led: hw::led::LedHandle) {
             let mut last = None;
             loop {
                 let net = platform.net.status();
-                let want = if platform::ota::ota_state() == platform::ota::OtaState::Pending {
+                let want = if let Some(fault) = fault_pattern(&faults) {
+                    fault
+                } else if platform::ota::ota_state() == platform::ota::OtaState::Pending {
                     LedPattern::OtaPending
                 } else if !net.link {
                     LedPattern::NoLink

@@ -60,6 +60,10 @@
 //! - The sense thread starts and keeps reading U15 (plus the 1 s expander
 //!   readback from ADR component 2).
 //! - The LED thread starts on GPIO1, replacing the blink loop in `main.rs`.
+//!
+//! One more thread exists only in a devboard build: with the `rgb-led`
+//! feature `main` also starts `rgb`, which paints the same patterns on
+//! the WS2812 of an ESP32-C6 devkit. The controller board has no RGB LED.
 
 use std::sync::{Arc, Mutex};
 
@@ -84,6 +88,9 @@ pub mod vin;
 
 #[cfg(feature = "hwtest")]
 pub mod hwtest;
+
+#[cfg(feature = "rgb-led")]
+pub mod rgb;
 
 /// Everything [`init`] needs. One field per pin or peripheral, so the call
 /// site reads as a pin map and a missing pin is a compile error.
