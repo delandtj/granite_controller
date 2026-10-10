@@ -98,3 +98,18 @@ The HTTP call returns as soon as the action is queued, with
 `"result":"accepted"` (or a refusal as a 400). Watch the outcome in
 `GET /api/v1/state` (`nodes[i].last_action`), in the MQTT `event`
 stream, or in the MQTT ack, which is published on completion.
+
+A script that wants the outcome in the reply adds `?wait=1`:
+
+```sh
+curl -sk -H "Authorization: Bearer $T" -X POST "$B/api/v1/nodes/3/on?wait=1"
+# {"v":1,"id":"api-7","ok":true,"result":"on","error":null}
+# or, 400: {"v":1,"id":"api-7","ok":false,"result":null,"error":"power_on_timeout"}
+```
+
+The wait is capped at 30 seconds; past that the reply is `accepted`
+again and the action carries on. The controller has one HTTP server
+task, so while a request waits nothing else is answered - the setup
+page included. Keep `?wait=1` for scripts, one at a time, and keep
+reading `last_action` for anything slower than the cap (a soft `off`
+with a long `t_soft_off_ms`).

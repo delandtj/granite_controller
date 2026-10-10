@@ -893,8 +893,28 @@ gap fixes, items 1, 3, 6 and 9 of `firmware/docs/gaps-2026-10.md`
   id finishes, capped at `api::ACTION_WAIT_MS` (30 s), then falls back
   to the `accepted` reply. The capability is a defaulted
   `api::Dispatcher::wait_for`, so a transport that must not block says
-  so by not implementing it; the simulator implements it, the board's
-  `ChannelDispatcher` does not yet (`http.rs`, see the handback note).
+  so by not implementing it. Both transports implement it now: the
+  simulator ticks its own clock, and the board's `ChannelDispatcher`
+  (`http.rs`) reads the event bus the MQTT ack is built from. On the
+  board the subscription is taken before the command is queued, so a
+  completion cannot slip past between the ack and the wait; the
+  dispatcher thread is never part of the wait (the bus sends into an
+  unbounded channel and drops a subscriber that stopped reading); and
+  the cap is `min(ACTION_WAIT_MS, http::WAIT_CAP)` = 30 s. The wait runs
+  with **no guard held**: `api::Dispatcher::wait_for` only records the
+  command id and the cap and returns `None` (so the core keeps its
+  `accepted` reply), `http::handle` drops every platform guard - the
+  configuration write guard included - and only then reads the bus,
+  rendering the outcome with the now-public `api::reply_response`.
+  Waiting under the write guard would have parked every blocking reader
+  of the live configuration, the MQTT worker's 5 s refresh first of all.
+  What remains is the single ESP-IDF HTTP server task: a waiting request
+  answers nothing else while it waits, which is why `?wait=1` is opt-in
+  and documented as a tool for scripts. Nothing in
+  `esp-idf-svc` 0.53's server configuration would cap it for us:
+  `recv_wait_timeout`/`send_wait_timeout` are hard-coded to 5 s and
+  bound socket I/O rather than a handler, and `session_timeout` /
+  `max_sessions` never reach `httpd_config_t`.
   A failed action answers 400 with the error, which is what a refused
   action already did. The setup page polls
   `state.nodes[i].last_action` for the outcome either way.

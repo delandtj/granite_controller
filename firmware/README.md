@@ -320,7 +320,24 @@ go through one dispatcher in `granite-core`: status, config sections
 (with staging and confirm for anything that can cut the session), node
 actions, rules, firmware upload and rollback, log tail, export/import,
 factory reset, recovery. (`probe_scan` is accepted and still logs a
-TODO: the 1-wire re-scan is not wired to the hardware layer yet.) The page itself is plain
+TODO: the 1-wire re-scan is not wired to the hardware layer yet.)
+
+A node action answers `accepted` at queue time and the outcome lands in
+`state.nodes[i].last_action` and on the MQTT `ack` topic.
+`POST /api/v1/nodes/<n>/<action>?wait=1` holds the HTTP reply until that
+command id finishes and answers with the outcome instead (400 with the
+error when it failed). Two caveats, both in `http.rs`
+(`ChannelDispatcher::wait_for`, `WAIT_CAP`): the wait is capped at 30 s
+(`api::ACTION_WAIT_MS`) and then falls back to the `accepted` reply, and
+ESP-IDF's HTTP server runs one task here, so a waiting request answers
+nothing else - the setup page included - until the action is done. It is
+a convenience for scripts, not the way the page works. The wait itself
+holds no lock: `wait_for` records the command id and returns, the
+handler drops every platform guard (the configuration write guard
+included, so the MQTT worker and the sense task keep reading it), and
+only then reads the same event bus the MQTT ack is built from.
+
+The page itself is plain
 HTML/CSS/JS from `firmware/web/`, gzipped into the image by
 `web/build.sh`; `granite-sim serve --assets ../web` serves it from disk
 for editing.

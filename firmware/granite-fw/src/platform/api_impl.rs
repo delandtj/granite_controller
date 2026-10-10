@@ -600,6 +600,7 @@ pub fn http_ctx(platform: &Arc<Platform>) -> HttpCtx {
         ota: Arc::new(Mutex::new(ota::OtaWriter::new())),
         rng: Arc::new(Mutex::new(EspRng)),
         commands: Arc::clone(&platform.commands),
+        events: Arc::clone(&platform.events),
         cert_pem: platform.identity.cert_pem.clone(),
         key_pem: platform.identity.key_pem.clone(),
         https_port: HTTPS_PORT,

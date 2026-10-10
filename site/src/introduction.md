@@ -65,9 +65,10 @@ the W5500 Ethernet path (link, DHCP, AutoIP, commit-confirm, dead-man),
 the relay presses and the press deadline, the power LED sense, the
 probes, and the over-the-air probation ladder end to end. The HTTPS
 page, the API, MQTT and Modbus have been exercised on a bare ESP32-C6
-devkit. Where the current firmware stores a setting but does not act on
-it yet, the page says so in a **Current firmware** note. Treat those
-notes as the to-do list for the first bring-up.
+devkit. Should a page describe behaviour the firmware stores but does
+not act on yet, it says so in a **Current firmware** note; treat such
+notes as the to-do list for the first bring-up. At the time of writing
+there are none left.
 
 ## Conventions
 

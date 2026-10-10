@@ -29,11 +29,17 @@
 //! `auth -> store -> platform -> identity -> net -> ota -> rng ->
 //! config -> observed`. Nothing else in the firmware may take two of
 //! these at the same time in a different order.
+//!
+//! No guard is ever held while something is waited for. A `?wait=1` node
+//! action is the one request that waits at all, and it waits in
+//! [`handle`] *after* the guards are dropped: holding the configuration
+//! write guard for seconds would park every blocking reader of the live
+//! configuration, the MQTT worker's 5 s refresh first of all.
 
 use std::ffi::CString;
 use std::sync::mpsc::{Receiver, Sender, channel};
 use std::sync::{Arc, Mutex, RwLock};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use esp_idf_svc::io::Write as _;
 use esp_idf_svc::http::Method as HttpMethod;
@@ -47,8 +53,10 @@ use granite_core::api::{
     OtaSink, Platform, Rng, Store, StreamKind, UploadOutcome,
 };
 use granite_core::config::Config;
-use granite_core::msg::{Command, Reply};
+use granite_core::msg::{Command, Event, EventKind, Reply};
 use granite_core::observed::Observed;
+
+use crate::platform::EventBus;
 
 /// Bytes read from the socket at a time while streaming an image.
 pub const CHUNK: usize = 2048;
@@ -59,6 +67,28 @@ pub const MAX_IMAGE: usize = 3 * 1024 * 1024;
 /// How long the HTTP task waits for the actuator task to answer a
 /// command before it gives up on the request.
 pub const COMMAND_TIMEOUT: Duration = Duration::from_secs(20);
+
+/// Ceiling on `?wait=1` (ADR component 8), on top of
+/// [`granite_core::api::ACTION_WAIT_MS`].
+///
+/// The trade-off, and why this is opt-in: ESP-IDF's HTTP server runs
+/// every handler on its own single server task (`sdkconfig.defaults` sets
+/// no `CONFIG_HTTPD_*`, so there is one), so a request parked here
+/// answers nothing else - the setup page included - until the action
+/// finishes. That is the whole cost: the wait runs with no guard held
+/// (see [`handle`]), so the dispatcher, the MQTT worker, the sense task
+/// and Modbus all carry on. Nothing in the server configuration shortens
+/// it for us:
+/// `esp-idf-svc` 0.53 hard-codes `recv_wait_timeout` and
+/// `send_wait_timeout` to 5 s, and those are socket read/write deadlines,
+/// not a handler deadline, while its `session_timeout` and `max_sessions`
+/// never reach `httpd_config_t` at all. So the cap is ours to pick, and
+/// the effective wait is `min(ACTION_WAIT_MS, WAIT_CAP)`: 30 s, which is
+/// an `on` or a `reset` with room to spare but well under a
+/// `t_soft_off_ms` of two minutes. A longer action keeps running and the
+/// reply falls back to `accepted`; the outcome is in
+/// `state.nodes[i].last_action` either way.
+pub const WAIT_CAP: Duration = Duration::from_secs(30);
 
 /// Control port of the HTTPS server. The plain server needs its own.
 const HTTPS_CTRL_PORT: u16 = 32768;
@@ -178,12 +208,86 @@ impl CommandChannel {
     }
 }
 
+/// A `?wait=1` wait that [`handle`] still owes the client: the command
+/// id to watch for and how long the core allowed.
+struct PendingWait {
+    id: String,
+    timeout_ms: u32,
+}
+
 /// [`granite_core::api::Dispatcher`] over the command channel.
-struct ChannelDispatcher<'a>(&'a CommandChannel);
+///
+/// `completions` is a subscription to the event bus the dispatcher thread
+/// publishes on, taken by [`handle`] *before* the command is sent and
+/// only when the request carries `?wait=1`. Subscribing first is what
+/// makes the wait race-free (the `action_done` cannot land between the
+/// ack and the subscription) and keeps the dispatcher thread out of it:
+/// the bus sends into an unbounded channel and drops a subscriber that
+/// stopped reading, so it never waits on a request. `None` means this
+/// request did not ask to wait.
+struct ChannelDispatcher<'a> {
+    commands: &'a CommandChannel,
+    completions: Option<Receiver<Event>>,
+    pending: Option<PendingWait>,
+}
 
 impl api::Dispatcher for ChannelDispatcher<'_> {
     fn dispatch(&mut self, cmd: &Command) -> Reply {
-        self.0.call(cmd)
+        self.commands.call(cmd)
+    }
+
+    /// Note the wait and answer "this transport cannot wait", so the core
+    /// hands back its `accepted` reply right away.
+    ///
+    /// Nothing blocks here on purpose: [`granite_core::api::handle`] runs
+    /// with every platform guard held (the configuration write guard
+    /// included), and waiting seconds inside it would park the MQTT
+    /// worker and anything else that reads the live configuration.
+    /// [`handle`] drops the guards first and then runs [`wait_outcome`].
+    /// [`COMMAND_TIMEOUT`] is untouched; it still bounds the ack of every
+    /// command, waiting or not.
+    fn wait_for(&mut self, cmd: &Command, timeout_ms: u32) -> Option<Reply> {
+        if self.completions.is_some() {
+            self.pending = Some(PendingWait {
+                id: cmd.id.clone(),
+                timeout_ms,
+            });
+        }
+        None
+    }
+}
+
+/// Read the event bus until command `pending.id` is done or the cap
+/// expires, with no guard held. `None` means the `accepted` reply stands,
+/// which is true either way - the action is queued.
+fn wait_outcome(completions: &Receiver<Event>, pending: &PendingWait) -> Option<Reply> {
+    let cap = WAIT_CAP.min(Duration::from_millis(u64::from(pending.timeout_ms)));
+    let deadline = Instant::now() + cap;
+    loop {
+        let left = deadline.saturating_duration_since(Instant::now());
+        // Timeout, or a bus with no publisher left.
+        let event = completions.recv_timeout(left).ok()?;
+        if let Some(reply) = finished_reply(&event, &pending.id) {
+            return Some(reply);
+        }
+    }
+}
+
+/// The final ack carried by `event`, if that event is command `id`
+/// finishing.
+///
+/// The same rule as the MQTT ack (`mqtt::resolve_from_event`), so both
+/// transports report the same outcome for the same command: `escalated`
+/// is a step inside `off`, not the end of it, so the wait goes on.
+fn finished_reply(event: &Event, id: &str) -> Option<Reply> {
+    match &event.kind {
+        EventKind::ActionDone {
+            id: done, result, ..
+        } if done == id && result != "escalated" => Some(Reply::ok(id, result.clone())),
+        EventKind::ActionFailed {
+            id: failed, error, ..
+        } if failed == id => Some(Reply::err(id, error.clone())),
+        _ => None,
     }
 }
 
@@ -211,6 +315,9 @@ pub struct HttpCtx {
     pub rng: SharedRng,
     /// The command channel into the actuator task.
     pub commands: Arc<CommandChannel>,
+    /// The event bus the dispatcher thread publishes on. Only `?wait=1`
+    /// subscribes to it, to turn an accepted action into its outcome.
+    pub events: Arc<EventBus>,
     /// Device certificate, PEM. Generated on first boot or uploaded.
     pub cert_pem: String,
     /// Its private key, PEM.
@@ -231,7 +338,7 @@ impl HttpCtx {
     ///     config: config.clone(),
     ///     observed: observed.clone(),
     ///     auth: HttpCtx::new_auth(),
-    ///     store, platform, identity, net, ota, rng, commands,
+    ///     store, platform, identity, net, ota, rng, commands, events,
     ///     cert_pem, key_pem,
     ///     https_port: 443,
     ///     http_port: 80,
@@ -580,59 +687,96 @@ fn authenticated(ctx: &HttpCtx, request: &ApiRequest, now: u64) -> bool {
 }
 
 /// Take every lock in the documented order and run the route table.
+///
+/// The guards live in the inner block and nothing in that block ever
+/// waits for the dispatcher to *finish* an action (see
+/// [`ChannelDispatcher::wait_for`]): a `?wait=1` action leaves the block
+/// as a [`PendingWait`] and the wait runs underneath it, with every guard
+/// dropped.
 fn handle(ctx: &HttpCtx, request: ApiRequest, now: u64) -> ApiResponse {
-    let mut auth = match ctx.auth.lock() {
-        Ok(g) => g,
-        Err(_) => return ApiResponse::error(503, "session state is unavailable"),
-    };
-    let mut store = match ctx.store.lock() {
-        Ok(g) => g,
-        Err(_) => return ApiResponse::error(503, "storage is unavailable"),
-    };
-    let mut platform = match ctx.platform.lock() {
-        Ok(g) => g,
-        Err(_) => return ApiResponse::error(503, "the platform is unavailable"),
-    };
-    let mut identity = match ctx.identity.lock() {
-        Ok(g) => g,
-        Err(_) => return ApiResponse::error(503, "identity is unavailable"),
-    };
-    let mut net = match ctx.net.lock() {
-        Ok(g) => g,
-        Err(_) => return ApiResponse::error(503, "the network control is unavailable"),
-    };
-    let mut ota = match ctx.ota.lock() {
-        Ok(g) => g,
-        Err(_) => return ApiResponse::error(503, "the OTA writer is unavailable"),
-    };
-    let mut rng = match ctx.rng.lock() {
-        Ok(g) => g,
-        Err(_) => return ApiResponse::error(503, "the RNG is unavailable"),
-    };
-    let mut config = match ctx.config.write() {
-        Ok(g) => g,
-        Err(_) => return ApiResponse::error(503, "the configuration is unavailable"),
-    };
-    let observed = match ctx.observed.read() {
-        Ok(g) => g.clone(),
-        Err(_) => Observed::new(),
-    };
-    let mut commands = ChannelDispatcher(&ctx.commands);
+    // Before any lock and before the command is queued: a `?wait=1`
+    // request needs the completion events of its own action (see
+    // [`ChannelDispatcher`]). Every other request skips this and the bus
+    // never grows a subscriber for it.
+    let completions = api::wants_wait(&request).then(|| ctx.events.subscribe());
 
-    let mut api_ctx = ApiCtx {
-        now_ms: now,
-        config: &mut config,
-        observed: &observed,
-        auth: &mut auth,
-        store: &mut *store,
-        platform: &mut *platform,
-        identity: &mut *identity,
-        net: &mut *net,
-        ota: &mut *ota,
-        rng: &mut *rng,
-        commands: &mut commands,
+    let (response, pending, completions) = {
+        let mut auth = match ctx.auth.lock() {
+            Ok(g) => g,
+            Err(_) => return ApiResponse::error(503, "session state is unavailable"),
+        };
+        let mut store = match ctx.store.lock() {
+            Ok(g) => g,
+            Err(_) => return ApiResponse::error(503, "storage is unavailable"),
+        };
+        let mut platform = match ctx.platform.lock() {
+            Ok(g) => g,
+            Err(_) => return ApiResponse::error(503, "the platform is unavailable"),
+        };
+        let mut identity = match ctx.identity.lock() {
+            Ok(g) => g,
+            Err(_) => return ApiResponse::error(503, "identity is unavailable"),
+        };
+        let mut net = match ctx.net.lock() {
+            Ok(g) => g,
+            Err(_) => return ApiResponse::error(503, "the network control is unavailable"),
+        };
+        let mut ota = match ctx.ota.lock() {
+            Ok(g) => g,
+            Err(_) => return ApiResponse::error(503, "the OTA writer is unavailable"),
+        };
+        let mut rng = match ctx.rng.lock() {
+            Ok(g) => g,
+            Err(_) => return ApiResponse::error(503, "the RNG is unavailable"),
+        };
+        let mut config = match ctx.config.write() {
+            Ok(g) => g,
+            Err(_) => return ApiResponse::error(503, "the configuration is unavailable"),
+        };
+        let observed = match ctx.observed.read() {
+            Ok(g) => g.clone(),
+            Err(_) => Observed::new(),
+        };
+        let mut commands = ChannelDispatcher {
+            commands: &ctx.commands,
+            completions,
+            pending: None,
+        };
+
+        let mut api_ctx = ApiCtx {
+            now_ms: now,
+            config: &mut config,
+            observed: &observed,
+            auth: &mut auth,
+            store: &mut *store,
+            platform: &mut *platform,
+            identity: &mut *identity,
+            net: &mut *net,
+            ota: &mut *ota,
+            rng: &mut *rng,
+            commands: &mut commands,
+        };
+        let response = api::handle(request, &mut api_ctx);
+        // `api_ctx` is not used again, so its borrow of `commands` is
+        // over and the recorded wait can be taken back out.
+        (
+            response,
+            commands.pending.take(),
+            commands.completions.take(),
+        )
     };
-    api::handle(request, &mut api_ctx)
+
+    // Every guard is gone; only now does `?wait=1` hold the reply, and
+    // the outcome replaces the queue ack (400 when the action failed,
+    // which is what a refusal already did). The single httpd task is
+    // still parked for the duration - that is the cost of the parameter
+    // and the reason it is opt-in, see [`WAIT_CAP`].
+    match (pending, completions) {
+        (Some(pending), Some(completions)) => {
+            wait_outcome(&completions, &pending).map_or(response, api::reply_response)
+        }
+        _ => response,
+    }
 }
 
 fn write_response(
@@ -689,4 +833,112 @@ fn write_response(
     }
     out.flush()?;
     Ok(())
+}
+
+// ---------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------
+
+// The `?wait=1` plumbing is the one piece of this file with no ESP-IDF in
+// it. granite-fw only builds for the board, so these run with
+// `cargo test --target riscv32imac-esp-espidf` on a devboard; a host
+// `cargo test` never sees them. They are type-checked by
+// `cargo clippy --all-targets`.
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use granite_core::actuator::ActionKind;
+    use granite_core::api::Dispatcher as _;
+    use granite_core::msg::CommandKind;
+
+    fn done(id: &str, result: &str) -> Event {
+        Event::new(
+            0,
+            EventKind::ActionDone {
+                id: id.into(),
+                node: Some(1),
+                action: ActionKind::On,
+                result: result.into(),
+            },
+        )
+    }
+
+    fn failed(id: &str, error: &str) -> Event {
+        Event::new(
+            0,
+            EventKind::ActionFailed {
+                id: id.into(),
+                node: Some(1),
+                action: ActionKind::On,
+                error: error.into(),
+            },
+        )
+    }
+
+    /// `escalated` is a step inside `off`, not the end of it, and another
+    /// command's completion is not ours.
+    #[test]
+    fn only_this_commands_final_event_resolves_the_wait() {
+        assert!(finished_reply(&done("x", "escalated"), "x").is_none());
+        assert!(finished_reply(&done("y", "on"), "x").is_none());
+        let reply = finished_reply(&done("x", "on"), "x").expect("on is final");
+        assert!(reply.ok);
+        assert_eq!(reply.result.as_deref(), Some("on"));
+        let reply =
+            finished_reply(&failed("x", "power_on_timeout"), "x").expect("a failure ends it");
+        assert!(!reply.ok);
+        assert_eq!(reply.error.as_deref(), Some("power_on_timeout"));
+    }
+
+    /// `wait_for` never blocks: it records the wait and answers "this
+    /// transport cannot wait", so the core keeps its `accepted` reply and
+    /// [`handle`] can drop every guard before waiting. A request that did
+    /// not ask to wait records nothing.
+    #[test]
+    fn wait_for_records_the_wait_and_does_not_block() {
+        let (commands, _rx) = CommandChannel::new();
+        let cmd = Command::new("x", CommandKind::of_action(ActionKind::On));
+
+        let (_tx, completions) = channel();
+        let mut waiting = ChannelDispatcher {
+            commands: &commands,
+            completions: Some(completions),
+            pending: None,
+        };
+        assert!(waiting.wait_for(&cmd, 1_000).is_none());
+        let pending = waiting.pending.take().expect("the wait was recorded");
+        assert_eq!(pending.id, "x");
+        assert_eq!(pending.timeout_ms, 1_000);
+
+        let mut not_waiting = ChannelDispatcher {
+            commands: &commands,
+            completions: None,
+            pending: None,
+        };
+        assert!(not_waiting.wait_for(&cmd, 1_000).is_none());
+        assert!(not_waiting.pending.is_none());
+    }
+
+    /// The wait walks past events that are not the answer, and gives up
+    /// at the cap.
+    #[test]
+    fn wait_outcome_picks_its_own_completion_and_times_out_otherwise() {
+        let (tx, completions) = channel();
+        tx.send(done("other", "on")).expect("buffered");
+        tx.send(done("x", "escalated")).expect("buffered");
+        tx.send(done("x", "off")).expect("buffered");
+        let pending = PendingWait {
+            id: String::from("x"),
+            timeout_ms: 1_000,
+        };
+        let reply = wait_outcome(&completions, &pending).expect("the third event is ours");
+        assert_eq!(reply.result.as_deref(), Some("off"));
+        // Nothing left on the bus: the cap runs out and the caller keeps
+        // the `accepted` reply.
+        let short = PendingWait {
+            id: String::from("x"),
+            timeout_ms: 10,
+        };
+        assert!(wait_outcome(&completions, &short).is_none());
+    }
 }

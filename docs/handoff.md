@@ -34,39 +34,20 @@ probation ladder end to end (no image has been pushed to a slot yet).
 The PLED level on a real motherboard is still the open question of
 docs/controller.md item 4.
 
-Firmware gaps found while fact-checking the docs site (2026-10-10,
-verified in source; the site carries "Current firmware" notes for each;
-the brief for fixing them is firmware/docs/gaps-2026-10.md):
-- Per-node boot policy is never applied on the board: Actuator::
-  submit_boot_policy is called only from granite-sim/src/sim.rs.
-- Target `all` is refused (bad_target) for every action except on_all
-  (actuator.rs ~795). The three shipped default rules use force_off on
-  `all`, so they fire and the action is refused. Fix the actuator or
-  the rule engine (fan out to one submission per node).
-- HTTP node actions reply `accepted` at queue time (main.rs:439); the
-  failure of a queued action reaches clients only via events / the MQTT
-  ack / last_action.
-- Staged mqtt and sec sections are not applied live and have no revert
-  timer; they take effect after confirm plus a reboot (api_impl.rs:285,
-  mqtt.rs:706). sec.modbus is the exception (config-watch thread).
-- Dead-man counts only gateway ICMP echo; net::note_connection() has no
-  callers, so "no accepted connection" never resets it. A static config
-  with an empty or ping-silent gateway falls to DHCP after t_deadman.
-- Fault bits PROBE_MISSING (2), VIN (3), CONFIG_FALLBACK (5) are never
-  set; bit 0 only at hardware init, not on a runtime press deadline.
-- OTA event phases `started` / `downloading` are never emitted.
-- mqtt.skip_time_check is ignored (esp-mqtt has no option).
-- vin_trim, probe names/ROM map and t_probe_s are read once at boot.
-- Console set-password mints a new salt and invalidates all API tokens
-  (platform/mod.rs:390); the API path keeps the salt.
-- Factory reset erases the device certificate (secrets namespace); the
-  setup page text says it survives (index.html:296).
-- The recovery-token "shown once" flag lives in the factory namespace,
-  so after a console set-password or a factory reset the page never
-  shows the token.
-- http.rs registers no HEAD handlers although the core handles HEAD.
-- No documented way to produce the OTA .bin (espflash save-image is
-  assumed; a signed build needs espsecure sign_data).
+Firmware gaps found while fact-checking the docs site (2026-10-10) are
+listed in firmware/docs/gaps-2026-10.md; all 14 were fixed the same day
+(commit df96ce9 and the follow-up for the board-side `?wait=1`). What
+those fixes still need a network or the real board for:
+- MQTT: client rebuild on a live section change, auto-confirm on
+  connect, the staged mqtt/sec deadline restoring the stored section
+  without a reboot.
+- Dead-man reset by accepted HTTPS/Modbus/MQTT connections; empty
+  gateway disarming it.
+- Fault bit 2 (a configured probe that is absent) and the live apply of
+  vin_trim, probe names and t_probe_s (needs a config write).
+- OTA progress events on a real push/pull, and whether a board built
+  with sdkconfig.defaults.signing accepts an espsecure-signed .bin.
+- HEAD responses, `?wait=1` on the board.
 
 Next steps:
 1. Devboard network tests with `--features wifi-dev` (Wi-Fi STA instead

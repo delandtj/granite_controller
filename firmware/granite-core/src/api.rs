@@ -1274,7 +1274,12 @@ fn new_command(ctx: &mut ApiCtx<'_>, action: CommandKind) -> Command {
 }
 
 /// Turn an ack into a response: a refusal is a client error, not a 200.
-fn reply_response(reply: Reply) -> ApiResponse {
+///
+/// Public because a transport that cannot wait inside [`handle`] may have
+/// to render the final ack itself: the board waits for a `?wait=1`
+/// outcome after it has dropped the guards `handle` ran under, and then
+/// replaces the `accepted` response with this.
+pub fn reply_response(reply: Reply) -> ApiResponse {
     let status = if reply.ok { 200 } else { 400 };
     match serde_json::to_value(&reply) {
         Ok(v) => ApiResponse::json(status, v),
@@ -1514,7 +1519,12 @@ pub const ACTION_WAIT_MS: u32 = 30_000;
 
 /// True when the request asked for the outcome rather than the ack
 /// (`?wait=1`, `?wait=true`).
-fn wants_wait(req: &ApiRequest) -> bool {
+///
+/// Public because a transport may have to prepare for the wait *before*
+/// the command is queued: the board's `ChannelDispatcher` subscribes to
+/// the actuator event bus here, so the completion of the command cannot
+/// slip past between the ack and the subscription.
+pub fn wants_wait(req: &ApiRequest) -> bool {
     matches!(req.param("wait"), Some("1" | "true" | "yes"))
 }
 

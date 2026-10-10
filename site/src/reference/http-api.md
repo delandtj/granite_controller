@@ -36,7 +36,7 @@ request bodies are limited to 64 KiB except the firmware upload.
 | GET | `/api/v1/status` | yes | Status page data: identity, `boot_reason`, `uptime_s`, `free_heap`, `state`, `net`, `mqtt`, `ota`, `staged`, `modbus` |
 | GET | `/api/v1/state` | yes | The state snapshot (same as the MQTT `state` payload) |
 | GET | `/api/v1/nodes` | yes | `{settings: <nodes section>, nodes: [...]}` |
-| POST | `/api/v1/nodes/<1-8 or all>/<action>` | yes | Queue an action; body is the `args` object (optional). 200 with `accepted` when queued, 400 when refused. `all` is accepted for `on`, `off`, `force_off`, `reset`, `cycle` and `on_all` (one press at a time, in `nodes.order`); `press` is per node |
+| POST | `/api/v1/nodes/<1-8 or all>/<action>` | yes | Queue an action; body is the `args` object (optional). 200 with `accepted` when queued, 400 when refused. `all` is accepted for `on`, `off`, `force_off`, `reset`, `cycle` and `on_all` (one press at a time, in `nodes.order`); `press` is per node. Add `?wait=1` to hold the reply until the action finishes (30 s cap, see below) |
 | POST | `/api/v1/cmd` | yes | A raw command, identical to the MQTT `cmd` payload |
 | GET | `/api/v1/config` | yes | Full export (no secrets) |
 | PUT | `/api/v1/config` | yes | Import a full document |
@@ -87,6 +87,29 @@ reboot), `ok`, `staged` or `saved` for configuration, or a
 HTTP reply: read `nodes[i].last_action` in `/api/v1/state`, or the
 MQTT `event` and `ack` topics. See
 [Controlling nodes](../operation/nodes.md) for the reasons.
+
+### `?wait=1` on a node action
+
+`POST /api/v1/nodes/<n>/<action>?wait=1` (also `wait=true`, `wait=yes`)
+holds the reply until that command id finishes, and answers with the
+outcome instead of the queue ack: 200 `{"result":"on"}`, or 400 with
+`"error":"power_on_timeout"`. It is meant for scripts that would
+otherwise poll `/api/v1/state`.
+
+Two limits:
+
+- The wait is capped at 30 seconds. A longer action - a soft `off` with
+  `t_soft_off_ms` at its two-minute maximum - keeps running and the
+  reply falls back to `accepted`, so `?wait=1` never replaces reading
+  `nodes[i].last_action`.
+- The controller runs one HTTP server task, so a waiting request
+  answers nothing else while it waits: the setup page stalls for as
+  long as the action takes. Use it from scripts, not from a browser
+  tab, and not in parallel.
+
+An escalation inside `off` (soft-off gave up, the controller holds PWR)
+is a step, not the end: the wait goes on and the reply is the final
+`off`, which is also what the MQTT ack reports.
 
 ## Status payload fields
 
