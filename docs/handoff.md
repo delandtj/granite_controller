@@ -285,7 +285,7 @@ tools/compact.py.
   first). Run after place. Only expected silk DRC hits: U1's outline
   where the antenna overhangs the bottom edge.
 - `pcbkit krt-route`: routes with KiCadRoutingTools (drandyhaas; checkout
-  and venv in ~/.cache/graver-pcb/routetest, rebuild the Rust core with
+  and venv in ~/Electronics/krt, pcbkit's default; rebuild the Rust core with
   CARGO_TARGET_DIR unset). Strips old copper, then planes (GND In1, +3V3
   In2), Ethernet and USB pairs, then everything on F.Cu/B.Cu only. Runs on
   a copy in ~/.cache/granite-pcb/route because KRT rewrites the .kicad_pro

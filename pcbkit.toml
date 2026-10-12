@@ -73,8 +73,6 @@ J18 = ["PW", "RS", "CM", "L+", "L-"]
 keep = [["U1", "29"]]      # ESP32 thermal-pad vias stay in the pad
 
 [krt]
-dir = "~/.cache/graver-pcb/routetest/KiCadRoutingTools"
-python = "~/.cache/graver-pcb/routetest/venv/bin/python"
 work = "~/.cache/granite-pcb/route"
 rework = "~/.cache/granite-pcb/reroute"
 clearance = 0.2
