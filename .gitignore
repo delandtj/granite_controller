@@ -17,3 +17,6 @@ fab/
 
 # mdBook output (site/)
 site/book/
+
+# Per-board recovery tokens and passwords (secrets)
+firmware/*recovery_token*

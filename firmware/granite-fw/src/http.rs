@@ -398,7 +398,9 @@ pub fn start(ctx: HttpCtx) -> anyhow::Result<HttpHandle> {
         ctrl_port: HTTP_CTRL_PORT,
         uri_match_wildcard: true,
         max_uri_handlers: 4,
-        stack_size: 6144,
+        // `/id` runs the same core handler as on 443; at 6144 it overflowed
+        // in identity_response -> new_nonce (rev C, 2026-10-16).
+        stack_size: 10240,
         max_open_sockets: 2,
         ..Default::default()
     };

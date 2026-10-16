@@ -53,7 +53,7 @@ use esp_idf_svc::eth::{BlockingEth, EspEth, EthDriver, SpiEth, SpiEthChipset};
 use esp_idf_svc::eventloop::EspSystemEventLoop;
 use esp_idf_svc::handle::RawHandle;
 use esp_idf_svc::hal::gpio::{Gpio18, Gpio19, Gpio20, Gpio21, Gpio22, Gpio23};
-use esp_idf_svc::hal::spi::{SPI2, SpiDriver, config::DriverConfig};
+use esp_idf_svc::hal::spi::{Dma, SPI2, SpiDriver, config::DriverConfig};
 use esp_idf_svc::hal::units::Hertz;
 use esp_idf_svc::ipv4;
 use esp_idf_svc::netif::{EspNetif, NetifConfiguration};
@@ -716,12 +716,16 @@ fn bring_up(
     // leaves the Ethernet MAC's SPI device attached to the bus; dropping the
     // driver then makes esp_spi_bus_free fail and esp-idf-hal's Drop panics
     // on it. A missing W5500 must stay a logged error, not a reboot loop.
+    //
+    // DMA on: without it a transaction is capped at 64 bytes and every
+    // frame the W5500 driver moves fails with "txdata transfer > host
+    // maximum" (seen on rev C, 2026-10-16). 4096 covers a 1514-byte frame.
     let spi: &'static SpiDriver<'static> = Box::leak(Box::new(SpiDriver::new(
         spi,
         pins.sclk,
         pins.mosi,
         Some(pins.miso),
-        &DriverConfig::new(),
+        &DriverConfig::new().dma(Dma::Auto(4096)),
     )?));
 
     let driver = EthDriver::new_spi(
