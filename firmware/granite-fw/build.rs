@@ -13,6 +13,8 @@ fn main() {
     // (ADR 0001 component 13). option_env! alone would not notice a change.
     println!("cargo:rerun-if-env-changed=FLEET_RECOVERY_PUBKEY");
 
+    check_app_version();
+
     // Build timestamp: the clock starts here until SNTP syncs (ADR
     // component 6) and it is the notBefore of the device certificate
     // (component 13).
@@ -22,6 +24,29 @@ fn main() {
         .unwrap_or(0);
     println!("cargo:rustc-env=GRANITE_BUILD_UNIX={secs}");
     println!("cargo:rustc-env=GRANITE_BUILD_X509={}", x509_time(secs));
+}
+
+/// The ESP-IDF app version (sdkconfig.defaults) must be the crate version
+/// and fit esp-idf-svc's 24-character `FirmwareInfo::version`, or every
+/// OTA slot read fails with ESP_ERR_INVALID_SIZE.
+fn check_app_version() {
+    println!("cargo:rerun-if-changed=sdkconfig.defaults");
+    let defaults = std::fs::read_to_string("sdkconfig.defaults")
+        .expect("build.rs: cannot read sdkconfig.defaults");
+    let ver = defaults
+        .lines()
+        .find_map(|l| l.trim().strip_prefix("CONFIG_APP_PROJECT_VER="))
+        .map(|v| v.trim().trim_matches('"').to_string())
+        .expect("build.rs: CONFIG_APP_PROJECT_VER missing from sdkconfig.defaults");
+    let crate_ver = env!("CARGO_PKG_VERSION");
+    assert_eq!(
+        ver, crate_ver,
+        "build.rs: CONFIG_APP_PROJECT_VER in sdkconfig.defaults ({ver}) must equal the crate version ({crate_ver})"
+    );
+    assert!(
+        ver.len() <= 24,
+        "build.rs: app version {ver} is longer than 24 characters"
+    );
 }
 
 /// Unix seconds as mbedTLS wants a certificate validity: `YYYYMMDDHHMMSS`.

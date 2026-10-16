@@ -103,3 +103,12 @@ CONFIG_COMPILER_OPTIMIZATION_SIZE=y
 # skipped. If you ever do use esp_idf_hal::i2c::I2cDriver, remove this
 # line again: the check would then be telling the truth.
 CONFIG_I2C_SKIP_LEGACY_CONFLICT_CHECK=y
+
+# --- app version -----------------------------------------------------------
+# The app descriptor's version, which esp-idf-svc's OTA slot reader copies
+# into a 24-character buffer. Left to ESP-IDF it is `git describe`
+# (e.g. rev-c-usb4105-25-gf6b075d, 25 characters) and every slot read
+# fails with ESP_ERR_INVALID_SIZE. build.rs checks that this equals the
+# crate version and fits in 24 characters.
+CONFIG_APP_PROJECT_VER_FROM_CONFIG=y
+CONFIG_APP_PROJECT_VER="0.1.0"

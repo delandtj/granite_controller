@@ -224,6 +224,10 @@ pub fn init() -> bool {
         if log::max_level() < LevelFilter::Info {
             log::set_max_level(LevelFilter::Info);
         }
+        // esp-idf-svc logs "Dropped" at Info every time an EspOta handle
+        // closes, and ota::info() opens one per status request (every 3 s
+        // while the setup page is open).
+        let _ = ESP.filter().set_target_level("esp_idf_svc::ota", LevelFilter::Warn);
     }
     installed
 }
