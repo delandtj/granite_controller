@@ -20,3 +20,6 @@ site/book/
 
 # Per-board recovery tokens and passwords (secrets)
 firmware/*recovery_token*
+
+# Cargo build output
+target/
