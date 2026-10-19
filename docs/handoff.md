@@ -1,67 +1,94 @@
-# Handoff - granite controller (updated 2026-10-10)
+# Handoff - granite controller (updated 2026-10-19)
 
 Read this first, then docs/controller.md and docs/power-board.md.
 
-## Next session: firmware
+## Next session: rev C bring-up, continued
 
-Boards are ordered (below). The firmware is written and integrated:
-firmware/docs/adr/0001-firmware-architecture.md (Accepted, with a "What
-was built differently" section at the end that tracks the deviations),
-firmware/README.md for build, flash, console, OTA and the devboard
-features.
+Rev C boards arrived 2026-10-16. Board 1 is on the bench: USB-C to this
+host (/dev/ttyACM0 when the devboard is unplugged), Ethernet on the bench
+LAN, **no 19 V yet** (no JST-PH plugs on hand; ordered). It runs entirely
+from USB.
 
-Implemented, and the parts that do not need the board are verified on a
-bare ESP32-C6 devboard (2026-10-10):
-- granite-core, host-tested: node state machine, actuator queue with the
-  press deadline, rule engine, config, messages, dispatcher, the HTTP API
-  handlers, the Modbus frame handler and register map.
-- granite-fw: hardware layer, platform layer (NVS, identity and
-  recovery, W5500 net with commit-confirm, SNTP, mDNS, USB console, OTA
-  with probation, log ring), HTTPS page plus /api/v1, MQTT client,
-  Modbus TCP server, all three wired into main.rs.
-- Verified on the devboard: boot order (relay resets low first), absent
-  expanders logged as a fault instead of a panic, HTTPS on 443 and /id on
-  80 listening, MQTT off means no broker thread, Modbus off means no
-  listener and a logged reason, console id/status/net, 280 KB free heap
-  after boot, heartbeat and no panic over 95 s. Release image 1.72 MB of
-  the 2.5 MB slot.
+Board 1 identity (secrets in firmware/board-cb374b_recovery_token,
+gitignored, mode 600):
+- device id granite-cb374b, base MAC 90:64:9b:cb:37:48, Ethernet MAC
+  ...:4b, DHCP 192.168.64.115, mDNS granite-cb374b.local
+- admin password set by the user; ask them, do not guess (5 failures =
+  60 s lockout). API token `ota-test` exists for scripted tests; its
+  value is in the previous session's scratchpad only, so make a new one
+  (POST /api/v1/session, then POST /api/v1/security/tokens).
+- running ota_0 (valid); ota_1 holds the deliberately broken test image.
 
-Untested on hardware, because it needs the real board: everything on the
-W5500 (link, DHCP, AutoIP, commit-confirm, dead-man), the expanders
-(relay presses, the press deadline dropping GPIO10, LED sense, dry
-contacts), DS18B20 probes, TMP1075, VIN, the LTC4282 path, and the OTA
-probation ladder end to end (no image has been pushed to a slot yet).
-The PLED level on a real motherboard is still the open question of
-docs/controller.md item 4.
+Done on board 1 (2026-10-16 .. 19):
+1. Power and USB: enumerates, C6 v0.2, 8 MB flash, no eFuses burned.
+2. `hwtest` example: U14/U15/TMP1075 answer (0x20/0x21/0x48), press
+   deadline drops GPIO10 (659 ms for 600 ms) and resets U14, U15 sense
+   reads, 1-wire and external I2C come up empty, status LED patterns seen.
+3. Ethernet: link, DHCP, SNTP server from option 42, mDNS, /id on 80 and
+   443, cert fingerprint matches the console, 0.8 ms ping.
+4. OTA rollback: good image pushed over HTTPS -> ota_0 pending -> valid
+   after an authenticated request; panicking image -> ota_1 -> bootloader
+   rolled back to ota_0 ("last invalid ota_1", boot reason panic).
+5. MQTT: bench broker (below) over TLS + password; staged section
+   auto-confirmed on connect; status/state/event/log all publish.
 
-Firmware gaps found while fact-checking the docs site (2026-10-10) are
-listed in firmware/docs/gaps-2026-10.md; all 14 were fixed the same day
-(commit df96ce9 and the follow-up for the board-side `?wait=1`). What
-those fixes still need a network or the real board for:
-- MQTT: client rebuild on a live section change, auto-confirm on
-  connect, the staged mqtt/sec deadline restoring the stored section
-  without a reboot.
-- Dead-man reset by accepted HTTPS/Modbus/MQTT connections; empty
-  gateway disarming it.
-- Fault bit 2 (a configured probe that is absent) and the live apply of
-  vin_trim, probe names and t_probe_s (needs a config write).
-- OTA progress events on a real push/pull, and whether a board built
-  with sdkconfig.defaults.signing accepts an espsecure-signed .bin.
-- HEAD responses, `?wait=1` on the board.
+Firmware fixes found by the board (all committed on eight-node-expander):
+- 2076c02: SPI2 had no DMA (64-byte cap broke every W5500 frame); port-80
+  httpd stack 6144 overflowed on /id.
+- 8419e1f: ESP-IDF app version came from git describe (25 chars) and
+  overflowed esp-idf-svc's 24-char FirmwareInfo::version, so every OTA
+  slot read failed (ESP_ERR_INVALID_SIZE); now CONFIG_APP_PROJECT_VER,
+  checked against the crate version in build.rs. esp_idf_svc::ota
+  "Dropped" spam filtered to Warn.
 
-Next steps:
-1. Devboard network tests with `--features wifi-dev` (Wi-Fi STA instead
-  of the W5500): first setup over HTTPS, a broker session against a real
-  mosquitto, a Modbus client against the map, an OTA push and a
-  deliberately failing image to see the probation reset.
-2. Bring-up checklist when rev C arrives: ADR 0001, "Bring-up order on
-  hardware" - console and identity, expanders held in reset with
-  readback, link and DHCP and /id, HTTPS first setup, sense, actuator
-  with the deadline proven by a hung task, MQTT, OTA rollback, Modbus,
-  rules. `cargo build --release --features hwtest --example hwtest` is
-  the first half of that on the bench.
-3. Setup-page and client work needs no board: `cargo run -p granite-sim
-  -- serve` runs the real core and the real page over fakes.
+Bench MQTT broker: `firmware/tools/mqtt-broker.sh <ip> [user ...]` sets
+up mosquitto as the systemd user service `granite-mqtt` (8883 TLS with a
+local CA + password on all interfaces; 1883 anonymous on 127.0.0.1 only).
+State in ~/.local/share/granite-mqtt (ca.crt for the board's MQTT page,
+users/<name> holds each password). Users: granite-cb374b (the board),
+bench (host-side tools). Board 1 publishes under granite/bench/granite-cb374b.
+Watch: `mosquitto_sub -h 127.0.0.1 -v -t 'granite/#'`.
+
+Bench gotcha: `espflash monitor` (even `--no-reset`) connects through the
+ROM loader and can leave the chip halted in download mode. The W5500
+keeps the switch link LED on, so the board looks connected but answers
+nothing. For a passive capture use a plain reader (e.g. `picocom` or
+`cat /dev/ttyACM0` after `stty`), and only use espflash monitor when a
+reset is wanted.
+
+Next steps, in ADR 0001 bring-up order:
+1. MQTT commands: a `cmd` round trip with `ack/<id>`, live section
+   change rebuilding the client, staged mqtt deadline restoring without a
+   reboot. Check the MQTT `ts` fields: they looked like uptime ms, not
+   wall-clock - verify SNTP actually synced.
+2. Actuator: a node press with the relay heard or measured across the
+   node header pins (one relay is fine on USB power), the deadline proven
+   by a deliberately hung task.
+3. OTA probation timeout path (an image nobody confirms; lower
+   sys.t_validate_s for the test) and OTA progress events on MQTT.
+4. Modbus TCP against the register map.
+5. Rules.
+6. Once plugs arrive: 19 V on J3 (VIN sense, trim), DS18B20 probes
+   (3-wire only; fault bit 2 with a configured absent probe), dry
+   contacts on J10, a real motherboard on a node connector (PLED level,
+   docs/controller.md item 4).
+
+Open nits seen on the board:
+- /api/v1/firmware `slots` lists only the next slot, size 0, empty
+  version; `validate_left_s` stays null while pending.
+- Every status poll logs ESP-IDF's `E esp_ota_ops: ota data invalid`
+  while otadata is blank (gone on this board after the first OTA); an
+  option is to have ota::info() skip the boot-slot query when blank.
+- hwtest's first read_leds/read_dry runs before the sense poller's
+  first read and logs "not present"; its messages assume a bare devboard.
+- PUT /api/v1/security/mqtt-credentials returned
+  an empty body although it worked.
+- `probe_scan` is still a logged TODO (1-wire re-scan not wired).
+
+Firmware docs: firmware/docs/adr/0001-firmware-architecture.md,
+firmware/README.md, firmware/docs/gaps-2026-10.md (all 14 closed).
+`cargo run -p granite-sim -- serve` runs the real core and page over
+fakes for page work without a board.
 
 Decided (user, 2026-10-09):
 - Code lives in firmware/ in this repo.
