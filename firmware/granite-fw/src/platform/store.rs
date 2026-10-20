@@ -85,6 +85,12 @@ impl Store {
         })
     }
 
+    /// The NVS partition, for a module that keeps a namespace of its own
+    /// (the OTA rollback report).
+    pub fn partition(&self) -> EspDefaultNvsPartition {
+        self.partition.clone()
+    }
+
     fn ns(&mut self, namespace: &str) -> HalResult<&mut EspNvs<NvsDefault>> {
         if !self.handles.contains_key(namespace) {
             let nvs =

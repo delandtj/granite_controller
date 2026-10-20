@@ -561,7 +561,11 @@ pub fn init(
     if config.mqtt.enabled {
         ota::expect_broker();
     }
-    ota::start(config.sys.t_validate_s, Some(events.sender()));
+    ota::start(
+        config.sys.t_validate_s,
+        Some(events.sender()),
+        Some(store.partition()),
+    );
 
     let net = net::init(
         net_hw,

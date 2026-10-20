@@ -17,7 +17,8 @@ gitignored, mode 600):
   logins = 60 s lockout). API token `ota-test` exists for scripted tests; its
   value is in the previous session's scratchpad only, so make a new one
   (POST /api/v1/session, then POST /api/v1/security/tokens).
-- running ota_0 (valid, master as of 2026-10-20); ota_1 holds the same build.
+- running ota_1 (valid, with the rollback report); ota_0 holds the same
+  build, marked invalid by the rollback test.
 
 Done on board 1 (2026-10-16 .. 19):
 1. Power and USB: enumerates, C6 v0.2, 8 MB flash, no eFuses burned.
@@ -101,10 +102,15 @@ Next steps, in ADR 0001 bring-up order:
      rebooting. Ack before the reboot (or on accept).
    - `pending_verify` is emitted at boot before the MQTT session exists
      and is lost (not seen on a normal pull either).
-   - `rolled_back` is only sent by the failing image, which usually has
-     no broker (that is why it failed); the surviving image knows "last
-     invalid <slot>" but says nothing. It should emit the rollback on
-     its first connect.
+   - FIXED 2026-10-20: `rolled_back` used to come only from the failing
+     image, which usually has no broker. Now the failing image writes
+     its verdict to NVS (ota/rb_why) and the image the bootloader falls
+     back to emits `rolled_back` on its first broker session ("ota_0 not
+     confirmed within 120 s (expanders=true link=true broker=false
+     https=false); version 0.1.0; now running ota_1"), then records the
+     slot's ELF sha in ota/rb_seen: verified on board 1, once only (a
+     reboot after it sent nothing). A rollback after a crash (no
+     verdict) gets a generic reason; that path is not tested on a board.
    - `verified` goes out ~10 ms before the reboot; it arrived on one
      run, but nothing guarantees it (the MQTT outbox is not flushed).
 4. Modbus TCP against the register map.

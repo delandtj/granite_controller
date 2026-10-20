@@ -29,6 +29,7 @@ use std::thread;
 use std::time::Duration;
 
 use esp_idf_svc::http::client::{Configuration as HttpConfiguration, EspHttpConnection};
+use esp_idf_svc::nvs::{EspDefaultNvsPartition, EspNvs, NvsDefault};
 use esp_idf_svc::ota::{EspOta, Slot, SlotState};
 use esp_idf_svc::sys::{
     EspError, esp, esp_ota_abort, esp_ota_begin, esp_ota_end, esp_ota_get_next_update_partition,
@@ -145,9 +146,11 @@ pub fn mark_link() {
     ready::LINK.store(true, Ordering::Relaxed);
 }
 
-/// Step 3a: the configured broker connected.
+/// Step 3a: the configured broker connected. Also the moment a rollback
+/// found at boot can be reported: see [`report_rollback`].
 pub fn mark_broker() {
     ready::BROKER.store(true, Ordering::Relaxed);
+    report_rollback();
 }
 
 /// Step 3b: an authenticated HTTPS request was served.
@@ -288,14 +291,21 @@ pub fn mark_invalid_and_reboot() -> EspError {
 ///
 /// `events` gets one `ota` event per step, so the probation shows up in the
 /// MQTT log the same way the prior art put it in the capture log.
-pub fn start(t_validate_s: u32, events: Option<Sender<Event>>) {
+///
+/// `nvs` is where the rollback report lives (see [`report_rollback`]);
+/// without it a rollback is only logged.
+pub fn start(t_validate_s: u32, events: Option<Sender<Event>>, nvs: Option<EspDefaultNvsPartition>) {
     // Park a copy for the transfer progress events (ADR component 11:
     // `started` and `downloading` on the event topic).
     if let Ok(mut guard) = PROGRESS_EVENTS.lock() {
         *guard = events.clone();
     }
+    if let Ok(mut guard) = NVS.lock() {
+        *guard = nvs;
+    }
     let state = match info() {
         Ok(info) => {
+            find_rollback(&info.running);
             log::info!(
                 "ota: running {} ({}), next {}, boot {}{}",
                 info.running,
@@ -373,6 +383,14 @@ fn probation(window_s: u32, events: Option<Sender<Event>>) {
                  the bootloader rolls back"
             );
             emit(&events, "rolled_back", &detail);
+            // This event rarely gets out (a missing broker is the usual
+            // reason to be here), so leave the reason for the image the
+            // bootloader falls back to.
+            let running = info().map(|i| i.running).unwrap_or_default();
+            nvs_set(
+                RB_WHY,
+                &format!("{running} not confirmed within {window_s} s ({detail})"),
+            );
             STATE.store(OtaState::Invalid.code(), Ordering::Relaxed);
             thread::sleep(REBOOT_DELAY);
             // Releases the relays first, then hands over to ESP-IDF.
@@ -401,6 +419,140 @@ fn emit(events: &Option<Sender<Event>>, phase: &str, detail: &str) {
             },
         ));
     }
+}
+
+// ---------------------------------------------------------------------------
+// Rollback report
+// ---------------------------------------------------------------------------
+//
+// The image that fails probation emits `rolled_back` itself, but it is
+// usually failing because it has no broker, so that event is lost. The
+// image the bootloader falls back to reports it instead: at boot it
+// finds the last invalid slot, and on its first broker session it emits
+// one `rolled_back` event and records the slot as reported in NVS, so the
+// report goes out once per rollback, however many reboots it takes to
+// reach a broker. A rollback after a crash or reset (no probation verdict
+// written) is reported the same way, with a generic reason.
+
+/// NVS namespace of the rollback report. Survives a factory reset.
+const RB_NAMESPACE: &str = "ota";
+/// Why the last probation failed, written by the failing image.
+const RB_WHY: &str = "rb_why";
+/// Identity of the last invalid image already reported.
+const RB_SEEN: &str = "rb_seen";
+
+/// The NVS partition, parked by [`start`].
+static NVS: Mutex<Option<EspDefaultNvsPartition>> = Mutex::new(None);
+
+/// A rollback found at boot, waiting for the first broker session.
+struct PendingRollback {
+    identity: String,
+    detail: String,
+}
+
+static ROLLBACK: Mutex<Option<PendingRollback>> = Mutex::new(None);
+
+fn rb_nvs() -> Option<EspNvs<NvsDefault>> {
+    let partition = NVS.lock().ok()?.clone()?;
+    match EspNvs::new(partition, RB_NAMESPACE, true) {
+        Ok(nvs) => Some(nvs),
+        Err(e) => {
+            log::warn!("ota: rollback record unavailable: {e}");
+            None
+        }
+    }
+}
+
+fn nvs_get(key: &str) -> Option<String> {
+    let nvs = rb_nvs()?;
+    let mut buf = [0u8; 256];
+    match nvs.get_str(key, &mut buf) {
+        Ok(value) => value.map(str::to_string),
+        Err(e) => {
+            log::warn!("ota: reading {RB_NAMESPACE}/{key} failed: {e}");
+            None
+        }
+    }
+}
+
+fn nvs_set(key: &str, value: &str) {
+    if let Some(nvs) = rb_nvs()
+        && let Err(e) = nvs.set_str(key, value)
+    {
+        log::warn!("ota: writing {RB_NAMESPACE}/{key} failed: {e}");
+    }
+}
+
+fn nvs_remove(key: &str) {
+    if let Some(nvs) = rb_nvs()
+        && let Err(e) = nvs.remove(key)
+    {
+        log::warn!("ota: removing {RB_NAMESPACE}/{key} failed: {e}");
+    }
+}
+
+/// What tells two images in the same slot apart: the ELF sha256 from the
+/// app descriptor, or version and build time when it is missing.
+fn image_identity(slot: &Slot) -> String {
+    let label = slot_label(slot);
+    match slot.firmware.as_ref() {
+        Some(fw) => match fw.signature.as_ref() {
+            Some(sig) => format!("{label} {}", hex(sig)),
+            None => format!("{label} {} {}", fw.version, fw.released),
+        },
+        None => label,
+    }
+}
+
+/// Boot: is there a rollback nobody has been told about? A recorded
+/// verdict always counts (the same image can fail twice); without one, a
+/// last invalid slot that differs from the last one reported does.
+fn find_rollback(running: &str) {
+    let slot = match EspOta::new().and_then(|ota| ota.get_last_invalid_slot()) {
+        Ok(Some(slot)) => slot,
+        Ok(None) => return,
+        Err(e) => {
+            log::warn!("ota: last invalid slot unreadable: {e}");
+            return;
+        }
+    };
+    let identity = image_identity(&slot);
+    let why = nvs_get(RB_WHY);
+    if why.is_none() && nvs_get(RB_SEEN).as_deref() == Some(identity.as_str()) {
+        return;
+    }
+    let version = slot
+        .firmware
+        .as_ref()
+        .map(|fw| fw.version.as_str().to_string())
+        .unwrap_or_default();
+    let why = why.unwrap_or_else(|| {
+        format!(
+            "{} did not confirm (reset or crash before its probation ended)",
+            slot_label(&slot)
+        )
+    });
+    let detail = format!("{why}; version {version}; now running {running}");
+    log::warn!("ota: rolled back: {detail}; reported on the next broker session");
+    if let Ok(mut guard) = ROLLBACK.lock() {
+        *guard = Some(PendingRollback { identity, detail });
+    }
+}
+
+/// First broker session after a rollback: emit it, then record it as
+/// reported. Runs from the MQTT worker's connect hook, so the event is
+/// queued while the session is up.
+fn report_rollback() {
+    let pending = match ROLLBACK.lock() {
+        Ok(mut guard) => guard.take(),
+        Err(_) => return,
+    };
+    let Some(pending) = pending else {
+        return;
+    };
+    emit_progress("rolled_back", None, pending.detail);
+    nvs_set(RB_SEEN, &pending.identity);
+    nvs_remove(RB_WHY);
 }
 
 /// Where the writer's own `started` and `downloading` events go.
