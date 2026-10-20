@@ -53,6 +53,8 @@
 use std::io::{ErrorKind as IoErrorKind, Read, Write};
 use std::net::{Shutdown, SocketAddr, TcpListener, TcpStream};
 use std::sync::atomic::{AtomicBool, AtomicU16, AtomicU32, AtomicUsize, Ordering};
+use std::collections::VecDeque;
+use std::sync::mpsc::Receiver;
 use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -60,9 +62,9 @@ use std::time::{Duration, Instant};
 use granite_core::config::ModbusCfg;
 use granite_core::modbus_map::{FwVersion, ResultCode};
 use granite_core::modbus_server::{
-    AllowList, MAX_FRAME, MBAP_HEADER, RegisterImage, handle_frame, mbap_payload_len,
+    AllowList, COMMAND_ID_PREFIX, MAX_FRAME, MBAP_HEADER, RegisterImage, handle_frame, mbap_payload_len,
 };
-use granite_core::msg::{Command, Reply};
+use granite_core::msg::{Command, Event, EventKind, Reply};
 use granite_core::observed::Observed;
 
 use crate::platform::CommandChannel;
@@ -125,6 +127,10 @@ pub struct ModbusCtx {
     /// notices a fault sets the bit and every reader sees it; it stays 0
     /// when nobody writes it.
     pub faults: Arc<AtomicU16>,
+    /// The event bus, for the completion of an accepted command: holding
+    /// register 9 moves from `accepted` to the outcome when the action
+    /// the last command word started finishes.
+    pub events: Receiver<Event>,
 }
 
 /// The firmware version as the register map reports it, from the crate
@@ -210,6 +216,7 @@ pub fn start(ctx: ModbusCtx) -> anyhow::Result<ModbusHandle> {
         conns: AtomicUsize::new(0),
         stop: AtomicBool::new(false),
         last_result: AtomicU16::new(ResultCode::Idle.as_u16()),
+        last: Mutex::new(LastCommand::default()),
         rejects: AtomicU32::new(0),
         reject_log: Mutex::new(None),
         seq: AtomicU32::new(0),
@@ -220,6 +227,13 @@ pub fn start(ctx: ModbusCtx) -> anyhow::Result<ModbusHandle> {
         .name("modbus".into())
         .stack_size(SUPERVISOR_STACK)
         .spawn(move || supervisor(worker))?;
+
+    let watcher = Arc::clone(&shared);
+    let events = ctx.events;
+    thread::Builder::new()
+        .name("modbus-events".into())
+        .stack_size(EVENTS_STACK)
+        .spawn(move || completions(&watcher, &events))?;
 
     Ok(ModbusHandle { shared })
 }
@@ -261,6 +275,8 @@ struct Shared {
     conns: AtomicUsize,
     stop: AtomicBool,
     last_result: AtomicU16,
+    /// The command behind holding register 9, while it is running.
+    last: Mutex<LastCommand>,
     rejects: AtomicU32,
     reject_log: Mutex<Option<Instant>>,
     seq: AtomicU32,
@@ -303,13 +319,37 @@ impl Shared {
         }
     }
 
-    /// Send one command to the dispatcher and wait for its ack.
+    /// Send one command to the dispatcher and wait for its ack, and make
+    /// it the command holding register 9 reports.
     ///
     /// The wait is bounded by [`crate::http::COMMAND_TIMEOUT`], and a
     /// queued action is acked with `accepted` immediately, so a slow
-    /// actuator cannot hold a Modbus connection.
+    /// actuator cannot hold a Modbus connection. An accepted command is
+    /// then followed to its end by [`completions`].
     fn submit(&self, cmd: &Command) -> Reply {
-        self.commands.call(cmd)
+        let reply = self.commands.call(cmd);
+        let mut code = ResultCode::of_reply(&reply);
+        let Ok(mut last) = self.last.lock() else {
+            self.set_last_result(code);
+            return reply;
+        };
+        last.running = None;
+        if code == ResultCode::Accepted {
+            // The action may already be over: very short ones can finish
+            // before this thread gets the ack back.
+            match last.finished.iter().find(|(id, _)| *id == cmd.id) {
+                Some((_, done)) => code = *done,
+                None => last.running = Some(cmd.id.clone()),
+            }
+        }
+        self.set_last_result(code);
+        reply
+    }
+
+    /// A connection lwIP had no socket for, logged like a refused peer.
+    fn log_reject_os(&self, e: &std::io::Error) {
+        let why = format!("no free socket: {e}");
+        self.log_reject(&SocketAddr::from(([0, 0, 0, 0], 0)), &why);
     }
 
     /// Log a refused connection at most once per
@@ -331,6 +371,53 @@ impl Shared {
         } else {
             log::warn!("modbus: refused {peer} ({why})");
         }
+    }
+}
+
+/// The command whose outcome holding register 9 is waiting for.
+#[derive(Default)]
+struct LastCommand {
+    /// Id of the last command word, while its action runs.
+    running: Option<String>,
+    /// Recent completions of Modbus commands, for an ack that arrives
+    /// after its own completion.
+    finished: VecDeque<(String, ResultCode)>,
+}
+
+/// Completions kept for [`LastCommand::finished`].
+const FINISHED_KEPT: usize = 8;
+
+/// Stack of the completion watcher.
+const EVENTS_STACK: usize = 3072;
+
+/// Follow `action_done` / `action_failed` events: when the running
+/// command word's action ends, holding register 9 shows how.
+fn completions(shared: &Arc<Shared>, events: &Receiver<Event>) {
+    while let Ok(event) = events.recv() {
+        let (id, code) = match &event.kind {
+            EventKind::ActionDone { id, result, .. } => match result.as_str() {
+                // A step inside `off`, not its end.
+                "escalated" => continue,
+                "shutdown_pending" => (id, ResultCode::ShutdownPending),
+                _ => (id, ResultCode::Ok),
+            },
+            EventKind::ActionFailed { id, .. } => (id, ResultCode::Failed),
+            _ => continue,
+        };
+        if !id.starts_with(COMMAND_ID_PREFIX) {
+            continue;
+        }
+        let Ok(mut last) = shared.last.lock() else {
+            continue;
+        };
+        if last.running.as_deref() == Some(id.as_str()) {
+            last.running = None;
+            shared.set_last_result(code);
+        }
+        if last.finished.len() == FINISHED_KEPT {
+            last.finished.pop_front();
+        }
+        last.finished.push_back((id.clone(), code));
     }
 }
 
@@ -442,6 +529,13 @@ fn serve(
             }
             Err(e) if e.kind() == IoErrorKind::WouldBlock => thread::sleep(POLL),
             Err(e) if e.kind() == IoErrorKind::Interrupted => {}
+            // lwIP's socket table is full (ENFILE, or EMFILE): lwIP has
+            // already closed that one connection. The listener is fine,
+            // so keep it; dropping it would refuse everyone else too.
+            Err(e) if matches!(e.raw_os_error(), Some(23 | 24)) => {
+                shared.log_reject_os(&e);
+                thread::sleep(POLL);
+            }
             Err(e) => {
                 log::warn!("modbus: accept failed ({e}); rebinding");
                 return;
@@ -541,9 +635,8 @@ fn connection(shared: &Arc<Shared>, mut stream: TcpStream, peer: SocketAddr, uni
                 let outcome = handle_frame(unit_id, &buf[..len], &image, &mut seq, &mut |cmd| {
                     shared.submit(cmd)
                 });
-                if let Some(code) = outcome.result {
-                    shared.set_last_result(code);
-                }
+                // `outcome.result` is what `submit` already stored, and
+                // storing it again here could undo a completion.
                 if !outcome.response.is_empty() && stream.write_all(&outcome.response).is_err() {
                     break;
                 }

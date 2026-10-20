@@ -17,8 +17,9 @@ gitignored, mode 600):
   logins = 60 s lockout). API token `ota-test` exists for scripted tests; its
   value is in the previous session's scratchpad only, so make a new one
   (POST /api/v1/session, then POST /api/v1/security/tokens).
-- running ota_0 (valid, master 2026-10-20 with the RTC watchdog);
-  ota_1 holds the boot-hang-test image, marked invalid.
+- running ota_0 (valid, master 2026-10-20 with the Modbus fixes);
+  ota_1 holds the previous build. Modbus TCP is enabled (allow
+  192.168.64.99/32).
 
 Done on board 1 (2026-10-16 .. 19):
 1. Power and USB: enumerates, C6 v0.2, 8 MB flash, no eFuses burned.
@@ -137,7 +138,34 @@ Next steps, in ADR 0001 bring-up order:
    on probation) was reset by the watchdog 59 s after boot, rolled back
    to ota_0, which reported `rolled_back` on MQTT. Boot reason reads
    `int_watchdog`. The cause of the hang itself is still unknown.
-4. Modbus TCP against the register map.
+4. Modbus TCP: done 2026-10-20 (bench client: a stdlib Python script,
+   raw MBAP; pymodbus/mbpoll not installed). Enabled through `sec.modbus`
+   (staged, confirm needed) with allow 192.168.64.99/32; left on.
+   Verified: every table matches /status (board 26.25 C, uptime, link,
+   mqtt, probes 0x8000, fault flags 8 = VIN window on USB, fw 0x0001,
+   map 1); exception 2 for any address outside the map, 3 for qty 0 /
+   too large / bad command word / bad coil value, 1 for an unknown
+   function (a PDU under 5 bytes, e.g. FC 7 or a 4-byte FC 43/14, is
+   closed instead: rmodbus' MBAP minimum); coil/command writes become the
+   same commands as MQTT (on: accepted -> power_on_timeout without a
+   motherboard; reset on an off node refused); allow-list refuses,
+   disable closes the port, max_conn 4 holds.
+   Fixed on the way (all verified on board 1):
+   - unit 0 / 0xFF were rmodbus "broadcast": a write was EXECUTED with
+     no reply, so a client (Modbus TCP says send 0xFF) retried and
+     pressed again. Now served as this unit, request unit echoed.
+   - holding register 9 stayed `accepted` forever; the server now
+     follows action_done / action_failed of its last command (2 -> 4
+     seen for power_on_timeout).
+   - lwIP socket table was 10: Modbus got 2 connections, and on ENFILE
+     the listener was dropped and rebound. Now 20 sockets, and ENFILE /
+     EMFILE backs off without dropping the listener.
+   OPEN (found here, not Modbus): every bearer-token request runs
+   PBKDF2 (20k iterations) on the token: 3.4 s per request against
+   0.43 s with a session cookie, login 1.9 s. It runs in the httpd task
+   and starves the idle task, so three parallel token requests reset
+   the board through the task watchdog (boot_reason task_watchdog),
+   and parallel logins would do the same without any credentials.
 5. Rules.
 6. Once plugs arrive: 19 V on J3 (VIN sense, trim), DS18B20 probes
    (3-wire only; fault bit 2 with a configured absent probe), dry

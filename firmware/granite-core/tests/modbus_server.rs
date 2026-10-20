@@ -222,6 +222,27 @@ fn a_frame_shorter_than_the_protocol_minimum_closes_the_connection() {
 }
 
 #[test]
+fn unit_0xff_and_0_are_this_unit_and_echoed() {
+    for unit in [0xFFu8, 0] {
+        let mut f = frame(&read_pdu(3, 0, 1));
+        f[6] = unit;
+        let out = serve(&f);
+        assert!(!out.response.is_empty(), "unit {unit} gets an answer");
+        assert_eq!(out.response[6], unit, "unit {unit} is echoed");
+        assert_eq!(out.response[7], 3);
+    }
+}
+
+#[test]
+fn a_write_to_unit_0xff_is_answered() {
+    let mut f = frame(&[5, 0, 0, 0xFF, 0x00]);
+    f[6] = 0xFF;
+    let out = serve(&f);
+    assert_eq!(out.response[6], 0xFF);
+    assert_eq!(&out.response[7..], &[5, 0, 0, 0xFF, 0x00]);
+}
+
+#[test]
 fn a_frame_for_another_unit_is_ignored() {
     let mut f = frame(&read_pdu(3, 0, 1));
     f[6] = 9;

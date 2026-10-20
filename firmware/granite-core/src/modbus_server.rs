@@ -28,6 +28,8 @@
 //! | any address in the requested span is not in the map | 2, illegal data address |
 //! | quantity 0, or a command word / coil value the map rejects | 3, illegal data value |
 //! | a malformed or truncated frame | no response; the caller closes the connection |
+//! | unit id 0 or 0xFF | served as this unit, the request's unit id echoed |
+//! | any other unit id that is not ours | ignored, no response |
 //!
 //! A write whose command is refused or fails is still a successful write
 //! at the protocol level: the outcome lands in holding register 9
@@ -54,6 +56,9 @@ pub const MBAP_HEADER: usize = 6;
 
 /// Largest frame the protocol allows, header included.
 pub const MAX_FRAME: usize = 256;
+
+/// Every command a Modbus write turns into has an id starting with this.
+pub const COMMAND_ID_PREFIX: &str = "modbus-";
 
 /// Default TCP port of a Modbus server.
 pub const DEFAULT_PORT: u16 = 502;
@@ -172,6 +177,23 @@ pub fn handle_frame(
     let mut broken = false;
     let mut answer = false;
 
+    // On TCP the unit id carries nothing (the IP address picks the
+    // server): the Modbus TCP guide has clients send 0xFF and accepts 0.
+    // rmodbus reads both as a serial broadcast, which executes a write
+    // and sends no reply, so a client retries and presses again. Treat
+    // them as this unit and echo the client's value back.
+    let wire_unit = request.get(MBAP_HEADER).copied();
+    let readdressed;
+    let request = match wire_unit {
+        Some(u) if u == 0 || u == 0xFF => {
+            let mut copy = request.to_vec();
+            copy[MBAP_HEADER] = unit_id;
+            readdressed = copy;
+            readdressed.as_slice()
+        }
+        _ => request,
+    };
+
     {
         let mut frame = ModbusFrame::new(unit_id, request, ModbusProto::TcpUdp, &mut response);
         if frame.parse().is_err() {
@@ -209,6 +231,12 @@ pub fn handle_frame(
         }
     }
 
+    if answer
+        && let Some(u) = wire_unit
+        && let Some(slot) = response.get_mut(MBAP_HEADER)
+    {
+        *slot = u;
+    }
     FrameOutcome {
         response: if answer { response } else { Vec::new() },
         broken,
@@ -404,7 +432,7 @@ fn plan_bits(w: &WriteBits<'_>) -> Result<Vec<(u16, bool)>, ErrorKind> {
 }
 
 fn next_id(seq: &mut u32) -> String {
-    let id = format!("modbus-{seq}");
+    let id = format!("{COMMAND_ID_PREFIX}{seq}");
     *seq = seq.wrapping_add(1);
     id
 }

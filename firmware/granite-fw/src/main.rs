@@ -430,6 +430,7 @@ fn main() -> anyhow::Result<()> {
         config: cfg_at_boot.sec.modbus.clone(),
         fw: modbus::fw_version(),
         faults: Arc::clone(&faults),
+        events: platform.events.subscribe(),
     }) {
         Ok(handle) => Some(handle),
         Err(e) => {
