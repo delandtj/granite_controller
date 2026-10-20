@@ -510,6 +510,9 @@ fn dispatcher<S: NodeSwitches>(
     let mut actuator = Actuator::new(switches);
     let mut nodes = Nodes::new();
     let mut rules = RuleEngine::new();
+    // The rules and the actuator live here: a hang must not go unnoticed.
+    // Every wait in this loop is bounded (DISPATCH_TICK, try-locks).
+    platform::watch_this_thread("dispatcher");
 
     let mut cfg = platform.config();
     apply_config(&platform, &cfg, &mut actuator, &mut nodes, &mut rules);
@@ -529,6 +532,7 @@ fn dispatcher<S: NodeSwitches>(
     let mut fallback_pending = fallback_sections;
 
     loop {
+        platform::feed_task_watchdog();
         let now = platform::now_ms();
         let mut events = Vec::new();
 
@@ -687,15 +691,14 @@ fn dispatcher<S: NodeSwitches>(
                     fired.rule_id,
                     fired.name,
                     fired.target,
-                    fired.value
+                    fired
+                        .value
+                        .map_or_else(|| String::from("missing"), |v| v.to_string())
                 );
                 platform.publish(event_from_rule(&fired, now));
-                if let granite_core::rules::RuleAction::Act { kind } = fired.action {
-                    let req = granite_core::actuator::ActionRequest::new(
-                        format!("rule{}", fired.rule_id),
-                        kind,
-                        fired.target,
-                    );
+                // A force_off from a rule acts on unknown nodes and takes
+                // over busy ones (Fired::request).
+                if let Some(req) = fired.request() {
                     let (_, mut evs) = actuator.submit(&req, now, &snapshot);
                     events.append(&mut evs);
                 }
@@ -889,6 +892,9 @@ fn apply_effect(
             }
         }
         SideEffect::ProbeScan => {
+            // Bench test of the dispatcher's task-watchdog subscription.
+            #[cfg(feature = "dispatcher-hang-test")]
+            dispatcher_hang();
             // TODO(ADR 0001 4): a probe scan is the hardware layer's
             // 1-wire bus walk; it lands when src/hw exposes it.
             log::warn!("probe_scan: the 1-wire bus is owned by the hardware layer, not wired yet");
@@ -954,7 +960,10 @@ fn start_sense(
             let mut vin_warned = false;
             drop(cfg);
 
+            // Watched from here, after the one-off bus scan.
+            platform::watch_this_thread("sense");
             loop {
+                platform::feed_task_watchdog();
                 let now = platform::now_ms();
 
                 // Pick up a `nodes` save: probe names and ROM ids, the
@@ -996,11 +1005,16 @@ fn start_sense(
                     last_probe_ms = now;
                     Some(
                         roms.iter()
-                            .map(|(rom, name)| ProbeObs {
-                                rom: *rom,
-                                name: name.clone(),
-                                centi_c: probes.read(*rom).ok(),
-                                ts_ms: now,
+                            .map(|(rom, name)| {
+                                // A conversion is up to 750 ms; eight
+                                // probes must not add up to a timeout.
+                                platform::feed_task_watchdog();
+                                ProbeObs {
+                                    rom: *rom,
+                                    name: name.clone(),
+                                    centi_c: probes.read(*rom).ok(),
+                                    ts_ms: now,
+                                }
                             })
                             .collect(),
                     )
@@ -1294,4 +1308,13 @@ fn config_event(section: Section, change: &str, detail: Option<String>) -> Event
             detail,
         },
     )
+}
+
+/// `dispatcher-hang-test`: never return, without feeding the watchdog.
+#[cfg(feature = "dispatcher-hang-test")]
+fn dispatcher_hang() {
+    log::warn!("dispatcher-hang-test: hanging the dispatcher; the task watchdog has to reset");
+    loop {
+        std::thread::sleep(std::time::Duration::from_secs(1));
+    }
 }

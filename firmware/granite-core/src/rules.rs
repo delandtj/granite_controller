@@ -11,7 +11,7 @@ use core::fmt;
 
 use serde::{Deserialize, Serialize};
 
-use crate::actuator::ActionKind;
+use crate::actuator::{ActionArgs, ActionKind, ActionRequest};
 use crate::observed::Observed;
 use crate::{DRY_COUNT, NODE_COUNT, PROBE_SLOTS, Target};
 
@@ -156,6 +156,20 @@ pub enum RuleAction {
     Event,
 }
 
+/// What a rule does when its source has no value (a probe that stopped
+/// answering, a sensor not read yet).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Missing {
+    /// The condition is false; the rule waits for a value.
+    #[default]
+    Ignore,
+    /// The condition counts as true, `hold_s` included: for a safety rule
+    /// whose sensor going quiet is as bad as the reading it guards.
+    /// Not for `changed`, which needs two values.
+    Trip,
+}
+
 /// When a fired rule may fire again.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -197,6 +211,8 @@ pub struct Rule {
     pub target: Target,
     /// Re-arm policy.
     pub rearm: Rearm,
+    /// What a missing value means.
+    pub missing: Missing,
 }
 
 impl Default for Rule {
@@ -213,6 +229,7 @@ impl Default for Rule {
             action: RuleAction::Event,
             target: Target::All,
             rearm: Rearm::Auto,
+            missing: Missing::Ignore,
         }
     }
 }
@@ -228,10 +245,34 @@ pub struct Fired {
     pub action: RuleAction,
     /// On what.
     pub target: Target,
-    /// The value that tripped it.
-    pub value: i32,
+    /// The value that tripped it; `None` for a missing value that trips.
+    pub value: Option<i32>,
     /// Whether an ack is needed before it can fire again.
     pub rearm: Rearm,
+}
+
+impl Fired {
+    /// The actuator request this firing makes, if it acts.
+    ///
+    /// `force_off` is the safety action (leak, over-temperature), so it
+    /// does what a manual command would refuse: it acts on a node whose
+    /// state is `unknown` (power-LED sense broken is no reason to leave a
+    /// node running in a leak) and takes over a node that is busy with
+    /// something else. Every other action follows the usual rules.
+    pub fn request(&self) -> Option<ActionRequest> {
+        let RuleAction::Act { kind } = self.action else {
+            return None;
+        };
+        let safety = kind == ActionKind::ForceOff;
+        Some(
+            ActionRequest::new(alloc::format!("rule{}", self.rule_id), kind, self.target)
+                .with_args(ActionArgs {
+                    force: safety,
+                    preempt: safety,
+                    ..ActionArgs::default()
+                }),
+        )
+    }
 }
 
 #[derive(Debug, Clone, Default)]
@@ -323,21 +364,27 @@ impl RuleEngine {
                 st.since_ms = None;
                 continue;
             }
-            let Some(v) = value else {
-                st.since_ms = None;
-                continue;
-            };
-
-            let cond = match rule.op {
-                Op::Gt => v > rule.threshold,
-                Op::Lt => v < rule.threshold,
-                Op::Eq => v == rule.threshold,
-                Op::Changed => previous.is_some_and(|p| p != v),
+            let cond = match (value, rule.missing) {
+                (Some(v), _) => match rule.op {
+                    Op::Gt => v > rule.threshold,
+                    Op::Lt => v < rule.threshold,
+                    Op::Eq => v == rule.threshold,
+                    Op::Changed => previous.is_some_and(|p| p != v),
+                },
+                (None, Missing::Trip) if rule.op != Op::Changed => true,
+                (None, _) => {
+                    st.since_ms = None;
+                    continue;
+                }
             };
 
             // Re-arm first, so a rule that cleared in the same tick in
-            // which it would fire again behaves predictably.
-            if !st.armed && rule.rearm == Rearm::Auto && cleared(&rule, v) {
+            // which it would fire again behaves predictably. A missing
+            // value never clears anything.
+            if !st.armed
+                && rule.rearm == Rearm::Auto
+                && value.is_some_and(|v| cleared(&rule, v))
+            {
                 st.armed = true;
             }
 
@@ -366,7 +413,7 @@ impl RuleEngine {
                 name: rule.name.clone(),
                 action: rule.action,
                 target: rule.target,
-                value: v,
+                value,
                 rearm: rule.rearm,
             });
         }
@@ -402,6 +449,8 @@ pub fn default_rules() -> Vec<Rule> {
             },
             target: Target::All,
             rearm: Rearm::Auto,
+            // No probe answering is no temperature watch at all.
+            missing: Missing::Trip,
         },
         Rule {
             id: 2,
@@ -417,6 +466,7 @@ pub fn default_rules() -> Vec<Rule> {
             },
             target: Target::All,
             rearm: Rearm::Manual,
+            missing: Missing::Ignore,
         },
         Rule {
             id: 3,
@@ -430,6 +480,7 @@ pub fn default_rules() -> Vec<Rule> {
             action: RuleAction::Event,
             target: Target::All,
             rearm: Rearm::Auto,
+            missing: Missing::Ignore,
         },
     ]
 }

@@ -135,6 +135,10 @@ pub struct ActionArgs {
     pub switch: Option<Switch>,
     /// Raw `press` duration in milliseconds.
     pub duration_ms: Option<u32>,
+    /// Cancel whatever the node is doing instead of refusing it as busy.
+    /// Not on the wire: only the rule engine's safety actions set it
+    /// (see [`crate::rules::Fired::request`]).
+    pub preempt: bool,
 }
 
 /// A queued request.
@@ -222,6 +226,8 @@ pub enum FailReason {
     Hal(String),
     /// A staggered group had at least one child that did not succeed.
     Partial,
+    /// A safety action took the node over before this one finished.
+    Preempted,
 }
 
 impl fmt::Display for FailReason {
@@ -233,6 +239,7 @@ impl fmt::Display for FailReason {
             FailReason::ExpanderFault => f.write_str("expander_fault"),
             FailReason::Hal(m) => write!(f, "hal: {m}"),
             FailReason::Partial => f.write_str("partial"),
+            FailReason::Preempted => f.write_str("preempted"),
         }
     }
 }
@@ -758,6 +765,36 @@ impl<S: NodeSwitches> Actuator<S> {
         out
     }
 
+    /// Drop every job of `node`, opening its relay first if it is the one
+    /// holding a press. The dropped jobs end `failed: preempted`.
+    fn cancel_node(&mut self, node: NodeId, out: &mut Vec<ActuatorEvent>) {
+        if self.press_owner == Some(node) {
+            let _ = self.switches.disarm_deadline();
+            if let Err(e) = self.switches.release_all() {
+                out.push(ActuatorEvent::Fault {
+                    id: None,
+                    node: Some(node),
+                    fault: fault_of(&e),
+                });
+            }
+            self.press_owner = None;
+        }
+        let dropped: Vec<Job> = self.jobs.iter().filter(|j| j.node == node).cloned().collect();
+        self.jobs.retain(|j| j.node != node);
+        for job in dropped {
+            let result = ActionResult::failed(FailReason::Preempted);
+            out.push(ActuatorEvent::Done {
+                id: job.id.clone(),
+                node: job.node,
+                action: job.kind,
+                result: result.clone(),
+            });
+            if let Some(gid) = job.group {
+                self.finish_group_child(gid, &result, out);
+            }
+        }
+    }
+
     /// Queue a request.
     pub fn submit(
         &mut self,
@@ -983,6 +1020,9 @@ impl<S: NodeSwitches> Actuator<S> {
     ) -> Result<bool, ActionResult> {
         if !is_node(node) {
             return Err(ActionResult::refused(RefuseReason::BadTarget));
+        }
+        if req.args.preempt && self.is_busy(node) {
+            self.cancel_node(node, out);
         }
         if self.is_busy(node) {
             return Err(ActionResult::refused(RefuseReason::Busy));

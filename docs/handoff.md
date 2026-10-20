@@ -17,7 +17,7 @@ gitignored, mode 600):
   logins = 60 s lockout). Make an API token for scripted tests (POST
   /api/v1/session, then POST /api/v1/security/tokens); the values of the
   existing ones are not kept anywhere.
-- running ota_0 (valid, master 2026-10-20 with the auth fixes);
+- running ota_1 (valid, master 2026-10-20 with the rules fixes);
   ota_1 holds the previous build. Modbus TCP is enabled (allow
   192.168.64.99/32).
 
@@ -172,7 +172,26 @@ Next steps, in ADR 0001 bring-up order:
    24 s with no reset while Modbus and MQTT keep answering. Bench
    tokens now: bench-2026-10-20 and bench-fast (values only in that
    session's scratchpad); the lost ota-test token was deleted.
-5. Rules.
+5. Rules: done 2026-10-20. Explained to the user; three fixes, all
+   verified on board 1 (rule set and node sense restored afterwards):
+   - a rule's force_off is a safety action (`Fired::request`): force
+     (acts on an `unknown` node) and preempt (a busy node's job ends
+     `failed: preempted`, its relay opened first). Bench: a 10 s RST
+     press on node 1 preempted by a board_temp > 20 C rule, then an 8 s
+     PWR force_off (node 1 sense `ignore` for the test). Host tests
+     cover the unknown-state case (no way to make a node unknown on the
+     bench).
+   - `missing: ignore|trip` per rule; shipped rule 1 (probe_max) trips,
+     so no probe answering forces all off after 30 s. Bench: rule_fired
+     with value null after the hold.
+   - the dispatcher and sense threads are under the task watchdog
+     (ADR said so, nothing did it). Bench: `dispatcher-hang-test`
+     feature hangs it on probe_scan; reset 10.05 s later, boot reason
+     task_watchdog. Six parallel logins plus MQTT commands: no reset.
+     The watchdog log names the task `pthread` (Rust thread names do
+     not reach FreeRTOS).
+   Still not tested with real inputs: dry_in (short J10 1 to G),
+   node_on (needs a motherboard), probes.
 6. Once plugs arrive: 19 V on J3 (VIN sense, trim), DS18B20 probes
    (3-wire only; fault bit 2 with a configured absent probe), dry
    contacts on J10, a real motherboard on a node connector (PLED level,

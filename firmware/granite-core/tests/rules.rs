@@ -5,7 +5,7 @@ use granite_core::Target;
 use granite_core::actuator::ActionKind;
 use granite_core::observed::{Observed, ProbeObs, Stamped};
 use granite_core::rules::{
-    MAX_RULES, Op, Rearm, Rule, RuleAction, RuleEngine, Source, default_rules,
+    MAX_RULES, Missing, Op, Rearm, Rule, RuleAction, RuleEngine, Source, default_rules,
 };
 
 fn probe_obs(centi: Option<i16>, ts: u64) -> Observed {
@@ -34,6 +34,7 @@ fn over_temp_rule() -> Rule {
         },
         target: Target::All,
         rearm: Rearm::Auto,
+        missing: Missing::Ignore,
     }
 }
 
@@ -47,7 +48,7 @@ fn the_condition_must_hold_for_hold_s() {
     let fired = e.tick(30_000, &hot);
     assert_eq!(fired.len(), 1);
     assert_eq!(fired[0].rule_id, 1);
-    assert_eq!(fired[0].value, 7_100);
+    assert_eq!(fired[0].value, Some(7_100));
     assert_eq!(
         fired[0].action,
         RuleAction::Act {
@@ -291,4 +292,37 @@ fn rules_serialise_round_trip() {
     assert!(json.contains("\"action\":\"act\""), "{json}");
     assert!(json.contains("\"kind\":\"force_off\""), "{json}");
     assert!(json.contains("\"target\":\"all\""), "{json}");
+}
+
+#[test]
+fn a_missing_value_trips_only_when_asked() {
+    let no_probe = Observed::new();
+    let mut ignore = RuleEngine::with_rules(vec![over_temp_rule()]);
+    ignore.tick(0, &no_probe);
+    assert!(ignore.tick(60_000, &no_probe).is_empty(), "ignore waits for a value");
+
+    let mut rule = over_temp_rule();
+    rule.missing = Missing::Trip;
+    let mut trip = RuleEngine::with_rules(vec![rule]);
+    assert!(trip.tick(0, &no_probe).is_empty(), "the hold applies");
+    let fired = trip.tick(30_000, &no_probe);
+    assert_eq!(fired.len(), 1);
+    assert_eq!(fired[0].value, None);
+
+    // It stays fired while the value is missing, and an auto rule only
+    // re-arms on a real value below the hysteresis.
+    assert!(trip.tick(60_000, &no_probe).is_empty());
+    assert_eq!(trip.is_armed(1), Some(false));
+    trip.tick(61_000, &probe_obs(Some(6_000), 61_000));
+    assert_eq!(trip.is_armed(1), Some(true));
+}
+
+#[test]
+fn the_shipped_over_temperature_rule_trips_on_no_probe() {
+    assert_eq!(default_rules()[0].missing, Missing::Trip);
+    assert_eq!(default_rules()[1].missing, Missing::Ignore);
+    // An older stored rule set without the field reads as `ignore`.
+    let old = r#"{"id":9,"enabled":true,"source":"vin","op":"<","threshold":1,"action":"event"}"#;
+    let rule: Rule = serde_json::from_str(old).unwrap();
+    assert_eq!(rule.missing, Missing::Ignore);
 }

@@ -13,7 +13,7 @@ use granite_core::actuator::{
 use granite_core::hal::{HalError, Switch};
 use granite_core::node::SenseMode;
 use granite_core::observed::ProbeObs;
-use granite_core::rules::{Rule, RuleAction, RuleEngine, default_rules};
+use granite_core::rules::{Fired, Rearm, Rule, RuleAction, RuleEngine, default_rules};
 
 /// Compressed timings: the same shape as the defaults, short enough to
 /// run a soft-off escalation in a few thousand ticks. Each value is still
@@ -859,7 +859,8 @@ fn the_shipped_force_off_all_rule_produces_presses() {
     };
 
     // What the dispatcher does with a fired rule.
-    let req = ActionRequest::new(format!("rule{}", fired[0].rule_id), kind, fired[0].target);
+    assert_eq!(kind, ActionKind::ForceOff);
+    let req = fired[0].request().expect("an acting rule makes a request");
     assert_eq!(rig.submit(&req), Submission::Accepted { jobs: 2 });
     run_dropping_held_leds(&mut rig, 20_000);
 
@@ -1019,4 +1020,101 @@ fn timing_validation_matches_the_adr_ranges() {
     assert_eq!(clamped.t_short_ms, 100);
     assert_eq!(clamped.t_hold_ms, 10_000);
     clamped.validate().unwrap();
+}
+
+fn fired(kind: ActionKind, node: u8) -> Fired {
+    Fired {
+        rule_id: 2,
+        name: "leak float closed".into(),
+        action: RuleAction::Act { kind },
+        target: Target::Node(node),
+        value: Some(1),
+        rearm: Rearm::Manual,
+    }
+}
+
+#[test]
+fn a_rule_force_off_acts_on_a_node_in_unknown_state() {
+    let mut rig = Rig::new();
+    rig.set_timings(fast());
+    rig.set_led(5, None);
+
+    let manual = ActionRequest::new("c-1", ActionKind::ForceOff, Target::Node(5));
+    assert_eq!(
+        rig.submit(&manual),
+        Submission::Done(ActionResult::refused(RefuseReason::UnknownState)),
+        "a manual force_off still needs force"
+    );
+
+    let req = fired(ActionKind::ForceOff, 5).request().unwrap();
+    assert!(req.args.force && req.args.preempt);
+    assert!(matches!(rig.submit(&req), Submission::Accepted { .. }));
+    rig.run_to(20_000);
+    let presses: Vec<_> = rig.press_starts().into_iter().filter(|p| p.0 == 5).collect();
+    assert_eq!(presses.len(), 1, "one long PWR press");
+    assert_eq!(presses[0].1, Switch::Pwr);
+}
+
+#[test]
+fn a_rule_on_is_still_refused_on_an_unknown_node() {
+    let mut rig = Rig::new();
+    rig.set_timings(fast());
+    rig.set_led(5, None);
+    let req = fired(ActionKind::On, 5).request().unwrap();
+    assert!(!req.args.force && !req.args.preempt);
+    assert_eq!(
+        rig.submit(&req),
+        Submission::Done(ActionResult::refused(RefuseReason::UnknownState))
+    );
+    assert!(fired(ActionKind::On, 5).request().is_some());
+    let event_only = Fired {
+        action: RuleAction::Event,
+        ..fired(ActionKind::On, 5)
+    };
+    assert!(event_only.request().is_none());
+}
+
+#[test]
+fn a_rule_force_off_takes_over_a_busy_node() {
+    let mut rig = Rig::new();
+    rig.set_timings(fast());
+    rig.set_led(3, Some(true));
+
+    // A long raw press is holding node 3's RST relay.
+    let press = ActionRequest::new("c-press", ActionKind::Press, Target::Node(3)).with_args(
+        ActionArgs {
+            switch: Some(Switch::Rst),
+            duration_ms: Some(8_000),
+            ..ActionArgs::default()
+        },
+    );
+    assert!(matches!(rig.submit(&press), Submission::Accepted { .. }));
+    rig.run_for(100);
+    assert_eq!(rig.act.press_owner(), Some(3));
+
+    // A manual action is refused as busy; the rule's force_off is not.
+    let manual = ActionRequest::new("c-off", ActionKind::ForceOff, Target::Node(3));
+    assert_eq!(
+        rig.submit(&manual),
+        Submission::Done(ActionResult::refused(RefuseReason::Busy))
+    );
+    let req = fired(ActionKind::ForceOff, 3).request().unwrap();
+    assert!(matches!(rig.submit(&req), Submission::Accepted { .. }));
+
+    let preempted = rig.events.iter().any(|e| {
+        matches!(e, ActuatorEvent::Done { id, result, .. }
+            if id == "c-press" && *result == ActionResult::failed(FailReason::Preempted))
+    });
+    assert!(preempted, "the press ends failed: preempted");
+    assert!(
+        rig.act.switches_mut().ops.contains(&common::Op::ReleaseAll),
+        "the held relay is opened before the force_off"
+    );
+
+    // The node dies during the hold; the force_off completes.
+    rig.schedule_led(rig.now + 1_000, 3, Some(false));
+    rig.run_for(10_000);
+    assert_eq!(rig.result_of(3), Some(ActionResult::Ok));
+    let last = rig.press_starts().last().copied().unwrap();
+    assert_eq!((last.0, last.1), (3, Switch::Pwr));
 }

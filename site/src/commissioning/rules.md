@@ -11,7 +11,7 @@ Three rules come with the default configuration, all **disabled**:
 
 | Id | Name | Condition | Hold | Action | Re-arm |
 |---|---|---|---|---|---|
-| 1 | probe over temperature | hottest probe > 70.00 C | 30 s | force all nodes off | auto, hysteresis 5.00 C |
+| 1 | probe over temperature | hottest probe > 70.00 C, **or no probe answering** | 30 s | force all nodes off | auto, hysteresis 5.00 C |
 | 2 | leak float closed | dry contact 1 closed | 2 s | force all nodes off | manual |
 | 3 | bus voltage low | VIN < 15.000 V | 5 s | event only | auto, hysteresis 0.5 V |
 
@@ -34,6 +34,7 @@ the ones you want. Rule 2 assumes your leak float is on dry input 1.
 | `action` | `act` with a `kind`, or `event` | `act` runs a node action (`on`, `off`, `force_off`, `reset`, `cycle`, `press`, `on_all`); `event` only publishes `rule_fired`. |
 | `target` | 1..8 or `all` | `all` fans the action out over `nodes.order`, one press at a time: `off`, `force_off` and `reset` take only the nodes that are on and run back to back, `on` skips the nodes already on and `cycle` takes every node, both with the stagger interval between them. A raw `press` needs one node. |
 | `rearm` | `auto` (default) or `manual` | `manual` stays fired until acknowledged. |
+| `missing` | `ignore` (default) or `trip` | What a source with no value means: `ignore` waits for a value, `trip` counts it as the condition being true (hold included). Not for `changed`. |
 
 Sources and their units:
 
@@ -50,9 +51,28 @@ Sources and their units:
 | `uptime_s` | | s | |
 
 A source with no value (a probe that did not answer, a sensor never
-read) makes every comparison false, so a missing probe never fires an
-over-temperature rule by itself. Pair a critical probe with a
-`fault_flags` check on your monitoring side instead.
+read) makes the comparison false, unless the rule says `"missing":
+"trip"`. Use `trip` where a silent sensor is as bad as the reading it
+guards: shipped rule 1 has it, because with every probe gone there is
+no temperature watch at all. Do not enable rule 1 on a frame without
+probes; it would switch every node off after 30 s. The `rule_fired`
+event of a missing value has `"value": null`.
+
+## Safety actions
+
+A rule's `force_off` is treated as a safety action and does two things
+a manual command would not:
+
+- it acts on a node whose state is `unknown` (power-LED sense broken or
+  not wired): a node you cannot see is not a reason to leave it running
+  in a leak;
+- it takes over a node that is busy with another action: that action
+  ends `failed: preempted`, its relay is opened first, and the long
+  power press follows.
+
+Every other rule action (`on`, `off`, `reset`, ...) follows the same
+rules as a manual command, so it is refused on an `unknown` or busy
+node.
 
 ## Acknowledging a manual rule
 
@@ -98,6 +118,11 @@ per-node boot policy is not applied by the current firmware). With the
 network gone it keeps
 measuring, keeps evaluating rules, keeps serving the local page if
 anyone can reach it, and reconnects to the broker when it returns.
-Rule firings while offline are in the log ring (Maintenance page,
-`log` on the console), and the retained `state` shows their result
-once the broker session is back.
+Events while offline, `rule_fired` included, are held (the last 64)
+and published when the broker session is back; the log ring
+(Maintenance page, `log` on the console) has them too.
+
+The thread that runs the rules and the node actions, and the one that
+reads the sensors, are under the task watchdog: if either stops for
+10 s the controller restarts (boot reason `task_watchdog`) instead of
+sitting there with its rules silently stopped.

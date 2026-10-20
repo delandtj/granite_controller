@@ -36,6 +36,10 @@ deadline-test = []
 # the board (src/main.rs, platform/ota.rs). Bench-only. Off in a shipped
 # image.
 boot-hang-test = []
+# Hang the dispatcher on a `probe_scan` command, so the task watchdog
+# has to reset the board (src/main.rs). Bench-only. Off in a shipped
+# image.
+dispatcher-hang-test = []
 # Everything that only makes sense on a devboard, in one flag.
 devboard = ["wifi-dev", "rgb-led"]
 

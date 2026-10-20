@@ -188,6 +188,7 @@ impl Args {
             hard: self.hard,
             switch: self.switch,
             duration_ms: self.duration_ms,
+            preempt: false,
         }
     }
 }
@@ -399,8 +400,9 @@ pub enum EventKind {
         action: String,
         /// On what.
         target: Target,
-        /// The value that tripped it.
-        value: i32,
+        /// The value that tripped it; null when the rule tripped on a
+        /// missing value (`"missing": "trip"`).
+        value: Option<i32>,
         /// Whether it needs an ack before it can fire again.
         needs_ack: bool,
     },

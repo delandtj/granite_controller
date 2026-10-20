@@ -295,7 +295,7 @@ fn event_fixtures() {
                 name: "probe over temperature".into(),
                 action: "force_off".into(),
                 target: Target::All,
-                value: 7_123,
+                value: Some(7_123),
                 needs_ack: false,
             },
         ),
@@ -402,7 +402,7 @@ fn fired_rules_become_published_events() {
             kind: ActionKind::ForceOff,
         },
         target: Target::All,
-        value: 1,
+        value: Some(1),
         rearm: Rearm::Manual,
     };
     let ev = event_from_rule(&fired, 2_000);

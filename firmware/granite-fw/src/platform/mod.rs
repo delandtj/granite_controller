@@ -195,6 +195,28 @@ pub fn release_outputs() {
     }
 }
 
+/// Put the calling thread under the task watchdog
+/// (`CONFIG_ESP_TASK_WDT_TIMEOUT_S`, which panics, and the panic hook
+/// opens the relays). From then on it must call [`feed_task_watchdog`]
+/// more often than that, or the board resets. For the threads whose
+/// silent hang would be dangerous: the dispatcher (actuator and rules)
+/// and the sense task (ADR 0001, "Tasks and data flow").
+pub fn watch_this_thread(name: &str) {
+    let err = unsafe { esp_idf_svc::sys::esp_task_wdt_add(core::ptr::null_mut()) };
+    if err == esp_idf_svc::sys::ESP_OK {
+        log::info!("{name}: under the task watchdog");
+    } else {
+        log::error!("{name}: cannot join the task watchdog ({err})");
+    }
+}
+
+/// Tell the task watchdog the calling thread is alive.
+pub fn feed_task_watchdog() {
+    unsafe {
+        esp_idf_svc::sys::esp_task_wdt_reset();
+    }
+}
+
 /// Longest a planned reboot waits for MQTT to get its last messages out.
 const REBOOT_FLUSH: Duration = Duration::from_secs(3);
 

@@ -413,7 +413,9 @@ firmware/
 
 FreeRTOS tasks: `net` (ESP-IDF event loop), `mqtt`, `http`, `modbus`,
 `actuator`, `sense`, `rules` (merged with sense on one tick), `console`.
-The actuator, sense and rules tasks are subscribed to the task watchdog.
+The actuator, sense and rules tasks are subscribed to the task watchdog
+(on the board: the dispatcher thread, which runs the actuator and the
+rules, and the sense thread; added 2026-10-20, they were not before).
 Core logic is synchronous and single-threaded per component; cross-task
 traffic uses `std::sync::mpsc` and `RwLock<Observed>`.
 
