@@ -28,6 +28,10 @@ wifi-dev = []
 # GRANITE_RGB_GPIO when set. The controller board has no RGB LED, so
 # this is bench-only. Off in a shipped image.
 rgb-led = []
+# Stall every relay release for 8 s, as if the actuator task hung, so the
+# esp_timer press deadline is what opens the relay (src/hw/relays.rs).
+# Bench-only. Off in a shipped image.
+deadline-test = []
 # Everything that only makes sense on a devboard, in one flag.
 devboard = ["wifi-dev", "rgb-led"]
 

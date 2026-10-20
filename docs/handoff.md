@@ -77,9 +77,15 @@ Next steps, in ADR 0001 bring-up order:
    Design point for the fleet ADR: MQTT `ts` is monotonic ms since boot
    by definition (granite-core msg.rs); fleet logs will want a wall-clock
    field too.
-2. Actuator: a node press with the relay heard or measured across the
-   node header pins (one relay is fine on USB power), the deadline proven
-   by a deliberately hung task.
+2. Actuator: done 2026-10-20. Raw 10 s `press` on node 1 over MQTT:
+   ~100 ohm (100R series + photoMOS) across J11 1-3 for PWR, OL
+   otherwise; RST the same on 2-3. Deadline: an image built with the
+   bench-only `deadline-test` feature (relays.rs: release() stalls 8 s)
+   and a 2 s press: meter showed ~2.5 s then OL (esp_timer deadline =
+   press + 500 ms slack, U14 reset by GPIO10), the task woke 8 s later,
+   logged "press deadline fired", the action failed with
+   `expander_fault`, a `fault`/`press_deadline` event went out and the
+   fault bit cleared itself 1 s later. Normal image back on ota_1.
 3. OTA probation timeout path (an image nobody confirms; lower
    sys.t_validate_s for the test) and OTA progress events on MQTT.
 4. Modbus TCP against the register map.
@@ -118,6 +124,19 @@ Open nits seen on the board:
   `config_set` (the HTTP path says "confirm within N s").
 - `security` events (login, token_created) carry peer "0.0.0.0": the
   HTTP layer does not pass the client address through.
+- `fault` and `action_failed` events from a stalled tick carry the `ts`
+  of the tick start (accepted + 2.0 s in the deadline test), not of the
+  moment the fault was seen (8 s later).
+
+Bench gotcha (2026-10-20): the host's xHCI controller 0000:7b:00.0 died
+(`HC died; cleaning up` in the kernel log) with the board on its hub.
+The port kept powering the board, but after a software reboot the board
+never came back on the network until the controller was rebound
+(`echo 0000:7b:00.0 | sudo tee /sys/bus/pci/drivers/xhci_hcd/unbind`,
+then `.../bind`), which also power-cycled it; the same image then
+booted in seconds. No `/dev/ttyACM0` at session start = check
+`journalctl -k` for this first. Passive console capture that survives
+re-enumeration: a loop of `stty -F /dev/ttyACM0 raw 115200; cat`.
 
 Firmware docs: firmware/docs/adr/0001-firmware-architecture.md,
 firmware/README.md, firmware/docs/gaps-2026-10.md (all 14 closed).

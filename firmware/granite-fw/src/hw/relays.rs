@@ -168,6 +168,13 @@ impl NodeSwitches for Relays {
 
     fn release(&mut self, node: NodeId, sw: Switch) -> HalResult<()> {
         let bit = Self::bit_for(node, sw)?;
+        // Bench test of mechanism 2: the actuator task "hangs" past the
+        // deadline, so only the esp_timer can open the relay in time.
+        #[cfg(feature = "deadline-test")]
+        {
+            log::warn!("relays: deadline-test: stalling node {node} {sw} release for 8 s");
+            std::thread::sleep(std::time::Duration::from_secs(8));
+        }
         let fault = self.take_fault();
 
         let mut exp = lock(&self.exp);
