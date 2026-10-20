@@ -17,7 +17,7 @@ gitignored, mode 600):
   logins = 60 s lockout). API token `ota-test` exists for scripted tests; its
   value is in the previous session's scratchpad only, so make a new one
   (POST /api/v1/session, then POST /api/v1/security/tokens).
-- running ota_1 (valid, the SNTP fix); ota_0 holds the previous image.
+- running ota_0 (valid, master as of 2026-10-20); ota_1 holds the same build.
 
 Done on board 1 (2026-10-16 .. 19):
 1. Power and USB: enumerates, C6 v0.2, 8 MB flash, no eFuses burned.
@@ -86,8 +86,27 @@ Next steps, in ADR 0001 bring-up order:
    logged "press deadline fired", the action failed with
    `expander_fault`, a `fault`/`press_deadline` event went out and the
    fault bit cleared itself 1 s later. Normal image back on ota_1.
-3. OTA probation timeout path (an image nobody confirms; lower
-   sys.t_validate_s for the test) and OTA progress events on MQTT.
+3. OTA: done 2026-10-20, with event gaps (below). Pull over MQTT
+   (`ota` with url + sha256; host served the image over HTTPS with the
+   bench broker's server.crt, which the board trusts through the MQTT
+   CA): started, downloading every 10 % (1.7 MB in ~6 s), verified,
+   reboot, valid ("expanders, link and the broker"). Probation timeout:
+   t_validate_s 120, broker stopped at 90 % and no authenticated HTTPS:
+   "not confirmed within 120 s (expanders=true link=true broker=false
+   https=false)", marked invalid, bootloader back to ota_1 ("last
+   invalid ota_0"). t_validate_s back to 600; a second, normal pull left
+   the board on ota_0 (same normal build as ota_1), valid.
+   Event gaps for a fleet backend to see OTA outcomes (to fix):
+   - the `ota` command never gets its `ack/<id>`: it completes by
+     rebooting. Ack before the reboot (or on accept).
+   - `pending_verify` is emitted at boot before the MQTT session exists
+     and is lost (not seen on a normal pull either).
+   - `rolled_back` is only sent by the failing image, which usually has
+     no broker (that is why it failed); the surviving image knows "last
+     invalid <slot>" but says nothing. It should emit the rollback on
+     its first connect.
+   - `verified` goes out ~10 ms before the reboot; it arrived on one
+     run, but nothing guarantees it (the MQTT outbox is not flushed).
 4. Modbus TCP against the register map.
 5. Rules.
 6. Once plugs arrive: 19 V on J3 (VIN sense, trim), DS18B20 probes
