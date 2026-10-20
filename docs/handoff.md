@@ -13,8 +13,8 @@ Board 1 identity (secrets in firmware/board-cb374b_recovery_token,
 gitignored, mode 600):
 - device id granite-cb374b, base MAC 90:64:9b:cb:37:48, Ethernet MAC
   ...:4b, DHCP 192.168.64.115, mDNS granite-cb374b.local
-- admin password set by the user; ask them, do not guess (5 failures =
-  60 s lockout). API token `ota-test` exists for scripted tests; its
+- admin password: in firmware/board-cb374b_recovery_token (5 failed
+  logins = 60 s lockout). API token `ota-test` exists for scripted tests; its
   value is in the previous session's scratchpad only, so make a new one
   (POST /api/v1/session, then POST /api/v1/security/tokens).
 - running ota_1 (valid, the SNTP fix); ota_0 holds the previous image.
@@ -80,6 +80,20 @@ Next steps, in ADR 0001 bring-up order:
    (3-wire only; fault bit 2 with a configured absent probe), dry
    contacts on J10, a real motherboard on a node connector (PLED level,
    docs/controller.md item 4).
+
+Fleet backend (discussed 2026-10-20, no decisions yet): tens to
+hundreds of containers with tens of controllers each, MQTT, "always
+reachable". Human-facing parts will be Geomind/Hero. The user is talking
+to the developer of granite_code/granite_metal_provider_and_broker
+(empty today; its source is geomind_code/my_metal_provider_and_broker:
+a per-site provider with PDU power control and PXE, plus a marketplace
+broker - no MQTT, metrics, logs or uptime history). Strawman for the
+ADR: the site provider hosts the container's edge broker and gains a
+"granite controller" power driver next to the PDU drivers; a separate
+DC-side fleet service keeps the registry, node uptime history, metrics,
+logs and a command API with an HTTPS fallback path. Firmware impact
+already known: a broker failover list (one host today) and a wall-clock
+field in MQTT messages. Write the ADR only after that conversation.
 
 Open nits seen on the board:
 - /api/v1/firmware `slots` lists only the next slot, size 0, empty
