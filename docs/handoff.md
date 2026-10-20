@@ -13,7 +13,7 @@ Board 1 identity (secrets in firmware/board-cb374b_recovery_token,
 gitignored, mode 600):
 - device id granite-cb374b, base MAC 90:64:9b:cb:37:48, Ethernet MAC
   ...:4b, DHCP 192.168.64.115, mDNS granite-cb374b.local
-- admin password: in firmware/board-cb374b_recovery_token (5 failed
+- admin password: `deadbeef` (also in firmware/board-cb374b_recovery_token; 5 failed
   logins = 60 s lockout). API token `ota-test` exists for scripted tests; its
   value is in the previous session's scratchpad only, so make a new one
   (POST /api/v1/session, then POST /api/v1/security/tokens).
@@ -61,9 +61,17 @@ nothing. For a passive capture use a plain reader (e.g. `picocom` or
 reset is wanted.
 
 Next steps, in ADR 0001 bring-up order:
-1. MQTT: `cmd` round trip with `ack/<id>` works (config_get,
-   2026-10-20). Still to do: live section change rebuilding the client,
-   staged mqtt deadline restoring without a reboot. SNTP from DHCP
+1. MQTT: done 2026-10-20. `cmd` round trip with `ack/<id>` works
+   (config_get). `config_set` of the mqtt section (site bench -> bench2)
+   over MQTT: ack "staged" on the old topic, `online:false` there, client
+   rebuilt and online under bench2 within 4 s, no reboot. With
+   auto_confirm_on_connect off the section was reverted at exactly 300 s
+   ("not confirmed in time") and the client went back to bench, uptime
+   continuous; with it on, both directions confirmed on connect. Host
+   tools can use the anonymous 127.0.0.1:1883 listener (no password).
+   Bench admin password is `deadbeef` (dev only, fine in the open);
+   API token `bench-2026-10-20` exists, value only in that session's
+   scratchpad. SNTP from DHCP
    option 42 works since the fix below (the bench dnsmasq now hands out
    162.159.200.1; for sites, run an NTP server on the site router).
    Design point for the fleet ADR: MQTT `ts` is monotonic ms since boot
@@ -106,6 +114,10 @@ Open nits seen on the board:
 - PUT /api/v1/security/mqtt-credentials returned
   an empty body although it worked.
 - `probe_scan` is still a logged TODO (1-wire re-scan not wired).
+- `config` "staged" event has detail null when staged by an MQTT
+  `config_set` (the HTTP path says "confirm within N s").
+- `security` events (login, token_created) carry peer "0.0.0.0": the
+  HTTP layer does not pass the client address through.
 
 Firmware docs: firmware/docs/adr/0001-firmware-architecture.md,
 firmware/README.md, firmware/docs/gaps-2026-10.md (all 14 closed).
