@@ -17,7 +17,7 @@ gitignored, mode 600):
   60 s lockout). API token `ota-test` exists for scripted tests; its
   value is in the previous session's scratchpad only, so make a new one
   (POST /api/v1/session, then POST /api/v1/security/tokens).
-- running ota_0 (valid); ota_1 holds the deliberately broken test image.
+- running ota_1 (valid, the SNTP fix); ota_0 holds the previous image.
 
 Done on board 1 (2026-10-16 .. 19):
 1. Power and USB: enumerates, C6 v0.2, 8 MB flash, no eFuses burned.
@@ -35,6 +35,10 @@ Done on board 1 (2026-10-16 .. 19):
 Firmware fixes found by the board (all committed on eight-node-expander):
 - 2076c02: SPI2 had no DMA (64-byte cap broke every W5500 frame); port-80
   httpd stack 6144 overflowed on /id.
+- SNTP: lwIP drops the option 42 servers of a DHCP ACK unless "servers
+  from DHCP" was on before it arrived; SNTP was started after the
+  address, so it never synced. Now started in bring-up, before the
+  interface starts (net.rs start_sntp_early, also in wifi_dev).
 - 8419e1f: ESP-IDF app version came from git describe (25 chars) and
   overflowed esp-idf-svc's 24-char FirmwareInfo::version, so every OTA
   slot read failed (ESP_ERR_INVALID_SIZE); now CONFIG_APP_PROJECT_VER,
@@ -57,10 +61,14 @@ nothing. For a passive capture use a plain reader (e.g. `picocom` or
 reset is wanted.
 
 Next steps, in ADR 0001 bring-up order:
-1. MQTT commands: a `cmd` round trip with `ack/<id>`, live section
-   change rebuilding the client, staged mqtt deadline restoring without a
-   reboot. Check the MQTT `ts` fields: they looked like uptime ms, not
-   wall-clock - verify SNTP actually synced.
+1. MQTT: `cmd` round trip with `ack/<id>` works (config_get,
+   2026-10-20). Still to do: live section change rebuilding the client,
+   staged mqtt deadline restoring without a reboot. SNTP from DHCP
+   option 42 works since the fix below (the bench dnsmasq now hands out
+   162.159.200.1; for sites, run an NTP server on the site router).
+   Design point for the fleet ADR: MQTT `ts` is monotonic ms since boot
+   by definition (granite-core msg.rs); fleet logs will want a wall-clock
+   field too.
 2. Actuator: a node press with the relay heard or measured across the
    node header pins (one relay is fine on USB power), the deadline proven
    by a deliberately hung task.

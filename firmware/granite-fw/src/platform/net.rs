@@ -186,6 +186,8 @@ pub struct NetStatus {
 static LAST_CONN_S: AtomicU32 = AtomicU32::new(0);
 /// Set once SNTP reports a sync.
 static TIME_SYNCED: AtomicBool = AtomicBool::new(false);
+/// Set once `esp_netif_sntp_init` succeeded.
+static SNTP_STARTED: AtomicBool = AtomicBool::new(false);
 
 /// Record that a server accepted a connection, or that the broker session
 /// came up. Part of the static-config dead-man (ADR component 6): a
@@ -340,7 +342,6 @@ fn run(
         .unwrap_or(core::ptr::null_mut());
     let netif_index = link.netif().map(|netif| netif.get_index());
 
-    let mut sntp_started = false;
     let mut ip6_done = false;
     let mut mdns = None;
     let mut confirm: Option<Confirm> = None;
@@ -438,14 +439,16 @@ fn run(
             }
         }
 
-        // SNTP once there is an address to reach a server from.
-        if link_up && has_ip && !sntp_started {
-            match start_sntp(&cfg) {
-                Ok(()) => sntp_started = true,
-                Err(e) => log::warn!("sntp could not start: {e}"),
-            }
+        // SNTP normally starts in bring-up, before the first DHCP reply
+        // (see start_sntp_early); this is the fallback when that failed.
+        if link_up
+            && has_ip
+            && !SNTP_STARTED.load(Ordering::Relaxed)
+            && let Err(e) = start_sntp(&cfg)
+        {
+            log::warn!("sntp could not start: {e}");
         }
-        if sntp_started
+        if SNTP_STARTED.load(Ordering::Relaxed)
             && !TIME_SYNCED.load(Ordering::Relaxed)
             && unsafe { sntp_get_sync_status() } == sntp_sync_status_t_SNTP_SYNC_STATUS_COMPLETED
         {
@@ -752,6 +755,7 @@ fn bring_up(
 
     let eth = EspEth::wrap_all(driver, EspNetif::new_with_conf(&netif_conf)?)?;
     let mut eth = BlockingEth::wrap(eth, sysloop)?;
+    start_sntp_early(cfg);
 
     // Start without BlockingEth::start: that one waits for the started
     // event forever, and a missing W5500 must time out instead.
@@ -946,6 +950,17 @@ pub fn set_clock_to_build_time() {
 
 /// Start SNTP. With `net.sntp` empty the server comes from DHCP option 42
 /// (`CONFIG_LWIP_DHCP_GET_NTP_SRV=y`), otherwise from the config.
+/// Start SNTP before the interface can see a DHCP reply. lwIP keeps the
+/// option 42 servers of a lease only if "servers from DHCP" was already on
+/// when the ACK arrived ("Rejected ... via DHCP" otherwise), so starting
+/// after the address is too late. Needs the netif to exist (the TCP/IP
+/// stack is up then); a failure is logged and the run loop retries.
+pub(super) fn start_sntp_early(cfg: &NetCfg) {
+    if let Err(e) = start_sntp(cfg) {
+        log::warn!("sntp could not start before dhcp: {e}");
+    }
+}
+
 fn start_sntp(cfg: &NetCfg) -> anyhow::Result<()> {
     let server = cfg.sntp.trim();
     let mut conf: esp_sntp_config_t = unsafe { core::mem::zeroed() };
@@ -978,6 +993,7 @@ fn start_sntp(cfg: &NetCfg) -> anyhow::Result<()> {
     // move the server.
     unsafe { esp_netif_sntp_deinit() };
     unsafe { esp!(esp_netif_sntp_init(&conf))? };
+    SNTP_STARTED.store(true, Ordering::Relaxed);
     Ok(())
 }
 

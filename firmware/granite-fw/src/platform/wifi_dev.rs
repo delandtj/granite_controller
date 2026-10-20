@@ -116,6 +116,7 @@ pub fn bring_up(
         log::warn!("wifi-dev: hostname could not be set: {e}");
     }
 
+    super::net::start_sntp_early(cfg);
     wifi.connect()?;
     log::info!("wifi-dev: associated with \"{SSID}\", waiting for an address");
 
