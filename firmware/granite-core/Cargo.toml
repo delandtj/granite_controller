@@ -8,7 +8,6 @@ license.workspace = true
 [dependencies]
 heapless = "0.9.3"
 hmac = { version = "0.13.0", default-features = false }
-pbkdf2 = { version = "0.13.0", default-features = false, features = ["hmac"] }
 rmodbus = { version = "0.12.2", default-features = false, features = ["alloc"] }
 serde = { version = "1.0.229", default-features = false, features = ["derive", "alloc"] }
 serde_json = { version = "1.0.151", default-features = false, features = ["alloc"] }
@@ -17,3 +16,7 @@ sha2 = { version = "0.11.0", default-features = false }
 [features]
 default = ["std"]
 std = ["serde/std", "serde_json/std"]
+
+[dev-dependencies]
+pbkdf2 = { version = "0.13.0", default-features = false, features = ["hmac"] }
+sha2 = "0.11.0"

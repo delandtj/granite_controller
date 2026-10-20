@@ -677,14 +677,9 @@ fn authenticated(ctx: &HttpCtx, request: &ApiRequest, now: u64) -> bool {
     match &request.auth {
         Auth::None => false,
         Auth::Session(id) => auth.has_session(id, now),
-        Auth::Bearer(token) => secrets.api_tokens.iter().any(|t| {
-            api::verify_hash(
-                token.as_bytes(),
-                &secrets.admin_salt,
-                &t.hash,
-                secrets.admin_iters,
-            )
-        }),
+        // The routed path (`ApiCtx::is_authenticated`) upgrades an old
+        // token hash; this pre-check only needs the answer.
+        Auth::Bearer(token) => api::find_token(&secrets, token).is_some(),
     }
 }
 

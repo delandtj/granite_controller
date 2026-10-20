@@ -14,10 +14,10 @@ gitignored, mode 600):
 - device id granite-cb374b, base MAC 90:64:9b:cb:37:48, Ethernet MAC
   ...:4b, DHCP 192.168.64.115, mDNS granite-cb374b.local
 - admin password: `deadbeef` (also in firmware/board-cb374b_recovery_token; 5 failed
-  logins = 60 s lockout). API token `ota-test` exists for scripted tests; its
-  value is in the previous session's scratchpad only, so make a new one
-  (POST /api/v1/session, then POST /api/v1/security/tokens).
-- running ota_0 (valid, master 2026-10-20 with the Modbus fixes);
+  logins = 60 s lockout). Make an API token for scripted tests (POST
+  /api/v1/session, then POST /api/v1/security/tokens); the values of the
+  existing ones are not kept anywhere.
+- running ota_0 (valid, master 2026-10-20 with the auth fixes);
   ota_1 holds the previous build. Modbus TCP is enabled (allow
   192.168.64.99/32).
 
@@ -160,12 +160,18 @@ Next steps, in ADR 0001 bring-up order:
    - lwIP socket table was 10: Modbus got 2 connections, and on ENFILE
      the listener was dropped and rebound. Now 20 sockets, and ENFILE /
      EMFILE backs off without dropping the listener.
-   OPEN (found here, not Modbus): every bearer-token request runs
-   PBKDF2 (20k iterations) on the token: 3.4 s per request against
-   0.43 s with a session cookie, login 1.9 s. It runs in the httpd task
-   and starves the idle task, so three parallel token requests reset
-   the board through the task watchdog (boot_reason task_watchdog),
-   and parallel logins would do the same without any credentials.
+   FIXED (found here, not Modbus): every bearer-token request ran
+   PBKDF2 (20k) per stored token: 3.4 s per request, and three parallel
+   ones reset the board through the task watchdog (the KDF starved the
+   idle task); parallel logins would do it without credentials. Now
+   tokens are `s256:` SHA-256(salt || token) (old PBKDF2 ones rehashed
+   on first use), and the hand-written PBKDF2 sleeps one tick every 500
+   rounds (a 1 ms sleep is a busy-wait in ESP-IDF's usleep; 10 ms is a
+   real vTaskDelay). Verified: token request 0.43 s, unknown token
+   0.42 s, login 2.5 s; 6 bogus tokens + 4 logins in parallel queue for
+   24 s with no reset while Modbus and MQTT keep answering. Bench
+   tokens now: bench-2026-10-20 and bench-fast (values only in that
+   session's scratchpad); the lost ota-test token was deleted.
 5. Rules.
 6. Once plugs arrive: 19 V on J3 (VIN sense, trim), DS18B20 probes
    (3-wire only; fault bit 2 with a configured absent probe), dry

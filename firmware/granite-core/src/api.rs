@@ -687,11 +687,113 @@ pub fn ct_eq(a: &[u8], b: &[u8]) -> bool {
     diff == 0
 }
 
+/// PBKDF2 rounds between two calls of the pause hook.
+pub const KDF_CHUNK: u32 = 500;
+
+/// The pause hook. Only with `std`: a `no_std` build has no scheduler to
+/// yield to anyway.
+#[cfg(feature = "std")]
+static KDF_PAUSE: std::sync::OnceLock<fn()> = std::sync::OnceLock::new();
+
+/// Install a function [`pbkdf2_hex`] calls every [`KDF_CHUNK`] rounds.
+/// The first call wins.
+///
+/// A password hash is about two seconds of pure CPU. On a single core
+/// that starves every lower-priority task, the idle task included, and
+/// the task watchdog resets the board when a few logins queue up. The
+/// firmware installs a one-tick sleep here; the host leaves it empty.
+#[cfg(feature = "std")]
+pub fn set_kdf_pause(pause: fn()) {
+    let _ = KDF_PAUSE.set(pause);
+}
+
+fn kdf_pause() {
+    #[cfg(feature = "std")]
+    if let Some(pause) = KDF_PAUSE.get() {
+        pause();
+    }
+}
+
 /// PBKDF2-HMAC-SHA256 of `secret` with `salt`, hex encoded.
+///
+/// One output block (the hash is 32 bytes), written out so it can pause
+/// every [`KDF_CHUNK`] rounds (see [`set_kdf_pause`]); the result is
+/// that of `pbkdf2::pbkdf2_hmac::<Sha256>`.
 pub fn pbkdf2_hex(secret: &[u8], salt: &[u8], iters: u32) -> String {
+    use hmac::{Hmac, KeyInit, Mac};
+    type HmacSha256 = Hmac<sha2::Sha256>;
+
+    let Ok(prf) = HmacSha256::new_from_slice(secret) else {
+        // HMAC takes a key of any length; unreachable.
+        return String::new();
+    };
+    let mut first = prf.clone();
+    first.update(salt);
+    first.update(&1u32.to_be_bytes());
+    let mut u = first.finalize().into_bytes();
     let mut out = [0u8; HASH_BYTES];
-    pbkdf2::pbkdf2_hmac::<sha2::Sha256>(secret, salt, iters, &mut out);
+    out.copy_from_slice(&u);
+    for round in 1..iters {
+        if round % KDF_CHUNK == 0 {
+            kdf_pause();
+        }
+        let mut mac = prf.clone();
+        mac.update(&u);
+        u = mac.finalize().into_bytes();
+        for (o, x) in out.iter_mut().zip(u.iter()) {
+            *o ^= x;
+        }
+    }
     hex(&out)
+}
+
+/// Prefix of a token hash in the fast format.
+pub const TOKEN_HASH_PREFIX: &str = "s256:";
+
+/// How an API token is stored: SHA-256 of the device salt and the token.
+///
+/// A token is [`TOKEN_BYTES`] of randomness, so a slow KDF adds nothing
+/// against guessing and costs seconds per request; the password keeps
+/// PBKDF2. Hashes without the prefix are the old PBKDF2 ones.
+pub fn token_hash(token: &[u8], salt: &[u8]) -> String {
+    use sha2::{Digest, Sha256};
+    let mut h = Sha256::new();
+    h.update(salt);
+    h.update(token);
+    format!("{TOKEN_HASH_PREFIX}{}", hex(&h.finalize()))
+}
+
+/// Which stored token `token` is: its index, and whether it matched an
+/// old PBKDF2 hash (the caller should store [`token_hash`] instead).
+///
+/// The fast hashes are tried first, with one SHA-256 for all of them; an
+/// old hash costs a PBKDF2 each, and only when nothing else matched.
+pub fn find_token(secrets: &Secrets, token: &str) -> Option<(usize, bool)> {
+    if secrets.admin_password_missing() {
+        return None;
+    }
+    let salt = unhex(&secrets.admin_salt)?;
+    let fast = token_hash(token.as_bytes(), &salt);
+    if let Some(i) = secrets
+        .api_tokens
+        .iter()
+        .position(|t| ct_eq(t.hash.as_bytes(), fast.as_bytes()))
+    {
+        return Some((i, false));
+    }
+    secrets
+        .api_tokens
+        .iter()
+        .position(|t| {
+            !t.hash.starts_with(TOKEN_HASH_PREFIX)
+                && verify_hash(
+                    token.as_bytes(),
+                    &secrets.admin_salt,
+                    &t.hash,
+                    secrets.admin_iters,
+                )
+        })
+        .map(|i| (i, true))
 }
 
 /// True when `secret` matches a stored hash. Any malformed stored value
@@ -886,18 +988,17 @@ impl ApiCtx<'_> {
             Auth::None => false,
             Auth::Session(id) => self.auth.has_session(id, self.now_ms),
             Auth::Bearer(token) => {
-                let secrets = self.store.load_secrets();
-                if secrets.admin_password_missing() {
+                let mut secrets = self.store.load_secrets();
+                let Some((i, old_hash)) = find_token(&secrets, token) else {
                     return false;
+                };
+                if old_hash && let Some(salt) = unhex(&secrets.admin_salt) {
+                    // Pay the PBKDF2 once: from now on this token is
+                    // checked with the fast hash.
+                    secrets.api_tokens[i].hash = token_hash(token.as_bytes(), &salt);
+                    let _ = self.store.save_secrets(&secrets);
                 }
-                secrets.api_tokens.iter().any(|t| {
-                    verify_hash(
-                        token.as_bytes(),
-                        &secrets.admin_salt,
-                        &t.hash,
-                        secrets.admin_iters,
-                    )
-                })
+                true
             }
         }
     }
@@ -1923,7 +2024,7 @@ fn create_token(req: &ApiRequest, ctx: &mut ApiCtx<'_>) -> ApiResponse {
     let token = hex(&raw);
     secrets.api_tokens.push(ApiToken {
         name: name.clone(),
-        hash: pbkdf2_hex(token.as_bytes(), &salt, secrets.admin_iters),
+        hash: token_hash(token.as_bytes(), &salt),
         created_s: u64::from(ctx.platform.uptime_s()),
     });
     if let Err(e) = ctx.store.save_secrets(&secrets) {

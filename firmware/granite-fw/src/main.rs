@@ -122,6 +122,12 @@ fn main() -> anyhow::Result<()> {
         log::warn!("log ring could not be installed; falling back to the plain ESP-IDF logger");
     }
 
+    // A password hash pauses one tick every KDF_CHUNK rounds, so the idle
+    // task runs and a queue of logins cannot trip the task watchdog. A
+    // whole tick (CONFIG_FREERTOS_HZ=100): ESP-IDF's usleep busy-waits
+    // anything shorter, which would not yield at all.
+    granite_core::api::set_kdf_pause(|| std::thread::sleep(std::time::Duration::from_millis(10)));
+
     let peripherals = Peripherals::take()?;
     let pins = peripherals.pins;
 

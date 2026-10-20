@@ -310,7 +310,13 @@ iterations, per-device salt), a session cookie for the page and
 `Authorization: Bearer <token>` for scripts, 5 failed logins then a 60 s
 lockout. The salt is minted once and then kept: API tokens are hashed
 with it too, so changing the password - over the API or with the
-console's `set-password` - leaves existing tokens working.
+console's `set-password` - leaves existing tokens working. Tokens are
+32 random bytes and stored as `s256:` + SHA-256(salt || token): a slow
+KDF adds nothing for them and cost ~1.7 s per request per token. A
+token stored by older firmware (plain PBKDF2 hex) still works and is
+rehashed on first use. The password hash pauses one tick every 500
+rounds (`api::set_kdf_pause`), so queued logins cannot starve the idle
+task into a task-watchdog reset.
 
 `GET`, `HEAD`, `POST`, `PUT` and `DELETE` are registered; `HEAD` answers
 every `GET` route, for monitoring tools that probe with it.

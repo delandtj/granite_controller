@@ -1322,6 +1322,49 @@ fn credentials_come_out_of_the_headers() {
 }
 
 #[test]
+fn a_new_token_is_stored_with_the_fast_hash() {
+    let mut rig = Rig::new();
+    let session = rig.setup();
+    let r = rig.go(ApiRequest::new(Method::Post, "/api/v1/security/tokens")
+        .with_auth(Auth::Session(session))
+        .with_body(br#"{"name":"deploy"}"#));
+    let token = body_json(&r)["token"].as_str().unwrap().to_string();
+    let salt = api::unhex(&rig.store.secrets.admin_salt).unwrap();
+    assert_eq!(
+        rig.store.secrets.api_tokens[0].hash,
+        api::token_hash(token.as_bytes(), &salt)
+    );
+    assert!(rig.store.secrets.api_tokens[0].hash.starts_with(api::TOKEN_HASH_PREFIX));
+}
+
+#[test]
+fn an_old_pbkdf2_token_still_works_and_is_rehashed() {
+    let mut rig = Rig::new();
+    rig.setup();
+    let salt = api::unhex(&rig.store.secrets.admin_salt).unwrap();
+    let token = "ab".repeat(api::TOKEN_BYTES);
+    let iters = rig.store.secrets.admin_iters;
+    rig.store.secrets.api_tokens.push(granite_core::config::ApiToken {
+        name: String::from("old"),
+        hash: api::pbkdf2_hex(token.as_bytes(), &salt, iters),
+        created_s: 0,
+    });
+
+    let r = rig.go(ApiRequest::new(Method::Get, "/api/v1/state").with_auth(Auth::Bearer(token.clone())));
+    assert_eq!(r.status, 200);
+    assert_eq!(
+        rig.store.secrets.api_tokens[0].hash,
+        api::token_hash(token.as_bytes(), &salt),
+        "rehashed on first use"
+    );
+    let r = rig.go(ApiRequest::new(Method::Get, "/api/v1/state").with_auth(Auth::Bearer(token)));
+    assert_eq!(r.status, 200);
+    let r = rig.go(ApiRequest::new(Method::Get, "/api/v1/state")
+        .with_auth(Auth::Bearer("cd".repeat(api::TOKEN_BYTES))));
+    assert_eq!(r.status, 401);
+}
+
+#[test]
 fn pbkdf2_matches_the_documented_parameters() {
     let salt = api::unhex("00112233445566778899aabbccddeeff").unwrap();
     let hash = api::pbkdf2_hex(b"correct horse", &salt, api::PBKDF2_ITERS);
