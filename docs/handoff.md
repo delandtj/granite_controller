@@ -32,7 +32,7 @@ Done on board 1 (2026-10-16 .. 19):
 5. MQTT: bench broker (below) over TLS + password; staged section
    auto-confirmed on connect; status/state/event/log all publish.
 
-Firmware fixes found by the board (all committed on eight-node-expander):
+Firmware fixes found by the board (all on master):
 - 2076c02: SPI2 had no DMA (64-byte cap broke every W5500 frame); port-80
   httpd stack 6144 overflowed on /id.
 - SNTP: lwIP drops the option 42 servers of a DHCP ACK unless "servers
@@ -191,10 +191,11 @@ State 2026-10-09, branch eight-node-expander:
   Modbus map and the Home Assistant page are included from firmware/docs.
   Not hosted anywhere yet (a GitHub Pages workflow was not added; the
   user decides on hosting).
-- Branch `eight-node-expander` holds all current work (rev C), pushed to
-  the fork (2026-10-09, including the C36 swap and this handoff). Push only when the user asks.
-- `master` = rev A (colleague's STM32 design) + PCB setup, BOM fix,
-  first expansion header. Both branches are pushed to the user's fork.
+- `master` holds all current work (rev C). On 2026-10-20 it was
+  fast-forwarded to the old `eight-node-expander` branch, which was then
+  deleted, and the colleague's upstream (rev A, STM32) was dropped as a
+  remote: the designs have diverged. GitHub still marks the repo as a
+  fork until the user detaches it. Push only when the user asks.
 - Remotes: `origin` = github.com/delandtj/granite_controller (fork),
   `upstream` = github.com/LeeSmet/granite_controller (colleague, Lee
   Smet). No PR to upstream yet: the user wants to discuss more first.
