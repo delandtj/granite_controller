@@ -268,6 +268,7 @@ pub fn is_pending_verify() -> bool {
 pub fn mark_valid() -> Result<(), EspError> {
     let mut ota = EspOta::new()?;
     ota.mark_running_slot_valid()?;
+    disarm_rtc_watchdog();
     STATE.store(OtaState::Valid.code(), Ordering::Relaxed);
     log::warn!("ota: running image marked valid");
     Ok(())
@@ -339,7 +340,11 @@ pub fn start(t_validate_s: u32, events: Option<Sender<Event>>, nvs: Option<EspDe
     }
 
     let window = if t_validate_s == 0 { 600 } else { t_validate_s };
-    log::warn!("ota: this image is on probation, {window} s to confirm");
+    arm_rtc_watchdog(window.saturating_add(GUARD_MARGIN_S));
+    log::warn!(
+        "ota: this image is on probation, {window} s to confirm (RTC watchdog at {} s)",
+        window.saturating_add(GUARD_MARGIN_S)
+    );
     emit(&events, "pending_verify", &format!("{window} s to confirm"));
 
     let spawned = thread::Builder::new()
@@ -418,6 +423,92 @@ fn emit(events: &Option<Sender<Event>>, phase: &str, detail: &str) {
                 detail: Some(detail.to_string()),
             },
         ));
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Hardware probation deadline (RTC watchdog)
+// ---------------------------------------------------------------------------
+//
+// The probation thread enforces `t_validate` only if the image gets far
+// enough to start it and stays healthy enough to run it. The bootloader
+// arms the RTC watchdog (CONFIG_BOOTLOADER_WDT_ENABLE, 9 s) and, with
+// CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE, ESP-IDF leaves it running
+// into the app. A confirmed image switches it off first thing; an image
+// on probation keeps it, stretched to the probation window, and switches
+// it off only when it marks itself valid. A hang anywhere before that
+// resets the chip, and the bootloader rolls the unconfirmed image back.
+
+/// `wdt_hal_context_t` (hal/wdt_hal.h): the instance and a device pointer.
+#[repr(C)]
+struct WdtHalContext {
+    inst: u32,
+    dev: *mut core::ffi::c_void,
+}
+
+// hal/wdt_types.h
+const WDT_RWDT: u32 = 0;
+const WDT_STAGE0: u32 = 0;
+const WDT_STAGE_ACTION_RESET_RTC: u32 = 4;
+
+// Not in esp-idf-sys's bindings; plain functions in the hal and
+// esp_hw_support components.
+unsafe extern "C" {
+    fn wdt_hal_write_protect_disable(hal: *mut WdtHalContext);
+    fn wdt_hal_write_protect_enable(hal: *mut WdtHalContext);
+    fn wdt_hal_config_stage(hal: *mut WdtHalContext, stage: u32, timeout: u32, behavior: u32);
+    fn wdt_hal_enable(hal: *mut WdtHalContext);
+    fn wdt_hal_disable(hal: *mut WdtHalContext);
+    fn wdt_hal_feed(hal: *mut WdtHalContext);
+    fn rtc_clk_slow_freq_get_hz() -> u32;
+}
+
+/// `RWDT_HAL_CONTEXT_DEFAULT()` for the ESP32-C6.
+fn rwdt() -> WdtHalContext {
+    WdtHalContext {
+        inst: WDT_RWDT,
+        dev: (&raw mut esp_idf_svc::sys::LP_WDT).cast(),
+    }
+}
+
+/// Reset the chip unless [`disarm_rtc_watchdog`] runs within `secs`.
+fn arm_rtc_watchdog(secs: u32) {
+    let ticks = u64::from(secs) * u64::from(unsafe { rtc_clk_slow_freq_get_hz() });
+    let ticks = u32::try_from(ticks).unwrap_or(u32::MAX);
+    let mut ctx = rwdt();
+    unsafe {
+        wdt_hal_write_protect_disable(&mut ctx);
+        wdt_hal_config_stage(&mut ctx, WDT_STAGE0, ticks, WDT_STAGE_ACTION_RESET_RTC);
+        wdt_hal_enable(&mut ctx);
+        wdt_hal_feed(&mut ctx);
+        wdt_hal_write_protect_enable(&mut ctx);
+    }
+}
+
+fn disarm_rtc_watchdog() {
+    let mut ctx = rwdt();
+    unsafe {
+        wdt_hal_write_protect_disable(&mut ctx);
+        wdt_hal_disable(&mut ctx);
+        wdt_hal_write_protect_enable(&mut ctx);
+    }
+}
+
+/// What the early boot gets before [`start`] knows `t_validate`.
+const EARLY_GUARD_S: u32 = 60;
+
+/// Slack on top of `t_validate`: the probation thread gets the first go
+/// at a clean rollback, the watchdog only catches what it cannot.
+const GUARD_MARGIN_S: u32 = 60;
+
+/// First thing in `main` (and in every other binary built with this
+/// sdkconfig): keep the bootloader's watchdog for an image on probation,
+/// switch it off for any other.
+pub fn rtc_watchdog_at_boot() {
+    if is_pending_verify() {
+        arm_rtc_watchdog(EARLY_GUARD_S);
+    } else {
+        disarm_rtc_watchdog();
     }
 }
 

@@ -469,6 +469,15 @@ a board yet.
   broker step is not armed, so an authenticated HTTPS request is what
   confirms such an image. The LED blinks at 4 Hz while an image is on
   probation, and `ota-mark-valid` on the console confirms it by hand.
+  The hardware backs this up: the bootloader's RTC watchdog stays on
+  into the app (`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE`). A
+  confirmed image switches it off at the top of `main`; an image on
+  probation keeps it at 60 s for early boot, then `t_validate_s` + 60 s,
+  and switches it off when it confirms. An image that hangs before it
+  can roll itself back is reset by the watchdog, and the bootloader
+  rolls it back. Any other binary built with this sdkconfig must call
+  `platform::ota::rtc_watchdog_at_boot()` first (the hwtest example
+  does) or it resets after 9 s.
 
 App signing (ECDSA P-256, OTA signature verification, no Secure Boot and
 no eFuse burning) is an **opt-in**: the options live in

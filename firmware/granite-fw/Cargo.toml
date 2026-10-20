@@ -32,6 +32,10 @@ rgb-led = []
 # esp_timer press deadline is what opens the relay (src/hw/relays.rs).
 # Bench-only. Off in a shipped image.
 deadline-test = []
+# Hang at boot while on probation, so only the RTC watchdog can recover
+# the board (src/main.rs, platform/ota.rs). Bench-only. Off in a shipped
+# image.
+boot-hang-test = []
 # Everything that only makes sense on a devboard, in one flag.
 devboard = ["wifi-dev", "rgb-led"]
 

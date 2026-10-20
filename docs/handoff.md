@@ -17,8 +17,8 @@ gitignored, mode 600):
   logins = 60 s lockout). API token `ota-test` exists for scripted tests; its
   value is in the previous session's scratchpad only, so make a new one
   (POST /api/v1/session, then POST /api/v1/security/tokens).
-- running ota_1 (valid, with the rollback report); ota_0 holds the same
-  build, marked invalid by the rollback test.
+- running ota_0 (valid, master 2026-10-20 with the RTC watchdog);
+  ota_1 holds the boot-hang-test image, marked invalid.
 
 Done on board 1 (2026-10-16 .. 19):
 1. Power and USB: enumerates, C6 v0.2, 8 MB flash, no eFuses burned.
@@ -126,8 +126,17 @@ Next steps, in ADR 0001 bring-up order:
    ESP-IDF's USB-JTAG VFS write drops after 50 ms, so a blocked console
    is not proven. Field risk: an image that hangs early never runs its
    probation timer, and nothing resets it unless the task watchdog sees
-   it. Options to discuss: keep the RTC watchdog armed through probation
-   (bootloader WDT left on in the app, fed by the ladder thread).
+   it. FIXED 2026-10-20 with a hardware probation deadline: the
+   bootloader's RTC watchdog stays on into the app
+   (CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE; app side only, no
+   bootloader reflash); confirmed images switch it off at the top of
+   main, a probation image keeps it (60 s early, then t_validate + 60 s)
+   until it confirms. Verified on board 1: a probation boot armed at
+   120 s (t_validate 60), confirmed at 17 s, no reset by 154 s; a
+   `boot-hang-test` image (bench feature: hangs at the top of main while
+   on probation) was reset by the watchdog 59 s after boot, rolled back
+   to ota_0, which reported `rolled_back` on MQTT. Boot reason reads
+   `int_watchdog`. The cause of the hang itself is still unknown.
 4. Modbus TCP against the register map.
 5. Rules.
 6. Once plugs arrive: 19 V on J3 (VIN sense, trim), DS18B20 probes

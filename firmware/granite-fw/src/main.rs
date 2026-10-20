@@ -103,6 +103,17 @@ static SENSE_CFG: Mutex<SenseCfg> = Mutex::new(SenseCfg {
 fn main() -> anyhow::Result<()> {
     // 1. Patches that the ESP-IDF build expects to find linked in.
     esp_idf_svc::sys::link_patches();
+    platform::ota::rtc_watchdog_at_boot();
+    // Bench test of the hardware probation deadline: an image on
+    // probation hangs before the probation thread exists.
+    #[cfg(feature = "boot-hang-test")]
+    if platform::ota::is_pending_verify() {
+        esp_idf_svc::log::EspLogger::initialize_default();
+        log::warn!("boot-hang-test: hanging on probation; the RTC watchdog has to reset the chip");
+        loop {
+            std::thread::sleep(std::time::Duration::from_secs(1));
+        }
+    }
 
     // 2. The log ring replaces EspLogger::initialize_default: it forwards
     //    to the ESP-IDF logger and keeps the last 16 KB for `log tail`.
