@@ -360,7 +360,7 @@ fn main() -> anyhow::Result<()> {
             }
         }),
         observed: Arc::clone(&platform.observed),
-        events: platform.events.subscribe(),
+        events: platform.events.subscribe_replay(),
         // The worker applies `sys.log_level` itself, so it subscribes to
         // everything the ring sees and filters live.
         logs: platform::logring::subscribe(log::Level::Trace),

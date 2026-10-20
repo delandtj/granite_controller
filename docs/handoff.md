@@ -97,22 +97,37 @@ Next steps, in ADR 0001 bring-up order:
    https=false)", marked invalid, bootloader back to ota_1 ("last
    invalid ota_0"). t_validate_s back to 600; a second, normal pull left
    the board on ota_0 (same normal build as ota_1), valid.
-   Event gaps for a fleet backend to see OTA outcomes (to fix):
-   - the `ota` command never gets its `ack/<id>`: it completes by
-     rebooting. Ack before the reboot (or on accept).
-   - `pending_verify` is emitted at boot before the MQTT session exists
-     and is lost (not seen on a normal pull either).
-   - FIXED 2026-10-20: `rolled_back` used to come only from the failing
-     image, which usually has no broker. Now the failing image writes
-     its verdict to NVS (ota/rb_why) and the image the bootloader falls
-     back to emits `rolled_back` on its first broker session ("ota_0 not
-     confirmed within 120 s (expanders=true link=true broker=false
-     https=false); version 0.1.0; now running ota_1"), then records the
-     slot's ELF sha in ota/rb_seen: verified on board 1, once only (a
-     reboot after it sent nothing). A rollback after a crash (no
-     verdict) gets a generic reason; that path is not tested on a board.
-   - `verified` goes out ~10 ms before the reboot; it arrived on one
-     run, but nothing guarantees it (the MQTT outbox is not flushed).
+   OTA event gaps, all FIXED and verified on board 1 2026-10-20:
+   - `ota` command ack: the worker resolves a pending `ota` on the
+     `verified` / `failed` event ("verified, rebooting into the new
+     image"). `reboot` and `factory_reset` ack "rebooting" on accept.
+   - Lost events: the event bus keeps the first 32 events of a boot for
+     the first `subscribe_replay` (the MQTT worker), and the worker
+     holds up to 64 events while it has no session and sends them on
+     connect. `pending_verify` now arrives before `valid`.
+   - `rolled_back`: the failing image writes its verdict to NVS
+     (ota/rb_why); the image the bootloader falls back to emits
+     `rolled_back` on its first broker session ("ota_0 not confirmed
+     within 120 s (expanders=true link=true broker=false https=false);
+     version 0.1.0; now running ota_1") and records the slot's ELF sha
+     in ota/rb_seen, so it goes out once. A rollback after a reset or
+     crash gets "did not confirm (reset or crash before its probation
+     ended)" (seen in the console after a hard reset).
+   - Cut-off events: `planned_reboot` calls `mqtt::flush` (up to 3 s):
+     the worker marks a flush ticket done once the events and replies
+     queued before it are handled and the esp-mqtt outbox is empty. The
+     pull's `verified` event and ack went out 0.7 s before the reboot.
+   OPEN, intermittent: twice the board hung on the first boot of a
+   freshly uploaded image (16:27 and 16:59, both upload + /reboot, no
+   console reader). Console stopped mid-line at ~871 ms, right after the
+   port-80 httpd registered "/id"; no network. A hard reset (RTS via
+   pyserial, not espflash) recovered it through a bootloader rollback.
+   Not reproduced in 3 new-image boots + 3 reboots without a reader.
+   ESP-IDF's USB-JTAG VFS write drops after 50 ms, so a blocked console
+   is not proven. Field risk: an image that hangs early never runs its
+   probation timer, and nothing resets it unless the task watchdog sees
+   it. Options to discuss: keep the RTC watchdog armed through probation
+   (bootloader WDT left on in the app, fed by the ladder thread).
 4. Modbus TCP against the register map.
 5. Rules.
 6. Once plugs arrive: 19 V on J3 (VIN sense, trim), DS18B20 probes

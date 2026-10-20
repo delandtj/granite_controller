@@ -195,15 +195,24 @@ pub fn release_outputs() {
     }
 }
 
+/// Longest a planned reboot waits for MQTT to get its last messages out.
+const REBOOT_FLUSH: Duration = Duration::from_secs(3);
+
 /// The one way the firmware restarts itself.
 ///
-/// Releases every relay first, lets the last log line reach the console,
-/// then calls `esp_restart`. Never returns.
+/// Releases every relay first, gives MQTT up to [`REBOOT_FLUSH`] to
+/// deliver what is queued, lets the last log line reach the console, then
+/// calls `esp_restart`. Never returns.
 pub fn planned_reboot(reason: &str) -> ! {
     if !REBOOT_IN_PROGRESS.swap(true, Ordering::SeqCst) {
         log::warn!("planned reboot ({reason})");
     }
     release_outputs();
+    // The event and the ack that explain this reboot (an OTA `verified`,
+    // the `reboot` command's ack) are still in the MQTT worker's queue.
+    if !crate::mqtt::flush(REBOOT_FLUSH) && crate::mqtt::connected() {
+        log::warn!("planned reboot: MQTT did not flush within {REBOOT_FLUSH:?}");
+    }
     // Long enough for a 115200-equivalent USB flush, short enough that a
     // watchdog does not beat us to it.
     std::thread::sleep(Duration::from_millis(250));
@@ -220,9 +229,36 @@ pub fn planned_reboot(reason: &str) -> ! {
 /// (events go to MQTT, to the log and later to the HTTP event stream), so
 /// this is a list of senders with a non-blocking send. A subscriber that
 /// stops reading is dropped, not waited for.
-#[derive(Default)]
+///
+/// Events published before the MQTT worker subscribes (the config
+/// fallbacks and the OTA `pending_verify` of a boot) are kept, up to
+/// [`BOOT_BACKLOG`], and handed to the first [`EventBus::subscribe_replay`].
 pub struct EventBus {
-    subs: Mutex<Vec<Sender<Event>>>,
+    inner: Mutex<BusInner>,
+}
+
+struct BusInner {
+    subs: Vec<Sender<Event>>,
+    /// Everything published so far, until the first replay takes it.
+    backlog: Option<Vec<Event>>,
+    /// Boot events that did not fit in the backlog.
+    dropped: u32,
+}
+
+/// Events kept for the first replaying subscriber; later ones are counted
+/// and dropped.
+pub const BOOT_BACKLOG: usize = 32;
+
+impl Default for EventBus {
+    fn default() -> Self {
+        EventBus {
+            inner: Mutex::new(BusInner {
+                subs: Vec::new(),
+                backlog: Some(Vec::new()),
+                dropped: 0,
+            }),
+        }
+    }
 }
 
 impl EventBus {
@@ -234,8 +270,22 @@ impl EventBus {
     /// Add a subscriber.
     pub fn subscribe(&self) -> std::sync::mpsc::Receiver<Event> {
         let (tx, rx) = std::sync::mpsc::channel();
-        if let Ok(mut subs) = self.subs.lock() {
-            subs.push(tx);
+        if let Ok(mut inner) = self.inner.lock() {
+            inner.subs.push(tx);
+        }
+        rx
+    }
+
+    /// Add a subscriber that first gets everything published since boot.
+    /// Only the first caller gets the backlog (the MQTT worker); later
+    /// callers get a plain subscription.
+    pub fn subscribe_replay(&self) -> std::sync::mpsc::Receiver<Event> {
+        let (tx, rx) = std::sync::mpsc::channel();
+        if let Ok(mut inner) = self.inner.lock() {
+            for event in inner.backlog.take().unwrap_or_default() {
+                let _ = tx.send(event);
+            }
+            inner.subs.push(tx);
         }
         rx
     }
@@ -259,8 +309,20 @@ impl EventBus {
 
     /// Hand `event` to every live subscriber.
     pub fn publish(&self, event: Event) {
-        if let Ok(mut subs) = self.subs.lock() {
-            subs.retain(|tx| tx.send(event.clone()).is_ok());
+        if let Ok(mut guard) = self.inner.lock() {
+            // Through a plain reference, so the fields borrow separately.
+            let inner = &mut *guard;
+            if let Some(backlog) = inner.backlog.as_mut() {
+                if backlog.len() < BOOT_BACKLOG {
+                    backlog.push(event.clone());
+                } else {
+                    if inner.dropped == 0 {
+                        log::warn!("event bus: boot backlog full, later boot events are not replayed");
+                    }
+                    inner.dropped += 1;
+                }
+            }
+            inner.subs.retain(|tx| tx.send(event.clone()).is_ok());
         }
     }
 }

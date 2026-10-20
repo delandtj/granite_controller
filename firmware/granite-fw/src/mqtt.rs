@@ -91,7 +91,7 @@
 //!         }
 //!     }),
 //!     observed: Arc::clone(&platform.observed),
-//!     events: platform.events.subscribe(),
+//!     events: platform.events.subscribe_replay(),
 //!     logs: platform::logring::subscribe(log::Level::Trace),
 //!     commands: Box::new({
 //!         let tx = commands_tx.clone();
@@ -126,23 +126,26 @@
 //! function for anything that only wants the flag.
 
 use std::ffi::CString;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::collections::VecDeque;
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::mpsc::{Receiver, Sender, SyncSender, TryRecvError, channel, sync_channel};
 use std::sync::{Arc, RwLock};
 use std::thread::{self, JoinHandle};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use esp_idf_svc::handle::RawHandle;
 use esp_idf_svc::mqtt::client::{
     Details, EspMqttClient, EventPayload, LwtConfiguration, MqttClientConfiguration, QoS,
 };
-use esp_idf_svc::sys::{esp_mqtt_client_reconnect, esp_timer_get_time};
+use esp_idf_svc::sys::{
+    esp_mqtt_client_get_outbox_size, esp_mqtt_client_reconnect, esp_timer_get_time,
+};
 use esp_idf_svc::tls::X509;
 use serde_json::Value;
 
 use granite_core::config::{Config, Secrets};
 use granite_core::hal::BootReason;
-use granite_core::msg::{Command, Event, EventKind, LWT_PAYLOAD, Reply, State, Status, Topics};
+use granite_core::msg::{Command, CommandKind, Event, EventKind, LWT_PAYLOAD, Reply, State, Status, Topics};
 use granite_core::observed::{Observed, Stamped};
 
 use crate::platform::logring::LogRecord;
@@ -190,6 +193,13 @@ const WIRE_DEPTH: usize = 16;
 /// the rest of the loop.
 const DRAIN_PER_TICK: usize = 16;
 
+/// Name of the worker thread.
+const WORKER_THREAD: &str = "mqtt";
+
+/// Events kept while there is no session, sent on the next connect. The
+/// oldest go first when it overflows.
+const HELD_EVENTS: usize = 64;
+
 /// Inbound esp-mqtt buffer. Commands are small; this is the cap on one.
 const IN_BUFFER: usize = 2048;
 
@@ -213,6 +223,31 @@ static CONNECTED: AtomicBool = AtomicBool::new(false);
 /// True while the broker session is up.
 pub fn connected() -> bool {
     CONNECTED.load(Ordering::Relaxed)
+}
+
+/// Flush tickets: [`flush`] takes the next one, the worker marks it done
+/// once everything queued before it reached the broker.
+static FLUSH_ASKED: AtomicU32 = AtomicU32::new(0);
+static FLUSH_DONE: AtomicU32 = AtomicU32::new(0);
+
+/// Wait until every event published so far, and every ack the worker
+/// owes for it, is out and (QoS 1) acknowledged by the broker, or until
+/// `timeout` passes. For a planned reboot, so the event and the ack that
+/// explain it are not cut off. False at once without a session, and from
+/// the worker thread itself, which cannot wait for its own loop.
+pub fn flush(timeout: Duration) -> bool {
+    if !connected() || thread::current().name() == Some(WORKER_THREAD) {
+        return false;
+    }
+    let ticket = FLUSH_ASKED.fetch_add(1, Ordering::SeqCst).wrapping_add(1);
+    let end = Instant::now() + timeout;
+    while Instant::now() < end {
+        if FLUSH_DONE.load(Ordering::SeqCst) >= ticket {
+            return true;
+        }
+        thread::sleep(Duration::from_millis(20));
+    }
+    false
 }
 
 /// Monotonic milliseconds, the same clock the core compares against.
@@ -359,7 +394,7 @@ pub fn start(ctx: MqttCtx) -> anyhow::Result<MqttHandle> {
     let stop = Arc::new(AtomicBool::new(false));
     let worker_stop = Arc::clone(&stop);
     let join = thread::Builder::new()
-        .name("mqtt".into())
+        .name(WORKER_THREAD.into())
         .stack_size(WORKER_STACK)
         .spawn(move || supervise(ctx, &worker_stop))?;
 
@@ -527,6 +562,9 @@ const fn qos_of(qos: u8) -> QoS {
 struct Pending {
     /// Command id, which is also the ack topic leaf.
     id: String,
+    /// What was asked, for the commands whose completion is not an
+    /// actuator event (`ota`, `reboot`, `factory_reset`).
+    action: CommandKind,
     /// The dispatcher's reply channel, until it answered.
     reply: Option<Receiver<Reply>>,
     /// Monotonic deadline.
@@ -632,6 +670,8 @@ fn run(ctx: &mut MqttCtx, stop: &AtomicBool) -> anyhow::Result<Outcome> {
 
     let cmd_topic = topics.cmd();
     let mut pending: Vec<Pending> = Vec::new();
+    let mut held: VecDeque<Event> = VecDeque::new();
+    let mut held_dropped = 0u32;
     let mut session = false;
     let mut backoff_s = BACKOFF_MIN_S;
     let mut retry_at: Option<u64> = None;
@@ -643,6 +683,10 @@ fn run(ctx: &mut MqttCtx, stop: &AtomicBool) -> anyhow::Result<Outcome> {
     let mut outcome = Outcome::Stopped;
 
     while !stop.load(Ordering::Relaxed) {
+        // Read before anything is drained: whatever a flush caller queued
+        // before asking is in the channels by now.
+        let flush_asked = FLUSH_ASKED.load(Ordering::SeqCst);
+
         // 1. The wire. recv_timeout is the loop's only sleep, so a
         //    connect or a command is acted on as soon as it lands.
         match wire_rx.recv_timeout(TICK) {
@@ -674,6 +718,17 @@ fn run(ctx: &mut MqttCtx, stop: &AtomicBool) -> anyhow::Result<Outcome> {
                                 && let Some(confirm) = ctx.confirm_staged.as_ref()
                             {
                                 confirm();
+                            }
+                            // What happened while there was no session
+                            // (boot events included), oldest first.
+                            if held_dropped > 0 {
+                                log::warn!(
+                                    "mqtt: {held_dropped} event(s) were dropped while disconnected"
+                                );
+                                held_dropped = 0;
+                            }
+                            while let Some(event) = held.pop_front() {
+                                publish_json(&mut client, &topics.event(), qos, false, &event);
                             }
                             // Retained status and state, straight away.
                             next_status = 0;
@@ -726,7 +781,9 @@ fn run(ctx: &mut MqttCtx, stop: &AtomicBool) -> anyhow::Result<Outcome> {
 
         let now = now_ms();
 
-        // 2. Events: every one goes out, and one may finish a pending ack.
+        // 2. Events: every one goes out (held while there is no
+        //    session), and one may finish a pending ack.
+        let mut events_drained = false;
         for _ in 0..DRAIN_PER_TICK {
             match ctx.events.try_recv() {
                 Ok(event) => {
@@ -734,8 +791,18 @@ fn run(ctx: &mut MqttCtx, stop: &AtomicBool) -> anyhow::Result<Outcome> {
                         publish_json(&mut client, &topics.event(), qos, false, &event);
                     }
                     resolve_from_event(&event, &mut client, &topics, qos, &mut pending, session);
+                    if !session {
+                        if held.len() == HELD_EVENTS {
+                            held.pop_front();
+                            held_dropped += 1;
+                        }
+                        held.push_back(event);
+                    }
                 }
-                Err(TryRecvError::Empty) => break,
+                Err(TryRecvError::Empty) => {
+                    events_drained = true;
+                    break;
+                }
                 Err(TryRecvError::Disconnected) => {
                     anyhow::bail!("the event bus dropped the mqtt subscriber");
                 }
@@ -765,6 +832,16 @@ fn run(ctx: &mut MqttCtx, stop: &AtomicBool) -> anyhow::Result<Outcome> {
 
         // 4. Acks the dispatcher owes an answer for.
         resolve_pending(&mut client, &topics, qos, &mut pending, session, now);
+
+        // 4b. A flush: done once the events and replies queued before it
+        //     are handled and the QoS 1 outbox is empty.
+        if session && events_drained && flush_asked > FLUSH_DONE.load(Ordering::SeqCst) {
+            // Safe: the handle is alive for as long as `client` is.
+            let outbox = unsafe { esp_mqtt_client_get_outbox_size(client.handle()) };
+            if outbox <= 0 {
+                FLUSH_DONE.store(flush_asked, Ordering::SeqCst);
+            }
+        }
 
         // 5. Retained status.
         if session && now >= next_status {
@@ -1041,6 +1118,7 @@ fn on_command(
     log::info!("mqtt: command {} {} on {}", cmd.id, cmd.action, cmd.target);
     pending.push(Pending {
         id: cmd.id.clone(),
+        action: cmd.action,
         reply: Some(reply_rx),
         deadline_ms: now_ms() + REPLY_TIMEOUT.as_millis() as u64,
     });
@@ -1073,6 +1151,12 @@ fn resolve_pending(
                     // "accepted" means the actuator queued it; the ack
                     // the ADR wants goes out when the action finishes.
                     let queued = reply.ok && reply.result.as_deref() == Some("accepted");
+                    // A reboot or a factory reset completes by restarting
+                    // the board, so "accepted" is the last word there is.
+                    if queued && matches!(p.action, CommandKind::Reboot | CommandKind::FactoryReset) {
+                        done.push(Reply::ok(&p.id, "rebooting"));
+                        return false;
+                    }
                     if queued {
                         p.reply = None;
                         p.deadline_ms = now + ACTION_TIMEOUT.as_millis() as u64;
@@ -1105,7 +1189,8 @@ fn resolve_pending(
 }
 
 /// An `action_done` or `action_failed` event is the completion an accepted
-/// actuator command was waiting for.
+/// actuator command was waiting for; an `ota` outcome is the completion of
+/// an `ota` command.
 fn resolve_from_event(
     event: &Event,
     client: &mut EspMqttClient<'static>,
@@ -1123,6 +1208,26 @@ fn resolve_from_event(
             Reply::ok(id, result.clone())
         }
         EventKind::ActionFailed { id, error, .. } => Reply::err(id, error.clone()),
+        // An `ota` pull ends in `verified` (then a reboot) or `failed`;
+        // neither event carries the command id, and only one pull runs.
+        EventKind::Ota { phase, detail, .. } if phase == "verified" || phase == "failed" => {
+            let mut done: Vec<Reply> = Vec::new();
+            pending.retain(|p| {
+                if p.awaiting_completion() && p.action == CommandKind::Ota {
+                    done.push(if phase == "verified" {
+                        Reply::ok(&p.id, "verified, rebooting into the new image")
+                    } else {
+                        Reply::err(&p.id, detail.clone().unwrap_or_else(|| String::from("ota failed")))
+                    });
+                    return false;
+                }
+                true
+            });
+            for reply in &done {
+                publish_ack(client, topics, qos, reply, session);
+            }
+            return;
+        }
         _ => return,
     };
     let before = pending.len();
