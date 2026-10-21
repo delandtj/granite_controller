@@ -207,8 +207,9 @@ Topology: two-phase synchronous buck, phases 180 degrees apart.
   mode: VFB2 = INTVCC, RUN2 = RUN1, ITH2 and TRACK/SS2 to 1 nF).
   200 kHz per phase (FREQ = GND), so 400 kHz ripple at the output and
   input; a low frequency keeps switching loss down at 54 V, and the
-  fluid cools the larger inductors that need. Forced continuous mode,
-  spread spectrum on.
+  fluid cools the larger inductors that need. Forced continuous mode.
+  PLLIN/SPREAD to GND: no sync and no spread spectrum in rev 0.1
+  (spread spectrum is one pin change, to INTVCC, if EMI asks for it).
 - Output voltage: VOUT = 1 V x (1 + RB/RA), 180k / 10k = 19.0 V.
 - Gate drive 10 V (DRVSET open). DRVCC comes from the VIN LDO at
   start-up and from VOUT through EXTVCC once running (19 V is above the
