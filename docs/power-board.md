@@ -83,9 +83,10 @@ These are the critical requirements.
 2. Channel OFF state survives a controller reboot. Releasing it requires
    a new command, so a power-cycle in progress is not cut short or
    repeated by a reboot.
-3. The board logic is powered from the 19 V bus (local 3.3 V regulator),
-   not from the controller, so requirements 1-3 hold with the
-   controller disconnected.
+3. The board logic is powered from the 19 V bus (local 3.3 V / 5 V
+   regulators), not from the controller, so requirements 1-3 hold with
+   the controller disconnected. Only the controller side of the I2C
+   isolator takes power from J8.
 4. EXP_nRESET from the controller must NOT reset this board's channel
    state. On the controller it resets the relay-drive expander on every
    MCU reset; here that would violate requirement 3. The board does not
@@ -95,9 +96,19 @@ These are the critical requirements.
 
 - Physical: cable to the controller's J8 expansion header (2x6, 2.54 mm),
   max 0.5 m. Used pins: external I2C SCL/SDA (J8 5/6), EXP_INT (J8 8),
-  GND. 3V3 from J8 only as the I2C pull-up / level reference; not for
-  board logic. Whether J8 I2C is the right link at all is open (see
-  "Is I2C sufficient?" below).
+  3V3 and GND.
+- Galvanically isolated I2C (decided 2026-10-21). The isolator sits on
+  the power board. Its controller side is powered from J8 3V3 (a few
+  mA) and referenced to the controller GND in the cable; its board side
+  runs from the power board's own 3.3 V / 5 V, made from the 19 V bus.
+  The cable carries no bus current and the board's 19 V return never
+  touches it. EXP_INT crosses the barrier too (a third, one-way
+  channel: open drain on the controller side). Candidate parts: ISO1640
+  or ISO1540 for SDA/SCL plus a one-channel isolator for EXP_INT, or a
+  three-channel part if one exists in stock; to be chosen.
+- With the controller absent or unpowered, the controller side of the
+  isolator is dead, I2C is idle and every channel stays ON (default ON
+  holds).
 - I2C: 3.3 V levels, 100 or 400 kHz.
 - Rev C splits I2C in two buses. The on-board parts (U14 0x20, U15
   0x21, U5 TMP1075 0x48) are on the internal bus and do not collide.
@@ -106,8 +117,11 @@ These are the critical requirements.
   is plugged into J9.
 - EXP_INT: the board pulls it low (open drain) on any channel fault
   or power-good change. Shared with other modules.
-- Grounds: board GND (the 19 V bus return) connects to controller GND
-  through the cable. The controller's Ethernet side stays isolated by
+- Grounds: board GND (the 19 V bus return) does NOT connect to the
+  cable; the cable GND is the controller's, and only reaches the
+  controller side of the isolator. The two grounds still meet through
+  the 19 V bus, which also feeds the controller's J3, so no signal
+  current shares the bus return. The controller's Ethernet side stays isolated by
   its magjack; node front-panel contacts stay floating (photoMOS).
 
 ### PCB and mechanics
@@ -258,9 +272,10 @@ Bandwidth is not the constraint on any of these links.
 
 ### Where the data lives
 
-On the controller: only a short window. The ESP32-C6 has no PSRAM, the
-8 MB flash is fully partitioned (two 2.5 MB OTA slots, ~190 KB unused),
-and a time series written to flash every few seconds wears it out. So:
+Not on the controller (decided 2026-10-21): no logging to flash, on
+the 8 MB module or on the 16 MB module planned for production. The
+controller measures and publishes; it keeps only a short RAM window to
+bridge a broker outage. So:
 
 - Poll every channel at 1 Hz.
 - Every publish interval (default 10 s, a config value) publish one
@@ -275,17 +290,8 @@ and a time series written to flash every few seconds wears it out. So:
 - Expose the latest values as Modbus input registers too, for a BMS or
   SCADA that wants to poll.
 - Energy needs no on-device persistence: the counter lives in the
-  LTC4282 and survives a controller reboot.
-
-With a 16 MB module (planned for production, after testing) about 8 MB
-is free for a data partition, and a local history becomes possible: a
-fixed-size ring, written as a log with wear levelling. 1 min averages
-of 8 channels for 30 days is 43200 x 8 x ~16 B, about 5.5 MB. At
-~1 MB written per day the partition is rewritten about once a week, far
-inside the flash's ~100k erase cycles. It would let a frame without a
-backend show and export a month of history, and refill the backend
-after a long outage. It is a buffer, not the record: the backend store
-stays the source of truth.
+  LTC4282 and survives a controller reboot. An outage longer than the
+  RAM window loses resolution, not energy.
 
 Off the controller: a collector subscribes to MQTT and writes a store.
 Two candidates, to be decided with the fleet backend ADR:
@@ -326,18 +332,21 @@ elsewhere:
 - Software I2C on the controller (GPIO6/7) shares the CPU with
   everything else; EEPROM writes and bus recovery are untested.
 
-Options, cheapest first:
+Options that were considered:
 
-1. Plain I2C on J8, with an I2C isolator (e.g. ISO1540) on the power
-   board, and the power board alone on its bus segment (a switch or a
-   second bus, not shared with J9). One frame only.
+1. Galvanically isolated I2C on J8, isolator on the power board, board
+   side powered locally. CHOSEN 2026-10-21: fixes the ground problem
+   with no MCU or firmware on the power board.
 2. Differential I2C (e.g. PCA9615 over twisted pair) for a longer,
-   noisier cable. Still one controller per frame.
-3. Power duck: an MCU on the power board talks I2C to the LTC4282s
-   over a few cm of trace, keeps the retry counting and EEPROM checks
-   local, and talks RS-485 / Modbus RTU to the controller. Isolated,
-   multi-drop, metres of cable, one controller for a pod. Fits the pod
-   architecture; costs an MCU, firmware and an address scheme.
+   noisier cable. Not needed at 0.5 m once isolated.
+3. Power duck: an MCU on the power board, RS-485 / Modbus RTU to the
+   controller. Reaches a whole pod, but costs an MCU, firmware and an
+   address scheme. Not pursued for the power board.
+
+Still open with option 1: the shared bus. The isolated segment is on
+the same controller bus as J9, so a stuck Qwiic sensor still blocks
+monitoring (never power). Either accept it, or give J9 and J8 separate
+segments (an I2C switch on the controller, next board revision).
 
 ## Knowns and unknowns
 
@@ -359,14 +368,19 @@ connectors are not fixed.
   EXP_nRESET, 3V3, 5V), photoMOS PWR/RST per node, power LED sense per
   node, MQTT, Modbus TCP and HTTPS, SNTP wall clock.
 - The boards are immersed; 19 V is SELV.
+- Link: galvanically isolated I2C on J8, power board side powered from
+  its own 3.3 V / 5 V. No MCU on the power board, so the power-cycle
+  sequence, retry counting, start-up stagger and EEPROM checks run on
+  the controller.
+- No power logging on the controller: it measures and publishes, a
+  backend stores.
 
 ### Known unknowns
 
 Interface and architecture:
-- I2C on J8, power duck on RS-485, or both (see "Is I2C sufficient?").
-- Frames per controller.
-- Where the power-cycle sequence, retry counting, start-up stagger
-  and EEPROM checks run: controller or board.
+- Isolator part numbers (two I2C channels plus one for EXP_INT).
+- J9 and J8 on one bus segment or separate ones.
+- Frames per controller (isolated I2C over J8 is one frame each).
 - Connector and cable to the controller; hot-plug safe or not.
 
 Power path:
@@ -400,7 +414,8 @@ Requirements:
   real node.
 - Nodes take 19 V DC directly, with no internal brick. To check on the
   actual board.
-- Ground: the I2C cable shares the 85 A return (see above).
+- Ground: the I2C cable would share the 85 A return. Solved by the
+  isolated link.
 - Power LED sense becomes a cross-check: channel ON at 0 A with the LED
   lit, or OFF with the LED lit, means something is wrong. Not designed
   yet.
@@ -426,9 +441,8 @@ Requirements:
 6. A per-part FMEA: what happens when each part fails open, short or
    stuck.
 
-Decide first: I2C on J8 versus a power duck, and in or out of the
-fluid. Then the node's power input (connector, current profile, BIOS
-setting).
+Decide next: in or out of the fluid, then the node's power input
+(connector, current profile, BIOS setting).
 
 ## Open decisions
 
