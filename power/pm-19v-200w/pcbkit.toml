@@ -1,0 +1,12 @@
+# pcbkit settings for the PM-19V-200W port module (overrides the
+# granite_controller pcbkit.toml one level up).
+[project]
+name = "pm-19v-200w"
+libs = { pm = "pm.pretty" }
+
+[mkboard]
+copper_layers = 4
+stage_x = -120.0
+sheet_pitch = 90.0
+cell = 14.0
+per_row = 6

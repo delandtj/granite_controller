@@ -1,0 +1,4 @@
+(fp_lib_table
+	(version 7)
+	(lib (name "pm") (type "KiCad") (uri "${KIPRJMOD}/pm.pretty") (options "") (descr "PM-19V-200W local footprints"))
+)
