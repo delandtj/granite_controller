@@ -186,6 +186,88 @@ change (48 V class front ends, module ID readers).
 8. Controller supply at 54 V: auxiliary output on the power board or a
    40-60 V controller input.
 
+### First port module: PM-19V-200W
+
+Concept schematic, rev 0.1, 2026-10-21: `power/pm-19v-200w/` (KiCad
+10). Netlist checked; component values are first estimates, not
+verified on a bench.
+
+| Item | Value |
+|---|---|
+| Input | 40-60 V; UVLO ~38 V, OVLO ~62 V |
+| Output | 19.0 V +/-2 %, set by fixed resistors (a 19.5 V or 20 V variant is a resistor change) |
+| Current | 10.5 A continuous, designed for 13 A, current limit ~14-16 A, hiccup on a short |
+| Efficiency target | 97.5-98.5 % at 200 W (3-5 W loss) |
+| Size target | about 25 x 60 mm, eighth-brick outline and pinout (DOSA) |
+| Environment | immersed; no fan, no heatsink, no wet electrolytics |
+
+Topology: two-phase synchronous buck, phases 180 degrees apart.
+
+- Controller: ADI LTC7810 (4.5-140 V, dual, two-phase single-output
+  mode: VFB2 = INTVCC, RUN2 = RUN1, ITH2 and TRACK/SS2 to 1 nF).
+  200 kHz per phase (FREQ = GND), so 400 kHz ripple at the output and
+  input; a low frequency keeps switching loss down at 54 V, and the
+  fluid cools the larger inductors that need. Forced continuous mode,
+  spread spectrum on.
+- Output voltage: VOUT = 1 V x (1 + RB/RA), 180k / 10k = 19.0 V.
+- Gate drive 10 V (DRVSET open). DRVCC comes from the VIN LDO at
+  start-up and from VOUT through EXTVCC once running (19 V is above the
+  switchover point, below the 65 V EXTVCC limit, and still below it when
+  a shorted top FET puts the bus on VOUT). NDRV tied to DRVCC (unused).
+- Per phase: two 100 V N-MOSFETs (candidate Infineon BSC070N10NS5, 7
+  mOhm, to compare against GaN), 22 uH inductor (Isat >= 12 A, DCR as
+  low as fits, 15 x 15 mm class), 8 mOhm 2512 sense resistor (current
+  limit 67 mV min / 8 mOhm = 8.4 A peak per phase, ~14 A DC total;
+  0.34 W per phase; inductor DCR sensing is the efficiency option),
+  external bootstrap diode (BAS21, 250 V) and 0.1 uF.
+- Ripple at 54 V in: ~2.8 A peak-peak per phase (~43 % at 6.5 A).
+  Minimum on-time is no concern: 19 / (60 x 200k) = 1.6 us >> 90 ns.
+- Input: 8 x 2.2 uF 100 V X7R 1210 (ceramic loses ~60 % at 54 V); VIN
+  pin through 10 ohm and 1 uF.
+- Output: 4 x 22 uF 35 V X7R 1210 plus 2 x 100 uF 35 V solid polymer.
+- UVLO / OVLO: one divider VIN - 976k - RUN - 12.4k - OVLO - 19.6k -
+  GND: start at 38.4 V, stop above 62.7 V. RUN is also the module's
+  ON/OFF pin (brick pin 2): open = on, pulled low = off (default ON).
+- Soft start: 0.1 uF on TRACK/SS1, ~10 ms ramp into the load's input
+  capacitance.
+- Compensation (ITH1): 15k + 2.2 nF, 100 pF, plus 47 pF feed-forward
+  across the top feedback resistor. First guess, to tune on the bench.
+
+Independent output supervision (does not depend on the LTC7810 or its
+supplies):
+- 4.7 V rail from VIN through 47k and a zener (~1 mA).
+- Overvoltage: MCP65R46 comparator (internal 1.21 V reference,
+  open-drain), VOUT / (178k + 10k) trips at ~22.7 V, pulls OV_KILL low.
+  The front end cuts the port input on OV_KILL in hardware and latches
+  off. This covers a shorted top FET.
+- Power good: second MCP65R46, VOUT / (133k + 10k), PGOOD released
+  (high) above ~17.3 V.
+
+Interface (J1 eighth-brick pins, J2 auxiliary row beside them):
+
+| Pin | Signal |
+|---|---|
+| J1.1 | +VIN |
+| J1.2 | ON/OFF (RUN): open = on, low = off |
+| J1.3 | -VIN (GND) |
+| J1.4 | -VOUT (GND, non-isolated) |
+| J1.5-7 | Sense-, Trim, Sense+: not connected (voltage is fixed in hardware) |
+| J1.8 | +VOUT |
+| J2.1 | OV_KILL, open drain, low = overvoltage |
+| J2.2 | PGOOD, open drain, high = good |
+| J2.3 | ID: resistor to GND, read by the carrier ADC (value table to define) |
+| J2.4 | TEMP: 10k NTC to GND |
+| J2.5 | GND |
+
+Open for this module:
+- MOSFET choice, silicon versus GaN (switching loss at 54 V dominates).
+- Inductor part, and resistor versus DCR current sensing.
+- Compensation, checked with a load-step test.
+- Plug-in (pins) versus soldered to the carrier.
+- Whether an off-the-shelf brick in the same footprint (e.g. SynQor
+  NQ90W90EPx10, 10 A at 19 V = 190 W) is an acceptable fallback for
+  loads under 190 W.
+
 ## Requirements
 
 ### Input
