@@ -2,7 +2,9 @@
 
 Status: draft, 2026-10-07, measurement and knowns/unknowns added
 2026-10-21. Not started in hardware. Open decisions and unknowns are
-listed at the end; everything else is a requirement.
+listed at the end; everything else is a requirement. Since 2026-10-21
+the direction is a 48-54 V bus with per-load port modules (next
+section); the 19 V design below is the reference it grew from.
 
 ## Purpose
 
@@ -31,6 +33,158 @@ measurement.
 - The controller runs from the same 19 V bus (its J3), tapped upstream of
   the hot-swap channels with its own fuse, so no channel fault or
   channel disable can take the controller down.
+
+## Direction: 48-54 V bus, common port front end, per-load port modules
+
+Raised 2026-10-21, being thought through; not decided. The rest of this
+spec still describes the 19 V reference design (LTC4282 on a 19 V bus).
+Where this section conflicts with it, this section is the direction of
+travel; the 19 V Strix Halo channel becomes the first port module.
+
+### Why
+
+- Loads differ. Strix Halo nodes take 19 V at ~200 W; other loads in a
+  pod (storage servers, switches, GPU boxes) need other voltages and
+  far more power. A 19 V bus forces every load onto 19 V. With a
+  48-54 V bus the bus is the standard and each port decides what its
+  load gets: the same split as the controller (generic core, per-load
+  part).
+- Current: one frame at 1.6 kW is 33 A at 48 V against 85 A at 19 V; a
+  9-frame pod (~14.4 kW) is ~300 A against ~760 A. For the same copper
+  the conduction loss drops by about 6x.
+- 48 V class is the datacenter and telecom standard: OCP Open Rack V3
+  busbars, telecom -48 V (float ~54 V on a 24-cell lead-acid string),
+  54 V supplies for PoE switches, 2.5-3 kW 48-54 V supplies with
+  current share and PMBus.
+- Still SELV (< 60 V DC), but with only ~6 V of headroom at 54 V.
+
+### Input range
+
+Design for 40-60 V in, not for "48 V" or "54 V", so any 48 V class
+supply, or a battery-backed bus, works. Parts on the bus side are
+rated 80-100 V. Transient protection (TVS) must clamp inside the gap
+between 57 V and the parts' ratings.
+
+### Port = front end + module
+
+```
+40-60 V bus --> [ port front end ]        --> [ port module ]           --> load
+                same on every port:            per load class:
+                - hot-swap / eFuse 40-60 V     - 54->19 V 200 W (Strix Halo)
+                - V/I/P/energy metering        - 54->12 V 300 W
+                - default ON, OFF on command   - 54 V pass-through
+                - fault auto-retry             - 5 V low power, ...
+                - on the isolated I2C bus      - its own output connector
+                                               - its own output OV cut
+                                               - ID: type, Vout, Imax
+```
+
+Front end (identical on every port):
+- Keeps every requirement of "Control and failure behaviour": default
+  ON, OFF only on an explicit command, OFF survives a controller
+  reboot, logic powered from the bus.
+- Metering on the bus side counts load plus module loss. An optional
+  monitor on the module output (e.g. INA228, 85 V) counts the load
+  alone; with both, the module efficiency per port is a free health
+  check.
+- The LTC4282 does not fit (2.9-33 V). Candidates in the 48 V class:
+  TI LM5066I (10-80 V, already the fallback above), ADI ADM1272, ADI
+  LTC4286 / LTC4287. To check per part: default-ON behaviour, whether
+  OFF is RAM-only, whether configuration is set by pins and resistors
+  (then the EEPROM provisioning routine is not needed), addresses for
+  8 ports, metering accuracy.
+
+Module (the only load-specific part):
+- Converts (or passes through) and carries the load's output connector,
+  so the output connector is specified per module, not per board.
+- Output voltage and output overvoltage cut are fixed in the module's
+  hardware. Software turns the port on and off and may lower the current
+  limit within the module's maximum; it never sets the output voltage.
+  A config mistake or a firmware bug must not be able to put 24 V on a
+  12 V load.
+- Output OV cut independent of the converter: a non-isolated buck whose
+  high-side MOSFET fails short puts the full bus on the load (54 V onto
+  a 19 V board). This is the top entry in the FMEA.
+- Identifies itself (ID EEPROM, or a resistor read by an ADC): type,
+  nominal Vout, Imax. The controller compares it with its port config
+  (e.g. "port 3: expects 19 V, 250 W") and raises an alarm on a
+  mismatch at commissioning.
+- Pass-through modules serve loads that take 48-54 V themselves (OCP
+  gear, many GPU servers): no conversion, no conversion loss.
+
+### Losses
+
+A 54->19 V buck at 200 W is 96-98 % efficient: 4-8 W per port. That
+is not negligible: 60 W around the clock is ~525 kWh per year per frame,
+~4.7 MWh per year for a 9-frame pod, and all of it lands in the fluid as
+extra cooling load. Compare whole chains, not boards. Rough figures per
+frame at 1.6 kW (typical efficiencies, to be replaced with datasheet
+values):
+
+| Loss | 19 V bus | 54 V bus + per-port buck |
+|---|---|---|
+| AC -> DC supply | ~93 % (3 kW 19 V supplies are niche): ~120 W | ~96 % (54 V Titanium class): ~65 W |
+| Bus, 2 mOhm path | 85 A: ~15 W | 33 A: ~2 W |
+| Channel switch path | 8 x 1.1 W: ~9 W | ~1 W |
+| 54 -> 19 V modules | none | 8 x 4-6 W: 32-50 W |
+| Total | ~145 W | ~100-120 W |
+
+If the supply figures hold, the 54 V chain breaks even or wins, mostly
+on supply efficiency; across a pod the 19 V distribution loss grows
+much faster. Ways to cut module loss further: design for 98 %
+(GaN or low-RDS(on) FETs, low switching frequency with large inductors,
+which the fluid cools, two phases per port); a fixed-ratio converter
+(3:1, ~99 %, but unregulated: 16-18 V from 48-54 V, only if the load
+accepts that range); or no conversion at all for loads that take
+48-54 V.
+
+### Immersion
+
+The board sits in the fluid. 4-8 W per port is easy for the fluid to
+carry off magnetics and FETs; no heatsinks or fans. What the fluid adds:
+- Material compatibility of inductors (core coatings, glue), capacitors
+  (ceramic and polymer only, no wet electrolytics), connectors and fuses:
+  part of the fluid soak test.
+- Breaking 48-54 V DC under load arcs, and an arc in dielectric fluid
+  can carbonise it. Bus and port connectors are never unplugged under
+  load; the port is switched OFF before a module or load is unplugged.
+
+### Controller supply
+
+The rev C controller cannot sit on a 54 V bus: J3 has a 22 V TVS
+(SMAJ22A) and a 0.75 A PTC. Either the power board provides an
+always-on auxiliary output for the controller (19 V or 12 V, not one
+of the switched ports, its own fuse), or a later controller revision
+takes 40-60 V on J3. A rev C board must never be connected to the
+54 V bus.
+
+### Interface
+
+Unchanged: galvanically isolated I2C on J8, isolator on the power
+board, EXP_INT across the barrier. Only the parts behind the isolator
+change (48 V class front ends, module ID readers).
+
+### Open decisions for this direction
+
+1. Load classes in sight (Strix Halo nodes, storage servers, switches,
+   GPU boxes, ...) and their rough power. Sets the power per slot.
+2. One slot size or two (e.g. up to 300 W converted, up to 1.5 kW
+   pass-through). The largest class sets the front end current rating,
+   the copper and the slot pitch.
+3. Ports per board: fixed 8, or 4 / 8 variants.
+4. Module form: plug-in card (a connector between front end and module,
+   in the fluid: one more soak risk, but one board serves every load) or
+   soldered at assembly (no connector, a board variant per load mix).
+5. Bus voltage target and supplies: confirm 48-54 V supply models,
+   efficiency at 1.6-3 kW, current share, PMBus. Same for 19 V supplies,
+   to settle the loss table with datasheet numbers.
+6. Input range of each load: does the Strix Halo board need exactly
+   19 V or accept a range (decides whether a fixed-ratio module is an
+   option).
+7. Front end part (LM5066I, ADM1272, LTC4286/4287) against the
+   checklist above.
+8. Controller supply at 54 V: auxiliary output on the power board or a
+   40-60 V controller input.
 
 ## Requirements
 
