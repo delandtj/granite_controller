@@ -52,7 +52,13 @@ First port module PM-19V-200W, KiCad project `power/pm-19v-200w/`:
   Copper: ask 2 oz outer or 1 oz inner (10.5 A return on In2 0.5 oz).
 - KiCadRoutingTools updated 2026-10-21 to v0.23.1 (was 5622 commits
   behind); prebuilt grid_router downloaded, deps refreshed, every flag
-  pcbkit passes still exists. Not yet re-run on this board. The venv's
+  pcbkit passes still exists. Re-run 2026-10-21 on the 4 open nets: no
+  change (DRC identical). KRT now names the blockers: INTVCC by ITH2,
+  TRACK/SS2, VAUX, BOOST1; ITH1 by VAUX, ID, BG1, BOOST1, PGOOD, TEMP,
+  VIN_IC, VFB1 (and C14.1 sealed by same_net_pad_clearance 0.15);
+  OVLO by DRVCC, INTVCC, BOOST1/2, TEMP, BG2, RUN. Ripping all of those
+  too gave 8 opens (reverted). U1 surroundings are boxed in: hand-route
+  these 4 in KiCad or loosen placement around U1. The venv's
   `pip` script has a stale shebang: use `~/Electronics/krt/venv/bin/python
   -m pip`.
 
