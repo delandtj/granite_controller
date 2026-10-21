@@ -1,6 +1,60 @@
-# Handoff - granite controller (updated 2026-10-19)
+# Handoff - granite controller (updated 2026-10-21)
 
 Read this first, then docs/controller.md and docs/power-board.md.
+
+## Latest session (2026-10-21): power expansion, first port module
+
+Bench: board 1 stopped enumerating on USB at the start of the session
+(-71 "device not accepting address" on hub port 1-1.2, also no ping on
+192.168.64.115). Hub reset, port power toggle and xHCI rebind did not
+help: it needs a physical replug / power cycle (user powering the host
+off). Not looked at since; first thing to check next session. Console
+without espflash: `python -m serial.tools.miniterm --raw --rts 0 --dtr 0
+/dev/ttyACM0 115200`; MQTT log topic `granite/bench/granite-cb374b/log`.
+
+Power expansion (docs/power-board.md, all decisions dated there):
+- Link to the controller: galvanically isolated I2C on J8, isolator on
+  the power board, board side on its own 3.3/5 V. No MCU on the power
+  board. No power logging on the controller ever: it measures and
+  publishes on MQTT, a backend (RRD or TSDB, open) stores.
+- Direction (thinking stage): 48-54 V bus (design for 40-60 V in), board
+  in the fluid, each port = common front end (48 V class hot-swap +
+  metering, default ON) + per-load port module (own connector,
+  hardware-fixed Vout and OV cut, self-ID). LTC4282 is out at 48 V
+  (LM5066I / ADM1272 / LTC4286-7 candidates). 50-80 W conversion loss per
+  frame is significant to the user; doc compares whole-chain losses.
+- Production controllers move to 16 MB ESP32-C6 modules after testing.
+- Cost per port (rough): 1-port module ~$30-35 at volume (LTC7810 ~$14
+  of it, LCSC C581067 out of stock); 4/8-port boards ~30-40 % less per
+  port by running each LTC7810 channel as its own single-phase port.
+  Open decision: ports per module.
+
+First port module PM-19V-200W, KiCad project `power/pm-19v-200w/`:
+- Schematic (rev 0.1, wired, A3): LTC7810 two-phase 200 kHz/phase, 19.0 V
+  (180k/10k), UVLO 38 / OVLO 62.7 V, gate drive 10 V, EXTVCC = VOUT,
+  spread spectrum off; independent OV_KILL (>22.7 V) and PGOOD (>17.3 V)
+  comparators (MCP65R46) on a 4.7 V zener rail from VIN. Values are first
+  estimates (MOSFETs BSC070N10NS5, XAL1010 22 uH, 8 mOhm sense,
+  compensation). Netlist checked against the intended nets.
+- Board: 58.4 x 22.9 mm DOSA eighth-brick outline, 4 layers (In1 signal,
+  In2 solid GND), pm.pretty/Brick_Eighth_DOSA (pin positions from the
+  SynQor NQ90 drawing; pin-1 chirality NOT checked against DOSA).
+  Scripted flow, all re-runnable: `pcbkit mkboard` -> tools/place.py ->
+  `pcbkit setrules` -> tools/power.py (outer power pours, SW/GND/VIN via
+  fields, backbone tracks inside the pours so KRT sees them as one node;
+  group "power", kept by krt-route) -> `pcbkit krt-route` /
+  `krt-reroute`.
+- State (b444818): DRC 0 violations, parity clean, **4 opens left at U1**
+  (OVLO and INTVCC stubs to join, ITH1 pin 46 -> R8, TRACK/SS1 pin 45 ->
+  C15); KRT reroutes only shuffle them. Then `pcbkit gndpour`, DRC, check
+  via-in-pad notes, widen the VIN neck at J1.1 (C1/C3 GND pads leave
+  0.65 mm). KRT relaxed min via drill 0.3 -> 0.2 (fine for JLC 4L).
+  Copper: ask 2 oz outer or 1 oz inner (10.5 A return on In2 0.5 oz).
+- KiCadRoutingTools updated 2026-10-21 to v0.23.1 (was 5622 commits
+  behind); prebuilt grid_router downloaded, deps refreshed, every flag
+  pcbkit passes still exists. Not yet re-run on this board. The venv's
+  `pip` script has a stale shebang: use `~/Electronics/krt/venv/bin/python
+  -m pip`.
 
 ## Next session: rev C bring-up, continued
 
