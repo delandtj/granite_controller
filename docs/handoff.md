@@ -44,31 +44,26 @@ First port module PM-19V-200W, KiCad project `power/pm-19v-200w/`:
   fields, backbone tracks inside the pours so KRT sees them as one node;
   group "power", kept by krt-route) -> `pcbkit krt-route` /
   `krt-reroute`.
-- Placement reworked 2026-10-21 (tools/place.py): U1's small parts are
-  fixed in pin order instead of nearest-free packing, which made routes
-  cross. Row above U1 left to right D1, C18, C15, C14, R8, C13, C12
-  (pins 40-48); R6/R7 right of U1 by the VOUT pins; R5 and D2 at 270 so
-  OVLO (pin 9) runs east between D2's pads; the UVLO top resistor R3,
-  R1 and the NTC TH1 on the left edge by J1.1/J1.2/J2.4 (R3 had been
-  packed out at x=134 and TH1 on the right, so RUN and TEMP crossed the
-  whole controller). Gate/boost/DRVCC router width 0.4 -> 0.3 mm in
-  pcbkit.toml: 0.4 cannot leave U1's 0.3 mm pads at 0.5 mm pitch with
-  0.2 clearance (KRT necks down only plane taps), that alone took a
-  fresh route from 11 to 6 opens.
-- State: the board is the plain scripted flow (mkboard -> place.py ->
-  setrules -> power.py -> krt-route), DRC clean apart from silk and
-  dangling vias, parity clean, **6 opens at U1**: TRACK/SS1 (45 -> C15),
-  VFB1 (47 -> R6), BOOST1 (40 -> C18), TG1 (42 -> Q1 gate), BOOST2
-  (21 -> C19/D2), TG2 (19 -> Q3 gate). Top four: KRT runs the SW1 link
-  from C18.2 down into the pin escape lane and east along y 110.4 to a
-  via at (117.9, 110.4), walling off pins 42-47. Single-net and
-  rip-blocker reroutes, other orderings and ripping SW1 all stay at 6:
-  hand-route these. SW1 pin 41 also uses a via at (112.0, 113.78) under
-  U1's body (between pins and EP): check it is tented. Previous
-  placement (b444818) had 4 different opens. After routing: `pcbkit
-  gndpour`, DRC, via-in-pad check, widen the VIN neck at J1.1. KRT
-  relaxed min via drill 0.3 -> 0.2 (fine for JLC 4L). Copper: ask 2 oz
-  outer or 1 oz inner (10.5 A return on In2 0.5 oz).
+- State (b444818 board and tools/place.py, restored 2026-10-21): DRC
+  clean apart from silk and dangling vias, parity clean, **4 opens at
+  U1**: OVLO (pin 9 -> F.Cu stub), INTVCC (pin 8 -> stub to C10/pin 14),
+  ITH1 (pin 46 -> R8), TRACK/SS1 (pin 45 -> C15). To hand-route in
+  KiCad. Blockers per KRT: INTVCC by ITH2, TRACK/SS2, VAUX, BOOST1;
+  ITH1 by VAUX, ID, BG1, BOOST1, PGOOD, TEMP, VIN_IC, VFB1; OVLO by
+  DRVCC, INTVCC, BOOST1/2, TEMP, BG2, RUN. Easy one: INTVCC pin 3 is in
+  line with C10.1 (y 114.25), only a GND tie from pins 4-7 to the via at
+  (121.1, 111.0) is in the way. After routing: `pcbkit gndpour`, DRC,
+  via-in-pad check, widen the VIN neck at J1.1 (C1/C3 GND pads leave
+  0.65 mm). KRT relaxed min via drill 0.3 -> 0.2 (fine for JLC 4L).
+  Copper: ask 2 oz outer or 1 oz inner (10.5 A return on In2 0.5 oz).
+- Tried 2026-10-21 and dropped (683ed2a, reverted): U1 parts pinned in
+  pin order, R3/R1/TH1 to the left edge: fresh route 6 opens, but TH1
+  then sits away from the hot parts; with TH1 back near L1/U1 a fresh
+  route gives 12 (TEMP crosses the controller). Kept from it: gate,
+  boost and DRVCC router width 0.4 -> 0.3 mm in pcbkit.toml (0.4 cannot
+  leave U1's 0.3 mm pads at 0.5 mm pitch with 0.2 clearance; KRT necks
+  down only plane taps). Rerouting the 4 opens at 0.3 gives 5, so the
+  board stays at its 0.4 routing.
 - KiCadRoutingTools updated 2026-10-21 to v0.23.1 (was 5622 commits
   behind); prebuilt grid_router downloaded, deps refreshed, every flag
   pcbkit passes still exists. Its JSON_SUMMARY in the route log now
