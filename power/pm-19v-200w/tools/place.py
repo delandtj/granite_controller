@@ -59,6 +59,32 @@ ORIGIN = {
     'C23': (145.65, 112.05, 90, 'F'),
     'C24': (149.9, 105.9, 90, 'F'),
     'C25': (149.9, 117.0, 270, 'F'),
+    # U1's small parts where pin order matters (the nearest-free packer
+    # below would reorder them and the routes would cross). Row above U1,
+    # left to right like pins 40-48: D1, C18 (BOOST1/SW1), lane for TG1
+    # over pin 42, C15 (SS1, pin 45), C14/R8/C13 (ITH1, 46), C12 (VFB1, 47);
+    # VFB1 runs east under the row to C12, R6, R7. L1 pad 2 on the top
+    # side above pins 45-48 leaves no room for vias there.
+    'D1': (110.0, 108.81, 0, 'B'),
+    'C18': (112.75, 108.81, 90, 'B'),
+    'C15': (114.75, 108.81, 90, 'B'),
+    'C14': (116.75, 108.81, 90, 'B'),
+    'R8': (118.75, 108.81, 90, 'B'),
+    'C13': (120.75, 108.81, 90, 'B'),
+    'C12': (122.75, 108.81, 270, 'B'),
+    'R6': (121.09, 111.76, 180, 'B'),
+    'R7': (124.3, 111.76, 0, 'B'),
+    # right of U1, pins 9 (OVLO) over 10 (DRVCC): R5 with OVLO up, D2 with
+    # DRVCC down, so OVLO runs straight east between D2's pads
+    'R5': (124.69, 117.25, 270, 'B'),
+    'D2': (120.54, 117.34, 270, 'B'),
+    # left edge, by the pins they serve, so RUN and TEMP do not cross the
+    # controller: R3 (VIN - RUN, top of the UVLO divider) between J1.1 and
+    # J1.2 with VIN into the B.Cu VIN pour, R1 (VIN - VIN_IC) below the pour;
+    # the NTC beside J2.4 (TEMP)
+    'R3': (102.75, 106.9, 180, 'B'),
+    'R1': (106.42, 109.02, 0, 'B'),
+    'TH1': (101.4, 118.8, 270, 'B'),
 }
 # by courtyard centre; U1 rotation is chosen in main()
 COURTYARD = {
@@ -84,18 +110,14 @@ T2 = (126.4, 117.9, 132.6, 122.6)     # top, below L2; x < 126 stays free for Q4
 # U1's own parts: nearest free spot to the U1 pin they serve, pushed out
 # from the package (ref: (pin, rotations to try))
 ANCHOR = {
-    'C9': ('35', (90, 0)), 'R1': ('35', (90, 0)), 'C11': ('26', (90, 0)),
-    'C10': ('3', (0, 90)), 'C12': ('47', (90, 0)), 'R6': ('47', (90, 0)), 'R7': ('47', (90, 0)),
-    'R8': ('46', (90, 0)), 'C13': ('46', (90, 0)), 'C14': ('46', (90, 0)), 'C15': ('45', (90, 0)),
-    'C16': ('15', (90, 0)), 'C17': ('16', (90, 0)),
-    'D1': ('40', (0, 90)), 'C18': ('40', (90, 0)), 'D2': ('21', (0, 90)), 'C19': ('21', (90, 0)),
-    'R4': ('32', (90, 0)), 'R5': ('9', (90, 0)), 'R3': ('32', (90, 0)), 'TH1': ('3', (0, 90)),
+    'C9': ('35', (90, 0)), 'C11': ('26', (90, 0)),
+    'C10': ('3', (0, 90)), 'C16': ('15', (90, 0)), 'C17': ('16', (90, 0)),
+    'C19': ('21', (90, 0)), 'R4': ('32', (90, 0)),
 }
 
 # side, zones, refs, rotation for the rest
 PACK = [
     ('F', [T, T2], ['U2', 'U3', 'C27', 'C28', 'R11', 'D3', 'C26', 'R12', 'R13', 'R14', 'R15', 'R16'], 0),
-    ('B', [B6, B1, B2, B4, B3, B5], ['R3'], 90),
     ('B', [B4, B3, B5], ['U2', 'U3', 'C27', 'C28', 'R11', 'D3', 'C26', 'R12', 'R13', 'R14', 'R15', 'R16'], 0),
 ]
 

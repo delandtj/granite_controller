@@ -38,7 +38,9 @@ keep_groups = ["power"]
 # gate drive and bootstrap only: GND, VIN, VOUT and the switch nodes are
 # pours and planes (tools/power.py, [krt] planes), their router legs are taps
 power_nets = ["/VIN", "/TG1", "/TG2", "/BG1", "/BG2", "/BOOST1", "/BOOST2", "/DRVCC"]
-power_widths = [0.8, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4]
+# 0.3: widest track that leaves U1's 0.3 mm pads at 0.5 mm pitch with 0.2
+# clearance (KRT only necks down plane taps, not pad escapes)
+power_widths = [0.8, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3]
 planes = { nets = ["GND"], layers = ["In2.Cu"], via = [0.6, 0.3] }
 ground = { net = "GND", width = 0.5 }
 
