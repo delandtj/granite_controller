@@ -78,7 +78,8 @@ B2 = (119.8, 110.6, 125.9, 122.6)     # right of U1
 B3 = (130.2, 100.3, 153.0, 106.9)     # right of Q2
 B4 = (133.0, 107.2, 153.0, 113.2)     # above phase 2 and its caps
 B5 = (150.6, 113.6, 153.0, 122.6)     # right of C6/C8
-T = (108.4, 100.3, 114.6, 122.6)      # top, beside J2
+T = (108.4, 100.3, 114.6, 110.3)      # top, beside J2, clear of U1 below
+T2 = (126.4, 117.9, 132.6, 122.6)     # top, below L2; x < 126 stays free for Q4's GND vias
 
 # U1's own parts: nearest free spot to the U1 pin they serve, pushed out
 # from the package (ref: (pin, rotations to try))
@@ -93,9 +94,9 @@ ANCHOR = {
 
 # side, zones, refs, rotation for the rest
 PACK = [
-    ('F', [T], ['U2', 'U3', 'R11', 'D3', 'R12', 'R13', 'R14', 'R15', 'C26', 'C27', 'C28', 'R16'], 0),
+    ('F', [T, T2], ['U2', 'U3', 'C27', 'C28', 'R11', 'D3', 'C26', 'R12', 'R13', 'R14', 'R15', 'R16'], 0),
     ('B', [B6, B1, B2, B4, B3, B5], ['R3'], 90),
-    ('B', [B4, B3, B5], ['U2', 'U3', 'R11', 'D3', 'R12', 'R13', 'R14', 'R15', 'C26', 'C27', 'C28', 'R16'], 0),
+    ('B', [B4, B3, B5], ['U2', 'U3', 'C27', 'C28', 'R11', 'D3', 'C26', 'R12', 'R13', 'R14', 'R15', 'R16'], 0),
 ]
 
 
