@@ -1742,7 +1742,7 @@
 		(descr "Inductor, Coilcraft, XAL1010-XXX, 10.5x11.8x10.0mm, (https://www.coilcraft.com/getmedia/dd74e670-e705-456a-9a69-585fe02eaf3c/xal1010.pdf)")
 		(tags "xal")
 		(property "Reference" "L1"
-			(at 0 -7.145 0)
+			(at 0 6.95 0)
 			(layer "F.SilkS")
 			(uuid "17fe1054-40e7-4e44-8a37-583c5b91f848")
 			(effects
@@ -11661,6 +11661,31 @@
 		(fill no)
 		(layer "Edge.Cuts")
 		(uuid "1ddacd9e-47b5-4135-ab0c-9f43c2d68e8c")
+	)
+	(gr_text "19 V"
+		(at 117.6 120 0)
+		(layer "F.SilkS")
+		(uuid "4b22cf5e-2960-479c-8c8e-2dc3eb2ab6bd")
+		(effects
+			(font
+				(size 3.2 4.2)
+				(thickness 0.5)
+				(bold yes)
+			)
+		)
+	)
+	(gr_text "19 V"
+		(at 144.3 113.3 0)
+		(layer "B.SilkS")
+		(uuid "d38f59c1-e499-4e63-ae7e-87b6e5572be9")
+		(effects
+			(font
+				(size 2.8 3.6)
+				(thickness 0.45)
+				(bold yes)
+			)
+			(justify mirror)
+		)
 	)
 	(segment
 		(start 153.8 103.8)

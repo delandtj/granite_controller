@@ -15,7 +15,9 @@ fe73f87 and later, pcbkit main).
   via_dangling items remain. Details in the "State (2026-10-22)" bullet
   under the module section below. Next for the board: bench values
   (MOSFET, inductor, compensation), pin part and standoff for mounting,
-  then `pcbkit jlcfab`.
+  then `pcbkit jlcfab`. Later the same day: big "19 V" silk legend
+  on both sides, and a 24 V variant recipe (both in the module section
+  below).
 - Carrier interface: docs/power-board.md got a "Mounting on the
   carrier" section (DOSA pins, carrier holes, soldered not socketed,
   J2 absent on a fallback brick). Pin 1 chirality of the DOSA footprint
@@ -139,6 +141,48 @@ First port module PM-19V-200W, KiCad project `power/pm-19v-200w/`:
   U1 pin 48. No via-in-pad left. KRT relaxed min via drill 0.3 ->
   0.2 (fine for JLC 4L).
   Copper: ask 2 oz outer or 1 oz inner (10.5 A return on In2 0.5 oz).
+- Silk (2026-10-22): a large bold "19 V" legend on both sides, so the
+  rating is readable on a module out of its carrier. F.SilkS at
+  (117.6, 120.0), size 4.2 x 3.2 mm, 0.5 mm stroke, in the strip under
+  L1 between J2 and C28/R11 (L1's reference moved above its courtyard
+  to 119.5, 104.5 to make room); B.SilkS at (144.3, 113.3), 3.6 x 2.8
+  mm, 0.45 mm, mirrored, in the strip between the R14-R16 row and
+  C5/C6. Both are board-level PCB_TEXT items (not footprint fields):
+  `pcbkit silk` leaves them alone, a `pcbkit mkboard` from scratch
+  loses them. Vias are tented, so silk over vias is fine; DRC after:
+  still only the 7 old via_dangling. A voltage variant changes this
+  text too.
+- 24 V variant (PM-24V-200W), not started, recipe worked out
+  2026-10-22. Same PCB, same footprints; the output voltage is fixed
+  in hardware on purpose (no Trim; the DOSA trim convention is +/-10 %
+  so 19 V could not reach 24 V anyway, and a runtime-adjustable Vout
+  would decouple the independent OV cut from the output, which the
+  port-module rule forbids). Parts that change:
+  - R6/R7 (LTC7810 VFB, VOUT = 1 V x (1 + R6/R7)): 180k/10k ->
+    232k/10k = 24.2 V (230k for 24.0 V exactly). C12 feed-forward
+    across R6: 47p -> 39p (keeps the zero near 9 us).
+  - R12/R13 (OV comparator, 1.21 V x (1 + R12/R13)): 178k/10k (22.7
+    V) -> 226k/10k = 28.6 V. Forgetting this kills a healthy 24 V
+    module.
+  - R14/R15 (PGOOD): 133k/10k (17.3 V) -> 169k/10k = 21.7 V (90 %).
+  - R16 (ID): a different value, so the controller sees a 24 V module
+    (ID table still to define, power-board.md).
+  - C20-C23 output ceramics: 35 V X7R 1210 -> 50 V parts (DC bias at
+    24 V, and they must hold 28.6 V until OV_KILL acts). C24/C25
+    polymers 35 V are at 69 % of rating: acceptable, 50 V if a part
+    fits.
+  - Silk "19 V" -> "24 V" on both sides, schematic title, project
+    name.
+  Unchanged and checked: duty 40 % at 60 V in, 63 % at the 38 V UVLO;
+  EXTVCC at 24 V well inside the 65 V limit, but the EXTVCC LDO drops
+  14 V instead of 9 V at the gate-drive current (about 0.5 W instead of
+  0.3 W in the LTC7810, thermal check on the bench); inductor ripple
+  about 3 A pk-pk per phase at 54 V with 4.2 A per phase at 200 W (22
+  uH fine, 33 uH for the same ripple ratio); current limit stays about
+  14 A DC = 340 W, so either change R9/R10 8 mOhm -> 12 mOhm (about
+  9.5 A DC) to keep a 200 W class module or let the front end's power
+  limit do it; compensation (R8, C13, C14) is a bench item either
+  way. Bench carrier: nothing changes, set the load OVP for 24 V.
 - Tried 2026-10-21 and dropped (683ed2a, reverted): U1 parts pinned in
   pin order, R3/R1/TH1 to the left edge: fresh route 6 opens, but TH1
   then sits away from the hot parts; with TH1 back near L1/U1 a fresh
