@@ -65,10 +65,14 @@ First port module PM-19V-200W, KiCad project `power/pm-19v-200w/`:
   lane west to a via (114.2, 110.6), In1 under the TG1 via, via on the
   R8-C14 track; TRACK/SS1 goes inward, west along the channel to a via
   (113.85, 113.25), In1 east at y 113.03, via under C15.1. VAUX got a
-  second via (108.6, 110.0) for its north branch. Still to do: `pcbkit
-  gndpour`, via-in-pad check, widen the VIN neck at J1.1 (C1/C3 GND
-  pads leave 0.65 mm). KRT relaxed min via drill 0.3 -> 0.2 (fine for
-  JLC 4L).
+  second via (108.6, 110.0) for its north branch. `pcbkit gndpour` run
+  after that (F.Cu/B.Cu GND pours, 7 stitch vias): DRC 0 unconnected,
+  0 clearance; the 7 via_dangling left are old (5 VIN field vias at x
+  136-140, BOOST1 at 106.0,110.1 and 124.5,110.9), plus one new
+  starved_thermal on J1.3 (F.Cu pour makes an isolated island at the
+  VIN neck). Still to do: via-in-pad check, widen the VIN neck at J1.1
+  (C1/C3 GND pads leave 0.65 mm; fixes the J1.3 island too). KRT
+  relaxed min via drill 0.3 -> 0.2 (fine for JLC 4L).
   Copper: ask 2 oz outer or 1 oz inner (10.5 A return on In2 0.5 oz).
 - Tried 2026-10-21 and dropped (683ed2a, reverted): U1 parts pinned in
   pin order, R3/R1/TH1 to the left edge: fresh route 6 opens, but TH1
