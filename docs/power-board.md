@@ -294,12 +294,14 @@ carrier. Numbers below are from the SynQor NQ90W90EPx10 (rev D,
 - Carrier footprint: the same 8 holes. Artesyn's recommended pattern
   is 0.058" +/-0.008 (1.47 +/-0.2 mm) for the 1.02 mm pins and
   0.080" +/-0.008 (2.03 +/-0.2 mm) for the 1.57 mm pins, IPC-2222
-  level B, same 2.000" x 0.600" / 0.300" grid. The carrier sees the
-  module's bottom, so the pattern is the module's J1 mirrored: in
-  KiCad put `Brick_Eighth_DOSA` on the carrier's B side (THT pads are
-  on all layers, pin numbers stay right), or draw a host footprint
-  from the bottom view. Pins 4 and 8 carry 10.5 A: wide rings, via
-  fields into the carrier's planes.
+  level B, same 2.000" x 0.600" / 0.300" grid. The module sits on the
+  carrier component side up, so both are viewed from the same side:
+  the carrier's top-view hole pattern is the module's J1 pattern as
+  is, NOT mirrored (an earlier note here said to put the footprint on
+  the carrier's B side; that was wrong and is corrected 2026-10-22;
+  `carrier.pretty/Brick_Eighth_DOSA_Socket` in the bench carrier is
+  the host pattern, same pin coordinates as the module's J1). Pins 4
+  and 8 carry 10.5 A: wide rings, via fields into the carrier's planes.
 - J2 (the 5-pin 1.27 mm aux row) is ours, not DOSA: 5 more small
   pins and holes. An off-the-shelf fallback brick leaves them empty,
   so the carrier reads "ID open" as "no aux row" and then ignores
@@ -309,6 +311,62 @@ carrier. Numbers below are from the SynQor NQ90W90EPx10 (rev D,
   brick has no mounting holes to hold it otherwise. Receptacles
   (Mill-Max makes ones for the 0.061" brick power pins) only on the
   bench carrier, for swapping modules.
+
+#### Bench carrier: PM-BENCH-CARRIER
+
+KiCad project `power/pm-bench-carrier/` (rev 0.1, 2026-10-22): the
+board the module plugs into on the bench, until the 48 V power board
+exists. 130 x 55 mm, 2 layers, bench only (wet electrolytics, not for
+immersion). Schematic ERC clean, board routed, DRC clean (only the two
+"silk clipped by edge" warnings from the terminal blocks that overhang
+the edges by design). Not yet ordered; `pcbkit jlcfab` not run.
+
+- X1: the eight DOSA holes with solder-mount Mill-Max receptacles so
+  modules can be swapped: 0331 (accepts 0.94-1.09 mm pins, 1.85 mm
+  hole, 12 A) on pins 1-3 and 5-7, 9372 (accepts 1.14-1.65 mm pins,
+  2.64 mm hole, 18 A) on the 10 A pins 4 and 8. Pads 2.7 / 3.6 mm.
+  Pin 1 top left as on the module. X2: 1.27 mm 5-pin socket at the
+  module's J2 position (22.2 mm left of the brick centre, pin 1 at the
+  brick's centre line), inside the brick outline.
+- J1: 5.08 mm screw terminal (Phoenix MKDS 3/2, 24 A) for the lab
+  supply, 40-60 V; nano2 fuse 8 A 125 V (F1), SMBJ60A TVS, 2 x 100 uF
+  100 V electrolytic + 2.2 uF 1210 at pin 1, "VIN" LED (27k from VIN).
+  J2: same terminal for the electronic load, 100 uF 35 V + 10 uF, "VOUT"
+  LED (10k from VOUT). Input current limit on the supply ~6 A, load OVP
+  ~22 V.
+- Kelvin test points at the socket pins for efficiency measurement:
+  TP1 VIN_K / TP2 GNDIN_K at pins 1 / 3, TP3 VOUT_K / TP4 GNDOUT_K at
+  pins 8 / 4 (all 2.5 mm loops; the GND loops sit below the brick's
+  bottom edge, the live ones above its top edge).
+- Aux 5 V rail: 10k 1 W (2512) from VIN into a 5.1 V zener, ~5 mA at
+  54 V: pull-ups and LEDs only. PWR and OV_KILL / PGOOD are open-drain
+  on the module and must not be pulled above ~5 V.
+- Module signals (X2): OV_KILL with 100k pull-up, "OV" LED lit when
+  low; PGOOD with 100k pull-up, 2N7002 so the "PGOOD" LED is lit when
+  high; ID and TEMP with 10k pull-ups to 5 V (a voltmeter at TP9 / TP10
+  reads the module's ID resistor / NTC as a divider, the same way the
+  carrier ADC will). Test points on every signal, TP5 a spare GND loop,
+  TP11 the 5 V rail.
+- JP1 (2-pin header, "OFF"): jumper on pulls RUN (pin 2) to GND = module
+  off; open = on. TP6 RUN.
+- JP2 / JP3: open solder jumpers from Sense+ / Sense- (pins 7 / 5) to
+  VOUT / GND, for an off-the-shelf brick that wants its sense pins
+  connected; Trim (pin 6) unconnected. Leave open for PM-19V-200W.
+- No input cut-off on OV_KILL: the module is tested without a front
+  end, so for the shorted-top-FET test the electronic load's OVP and the
+  supply's current limit are the protection.
+- Copper: VIN (2.5 mm) and VOUT (3 mm) trunks on both layers drawn by
+  tools/power.py (group "power"; KRT only adds the small taps); GND is
+  the pour on both layers (pcbkit gndpour) with solid zone connection
+  on the 10 A pads (tools/place.py). Silk: pcbkit silk + connlabels +
+  tools/legend.py (net names at the test points, LED names, +/- at the
+  terminals).
+- Open: the module's J2 is a plain 1.27 mm pin header whose tails
+  (~3 mm) may not reach X2 once the module stands on the receptacle
+  flanges plus pin shoulders (2-3 mm): take long-tail 1.27 mm pins on
+  the module, or a taller socket here. Check with the chosen DOSA pins.
+  Receptacle flange sizes (0331, 9372) not verified against the pad
+  pitch (3.81 mm between pins 7 and 8) beyond the hole spec.
 
 Open for this module:
 - MOSFET choice, silicon versus GaN (switching loss at 54 V dominates).

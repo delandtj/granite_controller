@@ -1,0 +1,71 @@
+# pcbkit settings for the PM-19V-200W bench carrier (overrides the
+# granite_controller pcbkit.toml two levels up). 2L JLC, 130 x 55 mm.
+#
+# Board flow: mkboard -> outline -> setrules -> tools/place.py -> tools/power.py
+# (VIN / VOUT trunks, group "power") -> krt-route -> gndpour -> silk ->
+# connlabels -> tools/legend.py.
+
+[project]
+name = "pm-bench-carrier"
+libs = { carrier = "carrier.pretty" }
+
+[mkboard]
+copper_layers = 2
+stage_x = -120.0
+sheet_pitch = 90.0
+cell = 14.0
+per_row = 6
+
+[outline]
+length = 130.0
+height = 55.0
+origin = [100.0, 100.0]
+
+[rules]
+stackup = ""
+layers = {}
+
+[rules.netclasses]
+# name = [track, clearance, via_dia, via_drill]
+Default = [0.25, 0.2, 0.6, 0.3]
+
+[krt]
+work = "~/.cache/pcbkit/pm-bench-carrier/route"
+rework = "~/.cache/pcbkit/pm-bench-carrier/reroute"
+clearance = 0.2
+via = [0.6, 0.3]
+track_width = 0.25
+same_net_pad_clearance = 0.15
+signal_layers = ["F.Cu", "B.Cu"]
+keep_groups = ["power"]
+# VIN_J / VIN carry ~5 A, VOUT 10.5 A: 2.5 mm on F.Cu and B.Cu; +5V is the aux rail
+# the VIN / VOUT trunks are hand-drawn by tools/power.py (group "power"); KRT only adds the taps
+power_nets = ["+5V"]
+power_widths = [0.4]
+ground = { net = "GND", width = 0.5 }
+
+[gndpour]
+net = "GND"
+layers = ["F.Cu", "B.Cu"]
+via = [0.6, 0.3]
+via_clearance = 0.3
+edge_in = 1.0
+edge_pitch = 4.0
+grid = 5.0
+short_edge_inset = 0.0
+zone_clearance = 0.25
+zone_min_width = 0.25
+priority = 1
+group = "gnd-stitch"
+fill = true
+
+[silk]
+hide_prefixes = ["H", "TP"]      # test points carry their net name as a silk legend (tools/legend.py)
+order = ["J", "X"]
+relax_prefixes = ["J", "X"]
+
+[connlabels]
+names = { J1 = "VIN 40-60V", J2 = "VOUT 19V", X2 = "AUX", JP1 = "OFF" }
+
+[connlabels.legends]
+X2 = ["OV", "PG", "ID", "T", "G"]

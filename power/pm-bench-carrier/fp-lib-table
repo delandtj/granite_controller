@@ -1,0 +1,4 @@
+(fp_lib_table
+	(version 7)
+	(lib (name "carrier") (type "KiCad") (uri "${KIPRJMOD}/carrier.pretty") (options "") (descr "bench carrier footprints"))
+)

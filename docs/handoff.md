@@ -20,6 +20,25 @@ fe73f87 and later, pcbkit main).
   carrier" section (DOSA pins, carrier holes, soldered not socketed,
   J2 absent on a fallback brick). Pin 1 chirality of the DOSA footprint
   checked against the SynQor NQ90 and Artesyn drawings: correct.
+  CORRECTION (later the same day): that section first said the carrier
+  pattern is the module's J1 mirrored / on the B side. Wrong: module
+  and carrier are both viewed from above, the host pattern is the same
+  as the module's, unmirrored. Fixed in the doc.
+- Bench carrier drawn: `power/pm-bench-carrier/` (schematic, board,
+  pcbkit.toml, tools/place.py, tools/power.py, tools/legend.py,
+  carrier.kicad_sym, carrier.pretty/Brick_Eighth_DOSA_Socket). 130 x
+  55 mm 2L: DOSA socket with Mill-Max 0331 / 9372 solder-mount
+  receptacles, 1.27 mm aux socket, screw terminals in/out, fuse, TVS,
+  bulk caps, Kelvin test points at the socket pins, VIN/VOUT/OV/PGOOD
+  LEDs, 5 V aux rail (10k 1W + zener), ID/TEMP pull-ups + test points,
+  ON/OFF jumper, sense solder jumpers. ERC 0, DRC 0 errors (2 silk
+  edge warnings from the terminal blocks), 0 unconnected. Details and
+  open points (module J2 pin reach, no OV input cut-off) in
+  docs/power-board.md "Bench carrier". The schematic was written by a
+  generator script in the session scratchpad (not kept: the
+  .kicad_sch is the source now; edit it in eeschema). Board flow is the
+  comment at the top of its pcbkit.toml. Next: `pcbkit jlcfab`, LCSC
+  numbers, order with the module.
 - Tools: pcbkit and KRT v0.23.1 reinstalled on this machine (see
   "Tools and gotchas"); pcbkit gained a side-aware `silk`, and
   `handroute` / `view` (the scripted hand-routing loop and the
