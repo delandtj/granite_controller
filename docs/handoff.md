@@ -82,8 +82,12 @@ First port module PM-19V-200W, KiCad project `power/pm-19v-200w/`:
   (U1, Q1, Q3, C1-C5/C7, C20/C21: no pad-free spot; Fab keeps
   ${REFERENCE}); J1's 0.12 mm pin-label text widened to 0.15. DRC
   after all this: only the 7 old via_dangling (VIN field x 136-140,
-  BOOST1 at 106.0,110.1 and 124.5,110.9). Still to do: via-in-pad
-  check. KRT relaxed min via drill 0.3 -> 0.2 (fine for JLC 4L).
+  BOOST1 at 106.0,110.1 and 124.5,110.9). Via-in-pad check done: the
+  only via in an SMD pad was KRT's SNS1P plane tap at (117.3, 111.5)
+  inside L1.2 (with 2 mm stubs on F.Cu and In2); removed, the second
+  SNS1P via at (117.9, 111.8) outside the pad already links L1.2 to
+  U1 pin 48. No via-in-pad left. KRT relaxed min via drill 0.3 ->
+  0.2 (fine for JLC 4L).
   Copper: ask 2 oz outer or 1 oz inner (10.5 A return on In2 0.5 oz).
 - Tried 2026-10-21 and dropped (683ed2a, reverted): U1 parts pinned in
   pin order, R3/R1/TH1 to the left edge: fresh route 6 opens, but TH1
