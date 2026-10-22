@@ -1,8 +1,32 @@
-# Handoff - granite controller (updated 2026-10-21)
+# Handoff - granite controller (updated 2026-10-22)
 
 Read this first, then docs/controller.md and docs/power-board.md.
 
-## Latest session (2026-10-21): power expansion, first port module
+## Latest session (2026-10-22): PM-19V-200W routed, tools reinstalled
+
+Machine was rebooted after this session; nothing of the state below
+lives outside git. Everything is pushed (granite_controller master
+fe73f87 and later, pcbkit main).
+
+- PM-19V-200W board (power/pm-19v-200w/): the 4 U1 opens hand-routed,
+  gndpour run, VIN neck at J1.1 widened (pour polygon in tools/power.py
+  and on the board), J1.3 F.Cu island stitched, silk tidied, via-in-pad
+  check done. DRC: 0 unconnected, 0 clearance, 0 silk; only the 7 old
+  via_dangling items remain. Details in the "State (2026-10-22)" bullet
+  under the module section below. Next for the board: bench values
+  (MOSFET, inductor, compensation), pin part and standoff for mounting,
+  then `pcbkit jlcfab`.
+- Carrier interface: docs/power-board.md got a "Mounting on the
+  carrier" section (DOSA pins, carrier holes, soldered not socketed,
+  J2 absent on a fallback brick). Pin 1 chirality of the DOSA footprint
+  checked against the SynQor NQ90 and Artesyn drawings: correct.
+- Tools: pcbkit and KRT v0.23.1 reinstalled on this machine (see
+  "Tools and gotchas"); pcbkit gained a side-aware `silk`, and
+  `handroute` / `view` (the scripted hand-routing loop and the
+  all-layer region picture used this session). Bench board 1 USB
+  problem (below) still not looked at.
+
+## Session 2026-10-21: power expansion, first port module
 
 Bench: board 1 stopped enumerating on USB at the start of the session
 (-71 "device not accepting address" on hub port 1-1.2, also no ping on
@@ -101,8 +125,15 @@ First port module PM-19V-200W, KiCad project `power/pm-19v-200w/`:
   behind); prebuilt grid_router downloaded, deps refreshed, every flag
   pcbkit passes still exists. Its JSON_SUMMARY in the route log now
   names blockers per failed net ("blockers") and pads sealed by
-  same_net_pad_clearance. The venv's `pip` script has a stale shebang:
-  use `~/Electronics/krt/venv/bin/python -m pip`.
+  same_net_pad_clearance. 2026-10-22: this machine got a fresh setup
+  (pcbkit cloned to ~/Electronics/pcbkit from github delandtj/pcbkit,
+  `~/.local/bin/pcbkit` symlink to its bin/pcbkit; KRT v0.23.1 checkout
+  at ~/Electronics/krt/KiCadRoutingTools, venv ~/Electronics/krt/venv
+  with --system-site-packages for pcbnew 10.0.7, requirements.txt
+  installed, grid_router built from source with CARGO_TARGET_DIR
+  unset). The old stale-pip-shebang note no longer applies. The `gh`
+  CLI token on this machine is rejected ("Bad credentials"); git over
+  ssh works, so clone/push with git, or run `gh auth login`.
 
 ## Next session: rev C bring-up, continued
 
@@ -615,6 +646,17 @@ tools/compact.py.
   render(): a region PNG with F.Cu red, B.Cu blue, highlighted nets and
   DRC opens/violations drawn in. `pcbkit prune <pcb> <drc.rpt>` deletes
   what DRC flags as dangling; repeat DRC + prune until clean.
+- `pcbkit handroute <pcb> <plan.py> [--save]` (added 2026-10-22, the
+  loop that closed the pm-19v-200w opens): a plan of ('delseg', net,
+  layer, (x0,y0,x1,y1)) / ('delvia', ...) / ('delreg', ...) / ('trk',
+  net, layer, [pts], w) / ('via', net, (x,y), size, drill) applied to a
+  copy in ~/.cache/pcbkit/<board>/handroute, zones refilled, kicad-cli
+  DRC, region issues listed; H/V/45 enforced on tracks. `pcbkit view
+  <pcb> <png> x0 y0 x1 y1 [NET...]` draws every copper layer (In1
+  green, zone fills, labelled vias) for reading a spot before planning.
+  Working method: dump the region's pads/tracks/vias with pcbtool, draw
+  it with view, write the plan with explicit coordinates, run handroute
+  until the region is clean, then --save.
 - Board state 2026-10-08 (afternoon, superseded): placement by place.py + the user's
   hand moves (whole board shifted +25/+28.6 mm on the sheet, MCU-corner
   parts moved), routed by krt_route.sh, poured by gndpour.py, targeted KRT
