@@ -358,7 +358,10 @@ the edges by design). Not yet ordered; `pcbkit jlcfab` not run.
 - Copper: VIN (2.5 mm) and VOUT (3 mm) trunks on both layers drawn by
   tools/power.py (group "power"; KRT only adds the small taps); GND is
   the pour on both layers (pcbkit gndpour) with solid zone connection
-  on the 10 A pads (tools/place.py). Silk: pcbkit silk + connlabels +
+  on the 10 A pads (tools/place.py). The pour is made before routing
+  and its zones go into the kept group, so KRT treats GND as a plane
+  net and draws no GND tracks (the first pass had 58 of them, all
+  redundant on a two-layer board with pours on both sides). Silk: pcbkit silk + connlabels +
   tools/legend.py (net names at the test points, LED names, +/- at the
   terminals).
 - Open: the module's J2 is a plain 1.27 mm pin header whose tails

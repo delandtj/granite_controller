@@ -1,8 +1,10 @@
 # pcbkit settings for the PM-19V-200W bench carrier (overrides the
 # granite_controller pcbkit.toml two levels up). 2L JLC, 130 x 55 mm.
 #
-# Board flow: mkboard -> outline -> setrules -> tools/place.py -> tools/power.py
-# (VIN / VOUT trunks, group "power") -> krt-route -> gndpour -> silk ->
+# Board flow: mkboard -> outline -> setrules -> tools/place.py -> gndpour ->
+# tools/power.py (VIN / VOUT trunks, and the GND pours into group "power" so
+# krt-route keeps them and skips GND as a plane net: no GND tracks, every GND
+# pad lands in the pour) -> krt-route -> gndpour (refill, restitch) -> silk ->
 # connlabels -> tools/legend.py.
 
 [project]
@@ -37,12 +39,11 @@ via = [0.6, 0.3]
 track_width = 0.25
 same_net_pad_clearance = 0.15
 signal_layers = ["F.Cu", "B.Cu"]
-keep_groups = ["power"]
+keep_groups = ["power", "gnd-stitch"]
 # VIN_J / VIN carry ~5 A, VOUT 10.5 A: 2.5 mm on F.Cu and B.Cu; +5V is the aux rail
 # the VIN / VOUT trunks are hand-drawn by tools/power.py (group "power"); KRT only adds the taps
 power_nets = ["+5V"]
 power_widths = [0.4]
-ground = { net = "GND", width = 0.5 }
 
 [gndpour]
 net = "GND"

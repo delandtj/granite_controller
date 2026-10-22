@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """High-current copper for the bench carrier: the VIN and VOUT trunks as wide
 tracks on F.Cu (and B.Cu where both ends are through-hole pads), in a group
-"power" that krt-route keeps. GND is the gndpour on both layers, with the
-10 A pads set to solid zone connection in tools/place.py.
-Usage: power.py <in.kicad_pcb> <out.kicad_pcb>   (after tools/place.py)
+"power" that krt-route keeps. GND is the gndpour on both layers (run it
+before this script: the GND zones are moved into the same group, so KRT
+keeps them and treats GND as a plane net instead of routing it as tracks),
+with the 10 A pads set to solid zone connection in tools/place.py.
+Usage: power.py <in.kicad_pcb> <out.kicad_pcb>   (after place.py and gndpour)
 
 Paths (10.5 A out, ~5 A in):
   VIN_J  J1.1 -> F1.1                                   2.5 mm, F.Cu
@@ -59,8 +61,13 @@ def main(src, dst):
             board.Add(t)
             grp.AddItem(t)
             n += 1
+    zones = 0
+    for z in board.Zones():
+        if not z.GetIsRuleArea() and z.GetNetname() == 'GND':
+            grp.AddItem(z)
+            zones += 1
     board.Save(dst)
-    print('power tracks', n)
+    print('power tracks', n, 'GND zones grouped', zones)
 
 
 if __name__ == '__main__':

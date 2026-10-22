@@ -37,7 +37,10 @@ fe73f87 and later, pcbkit main).
   docs/power-board.md "Bench carrier". The schematic was written by a
   generator script in the session scratchpad (not kept: the
   .kicad_sch is the source now; edit it in eeschema). Board flow is the
-  comment at the top of its pcbkit.toml. Next: `pcbkit jlcfab`, LCSC
+  comment at the top of its pcbkit.toml. Note the order: gndpour runs
+  BEFORE krt-route (tools/power.py puts the GND zones in the kept
+  group, KRT then skips GND as a plane net: no GND tracks), and again
+  after it to refill and restitch. Next: `pcbkit jlcfab`, LCSC
   numbers, order with the module.
 - Tools: pcbkit and KRT v0.23.1 reinstalled on this machine (see
   "Tools and gotchas"); pcbkit gained a side-aware `silk`, and
