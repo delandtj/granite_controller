@@ -260,11 +260,62 @@ Interface (J1 eighth-brick pins, J2 auxiliary row beside them):
 | J2.4 | TEMP: 10k NTC to GND |
 | J2.5 | GND |
 
+#### Mounting on the carrier (eighth-brick, DOSA)
+
+The module is a brick: it carries pins, the carrier carries holes. The
+module PCB sits parallel to the carrier on 8 shouldered pins pressed
+or soldered into its own J1 holes; the pins protrude below the module
+(B side, where U1, the FETs and the 1210 caps are) and go through the
+carrier. Numbers below are from the SynQor NQ90W90EPx10 (rev D,
+2026) and Artesyn eighth-brick drawings; both agree.
+
+- Pin pattern, top view (component side, inductors up): pin 1 top
+  left, 2, 3 down the left short edge at 0.300" (7.62) pitch, pins 8
+  (top) to 4 (bottom) down the right edge at 0.150" (3.81) pitch,
+  rows 2.000" (50.8) apart, 0.145" (3.68) from each short edge. The
+  `pm.pretty/Brick_Eighth_DOSA` footprint matches this (checked
+  2026-10-22, the "pin 1 chirality" note is closed); the module's
+  F side is the brick's top, as it must be.
+- Pins: 1-3 and 5-7 are 0.040" (1.02 mm) dia with a 0.080" (2.03)
+  shoulder; 4 and 8 (the 10 A pins) 0.062" (1.57) with a 0.100"
+  (2.54) shoulder. Copper alloy, tin over nickel. Length below the
+  shoulder 0.145" (3.68) standard, 0.180" (4.57) long option (SynQor);
+  Artesyn uses 0.188" (4.78). The shoulder sets the standoff: the
+  module's bottom clearance is 0.020-0.070" (0.5-1.8 mm) plus
+  whatever pin length is left above the carrier; with the 1.6 mm
+  1210 caps on the B side take the long pins or add a 2-3 mm spacer
+  under the shoulders. Candidate pins: Mill-Max press-fit PCB pins
+  for plated through-holes (0.040" to 0.080" polygon press-fit end,
+  solder or plug-in pin end), or any "power module pin" in these two
+  diameters; pressed/soldered after JLC assembly. Module holes: J1
+  drills 1.3 / 1.9 mm with 2.1 / 2.7 mm pads suit solder-in pins of
+  these sizes (IPC-2222 level B); press-fit pins need the hole the pin
+  maker specifies.
+- Carrier footprint: the same 8 holes. Artesyn's recommended pattern
+  is 0.058" +/-0.008 (1.47 +/-0.2 mm) for the 1.02 mm pins and
+  0.080" +/-0.008 (2.03 +/-0.2 mm) for the 1.57 mm pins, IPC-2222
+  level B, same 2.000" x 0.600" / 0.300" grid. The carrier sees the
+  module's bottom, so the pattern is the module's J1 mirrored: in
+  KiCad put `Brick_Eighth_DOSA` on the carrier's B side (THT pads are
+  on all layers, pin numbers stay right), or draw a host footprint
+  from the bottom view. Pins 4 and 8 carry 10.5 A: wide rings, via
+  fields into the carrier's planes.
+- J2 (the 5-pin 1.27 mm aux row) is ours, not DOSA: 5 more small
+  pins and holes. An off-the-shelf fallback brick leaves them empty,
+  so the carrier reads "ID open" as "no aux row" and then ignores
+  PGOOD and OV_KILL (both open-drain with pull-ups, so absent reads
+  "good") and relies on its own output sensing.
+- Soldered, not socketed: immersed, 10 A, vibration, and an eighth
+  brick has no mounting holes to hold it otherwise. Receptacles
+  (Mill-Max makes ones for the 0.061" brick power pins) only on the
+  bench carrier, for swapping modules.
+
 Open for this module:
 - MOSFET choice, silicon versus GaN (switching loss at 54 V dominates).
 - Inductor part, and resistor versus DCR current sensing.
 - Compensation, checked with a load-step test.
-- Plug-in (pins) versus soldered to the carrier.
+- Pin part number and length (see mounting above), and whether the
+  B-side parts need a spacer under the shoulders.
 - Whether an off-the-shelf brick in the same footprint (e.g. SynQor
   NQ90W90EPx10, 10 A at 19 V = 190 W) is an acceptable fallback for
   loads under 190 W.
