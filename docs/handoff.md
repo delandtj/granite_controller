@@ -44,17 +44,31 @@ First port module PM-19V-200W, KiCad project `power/pm-19v-200w/`:
   fields, backbone tracks inside the pours so KRT sees them as one node;
   group "power", kept by krt-route) -> `pcbkit krt-route` /
   `krt-reroute`.
-- State (b444818 board and tools/place.py, restored 2026-10-21): DRC
-  clean apart from silk and dangling vias, parity clean, **4 opens at
-  U1**: OVLO (pin 9 -> F.Cu stub), INTVCC (pin 8 -> stub to C10/pin 14),
-  ITH1 (pin 46 -> R8), TRACK/SS1 (pin 45 -> C15). To hand-route in
-  KiCad. Blockers per KRT: INTVCC by ITH2, TRACK/SS2, VAUX, BOOST1;
-  ITH1 by VAUX, ID, BG1, BOOST1, PGOOD, TEMP, VIN_IC, VFB1; OVLO by
-  DRVCC, INTVCC, BOOST1/2, TEMP, BG2, RUN. Easy one: INTVCC pin 3 is in
-  line with C10.1 (y 114.25), only a GND tie from pins 4-7 to the via at
-  (121.1, 111.0) is in the way. After routing: `pcbkit gndpour`, DRC,
-  via-in-pad check, widen the VIN neck at J1.1 (C1/C3 GND pads leave
-  0.65 mm). KRT relaxed min via drill 0.3 -> 0.2 (fine for JLC 4L).
+- State (2026-10-22): the 4 U1 opens (OVLO, INTVCC, ITH1, TRACK/SS1)
+  hand-routed with a scripted plan (pcbnew python: delete KRT segments
+  by coordinate, add H/V/45 tracks and vias, refill zones, kicad-cli
+  DRC on a scratch copy, loop until clean). DRC: 0 unconnected, 0
+  clearance; only silk and the gndpour stitch "dangling" vias remain.
+  None of the four closed by adding copper alone, so neighbours moved.
+  Right column (pins 8-10): OVLO and DRVCC each got a via at the pad
+  end (119.4, 116.95 / 117.75); OVLO continues on In1 to a via by R5,
+  DRVCC links on F.Cu to the D2.2 via moved to (119.8, 116.3); BOOST2's
+  via moved above D2.1 (121.05, 117.7) so INTVCC's pin-14 wraparound
+  could shift east between the two new vias; pin 3 goes straight to
+  C10.1 and the pins 4-7 GND tie ends in a new via (119.5, 114.95)
+  under a TEMP/VAUX shift; SW2's F.Cu and SW1's In1 diagonals moved
+  east. Top row: ID's via left the band above the pins (now 111.3,
+  110.6, In1 at y 111.2); BOOST1 pin 40 exits inward to a via in the
+  ring (112.68, 113.7), In1 at y 113.85; SW1 pin 41 takes the lower
+  channel lane (113.85); BG1's via moved up to (119.3, 112.3), In1 at
+  112.5; VFB1 takes the upper band lane into pin 47, ITH1 the lower
+  lane west to a via (114.2, 110.6), In1 under the TG1 via, via on the
+  R8-C14 track; TRACK/SS1 goes inward, west along the channel to a via
+  (113.85, 113.25), In1 east at y 113.03, via under C15.1. VAUX got a
+  second via (108.6, 110.0) for its north branch. Still to do: `pcbkit
+  gndpour`, via-in-pad check, widen the VIN neck at J1.1 (C1/C3 GND
+  pads leave 0.65 mm). KRT relaxed min via drill 0.3 -> 0.2 (fine for
+  JLC 4L).
   Copper: ask 2 oz outer or 1 oz inner (10.5 A return on In2 0.5 oz).
 - Tried 2026-10-21 and dropped (683ed2a, reverted): U1 parts pinned in
   pin order, R3/R1/TH1 to the left edge: fresh route 6 opens, but TH1
