@@ -38,7 +38,7 @@ First port module PM-19V-200W, KiCad project `power/pm-19v-200w/`:
   compensation). Netlist checked against the intended nets.
 - Board: 58.4 x 22.9 mm DOSA eighth-brick outline, 4 layers (In1 signal,
   In2 solid GND), pm.pretty/Brick_Eighth_DOSA (pin positions from the
-  SynQor NQ90 drawing; pin-1 chirality NOT checked against DOSA).
+  SynQor NQ90 drawing; pin-1 chirality checked 2026-10-22 against the SynQor NQ90 and Artesyn drawings: matches, see power-board.md).
   Scripted flow, all re-runnable: `pcbkit mkboard` -> tools/place.py ->
   `pcbkit setrules` -> tools/power.py (outer power pours, SW/GND/VIN via
   fields, backbone tracks inside the pours so KRT sees them as one node;
