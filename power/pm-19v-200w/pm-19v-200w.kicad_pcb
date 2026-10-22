@@ -157,7 +157,7 @@
 		(descr "Tantalum Capacitor SMD Kemet-D (7343-31 Metric), IPC-7352 nominal, (Body size from: http://www.kemet.com/Lists/ProductCatalog/Attachments/253/KEM_TC101_STD.pdf)")
 		(tags "capacitor tantalum")
 		(property "Reference" "C25"
-			(at 0 -3.1 270)
+			(at 0.895 0.095 0)
 			(layer "F.SilkS")
 			(uuid "91c72ee3-d532-41fa-9864-f7dcdf4b7ed5")
 			(effects
@@ -221,7 +221,7 @@
 			(start -4.415 2.26)
 			(end 3.65 2.26)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -231,7 +231,7 @@
 			(start -4.415 -2.26)
 			(end -4.415 2.26)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -241,7 +241,7 @@
 			(start 3.65 -2.26)
 			(end -4.415 -2.26)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -355,7 +355,7 @@
 		(descr "Through hole straight pin header, 1x05, 1.27mm pitch, single row")
 		(tags "Through hole pin header THT 1x05 1.27mm single row")
 		(property "Reference" "J2"
-			(at 0 -1.745 0)
+			(at 0 -1.885 0)
 			(layer "F.SilkS")
 			(uuid "6ae83b68-0de6-40b6-b0c9-b206c80370de")
 			(effects
@@ -419,7 +419,7 @@
 			(start -1.16 -0.81)
 			(end 0 -0.81)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -429,7 +429,7 @@
 			(start -1.16 0)
 			(end -1.16 -0.81)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -439,7 +439,7 @@
 			(start -1.16 0.81)
 			(end -1.16 5.825)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -449,7 +449,7 @@
 			(start -1.16 0.81)
 			(end -0.666708 0.81)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -459,7 +459,7 @@
 			(start -1.16 5.825)
 			(end -0.317923 5.825)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -469,7 +469,7 @@
 			(start 0.317923 5.825)
 			(end 1.16 5.825)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -479,7 +479,7 @@
 			(start 0.666708 0.81)
 			(end 1.16 0.81)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -489,7 +489,7 @@
 			(start 1.16 0.81)
 			(end 1.16 5.825)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -632,7 +632,7 @@
 		(descr "Resistor SMD 2512 (6332 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R9"
-			(at 0 -2.63 0)
+			(at -4.975 0 0)
 			(layer "F.SilkS")
 			(uuid "62dec3e5-55f4-4d30-94a0-7461d6c19f14")
 			(effects
@@ -696,7 +696,7 @@
 			(start -2.177064 -1.71)
 			(end 2.177064 -1.71)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -706,7 +706,7 @@
 			(start -2.177064 1.71)
 			(end 2.177064 1.71)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -781,7 +781,7 @@
 		(descr "Capacitor SMD 1210 (3225 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "capacitor")
 		(property "Reference" "C23"
-			(at 0 -2.3 90)
+			(at -3.295 -0.000001 0)
 			(layer "F.SilkS")
 			(uuid "8f5f13c7-0a41-41d7-8a11-b3b1d2a64758")
 			(effects
@@ -845,7 +845,7 @@
 			(start -0.711252 -1.36)
 			(end 0.711252 -1.36)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -855,7 +855,7 @@
 			(start -0.711252 1.36)
 			(end 0.711252 1.36)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -932,6 +932,7 @@
 		(property "Reference" "C28"
 			(at 0 -1.43 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "bba100fb-f20e-4b77-86b5-a45778bade8c")
 			(effects
 				(font
@@ -994,7 +995,7 @@
 			(start -0.14058 -0.51)
 			(end 0.14058 -0.51)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -1004,7 +1005,7 @@
 			(start -0.14058 0.51)
 			(end 0.14058 0.51)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -1079,7 +1080,7 @@
 		(descr "Inductor, Coilcraft, XAL1010-XXX, 10.5x11.8x10.0mm, (https://www.coilcraft.com/getmedia/dd74e670-e705-456a-9a69-585fe02eaf3c/xal1010.pdf)")
 		(tags "xal")
 		(property "Reference" "L2"
-			(at 0 -6.85 0)
+			(at -0.000001 7.145 0)
 			(layer "F.SilkS")
 			(uuid "acd60004-39a1-42e8-af86-9e35d9c528a2")
 			(effects
@@ -1143,7 +1144,7 @@
 			(start -5.36 -6.01)
 			(end 5.36 -6.01)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -1153,7 +1154,7 @@
 			(start -5.36 6.01)
 			(end -5.36 -6.01)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -1163,7 +1164,7 @@
 			(start 5.36 -6.01)
 			(end 5.36 6.01)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -1173,7 +1174,7 @@
 			(start 5.36 6.01)
 			(end -5.36 6.01)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -1248,7 +1249,7 @@
 		(descr "SOT, 6 Pin (JEDEC MO-178 Var AB https://www.jedec.org/document_search?search_api_views_fulltext=MO-178)")
 		(tags "SOT TO_SOT_SMD")
 		(property "Reference" "U2"
-			(at 0 -2.4 0)
+			(at 3.195 0 0)
 			(layer "F.SilkS")
 			(uuid "8d968ccf-434a-43cd-9964-e8dbfe43ca86")
 			(effects
@@ -1312,7 +1313,7 @@
 			(start -0.91 -1.56)
 			(end 0.91 -1.56)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -1322,7 +1323,7 @@
 			(start -0.91 -1.51)
 			(end -0.91 -1.56)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -1332,7 +1333,7 @@
 			(start -0.91 1.56)
 			(end -0.91 1.51)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -1342,7 +1343,7 @@
 			(start 0.91 -1.56)
 			(end 0.91 -1.51)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -1352,7 +1353,7 @@
 			(start 0.91 1.51)
 			(end 0.91 1.56)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -1362,7 +1363,7 @@
 			(start 0.91 1.56)
 			(end -0.91 1.56)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -1373,7 +1374,7 @@
 				(xy -1.45 -1.51) (xy -1.69 -1.84) (xy -1.21 -1.84)
 			)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(fill yes)
@@ -1593,6 +1594,7 @@
 		(property "Reference" "R11"
 			(at 0 -1.65 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "afe5da9d-429a-4eaf-89d1-68ef186e9f40")
 			(effects
 				(font
@@ -1655,7 +1657,7 @@
 			(start -0.227064 -0.735)
 			(end 0.227064 -0.735)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -1665,7 +1667,7 @@
 			(start -0.227064 0.735)
 			(end 0.227064 0.735)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -1740,7 +1742,7 @@
 		(descr "Inductor, Coilcraft, XAL1010-XXX, 10.5x11.8x10.0mm, (https://www.coilcraft.com/getmedia/dd74e670-e705-456a-9a69-585fe02eaf3c/xal1010.pdf)")
 		(tags "xal")
 		(property "Reference" "L1"
-			(at 0 -6.85 180)
+			(at 0 -7.145 0)
 			(layer "F.SilkS")
 			(uuid "17fe1054-40e7-4e44-8a37-583c5b91f848")
 			(effects
@@ -1804,7 +1806,7 @@
 			(start 5.36 6.01)
 			(end -5.36 6.01)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -1814,7 +1816,7 @@
 			(start 5.36 -6.01)
 			(end 5.36 6.01)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -1824,7 +1826,7 @@
 			(start -5.36 6.01)
 			(end -5.36 -6.01)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -1834,7 +1836,7 @@
 			(start -5.36 -6.01)
 			(end 5.36 -6.01)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -1909,7 +1911,7 @@
 		(descr "Capacitor SMD 1210 (3225 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "capacitor")
 		(property "Reference" "C22"
-			(at 0 -2.3 90)
+			(at -3.295 0 0)
 			(layer "F.SilkS")
 			(uuid "c8031ec9-2eed-459a-96a8-6c0462033ea7")
 			(effects
@@ -1973,7 +1975,7 @@
 			(start -0.711252 -1.36)
 			(end 0.711252 -1.36)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -1983,7 +1985,7 @@
 			(start -0.711252 1.36)
 			(end 0.711252 1.36)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -2058,7 +2060,7 @@
 		(descr "SOT, 6 Pin (JEDEC MO-178 Var AB https://www.jedec.org/document_search?search_api_views_fulltext=MO-178)")
 		(tags "SOT TO_SOT_SMD")
 		(property "Reference" "U3"
-			(at 0 -2.4 0)
+			(at -3.195 0 0)
 			(layer "F.SilkS")
 			(uuid "2ffaaebe-7e0b-4ccc-b5fc-5aaf1ea37e55")
 			(effects
@@ -2122,7 +2124,7 @@
 			(start -0.91 -1.56)
 			(end 0.91 -1.56)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -2132,7 +2134,7 @@
 			(start -0.91 -1.51)
 			(end -0.91 -1.56)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -2142,7 +2144,7 @@
 			(start -0.91 1.56)
 			(end -0.91 1.51)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -2152,7 +2154,7 @@
 			(start 0.91 -1.56)
 			(end 0.91 -1.51)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -2162,7 +2164,7 @@
 			(start 0.91 1.51)
 			(end 0.91 1.56)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -2172,7 +2174,7 @@
 			(start 0.91 1.56)
 			(end -0.91 1.56)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -2183,7 +2185,7 @@
 				(xy -1.45 -1.51) (xy -1.69 -1.84) (xy -1.21 -1.84)
 			)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(fill yes)
@@ -2401,8 +2403,9 @@
 		(descr "Capacitor SMD 1210 (3225 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "capacitor")
 		(property "Reference" "C20"
-			(at 0 -2.3 90)
+			(at -0.005 -1.045001 90)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "4fa33306-9812-4bc3-9e6c-d8bbd8420d60")
 			(effects
 				(font
@@ -2465,7 +2468,7 @@
 			(start -0.711252 -1.36)
 			(end 0.711252 -1.36)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -2475,7 +2478,7 @@
 			(start -0.711252 1.36)
 			(end 0.711252 1.36)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -2550,7 +2553,7 @@
 		(descr "Tantalum Capacitor SMD Kemet-D (7343-31 Metric), IPC-7352 nominal, (Body size from: http://www.kemet.com/Lists/ProductCatalog/Attachments/253/KEM_TC101_STD.pdf)")
 		(tags "capacitor tantalum")
 		(property "Reference" "C24"
-			(at 0 -3.1 90)
+			(at -0.894999 -0.095 0)
 			(layer "F.SilkS")
 			(uuid "b675fbbc-09e1-41b1-888c-c8229ed6d968")
 			(effects
@@ -2614,7 +2617,7 @@
 			(start 3.65 -2.26)
 			(end -4.415 -2.26)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -2624,7 +2627,7 @@
 			(start -4.415 -2.26)
 			(end -4.415 2.26)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -2634,7 +2637,7 @@
 			(start -4.415 2.26)
 			(end 3.65 2.26)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -2748,8 +2751,9 @@
 		(descr "Capacitor SMD 1210 (3225 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "capacitor")
 		(property "Reference" "C21"
-			(at 0 -2.3 90)
+			(at -0.005 -1.045 90)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "2337ea8a-8a53-4d85-b329-bd9d09faebc6")
 			(effects
 				(font
@@ -2812,7 +2816,7 @@
 			(start -0.711252 -1.36)
 			(end 0.711252 -1.36)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -2822,7 +2826,7 @@
 			(start -0.711252 1.36)
 			(end 0.711252 1.36)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -2897,7 +2901,7 @@
 		(descr "DOSA eighth-brick DC-DC pin pattern, 58.4 x 22.9 mm body, input pins 1-3 left, output pins 4-8 right (SynQor NQ90 drawing; check pin 1 chirality)")
 		(tags "brick DOSA eighth")
 		(property "Reference" "J1"
-			(at 0 -13.2 0)
+			(at 0.176236 -9.912534 0)
 			(layer "F.SilkS")
 			(uuid "857fc5d7-ec4a-445b-8d9f-d76e8f982402")
 			(effects
@@ -3051,7 +3055,7 @@
 			(effects
 				(font
 					(size 0.8 0.8)
-					(thickness 0.12)
+					(thickness 0.15)
 				)
 			)
 		)
@@ -3136,7 +3140,7 @@
 		(descr "Resistor SMD 2512 (6332 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R10"
-			(at 0 -2.63 0)
+			(at -0.025001 -0.625001 0)
 			(layer "F.SilkS")
 			(uuid "2210a462-a46a-4db5-ba7b-c08c778e7b00")
 			(effects
@@ -3200,7 +3204,7 @@
 			(start -2.177064 -1.71)
 			(end 2.177064 -1.71)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -3210,7 +3214,7 @@
 			(start -2.177064 1.71)
 			(end 2.177064 1.71)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -3287,6 +3291,7 @@
 		(property "Reference" "C27"
 			(at 0 -1.43 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "503aa707-b79a-4e85-ad12-24f2ff28906c")
 			(effects
 				(font
@@ -3349,7 +3354,7 @@
 			(start -0.14058 -0.51)
 			(end 0.14058 -0.51)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -3359,7 +3364,7 @@
 			(start -0.14058 0.51)
 			(end 0.14058 0.51)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "F.SilkS")
@@ -3434,8 +3439,9 @@
 		(descr "Capacitor SMD 1210 (3225 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "capacitor")
 		(property "Reference" "C5"
-			(at 0 2.3 180)
+			(at -1.745001 -0.045 90)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "7b82ee13-05ca-4f33-a652-86ef2ae458e4")
 			(effects
 				(font
@@ -3503,7 +3509,7 @@
 			(start -0.711252 -1.36)
 			(end 0.711252 -1.36)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -3513,7 +3519,7 @@
 			(start -0.711252 1.36)
 			(end 0.711252 1.36)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -3591,6 +3597,7 @@
 		(property "Reference" "C9"
 			(at 0 1.68 270)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "3d99d201-f78c-48c5-900b-fe51d8790468")
 			(effects
 				(font
@@ -3658,7 +3665,7 @@
 			(start -0.261252 -0.735)
 			(end 0.261252 -0.735)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -3668,7 +3675,7 @@
 			(start -0.261252 0.735)
 			(end 0.261252 0.735)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -3744,8 +3751,9 @@
 		(descr "Capacitor SMD 1210 (3225 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "capacitor")
 		(property "Reference" "C1"
-			(at 0 2.3 0)
+			(at 1.745 0.045 90)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "4884dbf1-83b3-4683-b196-c63dd046098e")
 			(effects
 				(font
@@ -3813,7 +3821,7 @@
 			(start -0.711252 1.36)
 			(end 0.711252 1.36)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -3823,7 +3831,7 @@
 			(start -0.711252 -1.36)
 			(end 0.711252 -1.36)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -3901,6 +3909,7 @@
 		(property "Reference" "R4"
 			(at 0 1.43 270)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "161d5db0-9511-4230-8377-41363b14914a")
 			(effects
 				(font
@@ -3968,7 +3977,7 @@
 			(start -0.237258 -0.5225)
 			(end 0.237258 -0.5225)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -3978,7 +3987,7 @@
 			(start -0.237258 0.5225)
 			(end 0.237258 0.5225)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -4054,7 +4063,7 @@
 		(descr "Power MOSFET package, TDSON-8-1, 5.15x5.9mm (https://www.infineon.com/cms/en/product/packages/PG-TDSON/PG-TDSON-8-1/)")
 		(tags "tdson ")
 		(property "Reference" "Q4"
-			(at 0 3.5 180)
+			(at -4.725001 0 0)
 			(layer "B.SilkS")
 			(uuid "95976f07-2d1b-47ed-8588-0c320a67babd")
 			(effects
@@ -4114,7 +4123,7 @@
 			(start 3.06 -2.685)
 			(end -3.06 -2.685)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -4124,7 +4133,7 @@
 			(start 3.06 2.685)
 			(end -2.62 2.685)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -4135,7 +4144,7 @@
 				(xy -3.131622 2.42027) (xy -3.371622 2.75027) (xy -2.891622 2.75027) (xy -3.131622 2.42027)
 			)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(fill yes)
@@ -4407,6 +4416,7 @@
 		(property "Reference" "D3"
 			(at 0 1.85 180)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "333b97a1-9ab6-4c55-b4a2-3d4d99f47479")
 			(effects
 				(font
@@ -4465,7 +4475,7 @@
 			(start -1.61 -0.85)
 			(end 1.05 -0.85)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -4475,7 +4485,7 @@
 			(start -1.61 0.85)
 			(end -1.61 -0.85)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -4485,7 +4495,7 @@
 			(start -1.61 0.85)
 			(end 1.05 0.85)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -4681,6 +4691,7 @@
 		(property "Reference" "C12"
 			(at 0 1.43 270)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "15fb6b87-2eb0-45a0-af35-50d8936fe214")
 			(effects
 				(font
@@ -4748,7 +4759,7 @@
 			(start -0.14058 -0.51)
 			(end 0.14058 -0.51)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -4758,7 +4769,7 @@
 			(start -0.14058 0.51)
 			(end 0.14058 0.51)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -4836,6 +4847,7 @@
 		(property "Reference" "C26"
 			(at 0 1.43 180)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "4dc0f08c-2ea9-40c2-88ff-79b420716a08")
 			(effects
 				(font
@@ -4903,7 +4915,7 @@
 			(start -0.14058 -0.51)
 			(end 0.14058 -0.51)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -4913,7 +4925,7 @@
 			(start -0.14058 0.51)
 			(end 0.14058 0.51)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -4991,6 +5003,7 @@
 		(property "Reference" "C10"
 			(at 0 1.43 180)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "58b68901-824e-40be-952c-1c572bf1dd87")
 			(effects
 				(font
@@ -5058,7 +5071,7 @@
 			(start -0.14058 -0.51)
 			(end 0.14058 -0.51)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -5068,7 +5081,7 @@
 			(start -0.14058 0.51)
 			(end 0.14058 0.51)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -5146,6 +5159,7 @@
 		(property "Reference" "C16"
 			(at 0 1.43 270)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "71c9b1b1-e141-44c9-8645-c782be110c53")
 			(effects
 				(font
@@ -5213,7 +5227,7 @@
 			(start -0.14058 -0.51)
 			(end 0.14058 -0.51)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -5223,7 +5237,7 @@
 			(start -0.14058 0.51)
 			(end 0.14058 0.51)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -5299,8 +5313,9 @@
 		(descr "Capacitor SMD 1210 (3225 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "capacitor")
 		(property "Reference" "C2"
-			(at 0 2.3 0)
+			(at 1.745 0.045 90)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "5aa15b2c-02e8-4e44-903b-8e86304d010f")
 			(effects
 				(font
@@ -5368,7 +5383,7 @@
 			(start -0.711252 1.36)
 			(end 0.711252 1.36)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -5378,7 +5393,7 @@
 			(start -0.711252 -1.36)
 			(end 0.711252 -1.36)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -5456,6 +5471,7 @@
 		(property "Reference" "R12"
 			(at 0 1.43 180)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "ab1ccf7f-b2ce-4e77-a0e6-47b0134f0ffc")
 			(effects
 				(font
@@ -5523,7 +5539,7 @@
 			(start -0.237258 -0.5225)
 			(end 0.237258 -0.5225)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -5533,7 +5549,7 @@
 			(start -0.237258 0.5225)
 			(end 0.237258 0.5225)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -5611,6 +5627,7 @@
 		(property "Reference" "R15"
 			(at 0 1.43 180)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "b3081fb8-35f0-4167-8964-58c5532b326d")
 			(effects
 				(font
@@ -5678,7 +5695,7 @@
 			(start -0.237258 -0.5225)
 			(end 0.237258 -0.5225)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -5688,7 +5705,7 @@
 			(start -0.237258 0.5225)
 			(end 0.237258 0.5225)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -5766,6 +5783,7 @@
 		(property "Reference" "C18"
 			(at 0 1.43 270)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "3a80bb46-6a39-42f4-85ef-3fd2bdcabef4")
 			(effects
 				(font
@@ -5833,7 +5851,7 @@
 			(start -0.14058 -0.51)
 			(end 0.14058 -0.51)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -5843,7 +5861,7 @@
 			(start -0.14058 0.51)
 			(end 0.14058 0.51)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -5921,6 +5939,7 @@
 		(property "Reference" "R6"
 			(at 0 1.43 270)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "094e728e-1641-48cd-8ff2-8851de48c2ac")
 			(effects
 				(font
@@ -5988,7 +6007,7 @@
 			(start -0.237258 -0.5225)
 			(end 0.237258 -0.5225)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -5998,7 +6017,7 @@
 			(start -0.237258 0.5225)
 			(end 0.237258 0.5225)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -6076,6 +6095,7 @@
 		(property "Reference" "C14"
 			(at 0 1.43 270)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "661e1598-2c28-4df8-a7e8-a5044e4cde91")
 			(effects
 				(font
@@ -6143,7 +6163,7 @@
 			(start -0.14058 -0.51)
 			(end 0.14058 -0.51)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -6153,7 +6173,7 @@
 			(start -0.14058 0.51)
 			(end 0.14058 0.51)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -6229,8 +6249,9 @@
 		(descr "Capacitor SMD 1210 (3225 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "capacitor")
 		(property "Reference" "C4"
-			(at 0 2.3 0)
+			(at 1.745 0.045 90)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "ab521268-c19c-4f96-831e-dff3d3d4142e")
 			(effects
 				(font
@@ -6298,7 +6319,7 @@
 			(start -0.711252 1.36)
 			(end 0.711252 1.36)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -6308,7 +6329,7 @@
 			(start -0.711252 -1.36)
 			(end 0.711252 -1.36)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -6386,6 +6407,7 @@
 		(property "Reference" "R5"
 			(at 0 1.43 270)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "3f3a7def-dc74-4b88-b87d-798fd2dfda35")
 			(effects
 				(font
@@ -6453,7 +6475,7 @@
 			(start -0.237258 -0.5225)
 			(end 0.237258 -0.5225)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -6463,7 +6485,7 @@
 			(start -0.237258 0.5225)
 			(end 0.237258 0.5225)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -6541,6 +6563,7 @@
 		(property "Reference" "TH1"
 			(at 0 1.43 270)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "5873fce1-f2af-4a7b-b32c-0dcf9d376e39")
 			(effects
 				(font
@@ -6608,7 +6631,7 @@
 			(start -0.237258 -0.5225)
 			(end 0.237258 -0.5225)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -6618,7 +6641,7 @@
 			(start -0.237258 0.5225)
 			(end 0.237258 0.5225)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -6696,6 +6719,7 @@
 		(property "Reference" "C15"
 			(at 0 1.43 180)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "f7fadc1b-e9ba-4bc9-9d70-9fe4c865f79e")
 			(effects
 				(font
@@ -6763,7 +6787,7 @@
 			(start -0.14058 -0.51)
 			(end 0.14058 -0.51)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -6773,7 +6797,7 @@
 			(start -0.14058 0.51)
 			(end 0.14058 0.51)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -6851,6 +6875,7 @@
 		(property "Reference" "C13"
 			(at 0 1.43 270)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "377ec25a-d4fc-447d-bb50-0341f7f4fc7b")
 			(effects
 				(font
@@ -6918,7 +6943,7 @@
 			(start -0.14058 -0.51)
 			(end 0.14058 -0.51)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -6928,7 +6953,7 @@
 			(start -0.14058 0.51)
 			(end 0.14058 0.51)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -7004,7 +7029,7 @@
 		(descr "Resistor SMD 1206 (3216 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R3"
-			(at 0 1.83 270)
+			(at -3.275 0 0)
 			(layer "B.SilkS")
 			(uuid "066a5fd2-c819-4d62-88fa-c699fb544856")
 			(effects
@@ -7073,7 +7098,7 @@
 			(start -0.727064 -0.91)
 			(end 0.727064 -0.91)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -7083,7 +7108,7 @@
 			(start -0.727064 0.91)
 			(end 0.727064 0.91)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -7161,6 +7186,7 @@
 		(property "Reference" "R7"
 			(at 0 1.43 270)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "5d8919f8-37b6-4a29-952e-ee2781ae3a5c")
 			(effects
 				(font
@@ -7228,7 +7254,7 @@
 			(start -0.237258 -0.5225)
 			(end 0.237258 -0.5225)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -7238,7 +7264,7 @@
 			(start -0.237258 0.5225)
 			(end 0.237258 0.5225)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -7314,7 +7340,7 @@
 		(descr "Capacitor SMD 1210 (3225 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "capacitor")
 		(property "Reference" "C6"
-			(at 0 2.3 180)
+			(at 3.444999 0 0)
 			(layer "B.SilkS")
 			(uuid "867ce7a7-fc8f-441c-800d-1a41a98fd123")
 			(effects
@@ -7383,7 +7409,7 @@
 			(start -0.711252 -1.36)
 			(end 0.711252 -1.36)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -7393,7 +7419,7 @@
 			(start -0.711252 1.36)
 			(end 0.711252 1.36)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -7471,6 +7497,7 @@
 		(property "Reference" "C19"
 			(at 0 1.43 180)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "6cb76b2e-15bf-4eec-9485-517ff88a8276")
 			(effects
 				(font
@@ -7538,7 +7565,7 @@
 			(start -0.14058 -0.51)
 			(end 0.14058 -0.51)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -7548,7 +7575,7 @@
 			(start -0.14058 0.51)
 			(end 0.14058 0.51)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -7626,6 +7653,7 @@
 		(property "Reference" "D2"
 			(at 0 1.85 270)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "09ee511e-e2f4-4c1b-bbac-9aa015b102b3")
 			(effects
 				(font
@@ -7684,7 +7712,7 @@
 			(start -1.61 -0.85)
 			(end 1.05 -0.85)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -7694,7 +7722,7 @@
 			(start -1.61 0.85)
 			(end -1.61 -0.85)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -7704,7 +7732,7 @@
 			(start -1.61 0.85)
 			(end 1.05 0.85)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -7898,8 +7926,9 @@
 		(descr "Capacitor SMD 1210 (3225 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "capacitor")
 		(property "Reference" "C3"
-			(at 0 2.3 0)
+			(at 1.745 0.045 90)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "2b9abdce-8bc6-4625-a239-d1bde8758555")
 			(effects
 				(font
@@ -7967,7 +7996,7 @@
 			(start -0.711252 1.36)
 			(end 0.711252 1.36)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -7977,7 +8006,7 @@
 			(start -0.711252 -1.36)
 			(end 0.711252 -1.36)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -8053,7 +8082,7 @@
 		(descr "Power MOSFET package, TDSON-8-1, 5.15x5.9mm (https://www.infineon.com/cms/en/product/packages/PG-TDSON/PG-TDSON-8-1/)")
 		(tags "tdson ")
 		(property "Reference" "Q2"
-			(at 0 3.5 0)
+			(at 0 -3.825 0)
 			(layer "B.SilkS")
 			(uuid "34077138-2766-44ac-b7b1-683f6a6cc5bf")
 			(effects
@@ -8113,7 +8142,7 @@
 			(start 3.06 2.685)
 			(end -2.62 2.685)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -8123,7 +8152,7 @@
 			(start 3.06 -2.685)
 			(end -3.06 -2.685)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -8134,7 +8163,7 @@
 				(xy -3.131622 2.42027) (xy -3.371622 2.75027) (xy -2.891622 2.75027) (xy -3.131622 2.42027)
 			)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(fill yes)
@@ -8406,6 +8435,7 @@
 		(property "Reference" "C17"
 			(at 0 1.43 270)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "b9ae1269-0d76-42bf-8411-b2ae7b563d75")
 			(effects
 				(font
@@ -8473,7 +8503,7 @@
 			(start -0.14058 -0.51)
 			(end 0.14058 -0.51)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -8483,7 +8513,7 @@
 			(start -0.14058 0.51)
 			(end 0.14058 0.51)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -8561,6 +8591,7 @@
 		(property "Reference" "R1"
 			(at 0 1.43 180)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "2d5b1895-86f4-472f-a641-f00170499b78")
 			(effects
 				(font
@@ -8628,7 +8659,7 @@
 			(start -0.237258 -0.5225)
 			(end 0.237258 -0.5225)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -8638,7 +8669,7 @@
 			(start -0.237258 0.5225)
 			(end 0.237258 0.5225)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -8714,8 +8745,9 @@
 		(descr "Power MOSFET package, TDSON-8-1, 5.15x5.9mm (https://www.infineon.com/cms/en/product/packages/PG-TDSON/PG-TDSON-8-1/)")
 		(tags "tdson ")
 		(property "Reference" "Q1"
-			(at 0 3.5 0)
+			(at 3.025 0.025 90)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "05d11b4b-a885-41c8-8117-b22d2ffc0cc0")
 			(effects
 				(font
@@ -8774,7 +8806,7 @@
 			(start 3.06 2.685)
 			(end -2.62 2.685)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -8784,7 +8816,7 @@
 			(start 3.06 -2.685)
 			(end -3.06 -2.685)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -8795,7 +8827,7 @@
 				(xy -3.131622 2.42027) (xy -3.371622 2.75027) (xy -2.891622 2.75027) (xy -3.131622 2.42027)
 			)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(fill yes)
@@ -9067,6 +9099,7 @@
 		(property "Reference" "R16"
 			(at 0 1.43 180)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "618509d5-dc6e-4b70-ab95-016d9d4e8fe9")
 			(effects
 				(font
@@ -9134,7 +9167,7 @@
 			(start -0.237258 -0.5225)
 			(end 0.237258 -0.5225)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -9144,7 +9177,7 @@
 			(start -0.237258 0.5225)
 			(end 0.237258 0.5225)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -9220,8 +9253,9 @@
 		(descr "LQFP, 48 Pin (http://www.analog.com/media/en/technical-documentation/data-sheets/LTC7810.pdf)")
 		(tags "LQFP QFP")
 		(property "Reference" "U1"
-			(at 0 5.85 0)
+			(at 4.595 0.095 90)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "aea1b140-5e4f-4be6-97d8-966366a2cb4e")
 			(effects
 				(font
@@ -9289,7 +9323,7 @@
 			(start 3.61 3.61)
 			(end 3.61 3.16)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -9299,7 +9333,7 @@
 			(start 3.61 -3.16)
 			(end 3.61 -3.61)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -9309,7 +9343,7 @@
 			(start 3.61 -3.61)
 			(end 3.16 -3.61)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -9319,7 +9353,7 @@
 			(start 3.16 3.61)
 			(end 3.61 3.61)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -9329,7 +9363,7 @@
 			(start -3.16 -3.61)
 			(end -3.61 -3.61)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -9339,7 +9373,7 @@
 			(start -3.61 3.61)
 			(end -3.16 3.61)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -9349,7 +9383,7 @@
 			(start -3.61 3.16)
 			(end -3.61 3.61)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -9359,7 +9393,7 @@
 			(start -3.61 -3.61)
 			(end -3.61 -3.16)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -9370,7 +9404,7 @@
 				(xy -4.25 3.16) (xy -4.59 3.63) (xy -3.91 3.63)
 			)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(fill yes)
@@ -10064,6 +10098,7 @@
 		(property "Reference" "R13"
 			(at 0 1.43 180)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "782a324d-d8f4-4328-b2a3-d2463dad14ad")
 			(effects
 				(font
@@ -10131,7 +10166,7 @@
 			(start -0.237258 -0.5225)
 			(end 0.237258 -0.5225)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -10141,7 +10176,7 @@
 			(start -0.237258 0.5225)
 			(end 0.237258 0.5225)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -10219,6 +10254,7 @@
 		(property "Reference" "R14"
 			(at 0 1.43 180)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "17dcbf43-ab59-41e7-bbb4-7118747fce60")
 			(effects
 				(font
@@ -10286,7 +10322,7 @@
 			(start -0.237258 -0.5225)
 			(end 0.237258 -0.5225)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -10296,7 +10332,7 @@
 			(start -0.237258 0.5225)
 			(end 0.237258 0.5225)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -10374,6 +10410,7 @@
 		(property "Reference" "D1"
 			(at 0 1.85 270)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "55fdb1f3-8043-4aa8-af4b-abd5f30be727")
 			(effects
 				(font
@@ -10432,7 +10469,7 @@
 			(start -1.61 -0.85)
 			(end 1.05 -0.85)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -10442,7 +10479,7 @@
 			(start -1.61 0.85)
 			(end -1.61 -0.85)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -10452,7 +10489,7 @@
 			(start -1.61 0.85)
 			(end 1.05 0.85)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -10648,6 +10685,7 @@
 		(property "Reference" "R8"
 			(at 0 1.43 270)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "aa039349-62ef-46cc-ba3b-f7d30ad4d035")
 			(effects
 				(font
@@ -10715,7 +10753,7 @@
 			(start -0.237258 -0.5225)
 			(end 0.237258 -0.5225)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -10725,7 +10763,7 @@
 			(start -0.237258 0.5225)
 			(end 0.237258 0.5225)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -10801,8 +10839,9 @@
 		(descr "Capacitor SMD 1210 (3225 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "capacitor")
 		(property "Reference" "C7"
-			(at 0 2.3 180)
+			(at -1.745001 -0.045001 90)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "7c81dd0f-c3ac-4ba3-81b7-2cbb28cf87ca")
 			(effects
 				(font
@@ -10870,7 +10909,7 @@
 			(start -0.711252 -1.36)
 			(end 0.711252 -1.36)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -10880,7 +10919,7 @@
 			(start -0.711252 1.36)
 			(end 0.711252 1.36)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -10956,8 +10995,9 @@
 		(descr "Power MOSFET package, TDSON-8-1, 5.15x5.9mm (https://www.infineon.com/cms/en/product/packages/PG-TDSON/PG-TDSON-8-1/)")
 		(tags "tdson ")
 		(property "Reference" "Q3"
-			(at 0 3.5 180)
+			(at -3.025 -0.025 90)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "78d46b81-3726-45f3-bb78-c99226a4ebcb")
 			(effects
 				(font
@@ -11016,7 +11056,7 @@
 			(start 3.06 -2.685)
 			(end -3.06 -2.685)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -11026,7 +11066,7 @@
 			(start 3.06 2.685)
 			(end -2.62 2.685)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -11037,7 +11077,7 @@
 				(xy -3.131622 2.42027) (xy -3.371622 2.75027) (xy -2.891622 2.75027) (xy -3.131622 2.42027)
 			)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(fill yes)
@@ -11309,6 +11349,7 @@
 		(property "Reference" "C11"
 			(at 0 1.68 270)
 			(layer "B.SilkS")
+			(hide yes)
 			(uuid "b3643646-af69-497c-96d9-e991fd95980a")
 			(effects
 				(font
@@ -11376,7 +11417,7 @@
 			(start -0.261252 -0.735)
 			(end 0.261252 -0.735)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -11386,7 +11427,7 @@
 			(start -0.261252 0.735)
 			(end 0.261252 0.735)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -11462,7 +11503,7 @@
 		(descr "Capacitor SMD 1210 (3225 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "capacitor")
 		(property "Reference" "C8"
-			(at 0 2.3 180)
+			(at 3.444999 0 0)
 			(layer "B.SilkS")
 			(uuid "531c9fae-31cc-4653-bea3-ad9be7687312")
 			(effects
@@ -11531,7 +11572,7 @@
 			(start -0.711252 -1.36)
 			(end 0.711252 -1.36)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -11541,7 +11582,7 @@
 			(start -0.711252 1.36)
 			(end 0.711252 1.36)
 			(stroke
-				(width 0.12)
+				(width 0.15)
 				(type solid)
 			)
 			(layer "B.SilkS")
@@ -12668,6 +12709,14 @@
 		(layers "F.Cu" "B.Cu")
 		(net "GND")
 		(uuid "a80cbb9d-a5ac-4486-a635-332ede9f8d79")
+	)
+	(via
+		(at 102 118.6)
+		(size 0.6)
+		(drill 0.3)
+		(layers "F.Cu" "B.Cu")
+		(net "GND")
+		(uuid "ad241fd3-8e1d-4ac7-b6c1-fe1725f6635a")
 	)
 	(via
 		(at 147.2 112.5)

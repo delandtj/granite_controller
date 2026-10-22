@@ -75,9 +75,15 @@ First port module PM-19V-200W, KiCad project `power/pm-19v-200w/`:
   x <= 108.6, so the pour wraps under C3.2 (about 1.35 mm, plus the
   leg beside D1/the DRVCC track) instead of the single 0.8 mm KRT
   track; J1.1's pour is no longer an island. The J1.3 starved_thermal
-  (F.Cu GND pour island by pin 3, y 119) is unrelated and still open.
-  Still to do: via-in-pad check, that J1.3 island. KRT relaxed min via
-  drill 0.3 -> 0.2 (fine for JLC 4L).
+  (F.Cu GND pour island by pin 3, fenced by OVLO/RUN/BOOST1/BOOST2
+  F.Cu tracks) got a GND stitch via (102.0, 118.6; not in the
+  gnd-stitch group, so a gndpour re-run keeps it). Silk: `pcbkit silk`
+  run (now side-aware, see pcbkit): 17 refs placed, the rest hidden
+  (U1, Q1, Q3, C1-C5/C7, C20/C21: no pad-free spot; Fab keeps
+  ${REFERENCE}); J1's 0.12 mm pin-label text widened to 0.15. DRC
+  after all this: only the 7 old via_dangling (VIN field x 136-140,
+  BOOST1 at 106.0,110.1 and 124.5,110.9). Still to do: via-in-pad
+  check. KRT relaxed min via drill 0.3 -> 0.2 (fine for JLC 4L).
   Copper: ask 2 oz outer or 1 oz inner (10.5 A return on In2 0.5 oz).
 - Tried 2026-10-21 and dropped (683ed2a, reverted): U1 parts pinned in
   pin order, R3/R1/TH1 to the left edge: fresh route 6 opens, but TH1
