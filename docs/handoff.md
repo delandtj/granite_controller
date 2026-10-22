@@ -70,9 +70,14 @@ First port module PM-19V-200W, KiCad project `power/pm-19v-200w/`:
   0 clearance; the 7 via_dangling left are old (5 VIN field vias at x
   136-140, BOOST1 at 106.0,110.1 and 124.5,110.9), plus one new
   starved_thermal on J1.3 (F.Cu pour makes an isolated island at the
-  VIN neck). Still to do: via-in-pad check, widen the VIN neck at J1.1
-  (C1/C3 GND pads leave 0.65 mm; fixes the J1.3 island too). KRT
-  relaxed min via drill 0.3 -> 0.2 (fine for JLC 4L).
+  VIN neck). VIN neck at J1.1 widened the same day: the B.Cu VIN pour
+  polygon (tools/power.py ZONES and the board) now dips to y 108.3 for
+  x <= 108.6, so the pour wraps under C3.2 (about 1.35 mm, plus the
+  leg beside D1/the DRVCC track) instead of the single 0.8 mm KRT
+  track; J1.1's pour is no longer an island. The J1.3 starved_thermal
+  (F.Cu GND pour island by pin 3, y 119) is unrelated and still open.
+  Still to do: via-in-pad check, that J1.3 island. KRT relaxed min via
+  drill 0.3 -> 0.2 (fine for JLC 4L).
   Copper: ask 2 oz outer or 1 oz inner (10.5 A return on In2 0.5 oz).
 - Tried 2026-10-21 and dropped (683ed2a, reverted): U1 parts pinned in
   pin order, R3/R1/TH1 to the left edge: fresh route 6 opens, but TH1
