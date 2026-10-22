@@ -40,7 +40,11 @@ fe73f87 and later, pcbkit main).
   comment at the top of its pcbkit.toml. Note the order: gndpour runs
   BEFORE krt-route (tools/power.py puts the GND zones in the kept
   group, KRT then skips GND as a plane net: no GND tracks), and again
-  after it to refill and restitch. Next: `pcbkit jlcfab`, LCSC
+  after it to refill and restitch. LCSC numbers added to the 20 SMD
+  parts (schematic LCSC field and board footprint field), jlcfab run:
+  BOM/CPL filled; D1, D2, Q1, F1 and the LEDs have no rotation entry in
+  pcbkit's table, verify in the JLC preview. F1 is now 10 A (0451010.MRL,
+  C44479; the 8 A nano2 is not at LCSC). Next: `pcbkit jlcfab`, LCSC
   numbers, order with the module.
 - Tools: pcbkit and KRT v0.23.1 reinstalled on this machine (see
   "Tools and gotchas"); pcbkit gained a side-aware `silk`, and

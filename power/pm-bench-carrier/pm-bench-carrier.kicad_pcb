@@ -4733,6 +4733,17 @@
 				)
 			)
 		)
+		(property "LCSC" "C25803"
+			(at 0 0 0)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "0c4d489b-9d71-426d-9f06-fae540460a62")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/5afc97ba-6b05-5741-9cf2-7889b243be9c")
 		(sheetname "pm-bench-carrier")
 		(sheetfile "pm-bench-carrier.kicad_sch")
@@ -5193,6 +5204,17 @@
 				)
 			)
 		)
+		(property "LCSC" "C84256"
+			(at 0 0 0)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "e785d8db-58c9-4e29-8c6d-a9cadbbc8128")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/717d873c-c8ae-5da1-8498-4c5becef10ec")
 		(sheetname "pm-bench-carrier")
 		(sheetfile "pm-bench-carrier.kicad_sch")
@@ -5546,6 +5568,17 @@
 				)
 			)
 		)
+		(property "LCSC" "C270956"
+			(at 0 0 0)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "03600169-a709-4cdd-a791-35543aeca763")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/24bb349c-a39c-56d5-ba26-dff8e500cae1")
 		(sheetname "pm-bench-carrier")
 		(sheetfile "pm-bench-carrier.kicad_sch")
@@ -5806,7 +5839,7 @@
 				)
 			)
 		)
-		(property "Value" "8A 125V nano2"
+		(property "Value" "10A 125V nano2"
 			(at 0 2.7 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -5841,6 +5874,17 @@
 				(font
 					(size 1.27 1.27)
 					(thickness 0.15)
+				)
+			)
+		)
+		(property "LCSC" "C44479"
+			(at 0 0 0)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "8a7eeaa6-18dd-4d1e-881c-71723b7f8b56")
+			(effects
+				(font
+					(size 1.27 1.27)
 				)
 			)
 		)
@@ -6047,6 +6091,17 @@
 				(font
 					(size 1 1)
 					(thickness 0.15)
+				)
+			)
+		)
+		(property "LCSC" "C22978"
+			(at 0 0 0)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "180d7e2a-a60c-40cd-b3b4-d5383423e318")
+			(effects
+				(font
+					(size 1.27 1.27)
 				)
 			)
 		)
@@ -6553,6 +6608,17 @@
 				(font
 					(size 1 1)
 					(thickness 0.15)
+				)
+			)
+		)
+		(property "LCSC" "C55151"
+			(at 0 0 0)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "9720781a-8f98-4458-97c3-d2f0f4b2b60b")
+			(effects
+				(font
+					(size 1.27 1.27)
 				)
 			)
 		)
@@ -7544,6 +7610,17 @@
 				)
 			)
 		)
+		(property "LCSC" "C15849"
+			(at 0 0 0)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "df7dd4f1-bf5a-487f-b06a-f0851bc3e3ad")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/12a14507-6493-576a-88d1-3b76a5629909")
 		(sheetname "pm-bench-carrier")
 		(sheetfile "pm-bench-carrier.kicad_sch")
@@ -7690,6 +7767,17 @@
 				(font
 					(size 1 1)
 					(thickness 0.15)
+				)
+			)
+		)
+		(property "LCSC" "C17943"
+			(at 0 0 0)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "7dc756c8-3901-49cb-ad77-c29c7b1f71ad")
+			(effects
+				(font
+					(size 1.27 1.27)
 				)
 			)
 		)
@@ -8495,6 +8583,17 @@
 				)
 			)
 		)
+		(property "LCSC" "C353345"
+			(at 0 0 0)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "49658abf-2f36-4c89-94dc-bc4d053007f8")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/b48bbc51-8848-5465-8bb3-bdc249b7b5a1")
 		(sheetname "pm-bench-carrier")
 		(sheetfile "pm-bench-carrier.kicad_sch")
@@ -8773,6 +8872,17 @@
 				)
 			)
 		)
+		(property "LCSC" "C17414"
+			(at 0 0 0)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "7e47133f-b85d-41a4-9601-6b3ab3570386")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/3e4bee08-25fc-5f89-b3b8-d750887abe64")
 		(sheetname "pm-bench-carrier")
 		(sheetfile "pm-bench-carrier.kicad_sch")
@@ -8920,6 +9030,17 @@
 				(font
 					(size 1 1)
 					(thickness 0.15)
+				)
+			)
+		)
+		(property "LCSC" "C22978"
+			(at 0 0 0)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "12159efc-d3a6-4283-955d-05c75dfdb8c4")
+			(effects
+				(font
+					(size 1.27 1.27)
 				)
 			)
 		)
@@ -9430,6 +9551,17 @@
 				)
 			)
 		)
+		(property "LCSC" "C2297"
+			(at 0 0 0)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "550312a3-5090-4e14-83bf-d299a8e39c61")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/a12236ff-d678-56e0-8546-3eed775ba416")
 		(sheetname "pm-bench-carrier")
 		(sheetfile "pm-bench-carrier.kicad_sch")
@@ -9780,6 +9912,17 @@
 				(font
 					(size 1 1)
 					(thickness 0.15)
+				)
+			)
+		)
+		(property "LCSC" "C27131"
+			(at 0 0 0)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "a24b30a7-0bd5-4770-bd67-47748cdad1e0")
+			(effects
+				(font
+					(size 1.27 1.27)
 				)
 			)
 		)
@@ -10152,6 +10295,17 @@
 				)
 			)
 		)
+		(property "LCSC" "C2297"
+			(at 0 0 0)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "b3d7f714-3cbc-4446-86d6-070ca5ab13c4")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/55d19a8f-04b6-597c-a10a-74618fb514fa")
 		(sheetname "pm-bench-carrier")
 		(sheetfile "pm-bench-carrier.kicad_sch")
@@ -10348,6 +10502,17 @@
 				(font
 					(size 1 1)
 					(thickness 0.15)
+				)
+			)
+		)
+		(property "LCSC" "C2297"
+			(at 0 0 0)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "379f096a-5c25-48df-8506-f0b6b1c21d35")
+			(effects
+				(font
+					(size 1.27 1.27)
 				)
 			)
 		)
@@ -10657,6 +10822,17 @@
 				)
 			)
 		)
+		(property "LCSC" "C25804"
+			(at 0 0 0)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "4c35267a-44f0-420f-a897-4626202f35a9")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/82f2b658-1678-568c-9232-152eb01fc038")
 		(sheetname "pm-bench-carrier")
 		(sheetfile "pm-bench-carrier.kicad_sch")
@@ -10804,6 +10980,17 @@
 				(font
 					(size 1 1)
 					(thickness 0.15)
+				)
+			)
+		)
+		(property "LCSC" "C25803"
+			(at 0 0 0)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "781d3447-1333-4d9f-b2a2-9ea4052c140c")
+			(effects
+				(font
+					(size 1.27 1.27)
 				)
 			)
 		)
@@ -12954,6 +13141,17 @@
 				)
 			)
 		)
+		(property "LCSC" "C2918502"
+			(at 0 0 0)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "86d8e06a-bb0d-4570-be7d-182bdb7c78d6")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/8e01ec4f-00ee-58dd-9a7e-39e5e8567cb7")
 		(sheetname "pm-bench-carrier")
 		(sheetfile "pm-bench-carrier.kicad_sch")
@@ -13207,6 +13405,17 @@
 				(font
 					(size 1 1)
 					(thickness 0.15)
+				)
+			)
+		)
+		(property "LCSC" "C8545"
+			(at 0 0 0)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "fa47cea8-9005-4bc9-8a28-99824639736c")
+			(effects
+				(font
+					(size 1.27 1.27)
 				)
 			)
 		)
@@ -13885,6 +14094,17 @@
 				(font
 					(size 1 1)
 					(thickness 0.15)
+				)
+			)
+		)
+		(property "LCSC" "C25804"
+			(at 0 0 0)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "bd9a4062-b528-4bb4-a8f8-d4480262712a")
+			(effects
+				(font
+					(size 1.27 1.27)
 				)
 			)
 		)

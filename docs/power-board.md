@@ -319,7 +319,17 @@ board the module plugs into on the bench, until the 48 V power board
 exists. 130 x 55 mm, 2 layers, bench only (wet electrolytics, not for
 immersion). Schematic ERC clean, board routed, DRC clean (only the two
 "silk clipped by edge" warnings from the terminal blocks that overhang
-the edges by design). Not yet ordered; `pcbkit jlcfab` not run.
+the edges by design). Not yet ordered. `pcbkit jlcfab` run 2026-10-22:
+gerbers, BOM (15 lines, 20 SMD parts with LCSC numbers in the
+schematic and board) and CPL in `fab/` (gitignored, regenerate). Hand
+assembly: the receptacles, X2, J1, J2, JP1, C1, C2, C4, the test loops.
+LCSC: fuse C44479 (0451010.MRL, 10 A: the 8 A is not stocked), TVS
+C353345, zener C27131, 2N7002 C8545, C3 C55151, C5 C2918502, C6 C15849,
+R1 C17943, R2 C17414, R3 C270956, 100k C25803, 3.3k C22978, 10k C25804,
+green LEDs C2297, red LED C84256. The CPL rotations of D1, D2, Q1, F1
+and the four LEDs are written uncorrected (no entry in pcbkit's
+KiCad-to-EasyEDA table for these footprint/LCSC pairs): check them in
+the JLC placement preview before ordering.
 
 - X1: the eight DOSA holes with solder-mount Mill-Max receptacles so
   modules can be swapped: 0331 (accepts 0.94-1.09 mm pins, 1.85 mm
