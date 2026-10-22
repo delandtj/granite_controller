@@ -112,6 +112,71 @@ Module (the only load-specific part):
 - Pass-through modules serve loads that take 48-54 V themselves (OCP
   gear, many GPU servers): no conversion, no conversion loss.
 
+### Current and power measurement: where it lives
+
+Written out 2026-10-22 after the question "can I read power
+consumption now?". Short answer: not yet. Nothing in the hardware that
+exists today (module, bench carrier) meters anything; metering is a
+function of the port front end on the 48 V power board, which is still
+a spec.
+
+How current is measured:
+- Shunt: a few-milliohm resistor in the wire, the voltage across it is
+  amplified and digitised (Ohm's law). The monitor chip must stand the
+  wire's voltage: on the 54 V bus an 85 V class part (INA228, or the
+  hot-swap controllers below); on the 19 V output almost anything.
+- Hall sensor: measures the field around the wire. No resistor, no
+  loss, isolated, but less accurate at small currents and drifts with
+  temperature. Not the fit for 3.7 A per port; a shunt is.
+
+Three places in this design:
+1. Bus side, in the port front end (54 V, 3.7 A at 200 W). The
+   hot-swap chip already has a shunt for its current limit; the
+   telemetry versions (LM5066I, ADM1272, LTC4286/4287) read the same
+   shunt and report V, I, P and accumulated energy over I2C. One chip
+   is switch, fuse and meter. A 10 mOhm shunt costs 0.14 W. This is
+   the planned, required measurement; it counts load plus module loss.
+2. Module output (19 V, 10.5 A). Counts what the node really eats;
+   with 1. the difference is the module's efficiency, a health number,
+   not a requirement. The output is only reachable on the module
+   itself (the module carries its own output connector), so an output
+   measurement needs the module to report it, see the J2 decision.
+3. Inside the module: the two 8 mOhm phase sense resistors are not
+   usable for a readout. They see the chopped inductor current and
+   feed the LTC7810's protection only.
+
+What the front end delivers: instantaneous V, I, P; min and max since
+the last read (a 1 s poll still catches peaks); an energy counter the
+chip integrates on its own, so a missed poll loses nothing. About 1 %
+accuracy is routine with a 1 % shunt; shunt self-heating at 10 A is
+the usual enemy (2512 or bigger, low tempco). See "Power measurement
+and recording" for the data path and volume.
+
+Module output reporting, the one decision to take now: J2 is a 5-pin
+header with no spare pin, cheap to change at rev 0.1 and expensive
+later (every carrier and front end follows it). Options:
+- None: bus-side metering alone gives per-node power. Nothing changes.
+- Analog: a sense amplifier on the module (INA190 class, 2 mOhm shunt,
+  about 0.2 W at 10.5 A) puts out a voltage proportional to output
+  current on one extra J2 pin, read by the front end's ADC the same
+  way as ID and TEMP. J2 becomes 6 pins. Cheapest, no address, no
+  energy counter (the controller integrates).
+- Digital: an INA228 on the module and SDA/SCL on J2. More accurate,
+  energy on-chip, costs two pins and one I2C address per module. J2
+  becomes 7 pins.
+Open, listed under "Open decisions for this direction".
+
+Reading power today, on the bench: the lab supply's V and I readout
+for the input, the electronic load's V and I readout for the output,
+V x I on each side; the carrier's Kelvin test points (TP1-TP4 at the
+socket pins) are where a voltmeter goes so lead drops stay out of the
+efficiency number. The carrier has no shunt and no monitor IC. If
+numbers over I2C are wanted before the power board exists: an INA228
+breakout (85 V) with its shunt spliced into the VIN lead, a second one
+in the VOUT lead, on the controller's external I2C bus. A bench hack,
+not part of the design; a carrier rev could carry the same two parts
+plus a Qwiic header.
+
 ### Losses
 
 A 54->19 V buck at 200 W is 96-98 % efficient: 4-8 W per port. That
@@ -185,6 +250,9 @@ change (48 V class front ends, module ID readers).
    checklist above.
 8. Controller supply at 54 V: auxiliary output on the power board or a
    40-60 V controller input.
+9. Module output current reporting on J2: none, one analog pin (J2 ->
+   6 pins) or I2C (J2 -> 7 pins). See "Current and power measurement".
+   Decide before the first module order; the carrier's X2 follows.
 
 ### First port module: PM-19V-200W
 
@@ -390,6 +458,39 @@ Open for this module:
 - Whether an off-the-shelf brick in the same footprint (e.g. SynQor
   NQ90W90EPx10, 10 A at 19 V = 190 W) is an acceptable fallback for
   loads under 190 W.
+- J2 pin count (open decision 9 above).
+
+Marking: a large bold "19 V" legend on both silk layers (2026-10-22;
+board-level text, kept by `pcbkit silk`, lost by a fresh `mkboard`), so
+the rating is readable on a loose module. A voltage variant changes it.
+
+Variants: the output voltage is a resistor change, by design never a
+trim or a software setting (a 19 V build could not reach 24 V through
+the DOSA +/-10 % trim convention anyway, and a runtime-adjustable Vout
+would decouple the independent OV cut from the output). A 24 V build
+(PM-24V-200W) on the same PCB, recipe 2026-10-22, not started:
+
+| Ref | 19 V | 24 V | Note |
+|---|---|---|---|
+| R6/R7 (VFB, 1 V x (1 + R6/R7)) | 180k/10k | 232k/10k | 24.2 V; 230k for 24.0 V |
+| C12 (feed-forward across R6) | 47p | 39p | zero stays near 9 us |
+| R12/R13 (OV cut, 1.21 V x (1 + R12/R13)) | 178k/10k, 22.7 V | 226k/10k | 28.6 V; forgetting it kills a healthy module |
+| R14/R15 (PGOOD) | 133k/10k, 17.3 V | 169k/10k | 21.7 V, 90 % |
+| R16 (ID) | 10k | other | ID table to define |
+| C20-C23 output ceramics | 35 V X7R 1210 | 50 V | DC bias at 24 V, must hold 28.6 V until OV_KILL |
+| C24/C25 polymers | 35 V | 35 V (50 V if it fits) | 69 % of rating |
+| Silk, title | 19 V | 24 V | |
+
+Checked and unchanged: duty 40 % at 60 V in, 63 % at the 38 V UVLO;
+EXTVCC at 24 V inside the 65 V limit, but its LDO drops 14 V instead
+of 9 V at the gate-drive current (about 0.5 W instead of 0.3 W in the
+LTC7810, bench thermal check); inductor ripple about 3 A pk-pk per
+phase at 54 V with 4.2 A per phase at 200 W (22 uH fine, 33 uH for the
+same ripple ratio); current limit stays about 14 A DC = 340 W, so
+either R9/R10 8 -> 12 mOhm (about 9.5 A DC) for a 200 W class module
+or let the front end's power limit do it; compensation is a bench
+item either way. The bench carrier needs no change (load OVP set for
+24 V).
 
 ## Requirements
 
