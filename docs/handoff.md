@@ -46,6 +46,27 @@ docs/power-board.md, section "Power plane: PP-48-xS":
   housing, STM32G0B1, primitives on the plane / policy on the
   controller. Next: power/pp-48/ KiCad project (core + slot sheets),
   2-slot board first.
+- STARTED power/pp-48-2s/ (2-slot plane): tools/gensch.py generates the
+  flat schematic (187 symbols, every net a label at the pin, power nets
+  as global labels anchored to power symbols + PWR_FLAGs at the sheet
+  bottom); ERC 0 violations; netlist exported; pcbkit mkboard/outline
+  (150 x 80 mm, 4L)/setrules run. pp.kicad_sym = PM_Brick_Socket (from
+  the carrier) + TLP176AM (from the controller); pp.pretty/
+  Brick_Eighth_DOSA_Plane = socket pattern with 1.5 / 2.05 mm holes for
+  soldered brick pins. Values: LM5164 3V3 (41.2k RON 200 kHz, 33 uH,
+  86.6k/49.9k, type 3 ripple injection 453k/1.5n/100n) and 12 V (100k
+  300 kHz, 68 uH, 453k/49.9k, 453k/2.2n/100n, TI example), EN/UVLO
+  1M/52.3k = 30 V; LM5069: 2 x 7 mOhm 2512, UVLO 143k/10k (38 V), OVLO
+  240k/10k (62 V), RPWR 13.7k (~50 W), CT 220n; OV latch 74LVC1G74
+  (/PRE = OV_KILL, /CLR = 100k/100n RC + MCU 2N7002), 2N7002s on
+  UVLO for OFF and latch; INA238 A1/A0 straps 0x40 + slot - 1; MCP23017
+  per 2 slots (0x20+), GPA = odd slot, GPB = even slot, bit order PWRD
+  RSTD PGD PG LQ LED; MCU pins in the generator's mcu_nets table.
+  Pass FET BSC070N10NS5 as placeholder (SOA open). NEXT: tools/
+  place.py (brick sockets, node connectors on one edge, bus terminal,
+  MCU corner), tools/power.py pours (VBUS, S*_SENSE, S*_OUT, S*_NODE),
+  route, LCSC numbers (INA238, LM5164, STM32G0B1CBT6, ISO1640, ISO7721,
+  MCP23017, 74LVC1G74, TLP291, Mini-Fit, JST PH, crystal, inductors).
 - Open: MOSFET and shunt for the LM5069 at 15 A, OV latch part, node
   connector and cable, aux buck and OR-ing, plane input/fuse, outline,
   ID table, STM32 part and bootloader, controller-side plane discovery.

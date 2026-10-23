@@ -1,0 +1,4 @@
+(sym_lib_table
+	(version 7)
+	(lib (name "pp") (type "KiCad") (uri "${KIPRJMOD}/pp.kicad_sym") (options "") (descr "power plane symbols"))
+)

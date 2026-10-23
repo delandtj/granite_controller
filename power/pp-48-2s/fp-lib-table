@@ -1,0 +1,4 @@
+(fp_lib_table
+	(version 7)
+	(lib (name "pp") (type "KiCad") (uri "${KIPRJMOD}/pp.pretty") (options "") (descr "power plane footprints"))
+)

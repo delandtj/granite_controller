@@ -1,0 +1,77 @@
+# pcbkit settings for the PP-48-2S power plane (overrides the
+# granite_controller pcbkit.toml two levels up). 4L JLC, 150 x 80 mm, immersed.
+#
+# Schematic is generated: tools/gensch.py 2 -> pp-48-2s.kicad_sch, then
+# kicad-cli sch export netlist --format kicadxml --output pp-48-2s.xml.
+# Board flow: mkboard -> outline -> setrules -> tools/place.py -> gndpour ->
+# tools/power.py (VBUS / slot OUT / NODE pours, group "power") -> krt-route ->
+# gndpour (refill, restitch) -> silk -> connlabels.
+
+[project]
+name = "pp-48-2s"
+libs = { pp = "pp.pretty" }
+
+[mkboard]
+copper_layers = 4
+stage_x = -120.0
+sheet_pitch = 90.0
+cell = 14.0
+per_row = 8
+
+[outline]
+length = 150.0
+height = 80.0
+origin = [100.0, 100.0]
+
+[rules]
+stackup = "jlc04161h-7628"
+# In1: solid GND under everything; In2: 3V3 / signals (the 54 V paths are outer-layer pours)
+layers = { "In1.Cu" = ["power", "GND"], "In2.Cu" = ["mixed", "PWR"] }
+
+[rules.netclasses]
+# name = [track, clearance, via_dia, via_drill]
+Default = [0.2, 0.2, 0.5, 0.2]
+
+[krt]
+work = "~/.cache/pcbkit/pp-48-2s/route"
+rework = "~/.cache/pcbkit/pp-48-2s/reroute"
+clearance = 0.2
+via = [0.5, 0.2]
+track_width = 0.2
+same_net_pad_clearance = 0.15
+signal_layers = ["F.Cu", "In2.Cu", "B.Cu"]
+keep_groups = ["power", "gnd-stitch"]
+# VBUS, the slot SENSE/OUT nodes and the NODE outputs are pours drawn by tools/power.py
+power_nets = ["+3V3", "+12V", "V12_OUT", "CTRL_3V3"]
+power_widths = [0.4, 0.5, 0.5, 0.3]
+
+[gndpour]
+net = "GND"
+layers = ["F.Cu", "B.Cu"]
+via = [0.5, 0.2]
+via_clearance = 0.3
+edge_in = 1.0
+edge_pitch = 4.0
+grid = 5.0
+short_edge_inset = 1.0
+zone_clearance = 0.25
+zone_min_width = 0.25
+priority = 1
+group = "gnd-stitch"
+fill = true
+
+[silk]
+hide_prefixes = ["H"]
+order = ["J", "X"]
+relax_prefixes = ["J", "X"]
+
+[connlabels]
+names = { J1 = "BUS 40-60V", J2 = "CTRL IN", J3 = "CTRL OUT", J4 = "12V AUX", J5 = "SWD", J101 = "NODE 1", J201 = "NODE 2", X102 = "AUX 1", X202 = "AUX 2" }
+
+[connlabels.legends]
+J1 = ["+", "-"]
+J2 = ["3V", "G", "CL", "DA", "INT"]
+J3 = ["3V", "G", "CL", "DA", "INT"]
+J4 = ["+", "-"]
+X102 = ["OV", "PG", "ID", "T", "G", "DA", "CL"]
+X202 = ["OV", "PG", "ID", "T", "G", "DA", "CL"]
