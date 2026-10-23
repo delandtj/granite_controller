@@ -279,7 +279,7 @@ themselves.
 
 ### Power plane: PP-48-xS (the carrier board)
 
-ADR: docs/adr/0001-48v-power-plane.md (Proposed, 2026-10-23) is the
+ADR: docs/adr/0001-48v-power-plane.md (Accepted, 2026-10-23) is the
 decision record for the plane, the slimmed controller and the
 register map; this section stays the component spec.
 
@@ -303,7 +303,7 @@ Decisions:
    falls with several planes per controller and with plane types that
    do not exist yet. The MCU is a telemetry aggregator and command
    relay only; the safety chain stays in hardware (rules below).
-   Candidate STM32G0B1: two I2C peripherals (slave toward the
+   STM32G0B1 (decided 2026-10-23): two I2C peripherals (slave toward the
    controller, master toward the front ends), 16 ADC channels (ID and
    TEMP of 8 slots), FDCAN for a later pod-wide link, Rust with
    embassy-stm32. Powered from the bus through a 100 V buck (LM5164
@@ -390,8 +390,9 @@ X2 on the bench carrier mates the first 5 pins and stays as is.
 ON/OFF stays on J1.2 (RUN), driven by the plane front end's enable
 chain, not by J2.
 
-Slot node connector (plane side, per slot, proposal): one housing for
-power and front panel, Mini-Fit Jr 2x4 class (9-13 A per pin): two
+Slot node connector (plane side, per slot, decided 2026-10-23): one
+housing for power and front panel, Mini-Fit Jr 2x4 class (9-13 A per
+pin): two
 pins +VOUT, two pins GND, PWR_SW, RST_SW, PLED+, one spare. The
 switch returns are the shared GND (the brick output is not isolated,
 the node's GND is the plane's). Fluid compatibility of the housing is
@@ -409,8 +410,9 @@ mA each from J8 3V3. 0.5 m total per the existing requirement. Next
 to it the 12 V aux output (2-pin, fused on the plane) for the
 controller's J3.
 
-Register map, first sketch (16-bit registers, little endian, the map
-version is the first thing a controller reads):
+Register map (16-bit registers at fixed offsets, little endian, the
+map version at offset 0 is the first thing a controller reads; fields
+are appended, never moved; decided with the ADR 2026-10-23):
 
 - Plane: map version, plane type (0x0001 = PP-48-xS), slot count,
   firmware version, bus voltage, plane temperature, MCU uptime, global

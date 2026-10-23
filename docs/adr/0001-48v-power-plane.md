@@ -1,7 +1,10 @@
 # 48 V power plane and slimmed controller
 
-**Status**: Proposed
+**Status**: Accepted
 **Date**: 2026-10-23
+**Updated**: 2026-10-23 (accepted; review asks answered: fixed-offset
+register map, one node housing, STM32G0B1, policy on the controller
+and primitives on the plane)
 
 Related: docs/power-board.md (the running spec, sections "Direction:
 48-54 V bus", "Power plane: PP-48-xS", "Front end part"),
@@ -511,21 +514,20 @@ answer may be "never update a plane in service, swap it".
   then short, inrush, retry, OV latch, stagger, three-plane bus,
   soak.
 
-Review asks:
-1. Register map: fixed offsets with a version field, or
-   tag-length-value? Pick one.
-2. Node connector: one Mini-Fit housing for power and front panel, or
-   two connectors? Pick one.
-3. STM32G0B1 accepted as the plane MCU, yes or no?
-4. Policy split (primitives on plane, policy on controller) accepted,
-   yes or no?
+Review asks, answered 2026-10-23:
+1. Register map: fixed offsets with a version field. Decided.
+2. Node connector: one Mini-Fit Jr 2x4 housing for power and front
+   panel. Decided.
+3. STM32G0B1 as the plane MCU. Decided.
+4. Primitives on the plane, policy on the controller. Decided.
 
 ---
 
 ## Open Questions
 
 **Architecture-changers**
-- [ ] Register map encoding (fixed offsets vs TLV).
+- [x] Register map encoding: fixed offsets with a version field
+      (2026-10-23).
 - [ ] One plane type carries the 12 V aux; does every plane type have
       to, or only PP-48?
 - [ ] Frames per controller and cable topology: daisy chain on the
