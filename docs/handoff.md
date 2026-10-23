@@ -33,9 +33,17 @@ docs/power-board.md, section "Power plane: PP-48-xS":
   every plane, OR-ed from two planes when several; never from slot 1's
   brick (rejected: controller downstream of a switched slot). Rev C's
   J3 takes it as is.
-- Open: front end part at 15 A, OV latch part, node connector and
-  cable, aux buck and OR-ing, plane input/fuse, outline, ID table,
-  STM32 part and bootloader, controller-side plane discovery.
+- Front end part chosen (decision 7): LM5069-2 (switch, 55 mV current
+  limit, power limit, auto-retry; LCSC C111822, $3.70 at 100, in
+  stock) + INA238 (16-bit monitor, +/-5 uV, +/-0.1 %, 16 addresses;
+  not at LCSC, Mouser stock) on one 3.5 mOhm shunt. Rejected: ADM1272
+  (end of life), LTC4286/4287 (price, not at LCSC, 48-QFN), LM5066I
+  (12-bit telemetry +/-3.5 to 6 %, misses the 2 % requirement, $8.58).
+  INA228 is the drop-in upgrade when LCSC has stock. Datasheet
+  extracts used for this are not in the repo (scratchpad only).
+- Open: MOSFET and shunt for the LM5069 at 15 A, OV latch part, node
+  connector and cable, aux buck and OR-ing, plane input/fuse, outline,
+  ID table, STM32 part and bootloader, controller-side plane discovery.
 
 ## Session 2026-10-22: PM-19V-200W routed, tools reinstalled
 

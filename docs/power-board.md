@@ -88,12 +88,13 @@ Front end (identical on every port):
   monitor on the module output (e.g. INA228, 85 V) counts the load
   alone; with both, the module efficiency per port is a free health
   check.
-- The LTC4282 does not fit (2.9-33 V). Candidates in the 48 V class:
-  TI LM5066I (10-80 V, already the fallback above), ADI ADM1272, ADI
-  LTC4286 / LTC4287. To check per part: default-ON behaviour, whether
-  OFF is RAM-only, whether configuration is set by pins and resistors
-  (then the EEPROM provisioning routine is not needed), addresses for
-  8 ports, metering accuracy.
+- The LTC4282 does not fit (2.9-33 V). Candidates in the 48 V class
+  were TI LM5066I, ADI ADM1272, ADI LTC4286 / LTC4287, checked for
+  default-ON behaviour, OFF via pin, pin-and-resistor configuration,
+  metering accuracy and price. DECIDED 2026-10-23: none of them; the
+  front end is a TI LM5069-2 hot-swap controller plus a TI INA238
+  monitor on one shared shunt. See "Front end part" under "Power
+  plane".
 
 Module (the only load-specific part):
 - Converts (or passes through) and carries the load's output connector,
@@ -264,8 +265,8 @@ themselves.
 6. Input range of each load: does the Strix Halo board need exactly
    19 V or accept a range (decides whether a fixed-ratio module is an
    option).
-7. Front end part (LM5066I, ADM1272, LTC4286/4287) against the
-   checklist above.
+7. DECIDED 2026-10-23: LM5069-2 + INA238 on one shunt, see "Front end
+   part" under "Power plane".
 8. DECIDED 2026-10-23: 12 V always-on aux output on every plane, OR-ed
    on the controller when there are several planes. See "Controller
    supply".
@@ -309,13 +310,14 @@ Decisions:
    the same map; type-specific fields are additions, never changes.
    The controller firmware adapts to more planes and more types, it
    never learns a plane's internals.
-4. Measurement: bus-side per slot, from the shunt of the front end
-   (switch, current limit, fuse and meter in one chip: LM5066I,
-   ADM1272, LTC4286/4287, to be chosen). The MCU polls the front ends
-   at 10-20 Hz, keeps min/max since the last controller read and
-   integrates energy against its own crystal, so the front end no
-   longer needs an energy register or an external clock. Module
-   output measurement stays a health number (decision 9 below).
+4. Measurement: bus-side per slot, from the shunt of the front end.
+   Switch and protection in one chip (LM5069-2), metering in a second
+   chip on the same shunt (INA238), see "Front end part" below. The
+   MCU polls the monitors at 10-20 Hz, keeps min/max since the last
+   controller read and integrates energy against its own crystal, so
+   the front end needs no energy register and no external clock.
+   Module output measurement stays a health number (decision 9
+   below).
 5. Link to the controller unchanged in principle: isolated I2C, the
    isolator on the plane, its controller side powered from J8 3V3.
    What changes is that only the MCU sits behind the isolator.
@@ -429,17 +431,74 @@ version is the first thing a controller reads):
   the global status.
 
 Firmware (plane): Rust, embassy-stm32, I2C slave register map toward
-the controller, PMBus master toward the front ends. Update over SWD on
-the bench; an I2C bootloader is open. The controller firmware's
-EEPROM-provisioning routine written for the LTC4282 moves to the plane
-MCU if the chosen front end needs any provisioning at all (pin and
-resistor configuration is preferred so that it does not).
+the controller, I2C master toward the INA238 monitors. Update over SWD
+on the bench; an I2C bootloader is open. No EEPROM anywhere in the
+front end: the LM5069 is configured by resistors, the INA238 gets its
+configuration register (ADC range, conversion time, averaging, shunt
+calibration) written by the MCU at every boot. The LTC4282 EEPROM
+provisioning routine below is history.
+
+#### Front end part
+
+Decided 2026-10-23 after checking the datasheets and LCSC stock the
+same day. Requirement to meet: current and power within 2 % of
+reading at 10 A (Monitoring table), useful down to 1-4 A, default ON
+at a pin, OFF via a pin, auto-retry, configuration by resistors.
+
+| Part | Range | Protection | Metering | Price, stock (LCSC, 2026-10-23) | Verdict |
+|---|---|---|---|---|---|
+| ADI ADM1272 | 16-80 V | hot-swap, PMBus | 12-bit, +/-0.85 % | last-time buy at ADI, 1 piece at LCSC | out: end of life |
+| ADI LTC4286 | 8.5-80 V | hot-swap, PMBus | 12-bit, +/-1 %, no energy | not at LCSC, ~$19 single, $8.84 at 1k | out: price, sourcing |
+| ADI LTC4287 | 6.5-80 V | hot-swap, PMBus | with energy | 48-QFN 7x7, ~$28 single, 30 week lead | out: price, size |
+| TI LM5066I | 10-80 V | hot-swap, power limit, PMBus, 27 addresses | 12-bit at 1 kHz; current +/-3.5 % at 80 % of range, +/-6 % at 19 %; power +/-4.5 to 6.5 %; READ_EIN, peaks, averages | C1848356, $8.58 at 100, 129 in stock, HTSSOP-28 | out: metering misses 2 %, and PMBus addressing is moot behind the MCU |
+| TI LM5069-2 | 9-80 V | hot-swap, current limit 55 mV (48.5-61.5), circuit breaker 105 mV, power limit (PWR resistor), UVLO/EN and OVLO pins, PGD, insertion timer, auto-retry at 0.5 % duty | none | C111822, $3.70 at 100, 7219 in stock, VSSOP-10 | CHOSEN for switch and protection |
+| TI INA238 | -0.3 to 85 V common mode, bus 0-85 V | none | 16-bit; offset +/-5 uV max, gain +/-0.1 % max, 5 uV/LSB at +/-163.84 mV; 16 I2C addresses (A0/A1 to GND, VS, SDA, SCL); ALERT; die temperature | not at LCSC (TI 12 week lead); Mouser ~714 in stock, ~1.5-2 EUR; VSSOP-10 | CHOSEN for metering |
+| TI INA228 | as INA238 | none | 20-bit, +/-1 uV, +/-0.05 %, energy and charge accumulators | C2887910, $6.08 at 100, 0 in stock | fallback: same footprint and pinout as INA238, drop-in if stock appears; its accumulators are not needed (MCU integrates) |
+| TI INA237 | as INA238 | none | 16-bit, lower accuracy class | C2864837, $0.75 at 1k, 0 in stock | fallback for cost, same footprint |
+
+Why two chips beat one: the integrated parts meter with the 12-bit
+ADC that also serves their protection, so a percent of full scale, and
+at a quarter of the range that is 6 % of reading. A dedicated monitor
+meters at a percent of reading down to a few hundred mA. The pair is
+also cheaper than the LM5066I alone, in stock, and nothing in it has
+an address count or an EEPROM to manage.
+
+Per slot, numbers for the 15 A class:
+- Shunt 3.5 mOhm, 0.5 %, low tempco, 2512 2 W (or two 7 mOhm 2512 in
+  parallel). Current limit 55 mV / 3.5 mOhm = 15.7 A (13.9-17.6 A over
+  the threshold tolerance), circuit breaker 30 A. Loss 0.39 W at
+  10.5 A, 0.8 W at 15 A.
+- INA238 on the same shunt, Kelvin-connected, +/-163.84 mV range:
+  LSB 1.4 mA, full scale 47 A. At 4 A (14 mV) the offset is 0.04 %
+  and the gain error 0.1 % of reading; with the 0.5 % shunt the
+  reading is inside 1 % from 1 A up. Energy by MCU integration of
+  V x I at 10-20 Hz, conversion time 1 ms with averaging.
+- VBUS of the INA238 on the slot side of the MOSFET (reads 0 when the
+  slot is OFF, reads the voltage the brick actually gets); the bus
+  voltage itself is one plane-level reading.
+- LM5069-2: UVLO divider for ~38 V start, OVLO divider for ~62 V stop
+  (the module's own windows), RPWR for the MOSFET's SOA at 54 V,
+  TIMER for insertion delay and fault timeout, PGD to the MCU. The -2
+  variant retries on its own at 0.5 % duty; the MCU counts retries
+  from PGD and applies the retry policy by pulling UVLO/EN low.
+- Enable chain on UVLO/EN: the divider holds it above threshold (ON);
+  the MCU's open-drain output and the slot's OV latch each pull it
+  below threshold (OFF). UVLO/EN is rated 100 V abs max, so no level
+  concern; the pull-down only sinks the divider current.
+- MOSFET: 100 V N-channel in a 5x6 package, chosen with the SOA check
+  for power limiting at 54 V into a shorted output (open below).
+- 16 INA238 addresses cover a plane of 8 slots on one MCU I2C bus
+  with no mux; A0/A1 strapped per slot.
+
+Sourcing: LM5069-2 from LCSC for JLC assembly; INA238 consigned or
+bought at Mouser for the first planes (8 per plane). Verify LCSC
+stock again at order time; INA228 drops into the same footprint.
 
 Open for the plane:
 
-- Front end part at 15 A: default-ON behaviour at the pin, OFF via pin
-  only, configuration by pins and resistors, metering accuracy at
-  1-4 A, price. LM5066I, ADM1272, LTC4286/4287.
+- MOSFET for the LM5069 at 15 A: 100 V, SOA for power limiting at
+  54 V into a short, RPWR and TIMER values, retrying indefinitely.
+- Shunt part (3.5 mOhm 0.5 % 2512, tempco) and its self-heating.
 - Per-slot OV latch part (dual flip-flop or discrete bistable), and
   how the latch interacts with the front end's own retry.
 - Slot output connector (>= 15 A, keyed, fluid compatible).
@@ -831,6 +890,9 @@ These are the critical requirements.
 
 ## Selected parts
 
+For the 19 V reference design. The 48 V plane uses LM5069-2 + INA238,
+see "Front end part" above (2026-10-23).
+
 - Hot-swap controller: Analog Devices LTC4282, one per channel
   (decided 2026-10-07). 2.9-33 V, 16-bit V/I/P plus energy
   accumulation (+/-0.7 % total error), MOSFET power foldback for SOA,
@@ -876,6 +938,9 @@ These are the critical requirements.
     firmware does this over I2C (see "EEPROM provisioning" below).
 
 ## EEPROM provisioning (controller firmware)
+
+19 V reference design only; the 48 V plane front end has no EEPROM
+(2026-10-23). Kept for the record.
 
 On every controller boot, for each LTC4282 at 0x40-0x47:
 
