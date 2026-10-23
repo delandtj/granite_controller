@@ -1,8 +1,34 @@
-# Handoff - granite controller (updated 2026-10-22)
+# Handoff - granite controller (updated 2026-10-23)
 
 Read this first, then docs/controller.md and docs/power-board.md.
 
-## Latest session (2026-10-22): PM-19V-200W routed, tools reinstalled
+## Latest session (2026-10-23): power plane architecture (docs only)
+
+Discussion only, no hardware or tools touched. Written into
+docs/power-board.md, section "Power plane: PP-48-xS":
+- The carrier board is the "power plane": one design in 2, 4 and 8
+  slot sizes (6 = depopulated 8), 48 V only, one slot kind (eighth
+  brick, 15 A plane-side front end). Mains / 220 V modules were
+  discussed and dropped; inductive measurement discussed and rejected
+  for DC slots (percent-of-full-scale error at 4 A), the front end's
+  shunt meters every slot bus-side.
+- One STM32 per plane (G0B1 candidate) as telemetry aggregator and
+  command relay, one I2C address per plane (proposal 0x30-0x37), one
+  register map for every plane type. SUPERSEDES the 2026-10-21 "no
+  MCU on the power board" decision. Safety stays in hardware: enable
+  pins pulled to ON, MCU pulls low for OFF, OV cut is a hardware
+  latch, stagger by the MCU degrades to all-on. Rules listed in the
+  doc.
+- The controller is plane-type agnostic: enumerates planes, reads
+  type / slot count / map version, exposes slots. Future plane types
+  for larger loads, never a second slot kind on this plane.
+- Decision 9 taken: J2 grows to 7 pins (SDA/SCL reserved, unpopulated
+  on rev 0.1). The bench carrier's 5-pin X2 stays.
+- Open: front end part at 15 A, OV latch part, slot output connector,
+  plane input/fuse, outline, ID table, STM32 part and bootloader,
+  controller-side plane discovery.
+
+## Session 2026-10-22: PM-19V-200W routed, tools reinstalled
 
 Machine was rebooted after this session; nothing of the state below
 lives outside git. Everything is pushed (granite_controller master

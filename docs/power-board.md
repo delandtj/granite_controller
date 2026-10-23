@@ -1,7 +1,8 @@
 # Power distribution board - component spec
 
 Status: draft, 2026-10-07, measurement and knowns/unknowns added
-2026-10-21. Not started in hardware. Open decisions and unknowns are
+2026-10-21, power plane (carrier with MCU) added 2026-10-23. Not
+started in hardware. Open decisions and unknowns are
 listed at the end; everything else is a requirement. Since 2026-10-21
 the direction is a 48-54 V bus with per-load port modules (next
 section); the 19 V design below is the reference it grew from.
@@ -225,21 +226,23 @@ takes 40-60 V on J3. A rev C board must never be connected to the
 
 ### Interface
 
-Unchanged: galvanically isolated I2C on J8, isolator on the power
-board, EXP_INT across the barrier. Only the parts behind the isolator
-change (48 V class front ends, module ID readers).
+Galvanically isolated I2C on J8, isolator on the power board (plane),
+EXP_INT across the barrier, unchanged. Behind the isolator sits one
+MCU per plane since 2026-10-23 (see "Power plane"), not the front ends
+themselves.
 
 ### Open decisions for this direction
 
 1. Load classes in sight (Strix Halo nodes, storage servers, switches,
    GPU boxes, ...) and their rough power. Sets the power per slot.
-2. One slot size or two (e.g. up to 300 W converted, up to 1.5 kW
-   pass-through). The largest class sets the front end current rating,
-   the copper and the slot pitch.
-3. Ports per board: fixed 8, or 4 / 8 variants.
-4. Module form: plug-in card (a connector between front end and module,
-   in the fluid: one more soak risk, but one board serves every load) or
-   soldered at assembly (no connector, a board variant per load mix).
+2. DECIDED 2026-10-23: one slot kind, the eighth-brick slot at 15 A.
+   Larger loads get their own plane type later (the controller is
+   plane-type agnostic), not a second slot kind on this plane.
+3. DECIDED 2026-10-23: 2, 4 and 8 slot planes of one design; 6 is a
+   depopulated 8.
+4. Module form: the module is a brick soldered into the plane (see
+   "Mounting on the carrier"); the plane carries the slot's output
+   connector. A plug-in receptacle only on the bench carrier.
 5. Bus voltage target and supplies: confirm 48-54 V supply models,
    efficiency at 1.6-3 kW, current share, PMBus. Same for 19 V supplies,
    to settle the loss table with datasheet numbers.
@@ -250,9 +253,149 @@ change (48 V class front ends, module ID readers).
    checklist above.
 8. Controller supply at 54 V: auxiliary output on the power board or a
    40-60 V controller input.
-9. Module output current reporting on J2: none, one analog pin (J2 ->
-   6 pins) or I2C (J2 -> 7 pins). See "Current and power measurement".
-   Decide before the first module order; the carrier's X2 follows.
+9. DECIDED 2026-10-23: J2 grows to 7 pins with SDA/SCL reserved and
+   unpopulated on rev 0.1; module output reporting is digital, later,
+   through the plane MCU. See "Power plane". The bench carrier's 5-pin
+   X2 mates pins 1-5 and stays.
+10. Plane address range, connector and chain topology (proposal under
+    "Power plane").
+
+### Power plane: PP-48-xS (the carrier board)
+
+Discussed and decided 2026-10-23. The board the bricks plug into is
+called the power plane. Three sizes of one design, 2, 4 and 8 slots
+(a 6-slot plane is an 8-slot plane with two slots unpopulated), all
+identical to the controller. 220 V / mains modules were discussed and
+dropped: the plane is 48 V only, and every slot is fed from the plane's
+bus, so the plane itself meters every slot. A load that does not fit a
+brick slot gets its own plane type later, not a second slot kind here.
+
+Decisions:
+
+1. One slot kind: the DOSA eighth-brick socket of PM-19V-200W plus its
+   J2 aux row, a plane-side front end rated 15 A (the brick pins 4/8
+   cap a module at about 10-12 A, 200-250 W), and the slot's output
+   connector (type still open, >= 15 A, keyed). 8 slots x 250 W is
+   2 kW: design the 8-slot plane's bus copper for 50 A (40 V in).
+2. An MCU per plane. Supersedes "no MCU on the power board"
+   (2026-10-21). That decision was taken for one board per frame; it
+   falls with several planes per controller and with plane types that
+   do not exist yet. The MCU is a telemetry aggregator and command
+   relay only; the safety chain stays in hardware (rules below).
+   Candidate STM32G0B1: two I2C peripherals (slave toward the
+   controller, master toward the front ends), 16 ADC channels (ID and
+   TEMP of 8 slots), FDCAN for a later pod-wide link, Rust with
+   embassy-stm32. Powered from the bus through a 100 V buck (LM5164
+   class) to 3.3 V, never from the controller cable.
+3. The controller is plane-type agnostic: it enumerates planes by
+   address, reads type, slot count and map version from the register
+   map, and exposes the slots. Every plane type, now and later, speaks
+   the same map; type-specific fields are additions, never changes.
+   The controller firmware adapts to more planes and more types, it
+   never learns a plane's internals.
+4. Measurement: bus-side per slot, from the shunt of the front end
+   (switch, current limit, fuse and meter in one chip: LM5066I,
+   ADM1272, LTC4286/4287, to be chosen). The MCU polls the front ends
+   at 10-20 Hz, keeps min/max since the last controller read and
+   integrates energy against its own crystal, so the front end no
+   longer needs an energy register or an external clock. Module
+   output measurement stays a health number (decision 9 below).
+5. Link to the controller unchanged in principle: isolated I2C, the
+   isolator on the plane, its controller side powered from J8 3V3.
+   What changes is that only the MCU sits behind the isolator.
+
+Safety rules for the MCU (the FMEA checks each):
+
+- Every front end enable pin is pulled up to ON on the plane. The MCU
+  pulls it low through an open-drain output to switch a slot OFF.
+  MCU in reset, unpowered, or crashed reads as ON. OFF is never set
+  through a PMBus OPERATION command: the pin default must be what
+  rules.
+- OFF lives in MCU RAM: it survives a controller reboot and a cable
+  unplug. An MCU watchdog reset returns the slot to ON (same class of
+  event as the accepted LTC4282 power-loss case). Restoring OFF from
+  RTC backup registers after a reset is an option, not a requirement.
+- The overvoltage cut is hardware: the module's OV_KILL sets a per-slot
+  latch that holds the enable pin low. The MCU reads the latch and
+  clears it on command; it does not implement it.
+- Start-up stagger: after boot the MCU holds all but the first slot
+  low and releases them in sequence (default 0.5 s). A dead MCU holds
+  nothing, so everything comes on together: the hardware default, not
+  a lockout. The hold starts within 50 ms of bus power so no slot
+  flickers.
+- Nothing on the plane depends on the controller cable: MCU, front
+  ends and the isolator's plane side run from the bus.
+
+Slot signal interface (J2 on the module, X2 on the plane):
+
+| Pin | Signal | Direction | Note |
+|---|---|---|---|
+| 1 | OV_KILL | module -> plane | open drain, low = overvoltage, sets the hardware latch |
+| 2 | PGOOD | module -> plane | open drain, high = good |
+| 3 | ID | module -> plane | resistor to GND, plane ADC, value table to define |
+| 4 | TEMP | module -> plane | 10k NTC to GND, plane ADC |
+| 5 | GND | | |
+| 6 | SDA | both | reserved, unpopulated on PM-19V-200W rev 0.1 |
+| 7 | SCL | both | reserved, unpopulated on PM-19V-200W rev 0.1 |
+
+Pins 6-7 close decision 9 as "digital, later": a module may carry an
+output monitor (INA228 class, address pins set per slot by the plane
+or behind a per-slot I2C switch) and the plane MCU reports module
+output and efficiency. Nothing in rev 0.1 uses them; adding them now
+costs two holes, adding them later costs every carrier. The 5-pin
+X2 on the bench carrier mates the first 5 pins and stays as is.
+ON/OFF stays on J1.2 (RUN), driven by the plane front end's enable
+chain, not by J2.
+
+Plane connector to the controller (controller side of the isolator):
+3V3, GND, SCL, SDA, EXP_INT. EXP_nRESET is not carried (the plane
+must ignore it). Two or three address strap bits on the plane set the
+plane address; proposal 0x30-0x37, 8 planes per controller bus, clear
+of the add-on expanders (0x21-0x27). Topology: each plane has an in
+and an out connector for a daisy chain, or a small star breakout at
+J8; the isolators sit in parallel on the controller-side bus, a few
+mA each from J8 3V3. 0.5 m total per the existing requirement.
+
+Register map, first sketch (16-bit registers, little endian, the map
+version is the first thing a controller reads):
+
+- Plane: map version, plane type (0x0001 = PP-48-xS), slot count,
+  firmware version, bus voltage, plane temperature, MCU uptime, global
+  status (any fault, any PGOOD change since last read, stagger active).
+- Per slot: status (present, enabled, pgood, OV latched, front end
+  fault, retrying), retry count, module class and ID code, V (mV),
+  I (mA), P (W x 10), min/max P since last read, module TEMP (0.1 C),
+  energy (J, u64), and the optional module-output V/I when pins 6-7
+  are used.
+- Control: slot enable mask (write 0 = OFF, 1 = ON), clear OV latch
+  mask, retry policy (max retries per window, window length, action),
+  stagger delay, clear min/max.
+- EXP_INT: pulled low on any fault, PGOOD change or OV latch; released
+  when the controller reads the global status.
+
+Firmware (plane): Rust, embassy-stm32, I2C slave register map toward
+the controller, PMBus master toward the front ends. Update over SWD on
+the bench; an I2C bootloader is open. The controller firmware's
+EEPROM-provisioning routine written for the LTC4282 moves to the plane
+MCU if the chosen front end needs any provisioning at all (pin and
+resistor configuration is preferred so that it does not).
+
+Open for the plane:
+
+- Front end part at 15 A: default-ON behaviour at the pin, OFF via pin
+  only, configuration by pins and resistors, metering accuracy at
+  1-4 A, price. LM5066I, ADM1272, LTC4286/4287.
+- Per-slot OV latch part (dual flip-flop or discrete bistable), and
+  how the latch interacts with the front end's own retry.
+- Slot output connector (>= 15 A, keyed, fluid compatible).
+- Plane input: lugs or connector for 50 A, main fuse, TVS.
+- Plane outline and slot pitch from the brick outline plus the output
+  connector; mounting in the frame.
+- ID resistor table (module class and nominal Vout).
+- STM32 part, I2C slave support in embassy-stm32 for the G0's I2C
+  peripheral, bootloader path.
+- Controller side: plane discovery on J8, exposing N planes x M slots
+  in MQTT, Modbus and the HTTPS page.
 
 ### First port module: PM-19V-200W
 
@@ -327,6 +470,7 @@ Interface (J1 eighth-brick pins, J2 auxiliary row beside them):
 | J2.3 | ID: resistor to GND, read by the carrier ADC (value table to define) |
 | J2.4 | TEMP: 10k NTC to GND |
 | J2.5 | GND |
+| J2.6-7 | SDA, SCL: reserved (decided 2026-10-23), not on the rev 0.1 board yet; the next module rev grows J2 to 7 pins |
 
 #### Mounting on the carrier (eighth-brick, DOSA)
 
@@ -458,7 +602,8 @@ Open for this module:
 - Whether an off-the-shelf brick in the same footprint (e.g. SynQor
   NQ90W90EPx10, 10 A at 19 V = 190 W) is an acceptable fallback for
   loads under 190 W.
-- J2 pin count (open decision 9 above).
+- J2 to 7 pins (decision 9, taken 2026-10-23): move the header and
+  the carrier's X2 footprint at the next rev.
 
 Marking: a large bold "19 V" legend on both silk layers (2026-10-22;
 board-level text, kept by `pcbkit silk`, lost by a fresh `mkboard`), so
@@ -795,13 +940,17 @@ elsewhere:
 Options that were considered:
 
 1. Galvanically isolated I2C on J8, isolator on the power board, board
-   side powered locally. CHOSEN 2026-10-21: fixes the ground problem
-   with no MCU or firmware on the power board.
+   side powered locally. CHOSEN 2026-10-21: fixes the ground problem.
+   Chosen then with no MCU on the board; since 2026-10-23 one MCU per
+   plane sits behind the isolator (see "Power plane"), the link itself
+   is unchanged.
 2. Differential I2C (e.g. PCA9615 over twisted pair) for a longer,
    noisier cable. Not needed at 0.5 m once isolated.
 3. Power duck: an MCU on the power board, RS-485 / Modbus RTU to the
    controller. Reaches a whole pod, but costs an MCU, firmware and an
-   address scheme. Not pursued for the power board.
+   address scheme. Not pursued in 2026-10-21; the plane MCU of
+   2026-10-23 is this option's MCU without the RS-485 link (I2C
+   stays), and its FDCAN keeps a pod-wide link open for later.
 
 Still open with option 1: the shared bus. The isolated segment is on
 the same controller bus as J9, so a stuck Qwiic sensor still blocks
@@ -829,9 +978,11 @@ connectors are not fixed.
   node, MQTT, Modbus TCP and HTTPS, SNTP wall clock.
 - The boards are immersed; 19 V is SELV.
 - Link: galvanically isolated I2C on J8, power board side powered from
-  its own 3.3 V / 5 V. No MCU on the power board, so the power-cycle
-  sequence, retry counting, start-up stagger and EEPROM checks run on
-  the controller.
+  its own 3.3 V / 5 V. Since 2026-10-23 one MCU per plane behind the
+  isolator: retry counting, start-up stagger, energy integration and
+  any front end provisioning run there; the power-cycle sequence and
+  policy stay on the controller. (Before: no MCU, everything on the
+  controller.)
 - No power logging on the controller: it measures and publishes, a
   backend stores.
 
