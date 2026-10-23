@@ -41,8 +41,8 @@ docs/power-board.md, section "Power plane: PP-48-xS":
   (12-bit telemetry +/-3.5 to 6 %, misses the 2 % requirement, $8.58).
   INA228 is the drop-in upgrade when LCSC has stock. Datasheet
   extracts used for this are not in the repo (scratchpad only).
-- ADR docs/adr/0001-48v-power-plane.md ACCEPTED 2026-10-23: fixed-
-  offset register map with version field, one Mini-Fit Jr 2x4 node
+- ADR docs/adr/0001-48v-power-plane.md ACCEPTED 2026-10-23: TLV
+  message format over I2C (CRC-8, global tags), one Mini-Fit Jr 2x4 node
   housing, STM32G0B1, primitives on the plane / policy on the
   controller. Next: power/pp-48/ KiCad project (core + slot sheets),
   2-slot board first.

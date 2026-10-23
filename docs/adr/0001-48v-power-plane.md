@@ -2,8 +2,8 @@
 
 **Status**: Accepted
 **Date**: 2026-10-23
-**Updated**: 2026-10-23 (accepted; review asks answered: fixed-offset
-register map, one node housing, STM32G0B1, policy on the controller
+**Updated**: 2026-10-23 (accepted; review asks answered: TLV message
+format over I2C, one node housing, STM32G0B1, policy on the controller
 and primitives on the plane)
 
 Related: docs/power-board.md (the running spec, sections "Direction:
@@ -63,10 +63,12 @@ Two board families and one interface:
    Ethernet, USB-C service, probes, J9, J8 as the only control
    interface, 12 V in from a plane (two inputs OR-ed). Rev C keeps
    serving until rev D exists; it talks to a plane as is.
-3. **One register map** over isolated I2C, one address per plane,
-   identical for every plane type now and later. The controller
-   enumerates planes, reads type and slot count, exposes slots. It
-   never learns a plane's internals.
+3. **One message format** over isolated I2C, one address per plane,
+   identical for every plane type now and later: tag-length-value
+   records, so a plane type adds tags and an old controller skips
+   what it does not know. The controller enumerates planes, reads
+   type and slot count, exposes slots. It never learns a plane's
+   internals.
 
 Decisions folded in, each dated in docs/power-board.md:
 - Front end per slot: TI LM5069-2 (switch, current limit, power
@@ -187,32 +189,56 @@ Decisions folded in, each dated in docs/power-board.md:
 5. **Bench carrier** (`power/pm-bench-carrier/`, exists)
    - Unchanged. Its 5-pin X2 mates J2 pins 1-5.
 
-### Register map (plane, I2C slave, 16-bit little endian)
+### Message format (plane, I2C slave, TLV)
 
-The first register is the map version. Fields per plane type are
-additions; existing offsets never change meaning.
+Decided 2026-10-23 (TLV preferred over fixed register offsets).
 
-- Plane: map version, plane type (0x0001 = PP-48-xS), slot count,
-  firmware version, bus voltage, plane temperature, MCU uptime,
-  global status (any fault, any PGOOD change, any LED change,
-  stagger active), aux 12 V voltage/current if monitored, aux fuse
-  state.
-- Per slot, read: status (present, enabled, pgood, OV latched, front
-  end fault, retrying), retry count, module class and ID code, V
-  (mV), I (mA), P (W x 10), P min/max since last read, module TEMP
-  (0.1 C), energy (J, u64), optional module-output V/I (J2 pins 6-7),
-  node LED state (on, off, blinking + period), cross-check flags (LED
-  lit at 0 A, LED lit while OFF, no LED after power-cycle),
-  power-cycle sequence state (idle, off-wait, on-wait, pressing,
-  done, failed).
-- Control: slot enable mask (0 = OFF, 1 = ON), clear OV latch mask,
-  retry policy (max retries per window, window length, action),
-  stagger delay, clear min/max; per slot: press PWR / press RST with
-  duration (50-10000 ms, long press = forced off), start power-cycle
-  (off delay, press-if-dark, LED timeout), abort sequence.
-- EXP_INT: low on any fault, PGOOD change, OV latch, LED change or
-  sequence completion; released when the controller reads the global
-  status.
+Transaction: the controller writes a request of 2 bytes, block id and
+slot index (0xFF = plane level), then reads: byte 0 = payload length
+L (0-254), bytes 1..L = TLV records, byte L+1 = CRC-8 over bytes
+0..L. A control write is the same 2-byte request followed by TLV
+records and a CRC-8; the plane answers the next read of block
+STATUS with an ack record. A record is tag (u8), length (u8), value
+(length bytes, little endian integers). Unknown tags are skipped by
+length; a reader never assumes order. Tags are global, not per block,
+and a tag's meaning never changes; new plane types add tags.
+
+Blocks: INFO (plane), STATUS (plane), SLOT (per slot telemetry and
+state), CTRL (per slot or plane control, write), EVENTS (what raised
+EXP_INT, read clears).
+
+Tags, first set (value type in brackets):
+- Plane INFO: 0x01 format version [u8], 0x02 plane type [u16, 0x0001
+  = PP-48-xS], 0x03 slot count [u8], 0x04 firmware version [u8 x3],
+  0x05 serial [u32], 0x06 capabilities bitmap [u32: node control,
+  aux monitor, module output monitor, FDCAN present, ...].
+- Plane STATUS: 0x10 bus voltage [u16 mV x10 = 0.01 V], 0x11 plane
+  temperature [i16 0.1 C], 0x12 uptime [u32 s], 0x13 global flags
+  [u16: any fault, any PGOOD change, any LED change, stagger active,
+  aux fuse open], 0x14 aux 12 V [u16 mV], 0x15 aux current [u16 mA],
+  0x16 ack of last CTRL [u8 ok/err code].
+- SLOT: 0x20 slot status [u16: present, enabled, pgood, OV latched,
+  front end fault, retrying, sequence running], 0x21 retry count
+  [u16], 0x22 module class [u8], 0x23 module ID code [u16], 0x24 V
+  [u16 mV x10], 0x25 I [u16 mA], 0x26 P [u16 0.1 W], 0x27 P min/max
+  since last read [u16, u16], 0x28 module TEMP [i16 0.1 C], 0x29
+  energy [u64 J], 0x2A module output V/I [u16, u16, if present],
+  0x2B node LED [u8 state: off/on/blinking, u16 period ms], 0x2C
+  cross-check flags [u8: LED lit at 0 A, LED lit while OFF, no LED
+  after power-cycle], 0x2D sequence state [u8: idle, off-wait,
+  on-wait, pressing, done, failed].
+- CTRL (write): 0x40 enable [u8 slot, u8 0/1], 0x41 clear OV latch
+  [u8 slot], 0x42 retry policy [u8 max, u16 window s, u8 action],
+  0x43 stagger delay [u16 ms], 0x44 clear min/max [u8 slot or 0xFF],
+  0x45 press PWR [u8 slot, u16 ms 50-10000], 0x46 press RST [u8 slot,
+  u16 ms], 0x47 power-cycle [u8 slot, u16 off delay s, u8
+  press-if-dark, u16 LED timeout s], 0x48 abort sequence [u8 slot].
+- EVENTS: 0x60 event [u8 slot, u8 kind, u32 uptime s] repeated.
+
+EXP_INT: low while EVENTS is non-empty; a read of EVENTS clears it.
+Size: one SLOT block is about 60 bytes; a plane of 8 slots is read in
+9 transactions, about 600 bytes, well under 3 % of a 100 kHz bus at
+1 Hz for three planes.
 
 ### Safety rules (hardware default ON; the MCU is never in the chain)
 
@@ -444,12 +470,11 @@ answer may be "never update a plane in service, swap it".
 
 ### Decisions you will probably want to tweak
 
-- **Register map layout and version field.**
-  Choice: 16-bit registers, little endian, map version at offset 0,
-  fields appended only. Alternative: a length-prefixed block read
-  with a type tag per field. Cost to change later: every controller
-  firmware and every plane firmware in the field; do it before the
-  first plane ships.
+- **Message format: TLV blocks with a CRC-8.**
+  Choice: 2-byte request, length-prefixed TLV payload, global tags,
+  CRC-8. Alternative: fixed register offsets with a version field.
+  Cost to change later: every controller firmware and every plane
+  firmware in the field; it is decided and will not move.
 - **Slot node connector: Mini-Fit Jr 2x4 with power and front panel in
   one housing.**
   Choice as stated. Alternative: separate power (2-pin Mini-Fit) and
@@ -515,7 +540,8 @@ answer may be "never update a plane in service, swap it".
   soak.
 
 Review asks, answered 2026-10-23:
-1. Register map: fixed offsets with a version field. Decided.
+1. Message format: TLV records (user's preference over fixed
+   offsets). Decided; format above.
 2. Node connector: one Mini-Fit Jr 2x4 housing for power and front
    panel. Decided.
 3. STM32G0B1 as the plane MCU. Decided.
@@ -526,8 +552,7 @@ Review asks, answered 2026-10-23:
 ## Open Questions
 
 **Architecture-changers**
-- [x] Register map encoding: fixed offsets with a version field
-      (2026-10-23).
+- [x] Message encoding: TLV with CRC-8 (2026-10-23).
 - [ ] One plane type carries the 12 V aux; does every plane type have
       to, or only PP-48?
 - [ ] Frames per controller and cable topology: daisy chain on the

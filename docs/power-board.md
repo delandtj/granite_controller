@@ -410,9 +410,9 @@ mA each from J8 3V3. 0.5 m total per the existing requirement. Next
 to it the 12 V aux output (2-pin, fused on the plane) for the
 controller's J3.
 
-Register map (16-bit registers at fixed offsets, little endian, the
-map version at offset 0 is the first thing a controller reads; fields
-are appended, never moved; decided with the ADR 2026-10-23):
+Message format: TLV records over I2C (decided 2026-10-23, the exact
+encoding, blocks and tags are in the ADR, section "Message format").
+Fields carried, grouped as the ADR's blocks:
 
 - Plane: map version, plane type (0x0001 = PP-48-xS), slot count,
   firmware version, bus voltage, plane temperature, MCU uptime, global
