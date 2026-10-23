@@ -286,12 +286,19 @@ the 28-pin GPIO expansion header (replaced by the 2x8 header above).
 1. Soak test plan for the HR911105A magjack (LED lenses, internal
    potting), the JST housings, the J8 header housing (Megastar,
    material not confirmed) and the WROOM-1 module (shield can, PCB).
-2. 19 V bus details from the power board: where the controller tap
-   sits relative to the hot-swap channels, and its fuse.
+2. Controller supply, decided 2026-10-23 (docs/power-board.md,
+   "Controller supply"): J3 is fed from a plane's always-on 12 V aux
+   output, OR-ed from two planes when there are several. Rev C needs
+   no change for it (J3 takes 4.5-36 V). Never from a slot, never from
+   the 54 V bus.
 3. LP I2C from the HP core: if ESP-IDF supports it, use it instead of
    software I2C for the external bus (same pins 6/7).
 4. Motherboard front-panel pinout (board model needed): PLED drive and
-   ground switch returns, for the 5-wire node cable.
+   ground switch returns. Since 2026-10-23 node control (PWR, RST,
+   PLED sense) moves to the power plane's slots (docs/power-board.md,
+   "Power plane", decision 6); the next controller rev drops the 8
+   node connectors, the 16 photoMOS and U14/U15, and keeps MCU,
+   Ethernet, probes, J8 and a 12 V J3. Rev C serves as is until then.
 5. Connector placement, mounting holes, assembly side, surface finish
    (carried over from the layout discussion; outline is 199 x 50 mm).
 

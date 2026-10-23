@@ -24,9 +24,18 @@ docs/power-board.md, section "Power plane: PP-48-xS":
   for larger loads, never a second slot kind on this plane.
 - Decision 9 taken: J2 grows to 7 pins (SDA/SCL reserved, unpopulated
   on rev 0.1). The bench carrier's 5-pin X2 stays.
-- Open: front end part at 15 A, OV latch part, slot output connector,
-  plane input/fuse, outline, ID table, STM32 part and bootloader,
-  controller-side plane discovery.
+- Node control moves to the plane (decision 6): PWR/RST photoMOS and
+  PLED sense per slot, one Mini-Fit Jr class cable per node from the
+  slot; primitives and the power-cycle sequence on the plane MCU,
+  policy on the controller. Next controller rev sheds the node
+  section; rev C unchanged until then.
+- Controller supply (decision 8 closed): 12 V always-on aux output on
+  every plane, OR-ed from two planes when several; never from slot 1's
+  brick (rejected: controller downstream of a switched slot). Rev C's
+  J3 takes it as is.
+- Open: front end part at 15 A, OV latch part, node connector and
+  cable, aux buck and OR-ing, plane input/fuse, outline, ID table,
+  STM32 part and bootloader, controller-side plane discovery.
 
 ## Session 2026-10-22: PM-19V-200W routed, tools reinstalled
 

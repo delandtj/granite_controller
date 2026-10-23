@@ -218,11 +218,26 @@ carry off magnetics and FETs; no heatsinks or fans. What the fluid adds:
 ### Controller supply
 
 The rev C controller cannot sit on a 54 V bus: J3 has a 22 V TVS
-(SMAJ22A) and a 0.75 A PTC. Either the power board provides an
-always-on auxiliary output for the controller (19 V or 12 V, not one
-of the switched ports, its own fuse), or a later controller revision
-takes 40-60 V on J3. A rev C board must never be connected to the
-54 V bus.
+(SMAJ22A) and a 0.75 A PTC. A rev C board must never be connected to
+the 54 V bus.
+
+DECIDED 2026-10-23: every plane carries an always-on 12 V auxiliary
+output for the controller: its own small 100 V buck from the bus
+(LM5164 class, about 1 A), its own fuse, never switched, not a slot.
+J3 takes 4.5-36 V through the LMR51430, so rev C runs on it as is;
+12 V keeps the SMAJ22A out of any overshoot argument a 19 V rail
+would have. With more than one plane per controller, feed the
+controller from two planes through an ideal-diode OR on the
+controller side, so one plane losing its bus, its aux fuse or being
+pulled for service does not take the controller down.
+
+Rejected the same day: feeding the controller from slot 1's brick.
+The controller must never be downstream of a switched slot: cycling
+node 1 would reboot the controller, a node 1 fault would drop it and
+make it reboot in step with the front end's retry, and the slot's OV
+cut, current limit and retry policy are sized for a 200 W motherboard,
+not for the board that has to stay up through those events. A 40-60 V
+controller input is dropped too; the plane feeds the controller.
 
 ### Interface
 
@@ -251,8 +266,9 @@ themselves.
    option).
 7. Front end part (LM5066I, ADM1272, LTC4286/4287) against the
    checklist above.
-8. Controller supply at 54 V: auxiliary output on the power board or a
-   40-60 V controller input.
+8. DECIDED 2026-10-23: 12 V always-on aux output on every plane, OR-ed
+   on the controller when there are several planes. See "Controller
+   supply".
 9. DECIDED 2026-10-23: J2 grows to 7 pins with SDA/SCL reserved and
    unpopulated on rev 0.1; module output reporting is digital, later,
    through the plane MCU. See "Power plane". The bench carrier's 5-pin
@@ -303,6 +319,27 @@ Decisions:
 5. Link to the controller unchanged in principle: isolated I2C, the
    isolator on the plane, its controller side powered from J8 3V3.
    What changes is that only the MCU sits behind the isolator.
+6. Node control moves to the plane (2026-10-23). Each slot carries the
+   node's front-panel signals next to its output connector: PWR and
+   RST contacts through two photoMOS (TLP176AM as on the controller
+   rev C), one power LED sense input (same 47k network as rev C).
+   Driven by MCU GPIO or an MCP23017 on the plane's private bus. The
+   slot is the node's single attachment: one cable per node from the
+   plane, splitting at the node end into the DC input and the
+   front-panel header. The signals are on the plane at the slot, NOT
+   through the brick: the module is a converter and knows nothing
+   about motherboards. The plane MCU executes the primitives (press
+   with duration, LED read, power-cycle sequence with delay and
+   press-if-dark); policy (soft shutdown first, hard cut only when the
+   node hangs, retry limits) stays on the controller. LED versus
+   current cross-checks (LED lit at 0 A, LED lit while OFF) are local
+   flags. Consequence: the controller sheds its node section (8
+   connectors, 16 photoMOS, U14/U15) at the next rev; rev C keeps
+   serving as is until then. A dead plane MCU now takes a frame's
+   control, buttons and LED sense included, with it; service is not
+   affected (default ON). In the FMEA.
+7. Controller supply: 12 V always-on aux output on every plane, see
+   "Controller supply" (decision 8 there).
 
 Safety rules for the MCU (the FMEA checks each):
 
@@ -347,6 +384,14 @@ X2 on the bench carrier mates the first 5 pins and stays as is.
 ON/OFF stays on J1.2 (RUN), driven by the plane front end's enable
 chain, not by J2.
 
+Slot node connector (plane side, per slot, proposal): one housing for
+power and front panel, Mini-Fit Jr 2x4 class (9-13 A per pin): two
+pins +VOUT, two pins GND, PWR_SW, RST_SW, PLED+, one spare. The
+switch returns are the shared GND (the brick output is not isolated,
+the node's GND is the plane's). Fluid compatibility of the housing is
+part of the soak test; the 5-wire node cable of rev C is replaced by
+this one cable.
+
 Plane connector to the controller (controller side of the isolator):
 3V3, GND, SCL, SDA, EXP_INT. EXP_nRESET is not carried (the plane
 must ignore it). Two or three address strap bits on the plane set the
@@ -354,7 +399,9 @@ plane address; proposal 0x30-0x37, 8 planes per controller bus, clear
 of the add-on expanders (0x21-0x27). Topology: each plane has an in
 and an out connector for a daisy chain, or a small star breakout at
 J8; the isolators sit in parallel on the controller-side bus, a few
-mA each from J8 3V3. 0.5 m total per the existing requirement.
+mA each from J8 3V3. 0.5 m total per the existing requirement. Next
+to it the 12 V aux output (2-pin, fused on the plane) for the
+controller's J3.
 
 Register map, first sketch (16-bit registers, little endian, the map
 version is the first thing a controller reads):
@@ -365,13 +412,21 @@ version is the first thing a controller reads):
 - Per slot: status (present, enabled, pgood, OV latched, front end
   fault, retrying), retry count, module class and ID code, V (mV),
   I (mA), P (W x 10), min/max P since last read, module TEMP (0.1 C),
-  energy (J, u64), and the optional module-output V/I when pins 6-7
-  are used.
+  energy (J, u64), the optional module-output V/I when pins 6-7 are
+  used, node LED state (on, off, blinking with period), cross-check
+  flags (LED lit at 0 A, LED lit while OFF, no LED after power-cycle),
+  power-cycle sequence state (idle, off-wait, on-wait, pressing, done,
+  failed).
 - Control: slot enable mask (write 0 = OFF, 1 = ON), clear OV latch
   mask, retry policy (max retries per window, window length, action),
-  stagger delay, clear min/max.
-- EXP_INT: pulled low on any fault, PGOOD change or OV latch; released
-  when the controller reads the global status.
+  stagger delay, clear min/max; per slot: press PWR / press RST with
+  duration (ms, 50-10000, long press = forced off), start power-cycle
+  (off delay, press-if-dark flag, LED timeout), abort sequence.
+- Plane: aux 12 V output voltage and current (if the aux buck's
+  monitor is populated), aux fuse state.
+- EXP_INT: pulled low on any fault, PGOOD change, OV latch, LED state
+  change or sequence completion; released when the controller reads
+  the global status.
 
 Firmware (plane): Rust, embassy-stm32, I2C slave register map toward
 the controller, PMBus master toward the front ends. Update over SWD on
@@ -395,7 +450,13 @@ Open for the plane:
 - STM32 part, I2C slave support in embassy-stm32 for the G0's I2C
   peripheral, bootloader path.
 - Controller side: plane discovery on J8, exposing N planes x M slots
-  in MQTT, Modbus and the HTTPS page.
+  in MQTT, Modbus and the HTTPS page; node control commands routed to
+  the owning plane instead of the local photoMOS.
+- Node connector part (Mini-Fit Jr 2x4 or equivalent, fluid
+  compatible) and the node-end split cable; motherboard front-panel
+  pinout (open item 4 of controller.md moves here).
+- Aux 12 V buck part and its fuse; ideal-diode OR on the controller
+  (next controller rev, or a small cable-side board for rev C).
 
 ### First port module: PM-19V-200W
 
