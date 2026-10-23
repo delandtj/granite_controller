@@ -41,6 +41,9 @@ docs/power-board.md, section "Power plane: PP-48-xS":
   (12-bit telemetry +/-3.5 to 6 %, misses the 2 % requirement, $8.58).
   INA228 is the drop-in upgrade when LCSC has stock. Datasheet
   extracts used for this are not in the repo (scratchpad only).
+- ADR drafted: docs/adr/0001-48v-power-plane.md (Proposed). Review
+  asks at the end of its implementation plan: register map encoding,
+  node connector, STM32G0B1, policy split.
 - Open: MOSFET and shunt for the LM5069 at 15 A, OV latch part, node
   connector and cable, aux buck and OR-ing, plane input/fuse, outline,
   ID table, STM32 part and bootloader, controller-side plane discovery.

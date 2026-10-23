@@ -279,6 +279,10 @@ themselves.
 
 ### Power plane: PP-48-xS (the carrier board)
 
+ADR: docs/adr/0001-48v-power-plane.md (Proposed, 2026-10-23) is the
+decision record for the plane, the slimmed controller and the
+register map; this section stays the component spec.
+
 Discussed and decided 2026-10-23. The board the bricks plug into is
 called the power plane. Three sizes of one design, 2, 4 and 8 slots
 (a 6-slot plane is an 8-slot plane with two slots unpopulated), all
