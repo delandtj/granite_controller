@@ -31,11 +31,20 @@ comment in pcbkit.toml):
   check the mask on the fab preview.
 - 60: `pcbkit prune` ate the +3V3 pad stubs of U103.8 and U203.8 (far
   end free, junction mid-track); 60 puts them back. Run 60 after prune.
-State: DRC 0 unconnected, 0 clearance, 0 dangling; 4 starved_thermal
-warnings (R107.2, U201.5, U102.1, C203.2: one pour spoke, pad is
-connected) and 50 silk items (silk step not run yet). NEXT: `pcbkit
-silk`, connlabels, the LCSC numbers still missing (58 of 174), MOSFET /
-shunt sizing for 15 A, jlcfab.
+Silk and connlabels run (silk: 52 references placed, 122 hidden; labels
+for the 9 connectors, pin legends on J1, J4, X102, X202). pcbkit
+connlabels was fixed for this board (commit in ~/Electronics/pcbkit,
+not pushed): connectors with the pins along y (J1 left edge, J2-J4
+right edge) got all legends on one spot; outline rectangles (the brick
+socket) blocked everything inside them. J2 / J3 pin legends are NOT on
+the board: 0.1 mm short on the left (U4 / U5 isolator silk outlines)
+and the body is 0.9 mm from the right edge. Move J2/J3 or the isolators
+1 mm if the legends are wanted.
+State: DRC 0 unconnected, 0 clearance, 0 dangling, 0 silk overlap; 4
+starved_thermal warnings (R107.2, U201.5, U102.1, C203.2: one pour
+spoke, pad is connected) and 1 silk_edge_clearance (J1's own outline
+at the left edge). NEXT: the LCSC numbers still missing (58 of 174),
+MOSFET / shunt sizing for 15 A, jlcfab.
 
 ## Session 2026-10-23: power plane architecture (docs only)
 
