@@ -36,10 +36,19 @@ for the 9 connectors, pin legends on J1, J4, X102, X202). pcbkit
 connlabels was fixed for this board (commit in ~/Electronics/pcbkit,
 not pushed): connectors with the pins along y (J1 left edge, J2-J4
 right edge) got all legends on one spot; outline rectangles (the brick
-socket) blocked everything inside them. J2 / J3 pin legends are NOT on
-the board: 0.1 mm short on the left (U4 / U5 isolator silk outlines)
-and the body is 0.9 mm from the right edge. Move J2/J3 or the isolators
-1 mm if the legends are wanted.
+socket) blocked everything inside them.
+J2 / J3 moved 1.7 mm inboard (and 0.5 / 0.6 mm up, courtyards: J5 + H2
+above J2, C26 below J3) so their pin legends fit between the body and
+the board edge (plan 70-j2-j3-left.py; a 1 mm move was not enough: INT
+is 2.1 mm wide and connlabels keeps 0.3 mm to the edge; moving them
+towards the isolators only shrinks the gap the legends wanted). The
+pads landed on the F.Cu corridor between the isolators and the old pad
+column, so CTRL_INT / CTRL_SCL / CTRL_SDA / EXP_IRQ / LED_RUN / the
+CTRL_GND via to C26 / the J3.1 feeder were rerouted by hand (comment
+block in the plan). pcbkit handroute got a ('move', ref, (dx, dy)) op
+for it. Legends now on all of J1-J4, X102, X202. J2 / J3 names are the
+bare "J2" / "J3": "J2 CTRL IN" fits nowhere (1.8 mm between the two
+bodies, J5 / H2 above J2, diagonals below J3).
 State: DRC 0 unconnected, 0 clearance, 0 dangling, 0 silk overlap; 4
 starved_thermal warnings (R107.2, U201.5, U102.1, C203.2: one pour
 spoke, pad is connected) and 1 silk_edge_clearance (J1's own outline
