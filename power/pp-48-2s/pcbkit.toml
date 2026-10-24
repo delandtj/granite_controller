@@ -5,7 +5,11 @@
 # kicad-cli sch export netlist --format kicadxml --output pp-48-2s.xml.
 # Board flow: mkboard -> outline -> setrules -> tools/place.py -> gndpour ->
 # tools/power.py (VBUS / slot OUT / NODE pours, group "power") -> krt-route ->
-# gndpour (refill, restitch) -> silk -> connlabels.
+# tools/power.py again -> gndpour (refill, restitch) -> the hand plans in
+# tools/handroute/NN-*.py in order (pcbkit handroute <board> <plan> --save;
+# the opens KRT leaves and the clearance fixes) -> prune (kicad-cli DRC
+# report; 60-* restores two pad stubs prune eats) -> gndpour -> silk ->
+# connlabels.
 
 [project]
 name = "pp-48-2s"

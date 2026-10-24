@@ -2,7 +2,42 @@
 
 Read this first, then docs/controller.md and docs/power-board.md.
 
-## Latest session (2026-10-23): power plane architecture (docs only)
+## Latest session (2026-10-24): PP-48-2S routed, DRC 0 errors
+
+The PC powered off at the end of the 2026-10-23 session (krt-reroute's
+GND pass sat 3 h in a "KiCad-oracle" leg before that). Nothing on disk
+was lost: the scripts write straight to the project. What was lost were
+the pre-route board copies and DRC reports in the session scratchpad
+(/tmp), hence the rule: keep board checkpoints under ~/.cache/pcbkit or
+commit WIP boards before long router runs. Committed as 1311ae7 (WIP
+checkpoint: placed, power copper, gndpour, one KRT pass).
+
+Then the 4 opens KRT left and the 2 clearance hits were closed by hand
+with `pcbkit handroute`; the plans are in power/pp-48-2s/tools/handroute/
+(run in number order after krt-route + power.py + gndpour, see the flow
+comment in pcbkit.toml):
+- 10: +3V3 to C203.1 (KRT's GND F.Cu chain around C203 removed, the pour
+  takes it; via beside C203 down to the +3V3 PWR trunk at y 162.8).
+- 20: /FB2 to C13.1: the +12V tap via sat between C12.2 and C13.1; moved
+  to the right of C13.2 (B.Cu link), FB2 is a straight F.Cu track.
+- 30: /S1_LQ to U103.5: KRT's GND tracks under U103 removed, via between
+  the pad rows, PWR west to the existing S1_LQ PWR run at x 133.8.
+- 40: S1_PGD diagonal shifted 0.1 mm east of the S1_OUT corner (0.149 ->
+  0.22 mm).
+- 50: /S1_ID to U3.11 (MCU): OSC_OUT's via moved up 0.5 mm, S1_ID via at
+  the pad's inner end under the LQFP body (0.12 mm from the pad, tent
+  it), PWR down x 226.1 and west along the empty y 133.3 lane to the
+  X102.3 via. NOTE: the via sits under the MCU body; fine for JLC, but
+  check the mask on the fab preview.
+- 60: `pcbkit prune` ate the +3V3 pad stubs of U103.8 and U203.8 (far
+  end free, junction mid-track); 60 puts them back. Run 60 after prune.
+State: DRC 0 unconnected, 0 clearance, 0 dangling; 4 starved_thermal
+warnings (R107.2, U201.5, U102.1, C203.2: one pour spoke, pad is
+connected) and 50 silk items (silk step not run yet). NEXT: `pcbkit
+silk`, connlabels, the LCSC numbers still missing (58 of 174), MOSFET /
+shunt sizing for 15 A, jlcfab.
+
+## Session 2026-10-23: power plane architecture (docs only)
 
 Discussion only, no hardware or tools touched. Written into
 docs/power-board.md, section "Power plane: PP-48-xS":
