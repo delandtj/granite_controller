@@ -22,8 +22,9 @@ identical. N=8 generates and passes ERC except S5..S8 ID/TEMP (the
 MCU pin table has ADC inputs for four slots; pre-existing).
 Built by four opus subagents (engine, checker, relink, blocks) under
 the coordinator; the ADR's "Built as" section lists the deviations.
-The block authors found things in the pin tables that look WRONG and
-were NOT changed (the ADR's job was an identical netlist):
+The block authors found things in the pin tables that looked wrong.
+Items 1-3 below are FIXED (tables, schematic, board; commit "four
+fixes"), 4 was checked and left, 5 is open:
 1. Every LED is reversed: Device:LED pin 1 = K, pin 2 = A, but D2 D3
    D4 D102 D103 D202 D203 have the resistor node on pin 1 and GND on
    pin 2 (anode to GND). None will light. Fix = swap the two nets per
@@ -41,12 +42,30 @@ were NOT changed (the ADR's job was an identical netlist):
 4. Brick X1 SENSE+ / SENSE- are NC; many DOSA bricks want remote
    sense tied to the output. Check PM-19V-200W.
 5. The 8-slot plane has no MCU ADC pins for slots 5-8 ID / TEMP.
+Fix status: 1 done (nets swapped, LEDnn_K -> LEDnn_A, the seven
+footprints turned 180 degrees, plan 80). 2 done: TI SNVSAU4D Table 6-1
+/ Figure 7-1 confirm RA SW -> node, CA node -> VOUT, CB node -> FB;
+C5/C6 and C12/C13 swapped places on the board and rewired (plans 81,
+82). 3 done: Sn_LCLR now ends on the Q104/Q204 gate + R112/R212, the
+latch node is /Slot n/CLRN (plans 81, 83). 4 checked: the PM-19V-200W
+module leaves brick pins 5-7 unconnected (its schematic and
+docs/power-board.md line 592), so X1.5 / X1.7 stay NC. DRC after all
+of it: the same 5 warnings, 0 unconnected; schcheck: schematic and
+pp-48-2s.xml equivalent; identity relink: no change.
+Value notes from the LM5164 datasheet check (not changed): the 3V3
+buck's CA 1.5n is 5 % under the Eq 24 minimum of 1.58n (1.8n or 2.2n
+would do; ripple at FB about 22 mV); CB 100n X7R meets the ">=" but
+TI designs CB for ~75 us settling with C0G (56 pF at 12 V, ~330 pF at
+3V3): revisit CB. CA parts have no LCSC number yet.
+tools/syncfields.py fails on KiCad 10 (FOOTPRINT.GetFieldByName is
+gone); the board's Value / LCSC / Description fields are therefore not
+synced from the schematic (kicad-cli drc --schematic-parity lists 104
+field mismatches, no net mismatches). Fix the script before jlcfab.
 Also open: the slot sheet keeps three unavoidable wire crossings
 (OUT to the INA238 over SENSE / GATE), and the link sheet four
 (J2 -> J3 chain). Cosmetic.
-NEXT: decide 1-4 (each is a table edit + regenerate + schcheck +
-relink + a small board fix), then the LCSC numbers (58 of 174),
-MOSFET / shunt sizing for 15 A, jlcfab.
+NEXT: syncfields for KiCad 10, CA / CB values, the LCSC numbers (58
+of 174), MOSFET / shunt sizing for 15 A, jlcfab.
 
 ## Session 2026-10-24 (afternoon): J2/J3 move, silk, connector labels: PP-48-2S routed, DRC 0 errors
 

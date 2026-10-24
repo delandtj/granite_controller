@@ -5,8 +5,8 @@ Parts and pin -> net tables copied from gensch.py (lm5164() and the 12 V
 aux parts after it). Each buck is drawn the way the LM5164 datasheet
 draws it: VIN caps on the VIN rail, EN/UVLO divider and RON on the left,
 BST cap arching over to SW, inductor to the output rail on the right,
-ripple injection RA / CA under the SW node, feedback divider and CB under
-the output, output caps to GND. VBUS, GND, +3V3, +12V are power symbols;
+type 3 ripple injection under the inductor (RA SW -> INJ, CA INJ -> VOUT,
+CB INJ -> FB), feedback divider under the output, output caps to GND. VBUS, GND, +3V3, +12V are power symbols;
 V12_OUT is a local wire with a PWR_FLAG; AUX_SNS leaves on the right.
 """
 from sch.draw import Block, R0402, R0603, R0805, C0402, C0603, C1210, LED0603
@@ -53,28 +53,31 @@ def lm5164(b, gx, gy, u, vout, nets, rron, l, rfb1, cout, ca, rsuffix, cbase, lc
     b.wire(sw, [P(xbst, -2), (cc(0), "2")])
 
     # ---------------------------------------------------------- ripple injection and feedback
-    xca, xd, xcbk = 27, 35, 44
+    # type 3 as the datasheet draws it (SNVSAU4D Figure 7-1): RA and CA in series across
+    # the inductor (SW -> INJ -> VOUT), CB from the INJ node down to FB
+    xinj, xca, xd = 29, 33, 40
     b.sym(rr(5), "Device:R", "453k", R0402, {"1": nets["sw"], "2": nets["inj"]}, at=P(21, 4), rot=90,
           desc="ripple injection RA (type 3)")
-    b.sym(cc(1), "Device:C", ca, C0402, {"1": nets["inj"], "2": nets["fb"]}, at=P(xca, 10), desc="ripple injection CA")
+    b.sym(cc(1), "Device:C", ca, C0402, {"1": nets["inj"], "2": nets["vout"]}, at=P(xca, 4), rot=90,
+          desc="ripple injection CA")
+    b.sym(cc(2), "Device:C", "100n", C0402, {"1": nets["inj"], "2": nets["fb"]}, at=P(xinj, 11),
+          desc="ripple injection CB (DC block)")
     b.sym(rr(3), "Device:R", rfb1, R0402, {"1": nets["vout"], "2": nets["fb"]}, at=P(xd, 9), desc="feedback top")
     b.sym(rr(4), "Device:R", "49.9k", R0402, {"1": nets["fb"], "2": "GND"}, at=P(xd, 20), desc="feedback bottom, VFB 1.2 V")
-    b.sym(cc(2), "Device:C", "100n", C0402, {"1": nets["fb"], "2": nets["vout"]}, at=P(xcbk, 9), rot=180,
-          desc="ripple injection CB (DC block)")
     b.wire(sw, [P(xra, -2), (rr(5), "1")])
-    b.wire(inj, [(rr(5), "2"), (cc(1), "1")])
+    b.wire(inj, [(rr(5), "2"), P(xinj, 4), (cc(2), "1")])
+    b.wire(inj, [P(xinj, 4), (cc(1), "1")])
     yfb = 15
-    b.wire(fb, [(u, "5"), P(12, yfb), P(xcbk, yfb), (cc(2), "1")])
-    b.wire(fb, [P(xca, yfb), (cc(1), "2")])
-    b.wire(fb, [P(xd, yfb), (rr(3), "2")])
+    b.wire(fb, [(u, "5"), P(12, yfb), P(xd, yfb), (rr(3), "2")])
+    b.wire(fb, [P(xinj, yfb), (cc(2), "2")])
     b.wire(fb, [P(xd, yfb), (rr(4), "1")])
 
     # ---------------------------------------------------------- output
     xo1, xo2 = 52, 63
     b.sym(cc(5), "Device:C", cout, C1210, {"1": nets["vout"], "2": "GND"}, at=P(xo1, 4), desc="output X7R")
     b.sym(cc(6), "Device:C", cout, C1210, {"1": nets["vout"], "2": "GND"}, at=P(xo2, 4), desc="output X7R")
-    rail = [P(29, -2), (lref, "2"), P(29, -2)]
-    for x, e in ((xd, (rr(3), "1")), (xcbk, (cc(2), "2")), (xo1, (cc(5), "1")), (xo2, (cc(6), "1"))):
+    rail = [P(29, -2), (lref, "2"), P(29, -2), P(37, -2), P(37, 4), (cc(1), "2"), P(37, 4), P(37, -2)]   # CA to VOUT
+    for x, e in ((xd, (rr(3), "1")), (xo1, (cc(5), "1")), (xo2, (cc(6), "1"))):
         rail += [P(x, -2), e, P(x, -2)]
     return P, rail
 
@@ -86,11 +89,12 @@ def block(N=2):
     # 3V3 buck U1: LM5164, 200 kHz, type 3 ripple injection
     P, rail = lm5164(b, *G1, "U1", "3.3 V", dict(en="EN1", ron="RON1", fb="FB1", bst="BST1", sw="SW1", inj="INJ1", vout="+3V3"),
                      "41.2k", "33u", "86.6k", "22u 10V", "1.5n", 3, 4, lcsc_l="C840528")
-    b.sym("R18", "Device:R", "1k", R0402, {"1": "+3V3", "2": "LED33_K"}, at=P(75, 3), desc="3V3 LED")
-    b.sym("D3", "Device:LED", "GREEN 3V3", LED0603, {"1": "LED33_K", "2": "GND"}, at=P(75, 12), rot=270, fields={"LCSC": "C2297"})
+    b.sym("R18", "Device:R", "1k", R0402, {"1": "+3V3", "2": "LED33_A"}, at=P(75, 3), desc="3V3 LED")
+    b.sym("D3", "Device:LED", "GREEN 3V3", LED0603, {"1": "GND", "2": "LED33_A"}, at=P(75, 12), rot=90, fields={"LCSC": "C2297"})
     b.wire("+3V3", rail + [P(75, -2), ("R18", "1")])
-    b.wire("LED33_K", [("R18", "2"), ("D3", "1")])
-    b.name("LED33_K", at=P(75, 8))
+    b.wire("LED33_A", [("R18", "2"), ("D3", "2")])
+    b.wire("GND", [P(75, 17), ("D3", "1")])          # GND below the LED arrows
+    b.name("LED33_A", at=P(75, 8))
     b.text("3V3 BUCK  U1 LM5164, 200 kHz", P(-34, -30))
 
     # 12 V aux buck U2, fuse, connector, LED, aux sense
@@ -102,14 +106,15 @@ def block(N=2):
           {"1": "V12_OUT", "2": "GND"}, at=P(102, -2), fields={"LCSC": "C131337"}, desc="always-on 12 V for the controller J3")
     b.sym("R15", "Device:R", "100k", R0402, {"1": "+12V", "2": "AUX_SNS"}, at=P(110, 2), desc="aux sense divider top")
     b.sym("R16", "Device:R", "27k", R0402, {"1": "AUX_SNS", "2": "GND"}, at=P(110, 10), desc="12 V -> 2.55 V at the ADC")
-    b.sym("R17", "Device:R", "4.7k", R0603, {"1": "V12_OUT", "2": "LED12_K"}, at=P(83, 3), desc="12V LED")
-    b.sym("D2", "Device:LED", "GREEN 12V", LED0603, {"1": "LED12_K", "2": "GND"}, at=P(83, 12), rot=270, fields={"LCSC": "C2297"})
+    b.sym("R17", "Device:R", "4.7k", R0603, {"1": "V12_OUT", "2": "LED12_A"}, at=P(83, 3), desc="12V LED")
+    b.sym("D2", "Device:LED", "GREEN 12V", LED0603, {"1": "GND", "2": "LED12_A"}, at=P(83, 12), rot=90, fields={"LCSC": "C2297"})
     b.wire("+12V", rail + [("F2", "1")])
     b.wire("V12_OUT", [("F2", "2"), P(79, -2), P(83, -2), ("R17", "1"), P(83, -2), ("J4", "1")])
     b.flag("V12_OUT", P(79, -2))
     b.wire("GND", [P(93, 4), ("J4", "2")])
-    b.wire("LED12_K", [("R17", "2"), ("D2", "1")])
-    b.name("LED12_K", at=P(83, 8))
+    b.wire("LED12_A", [("R17", "2"), ("D2", "2")])
+    b.wire("GND", [P(83, 17), ("D2", "1")])
+    b.name("LED12_A", at=P(83, 8))
     b.wire("AUX_SNS", [("R15", "2"), ("R16", "1")])
     b.wire("AUX_SNS", [P(110, 6), P(118, 6)])
     b.port("AUX_SNS", "output", side="right", pos=P(118, 6))

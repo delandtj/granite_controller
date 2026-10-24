@@ -2,7 +2,7 @@
 <export version="E">
   <design>
     <source>/home/delandtj/Granite/Electronics/granite_controller/power/pp-48-2s/pp-48-2s.kicad_sch</source>
-    <date>2026-10-24T18:03:06</date>
+    <date>2026-10-24T18:32:40</date>
     <tool>Eeschema 10.0.7</tool>
     <sheet number="1" name="/" tstamps="/">
       <title_block>
@@ -2889,12 +2889,12 @@
     <comp ref="Q104">
       <value>2N7002</value>
       <footprint>Package_TO_SOT_SMD:SOT-23</footprint>
-      <description>MCU clears the latch (drive high)</description>
+      <description>MCU clears the latch: drive high -&gt; Q4 pulls /CLR low</description>
       <fields>
         <field name="LCSC">C8545</field>
         <field name="Footprint">Package_TO_SOT_SMD:SOT-23</field>
         <field name="Datasheet"/>
-        <field name="Description">MCU clears the latch (drive high)</field>
+        <field name="Description">MCU clears the latch: drive high -&gt; Q4 pulls /CLR low</field>
       </fields>
       <libsource lib="Transistor_FET" part="2N7002" description="0.115A Id, 60V Vds, N-Channel MOSFET, SOT-23"/>
       <property name="LCSC" value="C8545"/>
@@ -3211,11 +3211,12 @@
     <comp ref="R112">
       <value>100k</value>
       <footprint>Resistor_SMD:R_0402_1005Metric</footprint>
+      <description>Q4 gate pull-down: MCU dead = latch not cleared</description>
       <fields>
         <field name="LCSC">C25741</field>
         <field name="Footprint">Resistor_SMD:R_0402_1005Metric</field>
         <field name="Datasheet"/>
-        <field name="Description"/>
+        <field name="Description">Q4 gate pull-down: MCU dead = latch not cleared</field>
       </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
       <property name="LCSC" value="C25741"/>
@@ -4174,12 +4175,12 @@
     <comp ref="Q204">
       <value>2N7002</value>
       <footprint>Package_TO_SOT_SMD:SOT-23</footprint>
-      <description>MCU clears the latch (drive high)</description>
+      <description>MCU clears the latch: drive high -&gt; Q4 pulls /CLR low</description>
       <fields>
         <field name="LCSC">C8545</field>
         <field name="Footprint">Package_TO_SOT_SMD:SOT-23</field>
         <field name="Datasheet"/>
-        <field name="Description">MCU clears the latch (drive high)</field>
+        <field name="Description">MCU clears the latch: drive high -&gt; Q4 pulls /CLR low</field>
       </fields>
       <libsource lib="Transistor_FET" part="2N7002" description="0.115A Id, 60V Vds, N-Channel MOSFET, SOT-23"/>
       <property name="LCSC" value="C8545"/>
@@ -4496,11 +4497,12 @@
     <comp ref="R212">
       <value>100k</value>
       <footprint>Resistor_SMD:R_0402_1005Metric</footprint>
+      <description>Q4 gate pull-down: MCU dead = latch not cleared</description>
       <fields>
         <field name="LCSC">C25741</field>
         <field name="Footprint">Resistor_SMD:R_0402_1005Metric</field>
         <field name="Datasheet"/>
-        <field name="Description"/>
+        <field name="Description">Q4 gate pull-down: MCU dead = latch not cleared</field>
       </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
       <property name="LCSC" value="C25741"/>
@@ -5728,7 +5730,7 @@
       <node ref="C25" pin="1" pintype="passive"/>
       <node ref="C27" pin="1" pintype="passive"/>
       <node ref="C28" pin="1" pintype="passive"/>
-      <node ref="C6" pin="2" pintype="passive"/>
+      <node ref="C5" pin="2" pintype="passive"/>
       <node ref="C9" pin="1" pintype="passive"/>
       <node ref="J5" pin="1" pinfunction="VCC_1" pintype="power_in"/>
       <node ref="L1" pin="2" pinfunction="2_2" pintype="passive"/>
@@ -5770,7 +5772,7 @@
       <node ref="U6" pin="9" pinfunction="V_{DD}_9" pintype="power_in"/>
     </net>
     <net code="2" name="+12V" class="Default">
-      <node ref="C13" pin="2" pintype="passive"/>
+      <node ref="C12" pin="2" pintype="passive"/>
       <node ref="C16" pin="1" pintype="passive"/>
       <node ref="C17" pin="1" pintype="passive"/>
       <node ref="F2" pin="1" pintype="passive"/>
@@ -5802,33 +5804,33 @@
       <node ref="U2" pin="3" pinfunction="EN/UVLO_3" pintype="input"/>
     </net>
     <net code="8" name="/Bucks/FB1" class="Default">
-      <node ref="C5" pin="2" pintype="passive"/>
-      <node ref="C6" pin="1" pintype="passive"/>
+      <node ref="C6" pin="2" pintype="passive"/>
       <node ref="R6" pin="2" pintype="passive"/>
       <node ref="R7" pin="1" pintype="passive"/>
       <node ref="U1" pin="5" pinfunction="FB_5" pintype="input"/>
     </net>
     <net code="9" name="/Bucks/FB2" class="Default">
-      <node ref="C12" pin="2" pintype="passive"/>
-      <node ref="C13" pin="1" pintype="passive"/>
+      <node ref="C13" pin="2" pintype="passive"/>
       <node ref="R12" pin="2" pintype="passive"/>
       <node ref="R13" pin="1" pintype="passive"/>
       <node ref="U2" pin="5" pinfunction="FB_5" pintype="input"/>
     </net>
     <net code="10" name="/Bucks/INJ1" class="Default">
       <node ref="C5" pin="1" pintype="passive"/>
+      <node ref="C6" pin="1" pintype="passive"/>
       <node ref="R8" pin="2" pintype="passive"/>
     </net>
     <net code="11" name="/Bucks/INJ2" class="Default">
       <node ref="C12" pin="1" pintype="passive"/>
+      <node ref="C13" pin="1" pintype="passive"/>
       <node ref="R14" pin="2" pintype="passive"/>
     </net>
-    <net code="12" name="/Bucks/LED12_K" class="Default">
-      <node ref="D2" pin="1" pinfunction="K_1" pintype="passive"/>
+    <net code="12" name="/Bucks/LED12_A" class="Default">
+      <node ref="D2" pin="2" pinfunction="A_2" pintype="passive"/>
       <node ref="R17" pin="2" pintype="passive"/>
     </net>
-    <net code="13" name="/Bucks/LED33_K" class="Default">
-      <node ref="D3" pin="1" pinfunction="K_1" pintype="passive"/>
+    <net code="13" name="/Bucks/LED33_A" class="Default">
+      <node ref="D3" pin="2" pinfunction="A_2" pintype="passive"/>
       <node ref="R18" pin="2" pintype="passive"/>
     </net>
     <net code="14" name="/Bucks/RON1" class="Default">
@@ -5906,8 +5908,8 @@
       <node ref="R22" pin="2" pintype="passive"/>
       <node ref="U3" pin="3" pinfunction="PC15_3" pintype="bidirectional"/>
     </net>
-    <net code="29" name="/MCU/LEDRUN_K" class="Default">
-      <node ref="D4" pin="1" pinfunction="K_1" pintype="passive"/>
+    <net code="29" name="/MCU/LEDRUN_A" class="Default">
+      <node ref="D4" pin="2" pinfunction="A_2" pintype="passive"/>
       <node ref="R19" pin="2" pintype="passive"/>
     </net>
     <net code="30" name="/MCU/LED_RUN" class="Default">
@@ -5944,10 +5946,8 @@
       <node ref="X102" pin="3" pinfunction="Pin_3_3" pintype="passive"/>
     </net>
     <net code="37" name="/S1_LCLR" class="Default">
-      <node ref="C105" pin="1" pintype="passive"/>
-      <node ref="Q104" pin="3" pinfunction="D_3" pintype="passive"/>
-      <node ref="R111" pin="2" pintype="passive"/>
-      <node ref="U103" pin="6" pinfunction="~{CLR}_6" pintype="input"/>
+      <node ref="Q104" pin="1" pinfunction="G_1" pintype="input"/>
+      <node ref="R112" pin="1" pintype="passive"/>
       <node ref="U3" pin="31" pinfunction="PC7_31" pintype="bidirectional"/>
     </net>
     <net code="38" name="/S1_LED" class="Default">
@@ -5997,10 +5997,8 @@
       <node ref="X202" pin="3" pinfunction="Pin_3_3" pintype="passive"/>
     </net>
     <net code="47" name="/S2_LCLR" class="Default">
-      <node ref="C205" pin="1" pintype="passive"/>
-      <node ref="Q204" pin="3" pinfunction="D_3" pintype="passive"/>
-      <node ref="R211" pin="2" pintype="passive"/>
-      <node ref="U203" pin="6" pinfunction="~{CLR}_6" pintype="input"/>
+      <node ref="Q204" pin="1" pinfunction="G_1" pintype="input"/>
+      <node ref="R212" pin="1" pintype="passive"/>
       <node ref="U3" pin="39" pinfunction="PD1_39" pintype="bidirectional"/>
     </net>
     <net code="48" name="/S2_LED" class="Default">
@@ -6071,16 +6069,18 @@
       <node ref="X102" pin="6" pinfunction="Pin_6_6" pintype="passive"/>
       <node ref="X202" pin="6" pinfunction="Pin_6_6" pintype="passive"/>
     </net>
-    <net code="60" name="/Slot 1/GATE" class="Default">
+    <net code="60" name="/Slot 1/CLRN" class="Default">
+      <node ref="C105" pin="1" pintype="passive"/>
+      <node ref="Q104" pin="3" pinfunction="D_3" pintype="passive"/>
+      <node ref="R111" pin="2" pintype="passive"/>
+      <node ref="U103" pin="6" pinfunction="~{CLR}_6" pintype="input"/>
+    </net>
+    <net code="61" name="/Slot 1/GATE" class="Default">
       <node ref="Q101" pin="4" pinfunction="G_4" pintype="input"/>
       <node ref="U101" pin="10" pinfunction="GATE_10" pintype="output"/>
     </net>
-    <net code="61" name="/Slot 1/LCLR_D" class="Default">
-      <node ref="Q104" pin="1" pinfunction="G_1" pintype="input"/>
-      <node ref="R112" pin="1" pintype="passive"/>
-    </net>
-    <net code="62" name="/Slot 1/NL_K" class="Default">
-      <node ref="D103" pin="1" pinfunction="K_1" pintype="passive"/>
+    <net code="62" name="/Slot 1/NL_A" class="Default">
+      <node ref="D103" pin="2" pinfunction="A_2" pintype="passive"/>
       <node ref="R118" pin="2" pintype="passive"/>
     </net>
     <net code="63" name="/Slot 1/NODE" class="Default">
@@ -6090,8 +6090,8 @@
       <node ref="R118" pin="1" pintype="passive"/>
       <node ref="X101" pin="8" pinfunction="+VOUT_8" pintype="power_out"/>
     </net>
-    <net code="64" name="/Slot 1/ONL_K" class="Default">
-      <node ref="D102" pin="1" pinfunction="K_1" pintype="passive"/>
+    <net code="64" name="/Slot 1/ONL_A" class="Default">
+      <node ref="D102" pin="2" pinfunction="A_2" pintype="passive"/>
       <node ref="R117" pin="2" pintype="passive"/>
     </net>
     <net code="65" name="/Slot 1/OUT" class="Default">
@@ -6165,16 +6165,18 @@
       <node ref="R104" pin="1" pintype="passive"/>
       <node ref="U101" pin="3" pinfunction="UVLO_3" pintype="input"/>
     </net>
-    <net code="79" name="/Slot 2/GATE" class="Default">
+    <net code="79" name="/Slot 2/CLRN" class="Default">
+      <node ref="C205" pin="1" pintype="passive"/>
+      <node ref="Q204" pin="3" pinfunction="D_3" pintype="passive"/>
+      <node ref="R211" pin="2" pintype="passive"/>
+      <node ref="U203" pin="6" pinfunction="~{CLR}_6" pintype="input"/>
+    </net>
+    <net code="80" name="/Slot 2/GATE" class="Default">
       <node ref="Q201" pin="4" pinfunction="G_4" pintype="input"/>
       <node ref="U201" pin="10" pinfunction="GATE_10" pintype="output"/>
     </net>
-    <net code="80" name="/Slot 2/LCLR_D" class="Default">
-      <node ref="Q204" pin="1" pinfunction="G_1" pintype="input"/>
-      <node ref="R212" pin="1" pintype="passive"/>
-    </net>
-    <net code="81" name="/Slot 2/NL_K" class="Default">
-      <node ref="D203" pin="1" pinfunction="K_1" pintype="passive"/>
+    <net code="81" name="/Slot 2/NL_A" class="Default">
+      <node ref="D203" pin="2" pinfunction="A_2" pintype="passive"/>
       <node ref="R218" pin="2" pintype="passive"/>
     </net>
     <net code="82" name="/Slot 2/NODE" class="Default">
@@ -6184,8 +6186,8 @@
       <node ref="R218" pin="1" pintype="passive"/>
       <node ref="X201" pin="8" pinfunction="+VOUT_8" pintype="power_out"/>
     </net>
-    <net code="83" name="/Slot 2/ONL_K" class="Default">
-      <node ref="D202" pin="1" pinfunction="K_1" pintype="passive"/>
+    <net code="83" name="/Slot 2/ONL_A" class="Default">
+      <node ref="D202" pin="2" pinfunction="A_2" pintype="passive"/>
       <node ref="R217" pin="2" pintype="passive"/>
     </net>
     <net code="84" name="/Slot 2/OUT" class="Default">
@@ -6325,14 +6327,14 @@
       <node ref="C9" pin="2" pintype="passive"/>
       <node ref="D1" pin="1" pinfunction="A1_1" pintype="passive"/>
       <node ref="D101" pin="1" pinfunction="A1_1" pintype="passive"/>
-      <node ref="D102" pin="2" pinfunction="A_2" pintype="passive"/>
-      <node ref="D103" pin="2" pinfunction="A_2" pintype="passive"/>
-      <node ref="D2" pin="2" pinfunction="A_2" pintype="passive"/>
+      <node ref="D102" pin="1" pinfunction="K_1" pintype="passive"/>
+      <node ref="D103" pin="1" pinfunction="K_1" pintype="passive"/>
+      <node ref="D2" pin="1" pinfunction="K_1" pintype="passive"/>
       <node ref="D201" pin="1" pinfunction="A1_1" pintype="passive"/>
-      <node ref="D202" pin="2" pinfunction="A_2" pintype="passive"/>
-      <node ref="D203" pin="2" pinfunction="A_2" pintype="passive"/>
-      <node ref="D3" pin="2" pinfunction="A_2" pintype="passive"/>
-      <node ref="D4" pin="2" pinfunction="A_2" pintype="passive"/>
+      <node ref="D202" pin="1" pinfunction="K_1" pintype="passive"/>
+      <node ref="D203" pin="1" pinfunction="K_1" pintype="passive"/>
+      <node ref="D3" pin="1" pinfunction="K_1" pintype="passive"/>
+      <node ref="D4" pin="1" pinfunction="K_1" pintype="passive"/>
       <node ref="J1" pin="2" pinfunction="Pin_2_2" pintype="passive"/>
       <node ref="J101" pin="3" pinfunction="Pin_3_3" pintype="passive"/>
       <node ref="J101" pin="4" pinfunction="Pin_4_4" pintype="passive"/>

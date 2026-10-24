@@ -13,7 +13,11 @@
 # the opens KRT leaves and the clearance fixes) -> prune (kicad-cli DRC
 # report; 60-* restores two pad stubs prune eats; 70-* moves J2 / J3 for
 # their pin legends and reroutes the corridor) -> gndpour -> silk ->
-# connlabels.
+# connlabels. The 2026-10-24 schematic fixes (LED polarity, ripple caps,
+# latch clear) were brought to the board as: 80-* (LEDs turned), 81-* (cuts
+# on the old nets), pcbkit relink --allow-shorts with the new xml, 82-*,
+# 83-*, gndpour, silk, connlabels. gndpour / silk / connlabels read
+# pcbkit.toml from beside the board: run them in the project dir.
 
 [project]
 name = "pp-48-2s"

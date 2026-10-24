@@ -137,10 +137,11 @@ def block(N=2):
 
     # ---------------------------------------------------------- run LED (right)
     yl = pin("47")[1]
-    b.sym("R19", "Device:R", "1k", R0402, {"1": "LED_RUN", "2": "LEDRUN_K"}, at=(XR + 11 * G, yl), rot=90,
+    b.sym("R19", "Device:R", "1k", R0402, {"1": "LED_RUN", "2": "LEDRUN_A"}, at=(XR + 11 * G, yl), rot=90,
           desc="firmware heartbeat LED")
-    b.sym("D4", "Device:LED", "GREEN RUN", LED0603, {"1": "LEDRUN_K", "2": "GND"}, at=(XR + 27 * G, yl),
+    b.sym("D4", "Device:LED", "GREEN RUN", LED0603, {"1": "GND", "2": "LEDRUN_A"}, at=(XR + 27 * G, yl), rot=180,
           fields={"LCSC": "C2297"})
+    b.wire("GND", [(XR + 33 * G, yl), ("D4", "1")])     # GND clear of the LED arrows
     xled = XR + 33 * G
 
     # ---------------------------------------------------------- bus ports and pull-ups (right)

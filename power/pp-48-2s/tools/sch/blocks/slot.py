@@ -91,15 +91,15 @@ def block(N=2):
         fields={"LCSC": "C8545"}, desc="OV latch output cuts the slot")
     R(10, "100k", R0402, {"1": "LQ", "2": "GND"}, (98, 101))
     sym("U3", "74xGxx:74AUC1G74", "74LVC1G74", "Package_SO:VSSOP-8_2.3x2mm_P0.5mm",
-        {"1": "GND", "2": "GND", "3": "NC", "4": "GND", "5": "LQ", "6": "LCLR", "7": "OVK", "8": "+3V3"},
+        {"1": "GND", "2": "GND", "3": "NC", "4": "GND", "5": "LQ", "6": "CLRN", "7": "OVK", "8": "+3V3"},
         (112, 100), mirror="y", fields={"LCSC": "C70285"},
         desc="OV latch: /PRE = module OV_KILL (low = set), /CLR = RC power-on clear + MCU; Q holds UVLO low until cleared")
     C(4, "100n", C0402, {"1": "+3V3", "2": "GND"}, (104, 84), desc="latch VCC")
-    R(11, "100k", R0402, {"1": "+3V3", "2": "LCLR"}, (128, 113), desc="power-on clear RC (10 ms)")
-    C(5, "100n", C0402, {"1": "LCLR", "2": "GND"}, (108, 120))
-    sym("Q4", FET, "2N7002", SOT23, {"1": "LCLR_D", "2": "GND", "3": "LCLR"}, (132, 124),
-        fields={"LCSC": "C8545"}, desc="MCU clears the latch (drive high)")
-    R(12, "100k", R0402, {"1": "LCLR_D", "2": "GND"}, (120, 129))
+    R(11, "100k", R0402, {"1": "+3V3", "2": "CLRN"}, (128, 111), desc="power-on clear RC (10 ms)")
+    C(5, "100n", C0402, {"1": "CLRN", "2": "GND"}, (122, 118))
+    sym("Q4", FET, "2N7002", SOT23, {"1": "LCLR", "2": "GND", "3": "CLRN"}, (132, 127),
+        fields={"LCSC": "C8545"}, desc="MCU clears the latch: drive high -> Q4 pulls /CLR low")
+    R(12, "100k", R0402, {"1": "LCLR", "2": "GND"}, (118, 131), desc="Q4 gate pull-down: MCU dead = latch not cleared")
 
     # ========================================================== brick socket and its J2 mate
     sym("X1", "pp:PM_Brick_Socket", "PM-19V-200W", "pp:Brick_Eighth_DOSA_Plane",
@@ -115,10 +115,10 @@ def block(N=2):
     R(16, "10k", R0402, {"1": "+3V3", "2": "TEMP"}, (140, 93), desc="NTC divider top")
     C(7, "100n", C0402, {"1": "TEMP", "2": "GND"}, (140, 103))
     C(8, "2.2u 50V", C1210, {"1": "NODE", "2": "GND"}, (192, 38), desc="node output, cable side")
-    R(17, "47k", R1206, {"1": "OUT", "2": "ONL_K"}, (134, 38), desc="slot ON LED from 54 V (1.1 mA, 65 mW)")
-    sym("D2", "Device:LED", "GREEN ON", LED0603, {"1": "ONL_K", "2": "GND"}, (134, 47), rot=270, fields={"LCSC": "C2297"})
-    R(18, "10k", R0603, {"1": "NODE", "2": "NL_K"}, (204, 38), desc="node 19 V LED")
-    sym("D3", "Device:LED", "GREEN NODE", LED0603, {"1": "NL_K", "2": "GND"}, (204, 47), rot=270, fields={"LCSC": "C2297"})
+    R(17, "47k", R1206, {"1": "OUT", "2": "ONL_A"}, (134, 38), desc="slot ON LED from 54 V (1.1 mA, 65 mW)")
+    sym("D2", "Device:LED", "GREEN ON", LED0603, {"1": "GND", "2": "ONL_A"}, (134, 47), rot=90, fields={"LCSC": "C2297"})
+    R(18, "10k", R0603, {"1": "NODE", "2": "NL_A"}, (204, 37), desc="node 19 V LED")
+    sym("D3", "Device:LED", "GREEN NODE", LED0603, {"1": "GND", "2": "NL_A"}, (204, 46), rot=90, fields={"LCSC": "C2297"})
 
     # ========================================================== node connector and front panel
     sym("J1", "Connector_Generic:Conn_02x04_Odd_Even", "NODE", "Connector_Molex:Molex_Mini-Fit_Jr_5566-08A_2x04_P4.20mm_Vertical",
@@ -153,15 +153,17 @@ def block(N=2):
     for x, ref, pin in ((112, "D1", "2"), (122, "C2", "1"), (134, "R17", "1")):
         wire("OUT", (x, 32), (ref, pin))
     b.flag("OUT", P(108, 32))
-    wire("ONL_K", ("R17", "2"), ("D2", "1"))
-    name("ONL_K", (134, 43))
+    wire("ONL_A", ("R17", "2"), ("D2", "2"))
+    name("ONL_A", (134, 43))
+    wire("GND", (134, 52), ("D2", "1"))                             # GND below the LED arrows
     wire("NODE", ("X1", "8"), ("J1", "1"))
     wire("NODE", (220, 32), (220, 28), (234, 28), ("J1", "2"))
     for x, ref in ((192, "C8"), (204, "R18")):
         wire("NODE", (x, 32), (ref, "1"))
     # no PWR_FLAG on NODE: X1.8 (+VOUT) is a power output and drives it (a flag would be a power-output conflict)
-    wire("NL_K", ("R18", "2"), ("D3", "1"))
-    name("NL_K", (204, 43))
+    wire("NL_A", ("R18", "2"), ("D3", "2"))
+    name("NL_A", (204, 42))
+    wire("GND", (204, 50), ("D3", "1"))
 
     # ========================================================== LM5069 pins
     wire("OVLO", ("U1", "4"), ("R5", "2"), ("R6", "1"))
@@ -196,11 +198,12 @@ def block(N=2):
     port("LQ", "output", "left", (90, 104))
     wire("GND", (100, 84), ("Q3", "2"))
     wire("GND", (124, 108), ("U3", "1"), ("U3", "2"))
-    wire("LCLR", ("U3", "6"), (114, 116), ("R11", "2"))
-    wire("LCLR", (128, 116), ("Q4", "3"))
-    wire("LCLR", (114, 116), (108, 116), ("C5", "1"))
-    port("LCLR", "input", "left", (102, 116))
-    wire("LCLR_D", ("Q4", "1"), ("R12", "1"))
+    wire("CLRN", ("U3", "6"), (114, 114), ("R11", "2"))            # latch /CLR node
+    wire("CLRN", (128, 114), ("Q4", "3"))
+    wire("CLRN", (122, 114), ("C5", "1"))
+    wire("LCLR", ("Q4", "1"), (118, 127), ("R12", "1"))            # MCU drives the Q4 gate
+    wire("LCLR", (118, 127), (102, 127))
+    port("LCLR", "input", "left", (102, 127))
     wire("OVK", ("X2", "1"), (162, 56), ("R13", "2"), (136, 56), (136, 80), (114, 80), ("U3", "7"))
 
     # ========================================================== X2 module signals
