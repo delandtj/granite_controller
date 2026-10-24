@@ -1,8 +1,72 @@
-# Handoff - granite controller (updated 2026-10-23)
+# Handoff - granite controller (updated 2026-10-25)
 
 Read this first, then docs/controller.md and docs/power-board.md.
 
-## Latest session (2026-10-24, evening): schematic generator rewrite
+## Start here (written 2026-10-25 for the next session)
+
+State: PP-48-2S (power/pp-48-2s) is schematic-complete, routed, DRC 0
+errors (5 warnings: 4 starved_thermal at R107.2 U201.5 U102.1 C203.2,
+1 silk_edge at J1), ERC 0, board fields in sync with the schematic
+(drc --schematic-parity 0 mismatches). Nothing is ordered. Nothing is
+pushed: granite_controller master is 16 commits ahead of origin,
+~/Electronics/pcbkit is 5 ahead. Push only when asked.
+
+The pipeline, in order, whenever the schematic changes (all from
+power/pp-48-2s/):
+  python3 tools/gensch.py                         (root + sheets/*)
+  kicad-cli sch erc --severity-all pp-48-2s.kicad_sch
+  cp pp-48-2s.xml <scratch>/old.xml
+  kicad-cli sch export netlist --format kicadxml -o pp-48-2s.xml pp-48-2s.kicad_sch
+  python3 tools/schcheck.py <scratch>/old.xml pp-48-2s.xml --map <scratch>/map.txt
+  pcbkit relink pp-48-2s.xml pp-48-2s.kicad_pcb --save   (--allow-shorts
+      only when pins move nets inside a part; then cut the old copper
+      first with a handroute plan, see tools/handroute/81-*.py)
+  python3 tools/syncfields.py pp-48-2s.xml pp-48-2s.kicad_pcb
+  kicad-cli pcb drc --severity-all --schematic-parity --format report -o <scratch>/drc.rpt pp-48-2s.kicad_pcb
+The .kicad_sch files are generated output: edit tools/sch/blocks/*.py
+or tools/gensch.py, never the sheets. If KiCad has the project open,
+reload before saving from the GUI (the board and sheets changed on
+disk several times on 2026-10-24).
+
+Uncommitted in the tree, not mine, left alone: pp-48-2s.kicad_pro
+(KiCad GUI set solder_mask_to_copper_clearance 0.005),
+fabrication-toolkit-options.json and production/ (a Fabrication
+Toolkit export made BEFORE the field sync, so its bom.csv has the old
+values and 92 empty LCSC cells: regenerate it, or use pcbkit jlcfab).
+
+NEXT, in the order I would take them:
+1. Parts: 58 of 174 footprints still have no LCSC number (the CA
+   caps, the brick socket pins, Molex, photoMOS alternatives...).
+   `grep -c` the xml or run jlcfab and read its missing list.
+2. LM5164 ripple values: 3V3 CA 1.5n -> 1.8n or 2.2n (under the Eq 24
+   minimum), CB 100n X7R vs TI's C0G 56-330 pF design. Table in
+   tools/sch/blocks/bucks.py, then the pipeline above (values only,
+   no relink needed, syncfields is enough).
+3. 15 A class check of the slot front end: shunt (two 7m 2512 in
+   parallel = 3.5m, 15.7 A limit), pass FET SOA against the LM5069
+   power limit, docs/power-board.md "Per slot, numbers for the 15 A
+   class".
+4. pcbkit jlcfab -> BOM / CPL, compare with production/.
+5. Module side (power/pm-19v-200w): the J2 aux header tails must
+   reach the plane across the brick pin shoulder standoff (long-tail
+   1.27 mm pins or a taller socket on the plane); pick the brick pin
+   part number. docs/power-board.md "Mounting on the carrier".
+6. 8-slot plane: the MCU pin table has ADC inputs for four slots
+   only (S5-S8 ID / TEMP dangle); needed before gensch.py 8 is real.
+7. Cosmetic: three wire crossings on the slot sheet, four on the
+   link sheet.
+
+Question that came up at the end of 2026-10-24 and may come back:
+"what are the pins on the DOSA module place". Answer: the module PCB
+has 13 holes (J1 = 8 DOSA brick pins, J2 = 5 aux pins of our own),
+shouldered Mill-Max style pins are soldered into them, and the plane's
+X1 (8 holes) and X2 (7 holes, 2 reserved for I2C) take those pins;
+X1 and X2 are turned 180 together on the plane, geometry checked
+against the module board on 2026-10-24. Plane nets: X1.1 OUT, X1.2
+RUN NC, X1.3 X1.4 GND, X1.5-7 NC (no remote sense on the module),
+X1.8 NODE; X2 OVK PG ID TEMP GND SDA2 SCL2.
+
+## Session (2026-10-24, evening): schematic generator rewrite
 
 ADR 0002 built and committed: tools/gensch.py now writes a root sheet
 plus sheets/{input,bucks,mcu,link,expanders,slot}.kicad_sch, drawn
