@@ -17764,7 +17764,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C338133"
 			(at 143.5100 50.8000 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -17860,7 +17860,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C338133"
 			(at 176.5300 50.8000 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -18244,7 +18244,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C477928"
 			(at 321.3100 54.6100 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -19129,7 +19129,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C1525"
 			(at 135.8900 104.1400 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -19225,7 +19225,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C338133"
 			(at 168.9100 104.1400 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -19609,7 +19609,19 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C840528"
+			(at 300.9900 104.1400 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "MPN" "Bourns SRR1260-330M"
 			(at 300.9900 104.1400 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -19705,7 +19717,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C477928"
 			(at 346.7100 107.9500 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -20014,7 +20026,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25741"
 			(at 468.6300 104.1400 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -20590,7 +20602,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C1525"
 			(at 168.9100 157.4800 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -20686,7 +20698,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C338133"
 			(at 201.9300 157.4800 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -21082,6 +21094,18 @@
 				(justify left)
 			)
 		)
+		(property "MPN" "Bourns SRR1260-680M"
+			(at 334.0100 157.4800 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
 		(pin "1"
 			(uuid "a14cf312-2919-555e-99f4-1770e7619c36")
 		)
@@ -21262,7 +21286,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C131337"
 			(at 406.4000 153.6700 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -21358,7 +21382,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25741"
 			(at 434.3400 157.4800 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -21742,7 +21766,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C11702"
 			(at 77.4700 198.1200 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -21934,7 +21958,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C2847904"
 			(at 179.0700 242.5700 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -22168,7 +22192,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C1525"
 			(at 240.0300 198.1200 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -22360,7 +22384,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C1525"
 			(at 306.0700 198.1200 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -22456,7 +22480,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C1525"
 			(at 339.0900 198.1200 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -22540,7 +22564,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "HSE, energy time base"
+		(property "Description" "HSE, energy time base; 3225 20 pF 10 ppm"
 			(at 375.9200 194.3100 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -22552,7 +22576,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C7424755"
 			(at 375.9200 194.3100 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -22607,7 +22631,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "12p"
+		(property "Value" "33p"
 			(at 410.2100 205.7400 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -22642,7 +22666,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "8 MHz crystal CL 20 pF"
 			(at 412.7500 198.1200 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -22703,7 +22727,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "12p"
+		(property "Value" "33p"
 			(at 443.2300 205.7400 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -22954,7 +22978,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C11702"
 			(at 523.2400 198.1200 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23146,7 +23170,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25741"
 			(at 77.4700 327.6600 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23338,7 +23362,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25741"
 			(at 153.6700 327.6600 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23530,7 +23554,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25741"
 			(at 229.8700 327.6600 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23722,7 +23746,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25879"
 			(at 306.0700 327.6600 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23818,7 +23842,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25879"
 			(at 339.0900 327.6600 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23914,7 +23938,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25744"
 			(at 372.1100 327.6600 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -24010,7 +24034,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C5122339"
 			(at 415.2900 326.3900 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -24124,7 +24148,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C1525"
 			(at 459.7400 327.6600 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -24220,7 +24244,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C1525"
 			(at 492.7600 327.6600 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -24316,7 +24340,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25900"
 			(at 36.8300 368.3000 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -24412,7 +24436,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25900"
 			(at 69.8500 368.3000 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -24508,7 +24532,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25900"
 			(at 102.8700 368.3000 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -24604,7 +24628,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25900"
 			(at 135.8900 368.3000 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -24700,7 +24724,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C366164"
 			(at 179.0700 369.5700 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -24814,7 +24838,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C1525"
 			(at 222.2500 368.3000 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -24910,7 +24934,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C1525"
 			(at 255.2700 368.3000 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -25105,7 +25129,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25741"
 			(at 328.9300 368.3000 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -25201,7 +25225,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C157993"
 			(at 367.0300 369.5700 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -25306,7 +25330,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C157993"
 			(at 400.0500 369.5700 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -25411,7 +25435,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C47023"
 			(at 441.9600 389.8900 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -25585,7 +25609,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C1525"
 			(at 496.5700 368.3000 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -25801,7 +25825,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C2904232"
 			(at 105.4100 472.4400 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -25897,7 +25921,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C2904232"
 			(at 138.4300 472.4400 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -26194,7 +26218,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25744"
 			(at 245.1100 472.4400 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -26386,7 +26410,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25744"
 			(at 311.1500 472.4400 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -26674,7 +26698,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25744"
 			(at 410.2100 472.4400 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -26866,7 +26890,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C338133"
 			(at 483.8700 472.4400 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -27082,7 +27106,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C1525"
 			(at 90.1700 528.3200 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -27277,7 +27301,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25741"
 			(at 163.8300 528.3200 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -27472,7 +27496,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25741"
 			(at 237.4900 528.3200 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -27568,7 +27592,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C70285"
 			(at 283.2100 537.2100 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -27682,7 +27706,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C1525"
 			(at 328.9300 528.3200 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -27778,7 +27802,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25741"
 			(at 361.9500 528.3200 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -27874,7 +27898,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C1525"
 			(at 394.9700 528.3200 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -28069,7 +28093,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25741"
 			(at 469.9000 528.3200 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -28165,7 +28189,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25744"
 			(at 502.9200 528.3200 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -28486,7 +28510,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25744"
 			(at 148.5900 586.7400 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -28582,7 +28606,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25744"
 			(at 181.6100 586.7400 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -28678,7 +28702,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C1525"
 			(at 214.6300 586.7400 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -28774,7 +28798,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25744"
 			(at 247.6500 586.7400 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -28870,7 +28894,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C1525"
 			(at 280.6700 586.7400 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -29254,7 +29278,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25804"
 			(at 420.3700 586.7400 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -29458,6 +29482,18 @@
 				(justify left)
 			)
 		)
+		(property "MPN" "Molex 39-28-1083"
+			(at 499.1100 585.4700 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
 		(pin "1"
 			(uuid "0b55d551-ceb4-56eb-95cf-8316672c382e")
 		)
@@ -29560,7 +29596,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C5370540"
 			(at 44.4500 633.7300 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -29758,7 +29794,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C5370540"
 			(at 125.7300 633.7300 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -29956,7 +29992,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C55144"
 			(at 207.0100 633.7300 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -30058,7 +30094,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25091"
 			(at 247.6500 635.0000 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -30154,7 +30190,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25792"
 			(at 280.6700 635.0000 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -30370,7 +30406,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C2904232"
 			(at 105.4100 695.9600 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -30466,7 +30502,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C2904232"
 			(at 138.4300 695.9600 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -30763,7 +30799,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25744"
 			(at 245.1100 695.9600 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -30955,7 +30991,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25744"
 			(at 311.1500 695.9600 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -31243,7 +31279,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25744"
 			(at 410.2100 695.9600 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -31435,7 +31471,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C338133"
 			(at 483.8700 695.9600 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -31651,7 +31687,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C1525"
 			(at 90.1700 751.8400 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -31846,7 +31882,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25741"
 			(at 163.8300 751.8400 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -32041,7 +32077,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25741"
 			(at 237.4900 751.8400 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -32137,7 +32173,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C70285"
 			(at 283.2100 760.7300 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -32251,7 +32287,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C1525"
 			(at 328.9300 751.8400 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -32347,7 +32383,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25741"
 			(at 361.9500 751.8400 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -32443,7 +32479,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C1525"
 			(at 394.9700 751.8400 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -32638,7 +32674,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25741"
 			(at 469.9000 751.8400 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -32734,7 +32770,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25744"
 			(at 502.9200 751.8400 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -33055,7 +33091,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25744"
 			(at 148.5900 810.2600 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -33151,7 +33187,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25744"
 			(at 181.6100 810.2600 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -33247,7 +33283,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C1525"
 			(at 214.6300 810.2600 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -33343,7 +33379,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25744"
 			(at 247.6500 810.2600 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -33439,7 +33475,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C1525"
 			(at 280.6700 810.2600 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -33823,7 +33859,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25804"
 			(at 420.3700 810.2600 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -34027,6 +34063,18 @@
 				(justify left)
 			)
 		)
+		(property "MPN" "Molex 39-28-1083"
+			(at 499.1100 808.9900 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
 		(pin "1"
 			(uuid "5415508f-3bd6-5ff3-88c4-03c38280fb52")
 		)
@@ -34129,7 +34177,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C5370540"
 			(at 44.4500 857.2500 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -34327,7 +34375,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C5370540"
 			(at 125.7300 857.2500 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -34525,7 +34573,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C55144"
 			(at 207.0100 857.2500 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -34627,7 +34675,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25091"
 			(at 247.6500 858.5200 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -34723,7 +34771,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25792"
 			(at 280.6700 858.5200 0)
 			(show_name no)
 			(do_not_autoplace no)

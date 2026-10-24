@@ -159,6 +159,10 @@ def pin_abs(part, p):
 LABEL_ANGLE = {0: 180, 180: 0, 90: 270, 270: 90}   # pin rot -> label angle
 
 def finish_part(part):
+    if not part["extra"].get("LCSC"):
+        key = (part["value"], part["fp"])
+        if key in BASIC:
+            part["extra"]["LCSC"] = BASIC[key]
     byname = {p["num"]: p for p in part["pins"]}
     for num, p in byname.items():
         net = part["nets"].get(num)
@@ -231,6 +235,13 @@ C0805 = "Capacitor_SMD:C_0805_2012Metric"; C1210 = "Capacitor_SMD:C_1210_3225Met
 LED0603 = "LED_SMD:LED_0603_1608Metric"
 SJ = "Jumper:SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm"
 
+BASIC = {   # JLC basic parts, by (value, footprint); verify in the JLC preview before ordering
+    ("10k", R0402): "C25744", ("100k", R0402): "C25741", ("47k", R0402): "C25792", ("220", R0402): "C25091",
+    ("270", R0402): "C22775", ("2.2k", R0402): "C25879", ("4.7k", R0402): "C25900", ("1k", R0402): "C11702",
+    ("10k", R0603): "C25804", ("100k", R0603): "C25803", ("100n", C0402): "C1525",
+}
+
+
 # ---------------------------------------------------------------- power anchors
 _pwrn = [0, 0]
 def power_cluster(x, y, net, symbol, flag=True):
@@ -270,8 +281,8 @@ core.place("F1", "Device:Fuse", "10A nano2", "Fuse:Fuse_Littelfuse-NANO2-451_453
            extra={"LCSC": "C44479"}, desc="0451010.MRL main fuse, 2-slot plane")
 core.place("D1", "Device:D_TVS", "SMBJ60A", "Diode_SMD:D_SMB", {"1": "GND", "2": "VBUS"}, extra={"LCSC": "C353345"},
            desc="bus TVS, 60 V standoff, clamps below the 100 V parts")
-core.place("C1", "Device:C", "2.2u 100V", C1210, {"1": "VBUS", "2": "GND"}, desc="X7R")
-core.place("C2", "Device:C", "2.2u 100V", C1210, {"1": "VBUS", "2": "GND"}, desc="X7R")
+core.place("C1", "Device:C", "2.2u 100V", C1210, {"1": "VBUS", "2": "GND"}, extra={"LCSC": "C338133"}, desc="X7R")
+core.place("C2", "Device:C", "2.2u 100V", C1210, {"1": "VBUS", "2": "GND"}, extra={"LCSC": "C338133"}, desc="X7R")
 core.place("R1", "Device:R", "470k", R0805, {"1": "VBUS", "2": "VBUS_SNS"}, desc="bus sense divider top, 150 V rated size")
 core.place("R2", "Device:R", "13k", R0402, {"1": "VBUS_SNS", "2": "GND"}, desc="60 V -> 1.61 V at the ADC")
 core.place("C3", "Device:C", "10n", C0402, {"1": "VBUS_SNS", "2": "GND"})
@@ -280,7 +291,7 @@ core.place("C3", "Device:C", "10n", C0402, {"1": "VBUS_SNS", "2": "GND"})
 def lm5164(u, vout, nets, rron, l, rfb1, cout, ca, rsuffix, cbase, lcsc_l=""):
     core.place(u, "Regulator_Switching:LM5164DDA", "LM5164DDA", "Package_SO:HSOP-8-1EP_3.9x4.9mm_P1.27mm_EP2.41x3.1mm",
                {"1": "GND", "2": "VBUS", "3": nets["en"], "4": nets["ron"], "5": nets["fb"], "6": "NC", "7": nets["bst"], "8": nets["sw"], "9": "GND"},
-               desc="100 V 1 A COT buck, %s" % vout, wide=True)
+               extra={"LCSC": "C477928"}, desc="100 V 1 A COT buck, %s" % vout, wide=True)
     r = rsuffix; c = cbase
     core.place("R%d" % r, "Device:R", "1M", R0805, {"1": "VBUS", "2": nets["en"]}, desc="EN/UVLO top")
     core.place("R%d" % (r + 1), "Device:R", "52.3k", R0402, {"1": nets["en"], "2": "GND"}, desc="on at 30 V, off at 28 V")
@@ -291,20 +302,20 @@ def lm5164(u, vout, nets, rron, l, rfb1, cout, ca, rsuffix, cbase, lcsc_l=""):
     core.place("C%d" % c, "Device:C", "2.2n 50V", C0402, {"1": nets["bst"], "2": nets["sw"]}, desc="bootstrap")
     core.place("C%d" % (c + 1), "Device:C", ca, C0402, {"1": nets["inj"], "2": nets["fb"]}, desc="ripple injection CA")
     core.place("C%d" % (c + 2), "Device:C", "100n", C0402, {"1": nets["fb"], "2": nets["vout"]}, desc="ripple injection CB (DC block)")
-    core.place("C%d" % (c + 3), "Device:C", "2.2u 100V", C1210, {"1": "VBUS", "2": "GND"}, desc="input, at the VIN pin")
+    core.place("C%d" % (c + 3), "Device:C", "2.2u 100V", C1210, {"1": "VBUS", "2": "GND"}, extra={"LCSC": "C338133"}, desc="input, at the VIN pin")
     core.place("C%d" % (c + 4), "Device:C", "100n 100V", C0603, {"1": "VBUS", "2": "GND"}, desc="input HF")
     core.place("C%d" % (c + 5), "Device:C", cout, C1210, {"1": nets["vout"], "2": "GND"}, desc="output X7R")
     core.place("C%d" % (c + 6), "Device:C", cout, C1210, {"1": nets["vout"], "2": "GND"}, desc="output X7R")
     core.place("L%d" % (1 if u == "U1" else 2), "Device:L", l, "Inductor_SMD:L_12x12mm_H6mm", {"1": nets["sw"], "2": nets["vout"]},
-               desc="shielded, Isat >= 1.5 A (Bourns SRR1260 class)")
+               extra={"LCSC": lcsc_l, "MPN": "Bourns SRR1260-%s" % ("330M" if l == "33u" else "680M")}, desc="shielded, Isat >= 1.5 A (Bourns SRR1260 class)")
 
 lm5164("U1", "3.3 V", dict(en="EN1", ron="RON1", fb="FB1", bst="BST1", sw="SW1", inj="INJ1", vout="+3V3"),
-       "41.2k", "33u", "86.6k", "22u 10V", "1.5n", 3, 4)
+       "41.2k", "33u", "86.6k", "22u 10V", "1.5n", 3, 4, lcsc_l="C840528")
 lm5164("U2", "12 V aux for the controller", dict(en="EN2", ron="RON2", fb="FB2", bst="BST2", sw="SW2", inj="INJ2", vout="+12V"),
        "100k", "68u", "453k", "22u 25V", "2.2n", 9, 11)
 core.place("F2", "Device:Fuse", "1.5A", "Fuse:Fuse_1206_3216Metric", {"1": "+12V", "2": "V12_OUT"}, desc="aux output fuse")
 core.place("J4", "Connector_Generic:Conn_01x02", "12V AUX OUT", "Connector_JST:JST_PH_B2B-PH-K_1x02_P2.00mm_Vertical",
-           {"1": "V12_OUT", "2": "GND"}, desc="always-on 12 V for the controller J3")
+           {"1": "V12_OUT", "2": "GND"}, extra={"LCSC": "C131337"}, desc="always-on 12 V for the controller J3")
 core.place("R15", "Device:R", "100k", R0402, {"1": "+12V", "2": "AUX_SNS"}, desc="aux sense divider top")
 core.place("R16", "Device:R", "27k", R0402, {"1": "AUX_SNS", "2": "GND"}, desc="12 V -> 2.55 V at the ADC")
 core.place("R17", "Device:R", "4.7k", R0603, {"1": "V12_OUT", "2": "LED12_K"}, desc="12V LED")
@@ -328,16 +339,16 @@ for k, v in list(mcu_nets.items()):
     m = re.match(r"S(\d)_", v or "")
     if m and int(m.group(1)) > N:
         mcu_nets[k] = "NC"
-core.place("U3", "MCU_ST_STM32G0:STM32G0B1CBTx", "STM32G0B1CBT6", "Package_QFP:LQFP-48_7x7mm_P0.5mm", mcu_nets,
+core.place("U3", "MCU_ST_STM32G0:STM32G0B1CBTx", "STM32G0B1CBT6", "Package_QFP:LQFP-48_7x7mm_P0.5mm", mcu_nets, extra={"LCSC": "C2847904"},
            desc="plane MCU: I2C1 slave to the controller (PB6/PB7), I2C2 master (PB10/PB11), ADC on PA0-7/PB0-1, SWD on PA13/PA14")
 core.place("C18", "Device:C", "100n", C0402, {"1": "+3V3", "2": "GND"}, desc="U3 VDD")
 core.place("C19", "Device:C", "4.7u", C0603, {"1": "+3V3", "2": "GND"}, desc="U3 VDD bulk")
 core.place("C20", "Device:C", "100n", C0402, {"1": "+3V3", "2": "GND"}, desc="U3 VREF+/VBAT")
 core.place("C21", "Device:C", "100n", C0402, {"1": "NRST", "2": "GND"}, desc="NRST")
 core.place("Y1", "Device:Crystal_GND24", "8MHz", "Crystal:Crystal_SMD_3225-4Pin_3.2x2.5mm", {"1": "OSC_IN", "2": "GND", "3": "OSC_OUT", "4": "GND"},
-           desc="HSE, energy time base")
-core.place("C22", "Device:C", "12p", C0402, {"1": "OSC_IN", "2": "GND"})
-core.place("C23", "Device:C", "12p", C0402, {"1": "OSC_OUT", "2": "GND"})
+           extra={"LCSC": "C7424755"}, desc="HSE, energy time base; 3225 20 pF 10 ppm")
+core.place("C22", "Device:C", "33p", C0402, {"1": "OSC_IN", "2": "GND"}, desc="8 MHz crystal CL 20 pF")
+core.place("C23", "Device:C", "33p", C0402, {"1": "OSC_OUT", "2": "GND"})
 core.place("J5", "Connector:Conn_ARM_SWD_TagConnect_TC2030-NL", "SWD", "Connector:Tag-Connect_TC2030-IDC-NL_2x03_P1.27mm_Vertical",
            {"1": "+3V3", "2": "SWDIO", "3": "NRST", "4": "SWCLK", "5": "GND", "6": "NC"}, desc="bench programming")
 core.place("R19", "Device:R", "1k", R0402, {"1": "LED_RUN", "2": "LEDRUN_K"}, desc="firmware heartbeat LED")
@@ -352,7 +363,7 @@ core.place("R25", "Device:R", "10k", R0402, {"1": "+3V3", "2": "EXP_IRQ"}, desc=
 # controller link: ISO1540 (I2C) + ISO7721 (EXP_INT), controller side on the cable's 3V3/GND
 core.place("U4", "Isolator:ISO1540", "ISO1640BD", "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
            {"1": "CTRL_3V3", "2": "CTRL_SDA", "3": "CTRL_SCL", "4": "CTRL_GND", "5": "GND", "6": "SCL1", "7": "SDA1", "8": "+3V3"},
-           desc="isolated I2C; side 1 = controller cable, side 2 = plane. ISO1540 symbol, ISO1640 pin compatible")
+           extra={"LCSC": "C5122339"}, desc="isolated I2C; side 1 = controller cable, side 2 = plane. ISO1540 symbol, ISO1640 pin compatible")
 core.place("C24", "Device:C", "100n", C0402, {"1": "CTRL_3V3", "2": "CTRL_GND"}, desc="U4 VCC1")
 core.place("C25", "Device:C", "100n", C0402, {"1": "+3V3", "2": "GND"}, desc="U4 VCC2")
 core.place("R26", "Device:R", "4.7k", R0402, {"1": "+3V3", "2": "SDA1"}, desc="I2C1 pull-up, isolator side 2")
@@ -361,7 +372,7 @@ core.place("R28", "Device:R", "4.7k", R0402, {"1": "CTRL_3V3", "2": "CTRL_SDA"},
 core.place("R29", "Device:R", "4.7k", R0402, {"1": "CTRL_3V3", "2": "CTRL_SCL"}, dnp=True)
 core.place("U5", "Isolator:ISO7721D", "ISO7721D", "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
            {"1": "CTRL_3V3", "2": "ISO_OUTA", "3": "CTRL_GND", "4": "CTRL_GND", "5": "GND", "6": "NC", "7": "INT_OUT", "8": "+3V3"},
-           desc="EXP_INT plane -> controller (channel A, side 2 in, side 1 out); channel B unused")
+           extra={"LCSC": "C366164"}, desc="EXP_INT plane -> controller (channel A, side 2 in, side 1 out); channel B unused")
 core.place("C26", "Device:C", "100n", C0402, {"1": "CTRL_3V3", "2": "CTRL_GND"}, desc="U5 VCC1")
 core.place("C27", "Device:C", "100n", C0402, {"1": "+3V3", "2": "GND"}, desc="U5 VCC2")
 core.place("Q1", "Transistor_FET:2N7002", "2N7002", "Package_TO_SOT_SMD:SOT-23", {"1": "ISO_OUTA", "2": "CTRL_GND", "3": "CTRL_INT"},
@@ -369,7 +380,7 @@ core.place("Q1", "Transistor_FET:2N7002", "2N7002", "Package_TO_SOT_SMD:SOT-23",
 core.place("R30", "Device:R", "100k", R0402, {"1": "ISO_OUTA", "2": "CTRL_GND"}, desc="gate pull-down")
 for j in ("J2", "J3"):
     core.place(j, "Connector_Generic:Conn_01x05", "CTRL " + ("IN" if j == "J2" else "OUT"), "Connector_JST:JST_PH_B5B-PH-K_1x05_P2.00mm_Vertical",
-               {"1": "CTRL_3V3", "2": "CTRL_GND", "3": "CTRL_SCL", "4": "CTRL_SDA", "5": "CTRL_INT"},
+               {"1": "CTRL_3V3", "2": "CTRL_GND", "3": "CTRL_SCL", "4": "CTRL_SDA", "5": "CTRL_INT"}, extra={"LCSC": "C157993"},
                desc="controller link, daisy chain; 3V3 GND SCL SDA INT, from J8 of the controller")
 
 # expanders: one MCP23017 per 2 slots, addresses 0x20.. ; GPA = odd slot, GPB = even slot
@@ -385,7 +396,7 @@ for e in range((N + 1) // 2):
         nets[str(21 + k)] = gp(sa, "A", k) if k < 6 else "NC"            # GPA0..7 = pins 21..28
         nets[str(1 + k)] = (gp(sb, "B", k) if (k < 6 and sb <= N) else "NC")  # GPB0..7 = pins 1..8
     ref = "U%d" % (6 + e)
-    core.place(ref, "Interface_Expansion:MCP23017x-x-SO", "MCP23017-E/SO", "Package_SO:SOIC-28W_7.5x17.9mm_P1.27mm", nets,
+    core.place(ref, "Interface_Expansion:MCP23017x-x-SO", "MCP23017-E/SO", "Package_SO:SOIC-28W_7.5x17.9mm_P1.27mm", nets, extra={"LCSC": "C47023"},
                desc="slot GPIO for slots %d-%d, address 0x%02X, INTA mirrored open-drain, never reset by the controller" % (sa, sb, 0x20 + e), wide=True)
     core.place("C%d" % (28 + e), "Device:C", "100n", C0402, {"1": "+3V3", "2": "GND"}, desc=ref + " VDD")
 
@@ -402,8 +413,8 @@ for s in range(1, N + 1):
     b.place("U%d" % (r + 1), "Power_Management:LM5069MM-2", "LM5069MM-2", "Package_SO:MSOP-10_3x3mm_P0.5mm",
             {"1": P + "SENSE", "2": "VBUS", "3": P + "UVLO", "4": P + "OVLO", "5": "GND", "6": P + "TIMER", "7": P + "PWR", "8": P + "PGD", "9": P + "OUT", "10": P + "GATE"},
             extra={"LCSC": "C111822"}, desc="hot-swap, 55 mV current limit, power limit, auto-retry 0.5 %", wide=True)
-    R(1, "7m 2W", R2512, {"1": "VBUS", "2": P + "SENSE"}, desc="shunt, two 7 mOhm in parallel = 3.5 mOhm: limit 15.7 A, breaker 30 A")
-    R(2, "7m 2W", R2512, {"1": "VBUS", "2": P + "SENSE"}, desc="shunt (parallel)")
+    R(1, "7m 2W", R2512, {"1": "VBUS", "2": P + "SENSE"}, extra={"LCSC": "C2904232"}, desc="shunt, two 7 mOhm in parallel = 3.5 mOhm: limit 15.7 A, breaker 30 A")
+    R(2, "7m 2W", R2512, {"1": "VBUS", "2": P + "SENSE"}, extra={"LCSC": "C2904232"}, desc="shunt (parallel)")
     b.place("Q%d" % (r + 1), "Transistor_FET:BSC070N10NS5", "BSC070N10NS5", "Package_TO_SOT_SMD:TDSON-8-1",
             by_name("Transistor_FET:BSC070N10NS5", {"G": P + "GATE", "S": P + "OUT", "D": P + "SENSE"}),
             desc="100 V pass MOSFET, placeholder: SOA check open (ADR 0001)")
@@ -416,7 +427,7 @@ for s in range(1, N + 1):
     R(8, "10k", R0402, {"1": "+3V3", "2": P + "PGD"}, desc="PGD pull-up")
     b.place("D%d" % (r + 1), "Device:D_TVS", "SMBJ60A", "Diode_SMD:D_SMB", {"1": "GND", "2": P + "OUT"}, extra={"LCSC": "C353345"},
             desc="slot output clamp (cable inductance on a cut)")
-    C(2, "2.2u 100V", C1210, {"1": P + "OUT", "2": "GND"}, desc="slot output, in front of the brick")
+    C(2, "2.2u 100V", C1210, {"1": P + "OUT", "2": "GND"}, extra={"LCSC": "C338133"}, desc="slot output, in front of the brick")
     # monitor
     b.place("U%d" % (r + 2), "Sensor_Energy:INA238", "INA238AIDGSR", "Package_SO:TSSOP-10_3x3mm_P0.5mm",
             {"1": ["GND", "GND", "GND", "GND", "+3V3", "+3V3", "+3V3", "+3V3"][s - 1], "2": ["GND", "+3V3", "SDA2", "SCL2"][(s - 1) % 4],
@@ -432,7 +443,7 @@ for s in range(1, N + 1):
     R(10, "100k", R0402, {"1": P + "LQ", "2": "GND"})
     b.place("U%d" % (r + 3), "74xGxx:74AUC1G74", "74LVC1G74", "Package_SO:VSSOP-8_2.3x2mm_P0.5mm",
             {"1": "GND", "2": "GND", "3": "NC", "4": "GND", "5": P + "LQ", "6": P + "LCLR", "7": P + "OVK", "8": "+3V3"},
-            desc="OV latch: /PRE = module OV_KILL (low = set), /CLR = RC power-on clear + MCU; Q holds UVLO low until cleared")
+            extra={"LCSC": "C70285"}, desc="OV latch: /PRE = module OV_KILL (low = set), /CLR = RC power-on clear + MCU; Q holds UVLO low until cleared")
     C(4, "100n", C0402, {"1": "+3V3", "2": "GND"}, desc="latch VCC")
     R(11, "100k", R0402, {"1": "+3V3", "2": P + "LCLR"}, desc="power-on clear RC (10 ms)")
     C(5, "100n", C0402, {"1": P + "LCLR", "2": "GND"})
@@ -460,13 +471,13 @@ for s in range(1, N + 1):
     # node connector + front panel
     b.place("J%d" % (r + 1), "Connector_Generic:Conn_02x04_Odd_Even", "NODE %d" % s, "Connector_Molex:Molex_Mini-Fit_Jr_5566-08A_2x04_P4.20mm_Vertical",
             {"1": P + "NODE", "2": P + "NODE", "3": "GND", "4": "GND", "5": P + "PWR_SW", "6": P + "RST_SW", "7": P + "PLED_P", "8": P + "PLED_N"},
-            desc="one cable per node: 1-2 +19 V, 3-4 GND, 5 PWR_SW, 6 RST_SW, 7 PLED+, 8 PLED-", wide=True)
+            extra={"MPN": "Molex 39-28-1083"}, desc="one cable per node: 1-2 +19 V, 3-4 GND, 5 PWR_SW, 6 RST_SW, 7 PLED+, 8 PLED-", wide=True)
     for k, (sig, drv) in enumerate((("PWR_SW", "PWRD"), ("RST_SW", "RSTD"))):
         b.place("U%d" % (r + 4 + k), "pp:TLP176AM", "TLP176AM", "Package_SO:SOIC-4_4.55x3.7mm_P2.54mm",
-                {"1": P + drv + "_A", "3": "GND", "4": "GND", "6": P + sig}, desc="photoMOS front-panel %s contact" % sig)
+                {"1": P + drv + "_A", "3": "GND", "4": "GND", "6": P + sig}, extra={"LCSC": "C5370540"}, desc="photoMOS front-panel %s contact" % sig)
         R(19 + k, "270", R0402, {"1": P + drv, "2": P + drv + "_A"}, extra={"LCSC": "C22775"}, desc="photoMOS LED, ~6.5 mA from the expander")
     b.place("U%d" % (r + 6), "Isolator:TLP291", "TLP291", "Package_SO:SOIC-4_4.55x2.6mm_P1.27mm",
-            {"1": P + "PLED_A", "2": P + "PLED_N", "3": "GND", "4": P + "LED"}, desc="power LED sense opto: LED lit -> output low")
+            {"1": P + "PLED_A", "2": P + "PLED_N", "3": "GND", "4": P + "LED"}, extra={"LCSC": "C55144"}, desc="power LED sense opto: LED lit -> output low")
     R(21, "220", R0402, {"1": P + "PLED_P", "2": P + "PLED_A"}, desc="opto LED series (as rev C)")
     R(22, "47k", R0402, {"1": "+3V3", "2": P + "LED"}, desc="opto collector pull-up")
     slot_y += b.height() + 20.0

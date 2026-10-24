@@ -1,5 +1,5 @@
 # pcbkit settings for the PP-48-2S power plane (overrides the
-# granite_controller pcbkit.toml two levels up). 4L JLC, 150 x 80 mm, immersed.
+# granite_controller pcbkit.toml two levels up). 4L JLC, 150 x 95 mm, immersed.
 #
 # Schematic is generated: tools/gensch.py 2 -> pp-48-2s.kicad_sch, then
 # kicad-cli sch export netlist --format kicadxml --output pp-48-2s.xml.
@@ -20,7 +20,7 @@ per_row = 8
 
 [outline]
 length = 150.0
-height = 80.0
+height = 95.0
 origin = [100.0, 100.0]
 
 [rules]
@@ -30,17 +30,19 @@ layers = { "In1.Cu" = ["power", "GND"], "In2.Cu" = ["mixed", "PWR"] }
 
 [rules.netclasses]
 # name = [track, clearance, via_dia, via_drill]
-Default = [0.2, 0.2, 0.5, 0.2]
+Default = [0.2, 0.15, 0.5, 0.2]   # 0.15: MSOP-10 / VSSOP-8 pads at 0.5 mm pitch
 
 [krt]
 work = "~/.cache/pcbkit/pp-48-2s/route"
 rework = "~/.cache/pcbkit/pp-48-2s/reroute"
-clearance = 0.2
+clearance = 0.15
 via = [0.5, 0.2]
 track_width = 0.2
 same_net_pad_clearance = 0.15
 signal_layers = ["F.Cu", "In2.Cu", "B.Cu"]
 keep_groups = ["power", "gnd-stitch"]
+# the hand copper (tools/power.py) must stay on its layers: KRT would otherwise move single-layer stubs
+route_extra = ["--ordering", "mps", "--no-stub-layer-swap"]
 # VBUS, the slot SENSE/OUT nodes and the NODE outputs are pours drawn by tools/power.py
 power_nets = ["+3V3", "+12V", "V12_OUT", "CTRL_3V3"]
 power_widths = [0.4, 0.5, 0.5, 0.3]
