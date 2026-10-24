@@ -1,8 +1,11 @@
 # pcbkit settings for the PP-48-2S power plane (overrides the
 # granite_controller pcbkit.toml two levels up). 4L JLC, 150 x 95 mm, immersed.
 #
-# Schematic is generated: tools/gensch.py 2 -> pp-48-2s.kicad_sch, then
-# kicad-cli sch export netlist --format kicadxml --output pp-48-2s.xml.
+# Schematic is generated: tools/gensch.py 2 -> pp-48-2s.kicad_sch + sheets/
+# (root + six drawn sheets, ADR 0002), then kicad-cli sch erc, kicad-cli sch
+# export netlist --format kicadxml --output pp-48-2s.xml, tools/schcheck.py
+# <old.xml> pp-48-2s.xml (electrically identical, rename map), and on a
+# routed board pcbkit relink pp-48-2s.xml pp-48-2s.kicad_pcb --save.
 # Board flow: mkboard -> outline -> setrules -> tools/place.py -> gndpour ->
 # tools/power.py (VBUS / slot OUT / NODE pours, group "power") -> krt-route ->
 # tools/power.py again -> gndpour (refill, restitch) -> the hand plans in

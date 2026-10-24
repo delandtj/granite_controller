@@ -2,6 +2,7 @@
 
 **Status**: Accepted
 **Updated**: 2026-10-24 (accepted; review asks 1-4 answered yes: sheet-path net names with one relink, six sheets, power symbols at the pins, relink in pcbkit)
+**Updated**: 2026-10-24 (built; deviations folded in, see "Built as" at the end)
 **Date**: 2026-10-24
 
 Related: docs/adr/0001-48v-power-plane.md (what the plane is),
@@ -492,3 +493,46 @@ Review asks:
 **Polish**
 - Sheet names "Input", "Bucks", "MCU", "Link", "Expanders", "Slot n";
   files `sheets/<name>.kicad_sch`. Taken as the default.
+
+---
+
+## Built as (deviations from the text above, folded in 2026-10-24)
+
+- KiCad applies the mirror AFTER the rotation (lib y flipped, rotate
+  counter-clockwise, then mirror). The "mirror before rotate" default
+  under Known unknowns was wrong; the 12-orientation netlist test
+  caught it.
+- A local net made only of wires is named "Net-(C102-Pad1)" by KiCad,
+  not "/Slot 1/NODE". finish() therefore puts one small local label on
+  every local net (on its longest horizontal wire); b.name() moves or
+  suppresses it. "Local nets are wires" reads "wires plus one name
+  label".
+- A power symbol wired only to a PWR_FLAG is "pin not connected" to
+  KiCad 10 ERC. The root anchors carry a global label on the wire
+  (symbol, label, flag), as the flat generator's clusters did.
+- The shared slot sheet cannot hold per-slot text: J101 / J201 Value
+  is "NODE" (was "NODE 1" / "NODE 2") and the INA238 description says
+  "0x40 + slot - 1" instead of the literal address. schcheck reports
+  these four field differences; every (ref, pin) -> net is identical.
+- NODE has no PWR_FLAG: X1.8 is a power-output pin, a flag there is an
+  ERC error. OUT keeps its flag. The flat generator flagged only OUT.
+- The INA238 symbol names pin 1 A1 and pin 2 A0; the slot ports carry
+  the pin names and the root ties pin 1 to GND x4 / +3V3 x4 and pin 2
+  to GND / +3V3 / SDA2 / SCL2 by slot index, exactly as before.
+- Reference / Value placement by free side: a part with no pins on
+  top gets both above the body; else below; else beside; a part with
+  pins on all four sides gets them at its top-right corner. Two-pin
+  parts keep the KiCad convention (reference above, value below, or
+  both to the right when upright). The lint does not check text.
+- The LED cathode: Device:LED's arrow graphics reach past the K pin,
+  so a wire entering its own pin along the pin axis is exempt from the
+  body-crossing lint.
+- Net names after the build: 71 renamed, the map is what schcheck
+  prints; /VBUS, /CTRL_3V3, /CTRL_GND became the global VBUS,
+  CTRL_3V3, CTRL_GND (power symbols). tools/power.py and the handroute
+  plans were rewritten with the map; pcbkit.toml power_nets was left
+  as it was (KRT routing is history for this board).
+- The 8-slot root generates and passes ERC except for 8 dangling
+  labels S5..S8 ID / TEMP: the STM32G0B1 pin table has ADC inputs for
+  four slots only, as in the flat generator. A design gap of the
+  8-slot plane, not of the generator.

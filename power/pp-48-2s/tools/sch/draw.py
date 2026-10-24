@@ -149,7 +149,7 @@ def llabel_box(text, x, y, ang):
 
 class Block:
     def __init__(self, name, key=None, project="pp-48-2s", paper=None, title=None, date="2026-10-24", pwr_base=0):
-        self.name, self.key, self.project = name, key or name, project
+        self.sheet_name, self.key, self.project = name, key or name, project
         self._paper, self.title, self.date, self.pwr_base = paper, title, date, pwr_base
         self.syms, self.order = {}, []
         self.wires, self.ports, self.flags, self.texts = [], [], [], []
@@ -352,7 +352,7 @@ class Block:
         for net, a, b in self.segs:
             where = "net %s: wire %s-%s" % (net, fmt(a), fmt(b))
             for r, box in bodies:
-                if seg_in_box(a, b, box): raise LintError("%s crosses the body of %s" % (where, r))
+                if seg_in_box(a, b, box) and not any(nn == net and s_.pin_xy(k) in (a, b) and on_seg((s_.pin_xy(k)[0] + 0.01 * s_.pin_out(k)[0], s_.pin_xy(k)[1] + 0.01 * s_.pin_out(k)[1]), a, b) for s_ in [self.syms[r]] for k, nn in s_.nets.items()): raise LintError("%s crosses the body of %s" % (where, r))   # a stub leaving its own pin outward is fine (graphics beyond the pin end, e.g. LED arrows)
             for xy, pnet, r, num in pins:
                 if pnet != net and on_seg(xy, a, b):
                     raise LintError("%s passes over %s pin %s (net %s)" % (where, r, num, pnet))
@@ -392,8 +392,8 @@ class Block:
 
     def write(self, path, instances=None, project=None):
         if not self.done: self.finish()
-        sh = K.Sheet(self.name, project or self.project, key=self.key, paper=self.paper, root=instances is None,
-                     title=self.title or self.name, date=self.date)
+        sh = K.Sheet(self.sheet_name, project or self.project, key=self.key, paper=self.paper, root=instances is None,
+                     title=self.title or self.sheet_name, date=self.date)
         def inst(ref):
             return None if instances is None else [(p, renumber(ref, off)) for p, off in instances]
         for net, a, b in self.segs: sh.wire(a, b, net)

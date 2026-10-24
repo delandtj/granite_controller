@@ -2,7 +2,53 @@
 
 Read this first, then docs/controller.md and docs/power-board.md.
 
-## Latest session (2026-10-24): PP-48-2S routed, DRC 0 errors
+## Latest session (2026-10-24, evening): schematic generator rewrite
+
+ADR 0002 built and committed: tools/gensch.py now writes a root sheet
+plus sheets/{input,bucks,mcu,link,expanders,slot}.kicad_sch, drawn
+blocks with wires, power symbols at the pins, hierarchical labels for
+the nets that leave a sheet; the slot is one file instantiated N
+times. Engine in tools/sch/ (kicad.py emitters, draw.py Block with
+wire / port / power / lint), blocks in tools/sch/blocks/, checker
+tools/schcheck.py, `pcbkit relink` in ~/Electronics/pcbkit (committed
+there, not pushed). ERC 0 with --severity-all. schcheck: every (ref,
+pin) -> net identical to the old flat netlist; 71 nets renamed (sheet
+path names, e.g. /S1_OUT -> /Slot 1/OUT); 4 expected field
+differences (J101/J201 Value "NODE", INA238 description). The routed
+board was relinked in place: 174 paths, 71 nets, DRC unchanged (0
+unconnected, the 4 starved_thermal + J1 silk_edge). power.py and the
+handroute plans carry the new names. Regenerate twice = byte
+identical. N=8 generates and passes ERC except S5..S8 ID/TEMP (the
+MCU pin table has ADC inputs for four slots; pre-existing).
+Built by four opus subagents (engine, checker, relink, blocks) under
+the coordinator; the ADR's "Built as" section lists the deviations.
+The block authors found things in the pin tables that look WRONG and
+were NOT changed (the ADR's job was an identical netlist):
+1. Every LED is reversed: Device:LED pin 1 = K, pin 2 = A, but D2 D3
+   D4 D102 D103 D202 D203 have the resistor node on pin 1 and GND on
+   pin 2 (anode to GND). None will light. Fix = swap the two nets per
+   LED in the tables; on the board the LED footprints then need a
+   180 degree turn (pad 1 / pad 2 swap places, the tracks stay).
+2. LM5164 type 3 ripple injection: tables have CA from INJ to FB and
+   CB (100n) from FB to VOUT. The datasheet figure has RA SW -> node,
+   CA node -> VOUT, CB node -> FB. As tabled the 100n shunts FB to
+   VOUT. Check the datasheet figure; if confirmed, swap the far ends
+   of C5/C6 and C12/C13 and rework those four caps on the board.
+3. Slot Q4 (MCU latch clear driver) is dead: its gate LCLR_D has only
+   the pull-down; the MCU's Sn_LCLR goes straight to the latch /CLR
+   node (and Q4's drain). Either the MCU should drive LCLR_D, or Q4 /
+   R12 go. On the board S1_LCLR runs MCU -> latch today.
+4. Brick X1 SENSE+ / SENSE- are NC; many DOSA bricks want remote
+   sense tied to the output. Check PM-19V-200W.
+5. The 8-slot plane has no MCU ADC pins for slots 5-8 ID / TEMP.
+Also open: the slot sheet keeps three unavoidable wire crossings
+(OUT to the INA238 over SENSE / GATE), and the link sheet four
+(J2 -> J3 chain). Cosmetic.
+NEXT: decide 1-4 (each is a table edit + regenerate + schcheck +
+relink + a small board fix), then the LCSC numbers (58 of 174),
+MOSFET / shunt sizing for 15 A, jlcfab.
+
+## Session 2026-10-24 (afternoon): J2/J3 move, silk, connector labels: PP-48-2S routed, DRC 0 errors
 
 The PC powered off at the end of the 2026-10-23 session (krt-reroute's
 GND pass sat 3 h in a "KiCad-oracle" leg before that). Nothing on disk
