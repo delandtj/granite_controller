@@ -57,14 +57,15 @@ buck's CA 1.5n is 5 % under the Eq 24 minimum of 1.58n (1.8n or 2.2n
 would do; ripple at FB about 22 mV); CB 100n X7R meets the ">=" but
 TI designs CB for ~75 us settling with C0G (56 pF at 12 V, ~330 pF at
 3V3): revisit CB. CA parts have no LCSC number yet.
-tools/syncfields.py fails on KiCad 10 (FOOTPRINT.GetFieldByName is
-gone); the board's Value / LCSC / Description fields are therefore not
-synced from the schematic (kicad-cli drc --schematic-parity lists 104
-field mismatches, no net mismatches). Fix the script before jlcfab.
+tools/syncfields.py ported to the KiCad 10 API (HasField / GetField /
+SetField by name; GetFieldByName is gone) and run: 108 Value / LCSC /
+Description fields on 174 footprints synced from pp-48-2s.xml, fields
+hidden; kicad-cli drc --schematic-parity now reports 0 mismatches.
+Run it after every relink (netlist, then relink, then syncfields).
 Also open: the slot sheet keeps three unavoidable wire crossings
 (OUT to the INA238 over SENSE / GATE), and the link sheet four
 (J2 -> J3 chain). Cosmetic.
-NEXT: syncfields for KiCad 10, CA / CB values, the LCSC numbers (58
+NEXT: CA / CB values, the LCSC numbers (58
 of 174), MOSFET / shunt sizing for 15 A, jlcfab.
 
 ## Session 2026-10-24 (afternoon): J2/J3 move, silk, connector labels: PP-48-2S routed, DRC 0 errors

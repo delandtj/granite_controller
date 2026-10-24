@@ -6,6 +6,8 @@
 # export netlist --format kicadxml --output pp-48-2s.xml, tools/schcheck.py
 # <old.xml> pp-48-2s.xml (electrically identical, rename map), and on a
 # routed board pcbkit relink pp-48-2s.xml pp-48-2s.kicad_pcb --save.
+# Then tools/syncfields.py pp-48-2s.xml pp-48-2s.kicad_pcb (Value, LCSC,
+# MPN, Description onto the footprints; drc --schematic-parity checks it).
 # Board flow: mkboard -> outline -> setrules -> tools/place.py -> gndpour ->
 # tools/power.py (VBUS / slot OUT / NODE pours, group "power") -> krt-route ->
 # tools/power.py again -> gndpour (refill, restitch) -> the hand plans in
