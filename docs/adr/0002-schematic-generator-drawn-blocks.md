@@ -1,6 +1,7 @@
 # Schematic generator: drawn blocks on hierarchical sheets
 
-**Status**: Proposed
+**Status**: Accepted
+**Updated**: 2026-10-24 (accepted; review asks 1-4 answered yes: sheet-path net names with one relink, six sheets, power symbols at the pins, relink in pcbkit)
 **Date**: 2026-10-24
 
 Related: docs/adr/0001-48v-power-plane.md (what the plane is),
