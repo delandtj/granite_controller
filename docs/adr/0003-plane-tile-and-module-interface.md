@@ -81,7 +81,7 @@ rest of the plane rested on assumptions that no longer hold:
    | Level | Device | Reset |
    |---|---|---|
    | Box supply / branch | breaker or fuse OUTSIDE the fluid | by hand |
-   | Tile input | LM5069 hot-swap, ~1.5 mOhm shunt (~30 A class), 2 FETs in parallel, INA238 | UVLO pulled low by the MCU (expander + FET); latch-off (-1) or retry (-2) to pick |
+   | Tile input | LM5069 hot-swap, ~1.5 mOhm shunt (~30 A class), 2 FETs in parallel, INA238 | UVLO pulled low by the MCU (expander + FET); LM5069-1, latch-off |
    | Slot input | LM5069-2 + INA238 + OV latch (as ADR 0001) | MCU |
    | Module output | buck current limit; PGOOD loss -> slot latch (start-up blanking); INA238 ALERT above ~210-220 W input -> slot latch | MCU |
 
@@ -171,8 +171,8 @@ rest of the plane rested on assumptions that no longer hold:
    - Module site: 4 standoffs, 6 pogos, module outline on silk.
    - ID: 10k pull-up, 100 nF, 1k series to ID_n.
    - Node power connector and front-panel connector at the bottom.
-3. **Port module PM-19V-250W** (`power/pm-19v-200w/`, updated in
-   place or copied; see open questions)
+3. **Port module PM-19V-250W** (`power/pm-19v-250w/`, new project
+   copied from `power/pm-19v-200w/`)
    - LTC7810 two-phase buck, 250 W; OV comparator and PGOOD
      comparator unchanged in principle; NTC removed; aux pads per
      docs/pm-interface.md.
@@ -356,13 +356,18 @@ reserved for VBUS along the top.
 - Layout: one column, repeat x4, core, tile outline and edges.
 - Bench carrier: regenerate mount.
 
-Review asks:
-1. Names: PP-48-4T for the tile, PM-19V-250W for the module. Yes / other?
-2. Tile hot-swap: LM5069-1 latch-off (recommended) or -2 auto-retry?
-3. Module update: edit `power/pm-19v-200w/` in place (history kept)
-   or copy to `power/pm-19v-250w/`?
-4. INT: one wired-OR INT from all columns, or INT_n per column to the
-   MCU (4 pins)?
+Review asks (answered 2026-10-26):
+1. Names: PP-48-4T for the tile, PM-19V-250W for the module. Yes.
+2. Tile hot-swap: LM5069-1 latch-off.
+3. Module: new project `power/pm-19v-250w/`, copied from
+   `power/pm-19v-200w/`, which stays for a few days until it is clear
+   nothing in it is needed.
+4. INT: open, being explained. Options: wired-OR to one MCU pin
+   (MCU reads all four expanders; one stuck INT hides the others),
+   INT_n per column to 4 MCU pins (recommended: pins are free, a
+   stuck column only blinds itself), or a TCA9545A mux that ORs the
+   four INTs and reports the channel (one pin, but the tile front end
+   moves upstream of the mux). The column is the same in all three.
 
 ---
 
@@ -377,7 +382,8 @@ Review asks:
 - [ ] PGOOD-loss latch start-up blanking: circuit and time.
 - [ ] INA238 ALERT threshold (210-220 W input) and whether it latches
   or only reports.
-- [ ] Tile hot-swap reset path and LM5069 variant.
+- [ ] Tile hot-swap reset path (LM5069-1 latch-off, decided).
+- [ ] INT: per column, wired-OR, or TCA9545A (review ask 4).
 - [ ] D1 SMBJ60A at 60 V standoff vs the new range (SMBJ64A?).
 - [ ] OV_KILL at 22.7 V against the node's input rating.
 - [ ] Spare aux contact: second GND or something useful.
