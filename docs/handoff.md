@@ -25,6 +25,19 @@ Done, committed:
   opens, all at U1 pins (TG1 TG2 BOOST1 BOOST2 DRVCC INTVCC RUN OVLO
   VIN_IC VFB): the user routes these by hand in KiCad. Then: gndpour,
   silk, connlabels, DRC, jlcfab.
+- 2026-10-26 night (5e39037): user asked Claude to route. U1 turned to
+  rot 0 and moved to x 114.45; the phase pairs swapped in placement
+  only (no schematic change): top pair Q3/Q4/L2/R10 = phase 2, bottom
+  pair Q1/Q2/L1/R9 = phase 1, so each drive group faces its FETs;
+  power.py zone/via net names swapped to match. Gate drive is hand
+  routed by tools/route_drive.py (pcbkit handroute), kept as group
+  "hand" ([krt] keep_groups) via tools/group_hand.py. Flow now: mkboard
+  -> place.py -> setrules -> power.py -> handroute route_drive.py
+  --save -> group_hand.py -> krt-route. KRT leaves 14 opens, all at the
+  input end (VOUT, OVLO, ITH1, INTVCC, DRVCC/NDRV pin 10, U2-, U3+, GND
+  taps). Supervision passives and U1 small-signal passives are 0402.
+  KRT's F.Cu tracks under the inductors and long top-side runs still
+  need a review pass.
 - Gotcha: a backgrounded `cd dir && pcbkit krt-route` ran in the session
   cwd and routed granite_controller in ~/.cache (stopped at the diff
   step, the board was not copied back). Run krt-route in the foreground
