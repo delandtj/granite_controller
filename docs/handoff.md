@@ -118,9 +118,41 @@ Open questions, for the user:
    - Standoff joints: a clamped M2 joint is < 1 mOhm (~0.2 W at 20 A);
      use lock washers so the clamp does not relax.
 
-Suggested order once those are answered: ADR for the plane tile and
-module interface -> module rework (screws, aux, OVLO, drop TEMP / SDA
-SCL) -> plane column generator -> route one column -> copy.
+PLAN FOR NEXT SESSION (agreed 2026-10-26): the plane gets a full
+redesign, the module an update. Nothing is ordered. Stop drawing; write
+the requirements down first (today's churn came from finding them
+during layout: mount -> aux -> screw positions -> module interface ->
+columns / tile -> I2C -> protection -> power class).
+
+Carries over unchanged (rearranged only): slot front end (LM5069,
+shunts, pass FET, INA238, OV latch, enables; already 15 A class, covers
+250 W), the LM5164 bucks, node front-panel interface (photoMOS, opto),
+G070 MCU and pinout work, the JLC part numbers / stock checks, and the
+tooling (gensch.py slot block per column, relink, syncfields, DRC
+pipeline, pcbkit).
+Redesigned: board organisation (vertical columns, 4-slot tile, core
+column), control interface (I2C mux + expander per column), protection
+(no fuses, tile hot-swap, core fed ahead of it), power distribution
+(30 A VBUS, NODE copper, connectors), module mount (screws, pogo,
+interface spec), placement and routing (one column, copied).
+Module: update only (OVLO, drop TEMP / SDA SCL, aux block, screw
+positions, maybe 250 W sizing); the LTC7810 core stays.
+
+Steps, documents first:
+1. Requirements, one page: node power (180 W peak, Halo Gorgon), input
+   48-60 V, slots per tile and per box (6x8 / 8x8), immersion
+   constraints (no fuses, no wet electrolytics, connector materials vs
+   fluid), what must work with the MCU dead, serviceability (quick
+   swap), box-level protection (breaker outside the fluid).
+2. ADR for the plane tile and module interface: the decisions above
+   plus the answers to open questions 1-8.
+3. Module interface spec: outline, screw positions and nets, pad sizes,
+   aux block and map, 6 mm gap, part heights both sides. All footprints
+   get generated from it (power/tools/pmmount.py at tag pm-mount-drawn
+   is a starting point if kept).
+4. Then design, in order: module update -> slot column -> core column
+   -> tile (route one column, copy).
+Most of the content for 1-3 is in this section already.
 
 ## Earlier: start here (written 2026-10-25 for the next session)
 
