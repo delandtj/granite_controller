@@ -45,26 +45,30 @@ ORIGIN = {
     'C2': (114.45, 101.95, 180, 'B'),
     'C3': (109.6, 105.3, 180, 'B'),
     'C4': (114.45, 105.3, 180, 'B'),
-    'Q1': (120.8, 104.0, 180, 'B'),
-    'Q2': (128.3, 104.0, 180, 'B'),
+    'Q3': (120.8, 104.0, 180, 'B'),      # phase 2 (top pair): U1 rot 0 puts its drive pins 19-24 top right
+    'Q4': (128.3, 104.0, 180, 'B'),
     # bottom, phase 2 (bottom edge)
-    'Q4': (129.6, 118.9, 0, 'B'),
-    'Q3': (137.1, 118.9, 0, 'B'),
+    'Q2': (129.6, 118.9, 0, 'B'),        # phase 1 (bottom pair): drive pins 37-42 bottom right
+    'Q1': (137.1, 118.9, 0, 'B'),
     'C5': (143.3, 117.55, 0, 'B'),
     'C6': (148.15, 117.55, 0, 'B'),
     'C7': (143.3, 120.9, 0, 'B'),
     'C8': (148.15, 120.9, 0, 'B'),
-    # bottom, phase 2 bootstrap beside SW2 (short BOOST2 loop)
-    'D2': (126.0, 112.0, 0, 'B'),
-    'C19': (126.0, 114.4, 0, 'B'),
+    # bootstraps at their drive pins (U1 rot 0): C19 over pins 20/21 (top pair),
+    # C18 under pins 41/40 (bottom pair); the diodes beside them
+    'C19': (115.45, 110.2, 180, 'B'),    # pad 1 (BOOST2) right, over pin 21
+    'C18': (115.45, 121.86, 180, 'B'),   # pad 1 (BOOST1) right, under pin 40
+    'D2': (120.9, 111.7, 270, 'B'),      # BOOST2 pad up, DRVCC pad down to pin 26
+    'D1': (120.3, 122.15, 0, 'B'),
+    'C11': (120.88, 115.29, 270, 'B'),   # DRVCC pad up, beside pin 26 and D2
     # bottom, output polymers
     'C24': (142.6, 110.5, 180, 'B'),     # VOUT pads of both polymers in the middle, under the VOUT pour
     'C25': (152.0, 110.5, 0, 'B'),
     # top
-    'L1': (118.7, CY, 180, 'F'),
-    'L2': (135.95, CY, 0, 'F'),
-    'R9': (146.1, 104.3, 270, 'F'),
-    'R10': (146.1, 118.6, 90, 'F'),
+    'L2': (118.7, CY, 180, 'F'),
+    'L1': (135.95, CY, 0, 'F'),
+    'R10': (146.1, 104.3, 270, 'F'),
+    'R9': (146.1, 118.6, 90, 'F'),
     'C20': (150.73, 109.02, 0, 'F'),
     'C21': (155.63, 109.02, 180, 'F'),   # GND pads of C20-C23 in the middle column
     'C22': (150.73, 112.47, 0, 'F'),
@@ -72,7 +76,7 @@ ORIGIN = {
 }
 # by courtyard centre; U1 rotation is chosen in main()
 COURTYARD = {
-    'U1': (116.45, 116.1, 180, 'B'),      # 1.8 mm below for the phase 2 drive fan-out, a channel right
+    'U1': (114.45, 116.1, 0, 'B'),        # drive groups at the right ends of both rows, facing their FETs
 }
 AUX = ('J2', CX + 12.70, CY - 7.85)   # pads on B.Cu in an F footprint
 
@@ -83,13 +87,13 @@ RESERVED = {
           (132.6, 104.9, 136.0, 106.9),      # GND vias, Q2 sources
           (135.6, 107.1, 140.7, 113.6),      # C24 GND pour and vias
           (124.2, 116.5, 125.9, 122.6),      # GND vias, Q4 sources
-          (121.7, 110.9, 124.1, 122.6),      # routing channel right of U1 (pins 1-12)
-          (112.8, 108.65, 116.6, 110.8),     # corridor above the phase 1 drive pins 37-42 (escapes, In1 vias)
-          (122.3, 106.3, 124.0, 110.8),      # TG1 lane from Q1's gate down to the corridor
+          (114.3, 106.9, 122.2, 110.8),      # top band right: TG2 / BG2 / BOOST2 / SW2 escapes from pins 19-24
+          (122.3, 106.3, 124.0, 110.8),      # TG2 lane down to Q3's gate
           (106.9, 106.8, 117.3, 108.3),      # VIN pour band under C1-C4
-          (111.2, 121.2, 121.8, 122.95),     # fan-out below U1 (phase 2 drive pins)
+          (109.2, 121.2, 119.6, 122.95),     # fan-out below U1
           (135.4, 114.0, 141.3, 116.1)],     # VIN vias (In1 feed), above Q3's drain
-    'F': [(106.9, 100.3, 148.1, 104.7),      # SNS1P pour along the top edge
+    'F': [(106.9, 100.3, 148.1, 104.7),      # SNS2P pour along the top edge
+          (112.0, 120.0, 131.0, 122.95),     # drive vias and the SW1 lane along the bottom edge
           (106.9, 106.8, 117.0, 108.4),      # VIN backbone vias under C1-C4 (B), keep F clear
           (125.6, 104.8, 128.4, 118.2),      # SW1 vias right of L1 pad 1
           (132.1, 106.9, 134.5, 118.2),      # SW2 vias right of L2 pad 1
@@ -97,14 +101,17 @@ RESERVED = {
 }
 
 # side, zones (x0, y0, x1, y1)
-B2 = (128.4, 107.1, 135.6, 112.2)     # middle band, between the SW1 tail and the C24 GND field
-B3 = (133.7, 100.3, 137.3, 106.9)     # top edge, right of Q2's GND vias
+B2 = (128.4, 107.1, 135.6, 112.2)     # middle band, between the SW2 tail and the C24 GND field
+B3 = (133.7, 100.3, 137.3, 106.9)     # top edge, right of Q4's GND vias
 B5 = (146.5, 100.3, 151.4, 106.9)     # top edge, right of the aux pads
-B6 = (107.0, 108.7, 111.1, 122.6)     # left of U1: VIN_IC / DRVCC, phase 2 ITH2 / SS2
-P = (116.7, 106.6, 122.2, 110.8)      # above U1's analog pins 45-47: VFB and ITH1 networks
-B7 = (127.7, 110.9, 129.4, 116.0)     # above Q4 beside D2/C19, next to the SW1 tail: C18, C10
+B6 = (107.0, 108.7, 109.1, 122.6)     # left of U1: analog network (VFB, ITH1, SS1), INTVCC, OVLO
+BIN = (100.4, 106.9, 106.9, 114.0)    # bottom, input end between the S1 and S2 keep-outs
+TOPL = (109.4, 108.65, 114.3, 110.8)  # above pins 13-16: ITH2, SS2
+CH = (119.7, 112.9, 124.1, 120.9)     # right of U1, beside VIN_IC / RUN / DRVCC (pins 35-26)
 T1 = (100.4, 106.8, 110.4, 114.1)     # top, input end between S1 and S2
-T3 = (106.9, 120.0, 139.0, 122.6)     # top, bottom strip under the inductors
+T3 = (106.9, 120.0, 112.0, 122.6)     # top, bottom strip, input end (x 112-131 is the SW1 lane and drive vias)
+T6 = (106.95, 114.2, 110.6, 119.9)    # top, input end between the S2 keep-out and L2
+T7 = (131.0, 120.0, 139.0, 122.6)     # top, bottom strip right of the SW1 lane
 T4 = (148.3, 100.3, 151.4, 107.2)     # top, output end, beside S4
 T5 = (148.3, 114.3, 151.4, 122.6)     # top, output end, beside S3
 
@@ -118,16 +125,18 @@ SUPERVISION = ['U2', 'U3', 'C27', 'C28', 'R11', 'D3', 'C26', 'R12', 'R13', 'R14'
 # side, zones, refs, rotation
 PACK = [
     ('F', [T1], ['U2', 'U3'], 0),
-    ('F', [T1, T3], ['R3', 'R4'], 90),            # RUN divider: input end, beside VIN and U1's RUN pins
-    ('F', [T1, T3], ['R3', 'R4'], 0),
-    ('F', [T1, T4, T5, T3], SUPERVISION, 0),
-    ('B', [P], ['C12', 'C14', 'R6', 'R7', 'R8', 'C13'], 0),   # 0402s, three rows: VFB divider, ITH1 comp
-    ('B', [P, B2], ['R6', 'R7', 'R8', 'C13', 'C12', 'C14'], 0),
-    ('B', [B2, B3], ['C15', 'R5'], 90),                       # SS1 and OVLO: slow, DC
-    ('B', [B6], ['C9', 'C11', 'R1', 'C16', 'C17'], 90),
-    ('B', [B7], ['C18', 'C10'], 90),
-    ('B', [B2], ['D1'], 0),
-    ('B', [B6, B7, B2, B3, B5], ['R1', 'C9', 'C11', 'D1', 'C16', 'C17', 'C18', 'C10'], 0),
+    ('F', [T1, T6, T3], ['R3', 'R4'], 90),        # RUN divider: input end, beside VIN
+    ('F', [T1, T6, T3], ['R3', 'R4'], 0),
+    ('F', [T1, T6, T3, T7, T4, T5], SUPERVISION, 0),
+    ('F', [T1, T6, T3, T7, T4, T5], SUPERVISION, 90),
+    ('B', [B6], ['R6', 'R7', 'C12', 'R8', 'C13', 'C14', 'C15', 'C10', 'R5'], 90),   # 0402s
+    ('B', [TOPL], ['C16', 'C17'], 90),
+    ('B', [TOPL, B6], ['C10', 'R5'], 90),
+    ('B', [TOPL, B6], ['C10', 'R5'], 0),
+    ('B', [BIN], ['C15', 'R5'], 90),                         # SS1, OVLO: slow and DC
+    ('B', [CH], ['C9', 'R1'], 90),
+    ('B', [B6, TOPL, CH, B2, B3, B5], ['R6', 'R7', 'C12', 'R8', 'C13', 'C14', 'C15', 'C10', 'R5',
+                                      'C16', 'C17', 'C9', 'R1'], 0),
     ('B', [B3, B5, B2], SUPERVISION, 0),
 ]
 
