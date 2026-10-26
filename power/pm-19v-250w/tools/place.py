@@ -34,7 +34,7 @@ import pcbnew
 W, H = 58.4, 22.9
 X0, Y0 = 100.0, 100.0
 CX, CY = X0 + W / 2, Y0 + H / 2
-GAP = 0.25
+GAP = 0.2          # courtyard to courtyard
 SCREW_KEEP = 3.4     # keep-out radius around each screw, both sides (docs/pm-interface.md)
 
 # ref: (x, y, rotation, side) by footprint origin
@@ -72,7 +72,7 @@ ORIGIN = {
 }
 # by courtyard centre; U1 rotation is chosen in main()
 COURTYARD = {
-    'U1': (116.45, 116.0, 180, 'B'),      # 1.8 mm below for the phase 2 drive fan-out, a channel right
+    'U1': (116.45, 116.1, 180, 'B'),      # 1.8 mm below for the phase 2 drive fan-out, a channel right
 }
 AUX = ('J2', CX + 12.70, CY - 7.85)   # pads on B.Cu in an F footprint
 
@@ -84,7 +84,9 @@ RESERVED = {
           (135.6, 107.1, 140.7, 113.6),      # C24 GND pour and vias
           (124.2, 116.5, 125.9, 122.6),      # GND vias, Q4 sources
           (121.7, 110.9, 124.1, 122.6),      # routing channel right of U1 (pins 1-12)
-          (106.9, 106.8, 117.3, 108.6),      # VIN pour band under C1-C4
+          (112.8, 108.65, 116.6, 110.8),     # corridor above the phase 1 drive pins 37-42 (escapes, In1 vias)
+          (122.3, 106.3, 124.0, 110.8),      # TG1 lane from Q1's gate down to the corridor
+          (106.9, 106.8, 117.3, 108.3),      # VIN pour band under C1-C4
           (111.2, 121.2, 121.8, 122.95),     # fan-out below U1 (phase 2 drive pins)
           (135.4, 114.0, 141.3, 116.1)],     # VIN vias (In1 feed), above Q3's drain
     'F': [(106.9, 100.3, 148.1, 104.7),      # SNS1P pour along the top edge
@@ -95,35 +97,38 @@ RESERVED = {
 }
 
 # side, zones (x0, y0, x1, y1)
-B1 = (107.0, 108.7, 123.0, 110.6)     # middle band, above U1, left of the SW1 vias
-B2 = (127.2, 107.1, 137.9, 112.2)     # middle band, between SW1 vias and C24
+B2 = (128.4, 107.1, 135.6, 112.2)     # middle band, between the SW1 tail and the C24 GND field
 B3 = (133.7, 100.3, 137.3, 106.9)     # top edge, right of Q2's GND vias
 B5 = (146.5, 100.3, 151.4, 106.9)     # top edge, right of the aux pads
-B6 = (107.0, 108.7, 111.1, 122.6)     # left of U1
-B7 = (124.2, 110.9, 129.4, 116.0)     # above Q4, right of U1's routing channel: phase 2 boost
+B6 = (107.0, 108.7, 111.1, 122.6)     # left of U1: VIN_IC / DRVCC, phase 2 ITH2 / SS2
+P = (116.7, 106.6, 122.2, 110.8)      # above U1's analog pins 45-47: VFB and ITH1 networks
+B7 = (127.7, 110.9, 129.4, 116.0)     # above Q4 beside D2/C19, next to the SW1 tail: C18, C10
 T1 = (100.4, 106.8, 110.4, 114.1)     # top, input end between S1 and S2
 T3 = (106.9, 120.0, 139.0, 122.6)     # top, bottom strip under the inductors
 T4 = (148.3, 100.3, 151.4, 107.2)     # top, output end, beside S4
 T5 = (148.3, 114.3, 151.4, 122.6)     # top, output end, beside S3
 
-# U1's own parts: nearest free spot to the U1 pin they serve, pushed out
-# from the package (ref: (pin, rotations to try))
-ANCHOR = {
-    'C9': ('35', (90, 0)), 'R1': ('35', (90, 0)), 'C11': ('26', (90, 0)),
-    'C10': ('3', (0, 90)), 'C12': ('47', (90, 0)), 'R6': ('47', (90, 0)), 'R7': ('47', (90, 0)),
-    'R8': ('46', (90, 0)), 'C13': ('46', (90, 0)), 'C14': ('46', (90, 0)), 'C15': ('45', (90, 0)),
-    'C16': ('15', (90, 0)), 'C17': ('16', (90, 0)),
-    'D1': ('40', (0, 90)), 'C18': ('40', (90, 0)),
-    'R5': ('9', (90, 0)),
-}
+# U1's own parts by function, so its pins keep clear lanes for hand routing
+# (the gate drive): nothing above the phase 1 drive pins 37-42 (corridor in
+# RESERVED), the analog parts above pins 45-47, the supply parts left, the
+# bootstraps right of the routing channel next to their switch nodes.
+ANCHOR = {}
 
 SUPERVISION = ['U2', 'U3', 'C27', 'C28', 'R11', 'D3', 'C26', 'R12', 'R13', 'R14', 'R15', 'R16']
-# side, zones, refs, rotation for the rest
+# side, zones, refs, rotation
 PACK = [
+    ('F', [T1], ['U2', 'U3'], 0),
     ('F', [T1, T3], ['R3', 'R4'], 90),            # RUN divider: input end, beside VIN and U1's RUN pins
+    ('F', [T1, T3], ['R3', 'R4'], 0),
     ('F', [T1, T4, T5, T3], SUPERVISION, 0),
-    ('B', [B1, B2, B3, B5, B6], SUPERVISION, 0),
-    ('B', [B7, B2, B1, B6, B3, B5], ['C17'], 0),
+    ('B', [P], ['C12', 'C14', 'R6', 'R7', 'R8', 'C13'], 0),   # 0402s, three rows: VFB divider, ITH1 comp
+    ('B', [P, B2], ['R6', 'R7', 'R8', 'C13', 'C12', 'C14'], 0),
+    ('B', [B2, B3], ['C15', 'R5'], 90),                       # SS1 and OVLO: slow, DC
+    ('B', [B6], ['C9', 'C11', 'R1', 'C16', 'C17'], 90),
+    ('B', [B7], ['C18', 'C10'], 90),
+    ('B', [B2], ['D1'], 0),
+    ('B', [B6, B7, B2, B3, B5], ['R1', 'C9', 'C11', 'D1', 'C16', 'C17', 'C18', 'C10'], 0),
+    ('B', [B3, B5, B2], SUPERVISION, 0),
 ]
 
 
@@ -292,8 +297,8 @@ def main(src, dst):
                             boxes[side].append(bx)
                             done = True
                             break
-                        x += 0.25
-                    y += 0.25
+                        x += 0.05
+                    y += 0.05
                 if done:
                     break
             if not done:

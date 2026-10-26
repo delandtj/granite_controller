@@ -39,8 +39,8 @@ def rect(x0, y0, x1, y1):
 ZONES = [
     # phase 1 input: round the bottom of C1-C4 (their GND islands leave no
     # path between the rows), up to the VIN pads and Q1's drain
-    ('/VIN', B, 3, [(100.4, 100.4), (122.2, 100.4), (122.2, 106.35), (117.2, 106.35), (117.2, 108.5),
-                    (100.4, 108.5)]),
+    ('/VIN', B, 3, [(100.4, 100.4), (122.2, 100.4), (122.2, 106.35), (117.2, 106.35), (117.2, 108.2),
+                    (100.4, 108.2)]),
     # phase 2 input: over the top of C5-C8, Q3's drain
     ('/VIN', B, 3, [(135.6, 113.9), (147.5, 113.9), (147.5, 122.7), (135.6, 122.7)]),
     # In1 feed from S1 to phase 2
