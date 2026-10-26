@@ -1,26 +1,32 @@
 #!/usr/bin/env python3
-"""Placement of PM-19V-250W in a DOSA eighth-brick outline (58.4 x 22.9 mm).
+"""Placement of PM-19V-250W in the 58.4 x 22.9 mm module outline.
 Usage: place.py <in.kicad_pcb> <out.kicad_pcb>
 
-Board origin (100, 100), brick centre (129.2, 111.45); input pins on the
-left, output pins on the right.
+Board origin (100, 100), module centre (129.2, 111.45); input end on the
+left, output end on the right. Mount and aux pads per docs/pm-interface.md
+(J1 = PM_Mount_M2 at the module centre, screws S1 VIN top left, S2 GND
+bottom left, S3 GND bottom right, S4 VOUT top right; J2 = aux pads on B at
+(+12.70, -7.85)). Nothing but J1's own copper inside the screw keep-outs
+(6.8 mm diameter, both sides).
 
-Bottom: phase 1 along the top edge, left to right: input caps C1-C4 (VIN
-pad facing the MOSFETs), Q1 high side (drain left), Q2 low side. Phase 2
-mirrored along the bottom edge, right of the controller: Q4 low side, Q3
-high side (drain right), input caps C5-C8. So both switch nodes sit under
-their inductor, and every gate pin faces the controller. U1 bottom left.
+Bottom: phase 1 along the top edge, left to right: input caps C1-C4, Q1
+high side (drain left), Q2 low side. Phase 2 along the bottom edge, right
+of the controller: Q4 low side, Q3 high side (drain right), input caps
+C5-C8. U1 bottom left. The output polymers C24/C25 (2.0 mm high) in the
+middle band at the output end, between the aux pads and phase 2.
 
-Top: L1 and L2 side by side, switch pads over the switch-node vias; sense
-resistors R9/R10 at the top and bottom edge; output caps and the VOUT
-pour at the output end; the output supervision in the free strip beside
-J2 at the input end.
+Top: L1 and L2 (XAL1510, 16 x 17 mm) side by side, switch pads facing
+each other over the switch-node vias; sense resistors R9/R10 upright at
+the output end (pad 2 toward the middle, VOUT); output MLCCs C20-C23 in the
+middle band between the S4 and S3 keep-outs; the output supervision at the
+input end.
 
 Fixed parts are placed by footprint origin (MOSFETs, inductors, caps,
 sense resistors: origin = body centre) or by courtyard centre (U1); the
-small parts are packed into zones that keep the switch-node via fields
-clear (tools/power.py puts the vias there).
+small parts are packed into zones that keep the switch-node and GND via
+fields clear (tools/power.py puts the vias there).
 """
+import math
 import sys
 
 import pcbnew
@@ -29,57 +35,65 @@ W, H = 58.4, 22.9
 X0, Y0 = 100.0, 100.0
 CX, CY = X0 + W / 2, Y0 + H / 2
 GAP = 0.25
+SCREW_KEEP = 3.4     # keep-out radius around each screw, both sides (docs/pm-interface.md)
 
 # ref: (x, y, rotation, side) by footprint origin
 ORIGIN = {
     'J1': (CX, CY, 0, 'F'),
-    'J2': (107.0, CY, 0, 'F'),
     # bottom, phase 1 (top edge)
-    'C1': (107.75, 102.0, 180, 'B'),
-    'C2': (112.65, 102.0, 180, 'B'),
-    'C3': (107.75, 105.35, 180, 'B'),
-    'C4': (112.65, 105.35, 180, 'B'),
-    'Q1': (118.9, 104.0, 180, 'B'),
-    'Q2': (126.3, 104.0, 180, 'B'),
-    # bottom, phase 2 (bottom edge, mirrored)
+    'C1': (109.6, 101.95, 180, 'B'),
+    'C2': (114.45, 101.95, 180, 'B'),
+    'C3': (109.6, 105.3, 180, 'B'),
+    'C4': (114.45, 105.3, 180, 'B'),
+    'Q1': (120.8, 104.0, 180, 'B'),
+    'Q2': (128.3, 104.0, 180, 'B'),
+    # bottom, phase 2 (bottom edge)
     'Q4': (129.6, 118.9, 0, 'B'),
-    'Q3': (137.0, 118.9, 0, 'B'),
-    'C5': (143.2, 117.55, 0, 'B'),
-    'C6': (147.95, 117.55, 0, 'B'),
-    'C7': (143.2, 120.9, 0, 'B'),
-    'C8': (147.95, 120.9, 0, 'B'),
+    'Q3': (137.1, 118.9, 0, 'B'),
+    'C5': (143.3, 117.55, 0, 'B'),
+    'C6': (148.15, 117.55, 0, 'B'),
+    'C7': (143.3, 120.9, 0, 'B'),
+    'C8': (148.15, 120.9, 0, 'B'),
+    # bottom, output polymers
+    'C24': (142.6, 110.5, 0, 'B'),
+    'C25': (152.0, 110.5, 180, 'B'),
     # top
-    'L1': (119.5, CY, 180, 'F'),
-    'L2': (130.7, CY, 0, 'F'),
-    'R9': (142.2, 102.5, 0, 'F'),
-    'R10': (142.2, 120.4, 0, 'F'),
-    'C20': (142.25, 107.15, 90, 'F'),
-    'C21': (145.65, 107.15, 90, 'F'),
-    'C22': (142.25, 112.05, 90, 'F'),
-    'C23': (145.65, 112.05, 90, 'F'),
-    'C24': (149.9, 105.9, 90, 'F'),
-    'C25': (149.9, 117.0, 270, 'F'),
+    'L1': (119.7, CY, 180, 'F'),
+    'L2': (135.95, CY, 0, 'F'),
+    'R9': (146.1, 104.3, 270, 'F'),
+    'R10': (146.1, 118.6, 90, 'F'),
+    'C20': (150.73, 109.02, 0, 'F'),
+    'C21': (155.63, 109.02, 0, 'F'),
+    'C22': (150.73, 112.47, 0, 'F'),
+    'C23': (155.63, 112.47, 0, 'F'),
 }
 # by courtyard centre; U1 rotation is chosen in main()
 COURTYARD = {
-    'U1': (114.0, 116.0, 180, 'B'),
+    'U1': (118.95, 117.45, 180, 'B'),
 }
+AUX = ('J2', CX + 12.70, CY - 7.85)   # pads on B.Cu in an F footprint
 
-# keep-clear boxes (switch-node via fields), per side
+# keep-clear boxes (switch-node and GND via fields), per side
 RESERVED = {
-    'B': [(123.9, 106.9, 126.0, 110.0), (128.9, 113.3, 132.6, 116.0)],
-    'F': [],
+    'B': [(124.0, 107.1, 127.0, 110.2),      # SW1 vias, under L1 pad 1
+          (129.5, 112.4, 132.3, 115.9),      # SW2 vias, under L2 pad 1
+          (132.2, 101.0, 133.6, 106.7),      # GND vias, Q2 sources
+          (124.3, 116.6, 125.7, 122.4)],     # GND vias, Q4 sources
+    'F': [(106.9, 100.3, 148.1, 104.7)],     # SNS1P pour along the top edge
 }
 
-# side, zones (x0, y0, x1, y1), refs, rotation
-B6 = (105.3, 114.9, 108.7, 122.6)     # below J2, left of U1
-B1 = (108.5, 107.2, 123.8, 110.5)     # above U1, below phase 1
-B2 = (119.8, 110.6, 125.9, 122.6)     # right of U1
-B3 = (130.2, 100.3, 153.0, 106.9)     # right of Q2
-B4 = (133.0, 107.2, 153.0, 113.2)     # above phase 2 and its caps
-B5 = (150.6, 113.6, 153.0, 122.6)     # right of C6/C8
-T = (108.4, 100.3, 114.6, 110.3)      # top, beside J2, clear of U1 below
-T2 = (126.4, 117.9, 132.6, 122.6)     # top, below L2; x < 126 stays free for Q4's GND vias
+# side, zones (x0, y0, x1, y1)
+B1 = (107.0, 107.1, 123.9, 112.1)     # middle band, left of the SW1 vias
+B2 = (127.2, 107.1, 137.9, 112.2)     # middle band, between SW1 vias and C24
+B3 = (133.7, 100.3, 137.3, 106.9)     # top edge, right of Q2's GND vias
+B5 = (146.5, 100.3, 151.4, 106.9)     # top edge, right of the aux pads
+B6 = (107.0, 107.1, 113.6, 122.6)     # left of U1
+B7 = (124.2, 112.3, 129.4, 116.0)     # between U1, Q4 and the SW2 vias: phase 2 boost
+T1 = (100.4, 106.8, 111.4, 114.1)     # top, input end between S1 and S2
+T2 = (106.9, 104.8, 111.4, 106.7)     # top, below the SNS1P strip, left of L1
+T3 = (106.9, 120.0, 139.0, 122.6)     # top, bottom strip under the inductors
+T4 = (148.3, 100.3, 151.4, 107.2)     # top, output end, beside S4
+T5 = (148.3, 114.3, 151.4, 122.6)     # top, output end, beside S3
 
 # U1's own parts: nearest free spot to the U1 pin they serve, pushed out
 # from the package (ref: (pin, rotations to try))
@@ -89,14 +103,16 @@ ANCHOR = {
     'R8': ('46', (90, 0)), 'C13': ('46', (90, 0)), 'C14': ('46', (90, 0)), 'C15': ('45', (90, 0)),
     'C16': ('15', (90, 0)), 'C17': ('16', (90, 0)),
     'D1': ('40', (0, 90)), 'C18': ('40', (90, 0)), 'D2': ('21', (0, 90)), 'C19': ('21', (90, 0)),
-    'R4': ('32', (90, 0)), 'R5': ('9', (90, 0)), 'R3': ('32', (90, 0)), 'TH1': ('3', (0, 90)),
+    'R4': ('32', (90, 0)), 'R5': ('9', (90, 0)), 'R3': ('32', (90, 0)),
 }
 
+SUPERVISION = ['U2', 'U3', 'C27', 'C28', 'R11', 'D3', 'C26', 'R12', 'R13', 'R14', 'R15', 'R16']
 # side, zones, refs, rotation for the rest
 PACK = [
-    ('F', [T, T2], ['U2', 'U3', 'C27', 'C28', 'R11', 'D3', 'C26', 'R12', 'R13', 'R14', 'R15', 'R16'], 0),
-    ('B', [B6, B1, B2, B4, B3, B5], ['R3'], 90),
-    ('B', [B4, B3, B5], ['U2', 'U3', 'C27', 'C28', 'R11', 'D3', 'C26', 'R12', 'R13', 'R14', 'R15', 'R16'], 0),
+    ('F', [T1, T2, T4, T5, T3], SUPERVISION, 0),
+    ('B', [B6, B1, B2, B3, B5], ['R3'], 90),
+    ('B', [B1, B2, B3, B5, B6], SUPERVISION, 0),
+    ('B', [B7, B2, B1, B6], ['D2', 'C19', 'C17'], 0),
 ]
 
 
@@ -168,7 +184,7 @@ def main(src, dst):
     def keep(fp, side):
         bx = cbox(fp)
         if fp.GetAttributes() & pcbnew.FP_THROUGH_HOLE:
-            if bx[2] - bx[0] < 40:
+            if bx[2] - bx[0] < 40:                 # J1 spans the board: its screws are added below
                 boxes['F'].append(bx)
                 boxes['B'].append(bx)
         else:
@@ -188,12 +204,20 @@ def main(src, dst):
         p = fp.GetPosition()
         fp.SetPosition(pcbnew.VECTOR2I(p.x + mm(x - (x0 + x1) / 2), p.y + mm(y - (y0 + y1) / 2)))
         keep(fp, side)
-    # J1 is only pins: each pin is an obstacle on both sides
+    # J1 is only screw pads: each screw keep-out is an obstacle on both sides
     for pad in fps['J1'].Pads():
-        q, r = pad.GetPosition(), tomm(pad.GetSizeX()) / 2 + 0.3
+        if tomm(pad.GetSizeX()) < 3:
+            continue                                   # the via ring inside the pad
+        q, r = pad.GetPosition(), SCREW_KEEP
         pb = (tomm(q.x) - r, tomm(q.y) - r, tomm(q.x) + r, tomm(q.y) + r)
         boxes['F'].append(pb)
         boxes['B'].append(pb)
+    ref, x, y = AUX
+    fp = fps[ref]
+    orient(fp, 0, 'F')
+    fp.SetPosition(pcbnew.VECTOR2I(mm(x), mm(y)))
+    c = fp.GetCourtyard(pcbnew.B_CrtYd).BBox()
+    boxes['B'].append((tomm(c.GetLeft()), tomm(c.GetTop()), tomm(c.GetRight()), tomm(c.GetBottom())))
 
     left, placed = [], set()
     # anchored parts first, spiral out from a point 2.5 mm outside their pin
@@ -216,7 +240,6 @@ def main(src, dst):
             w, h = x1 - x0, y1 - y0
             for r in [i * 0.25 for i in range(0, 60)]:
                 for k in range(max(1, int(r * 8))):
-                    import math
                     a = 2 * math.pi * k / max(1, int(r * 8))
                     cx, cy = ax + r * math.cos(a), ay + r * math.sin(a)
                     bx = (cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2)

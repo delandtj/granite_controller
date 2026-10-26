@@ -61,7 +61,7 @@ it, pad n = Sn, so the pattern cannot be placed wrong:
 - F pad 5.0 mm round (screw head 3.8 + lock washer 4.4 OD).
 - Inner layers 4.0 mm round, solid to the net's pour.
 - B pad 6.2 mm round (standoff face 5.56 mm), no solder mask, no paste.
-- 8 vias 0.3 mm drill on a 4.4 mm circle inside the pads, untented
+- 8 vias 0.3 mm drill, 0.65 mm pad, on a 4.4 mm circle inside the pads, untented
   (no solder on the module side, the joint is clamped).
 - Solid connection to the pour (no thermal spokes) on every layer.
 

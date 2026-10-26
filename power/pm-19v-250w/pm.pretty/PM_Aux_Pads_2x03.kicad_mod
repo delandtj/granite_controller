@@ -8,7 +8,7 @@
 	(property "Reference" "REF**"
 		(at 0 -3.74 0)
 		(layer "F.Fab")
-		(uuid "d60c3f43-b8ce-46e0-93fc-f401f1c5f7e1")
+		(uuid "3dbe64f3-4ac1-42ec-bed6-0dad96c115b4")
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -18,7 +18,7 @@
 	(property "Value" "PM_Aux_Pads_2x03"
 		(at 0 3.74 0)
 		(layer "F.Fab")
-		(uuid "4921a136-6d48-4460-8600-96d147e297b9")
+		(uuid "eab63162-fb94-403c-a088-34892ee712df")
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -29,7 +29,7 @@
 		(at 0 0 0)
 		(layer "F.Fab")
 		(hide yes)
-		(uuid "bc4f0314-e394-44a2-9dc9-fcf093e1356e")
+		(uuid "91177b6c-665a-499a-987c-5c06c9514737")
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -40,7 +40,7 @@
 		(at 0 0 0)
 		(layer "F.Fab")
 		(hide yes)
-		(uuid "1146ab3f-f87d-4b1c-a79f-b7bf298ef68e")
+		(uuid "59f5c0df-d748-4ac2-921c-57533b6e2a71")
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -58,7 +58,7 @@
 		)
 		(fill no)
 		(layer "B.CrtYd")
-		(uuid "9412901b-b1a1-41f3-a9a3-b3d869fe5e54")
+		(uuid "2aff2b6d-ffe5-4015-aef5-a4a22e5c80cd")
 	)
 	(fp_rect
 		(start -3.81 -2.54)
@@ -69,12 +69,12 @@
 		)
 		(fill no)
 		(layer "B.Fab")
-		(uuid "a9abd94b-693e-4fbe-ae46-93d4de43e831")
+		(uuid "23f1ee1e-d790-4db1-8893-3b15c906c445")
 	)
 	(fp_text user "1"
 		(at -4.44 -1.27 0)
 		(layer "B.Fab")
-		(uuid "27a56f9f-51c6-4185-92bb-ab29ab7d4172")
+		(uuid "074f47d1-67fd-405f-bc2e-d228af678064")
 		(effects
 			(font
 				(size 0.6 0.6)
@@ -86,37 +86,37 @@
 		(at -2.54 -1.27)
 		(size 2.2 2.2)
 		(layers "B.Cu" "B.Mask")
-		(uuid "1552f90a-d4b0-4dca-b219-afdb476c5479")
+		(uuid "63cad964-fc46-4177-9bd1-aed849423066")
 	)
 	(pad "2" smd circle
 		(at 2.54 -1.27)
 		(size 2.2 2.2)
 		(layers "B.Cu" "B.Mask")
-		(uuid "3383b015-1b7f-4c36-bd77-1da8a2053479")
+		(uuid "7eaa6e43-0d6c-49c2-b45c-d5094731caa2")
 	)
 	(pad "3" smd circle
 		(at -2.54 1.27)
 		(size 2.2 2.2)
 		(layers "B.Cu" "B.Mask")
-		(uuid "e2735aca-ab2b-4be4-9d65-23cdc5bb6d37")
+		(uuid "d6c5c8cf-dc27-463c-9ed5-60d1416282d9")
 	)
 	(pad "4" smd circle
 		(at 2.54 1.27)
 		(size 2.2 2.2)
 		(layers "B.Cu" "B.Mask")
-		(uuid "0e3d0ca6-bd70-4072-914f-0495b4f3c3d3")
+		(uuid "4665991c-2f5e-4691-8ba8-b294391f413b")
 	)
 	(pad "5" smd circle
 		(at 0 -1.27)
 		(size 2.2 2.2)
 		(layers "B.Cu" "B.Mask")
-		(uuid "9088ecb6-488b-4f7c-a83f-66f1d3f8fd3b")
+		(uuid "79bf92b2-30de-480a-aeef-c356d19c3ea1")
 	)
 	(pad "6" smd circle
 		(at 0 1.27)
 		(size 2.2 2.2)
 		(layers "B.Cu" "B.Mask")
-		(uuid "4ec48787-ca82-4d98-97df-44316d7ecfae")
+		(uuid "a74d8131-5cbd-4356-bc53-385de1dd49cf")
 	)
 	(embedded_fonts no)
 )

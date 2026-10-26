@@ -51,7 +51,7 @@ AUX_NAMES = ['OV_KILL', 'PGOOD', 'ID', 'RUN', 'GND', 'GND']
 
 # module side: M2 clearance hole, head pad on top, standoff face pad underneath
 MOD_DRILL, MOD_F, MOD_IN, MOD_B = 2.4, 5.0, 4.0, 6.2
-MOD_VIAS, MOD_VIA_R, MOD_VIA_DRILL, MOD_VIA_D = 8, 2.2, 0.3, 0.6   # stitching ring inside the screw pads
+MOD_VIAS, MOD_VIA_R, MOD_VIA_DRILL, MOD_VIA_D = 8, 2.2, 0.3, 0.65  # stitching ring inside the screw pads
 # plane side: standoff pilot hole, solder pad for the 5.56 mm body
 SO_DRILL, SO_F, SO_IN, SO_B, SO_BODY = 3.75, 6.4, 5.0, 5.0, 5.56
 MOD_AUX_PAD, POGO_PAD = 2.2, 2.2
