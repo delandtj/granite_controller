@@ -1,0 +1,60 @@
+# pcbkit settings for the PM-19V-250W port module (overrides the
+# granite_controller pcbkit.toml one level up). 4L JLC, 58.4 x 22.9 mm
+# eighth-brick outline (drawn by tools/place.py, not pcbkit outline).
+#
+# Board flow: mkboard -> tools/place.py -> setrules -> tools/power.py
+# (outer power pours and via fields, group "power") -> krt-route -> gndpour.
+
+[project]
+name = "pm-19v-250w"
+libs = { pm = "pm.pretty" }
+
+[mkboard]
+copper_layers = 4
+stage_x = -120.0
+sheet_pitch = 90.0
+cell = 14.0
+per_row = 6
+
+[rules]
+stackup = "jlc04161h-7628"
+# In1: signals (and the ~2 A VIN feed to phase 2); In2: solid GND, next to
+# the bottom MOSFETs so the hot-loop return runs right under them.
+layers = { "In1.Cu" = ["signal", "SIG"], "In2.Cu" = ["power", "GND"] }
+
+[rules.netclasses]
+# name = [track, clearance, via_dia, via_drill]
+Default = [0.2, 0.2, 0.5, 0.2]
+
+[krt]
+work = "~/.cache/pcbkit/pm-19v-250w/route"
+rework = "~/.cache/pcbkit/pm-19v-250w/reroute"
+clearance = 0.2
+via = [0.5, 0.2]
+track_width = 0.2
+same_net_pad_clearance = 0.15
+signal_layers = ["F.Cu", "In1.Cu", "B.Cu"]
+keep_groups = ["power"]
+# gate drive and bootstrap only: GND, VIN, VOUT and the switch nodes are
+# pours and planes (tools/power.py, [krt] planes), their router legs are taps
+power_nets = ["/VIN", "/TG1", "/TG2", "/BG1", "/BG2", "/BOOST1", "/BOOST2", "/DRVCC"]
+# 0.3: widest track that leaves U1's 0.3 mm pads at 0.5 mm pitch with 0.2
+# clearance (KRT only necks down plane taps, not pad escapes)
+power_widths = [0.8, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3]
+planes = { nets = ["GND"], layers = ["In2.Cu"], via = [0.6, 0.3] }
+ground = { net = "GND", width = 0.5 }
+
+[gndpour]
+net = "GND"
+layers = ["F.Cu", "B.Cu"]
+via = [0.6, 0.3]
+via_clearance = 0.3
+edge_in = 0.8
+edge_pitch = 3.0
+grid = 3.0
+short_edge_inset = 0.0
+zone_clearance = 0.25
+zone_min_width = 0.25
+priority = 1
+group = "gnd-stitch"
+fill = true

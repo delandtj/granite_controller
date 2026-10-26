@@ -37,10 +37,10 @@ head and the standoff face.
 |---|---|---|---|---|
 | S1 | VIN | -25.70 | -7.95 | 5.5 A at 48 V, 7 A at 38 V |
 | S2 | GND (input) | -25.70 | +5.95 | as S1 |
-| S3 | VOUT | +25.70 | -7.95 | 13.2 A / 20 A |
-| S4 | GND (output) | +25.70 | +5.95 | 13.2 A / 20 A |
+| S3 | GND (output) | +25.70 | +5.95 | 13.2 A / 20 A |
+| S4 | VOUT | +25.70 | -7.95 | 13.2 A / 20 A |
 
-S2 and S4 sit 2.0 mm closer to the centre line than S1 and S3. That is
+S2 and S3 sit 2.0 mm closer to the centre line than S1 and S4. That is
 the polarisation: turned 180 degrees, (x, y) -> (-x, -y), the module's
 holes land at y = +7.95 and -5.95, where no host standoff is (2.0 mm
 off against a 0.2 mm hole float), so not even one screw goes in with
@@ -51,11 +51,12 @@ same at both ends.
 
 Insets: 3.5 mm from the short edges; 3.5 mm from the top long edge,
 5.5 mm from the bottom one. The 6.2 mm underside pad leaves 0.4 mm to
-the edge at S1 and S3.
+the edge at S1 and S4.
 
 ## Screw pads
 
-Module (one footprint, four instances, net per table):
+Module: one footprint, pm:PM_Mount_M2 (schematic J1), all four screws in
+it, pad n = Sn, so the pattern cannot be placed wrong:
 - Plated hole 2.4 mm (M2 clearance, +/-0.2 float).
 - F pad 5.0 mm round (screw head 3.8 + lock washer 4.4 OD).
 - Inner layers 4.0 mm round, solid to the net's pour.
@@ -84,11 +85,15 @@ only, never power.
 | Pad | Net | x | y | Direction | Note |
 |---|---|---|---|---|---|
 | A1 | OV_KILL | +10.16 | -9.12 | module -> host | open drain, low = overvoltage, sets the slot latch |
-| A2 | GND | +12.70 | -9.12 | | reference for ID and the open drains |
-| A3 | PGOOD | +15.24 | -9.12 | module -> host | open drain, high = good |
-| A4 | ID | +10.16 | -6.58 | module -> host | resistor to GND, table below |
-| A5 | GND | +12.70 | -6.58 | | the spare, second GND |
-| A6 | RUN | +15.24 | -6.58 | host -> module | open = on, host pulls low = off |
+| A5 | GND | +12.70 | -9.12 | | reference for ID and the open drains |
+| A2 | PGOOD | +15.24 | -9.12 | module -> host | open drain, high = good |
+| A3 | ID | +10.16 | -6.58 | module -> host | resistor to GND, table below |
+| A6 | GND | +12.70 | -6.58 | | the spare, second GND |
+| A4 | RUN | +15.24 | -6.58 | host -> module | open = on, host pulls low = off |
+
+Pads are numbered by function (signals 1-4, GND 5-6), not by position;
+module footprint pm:PM_Aux_Pads_2x03 (schematic J2, pin n = An), host
+pogo designators follow the same numbers.
 
 - Pitch 2.54 mm both ways; block centre (+12.70, -7.85). Lies on the
   module's B side under the output sense resistor, clear of the
@@ -139,8 +144,8 @@ centre at (129.2, 111.45)):
   x; D1 (B) by 0.35 mm in y.
 - S2 (103.5, 117.4): R4, C9 and C11 (B, gate drive and OVLO) inside
   the keep-out.
-- S3 (154.9, 103.5): C24 (F, 100 uF) overlaps by 0.7 mm.
-- S4 (154.9, 117.4): C25 (F, 100 uF) overlaps by 0.7 mm.
+- S4 (154.9, 103.5): C24 (F, 100 uF) overlaps by 0.7 mm.
+- S3 (154.9, 117.4): C25 (F, 100 uF) overlaps by 0.7 mm.
 - Aux block: clear as placed.
 - TH1 (NTC), and J1/J2 (DOSA footprint and aux row) go away.
 
@@ -149,9 +154,8 @@ current board.
 
 ## Generator
 
-A script (power/tools/pmmount.py, restore from tag pm-mount-drawn and
-rework) reads the numbers above from one table in the script, emits:
-- module: PM_Mount_M2 (x4 by net), PM_Aux_Pads_2x03;
+power/tools/pmmount.py holds the numbers above in one table and emits:
+- module: PM_Mount_M2 (all four screws), PM_Aux_Pads_2x03;
 - host: PM_Standoff_M2x6_SMTSO, PM_Pogo_YZ130115073P,
   PM_Module_Outline (silk outline with S1 marker and the input end
   marked "VIN");
