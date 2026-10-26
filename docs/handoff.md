@@ -2,7 +2,85 @@
 
 Read this first, then docs/controller.md and docs/power-board.md.
 
-## Start here (written 2026-10-25 for the next session)
+## Start here (2026-10-26 evening): decide on the mount commit first
+
+The last commit, abb9f50 "screwed PM module mount footprints", was drawn
+before the decisions it depends on (screw positions, aux map, plane
+organisation, 48-60 V input), all of which changed in the discussion
+after it. Its boards are NOT clean: plane 245 DRC / 18 unconnected,
+carrier 15 / 6, module 142 / 6 (details in the 2026-10-26 mount block
+further down). The user has not decided whether to keep it.
+
+Revert point, local tags (not pushed):
+  pm-mount-before = 6ce63eb  (boards routed and clean, decision 4 doc in)
+  pm-mount-drawn  = abb9f50  (the drawn mount)
+To drop it: `git revert abb9f50` (keeps history), or, while master is
+not pushed, `git reset --hard pm-mount-before` (ask first).
+master is 5 commits ahead of origin, nothing pushed today.
+
+Decisions made in the discussion (2026-10-26, not yet in an ADR):
+- Mount: screwed module, M2 into SMT standoffs on the host, pogo pins on
+  the host for the aux signals pressing on flat pads under the module.
+  JLC places one part per designator: one part per standoff / pogo pin.
+  Parts found: standoff Sinhoo SMTSO2060CTJ C2915628 (M2 x 6, 5.56 body,
+  3.6 pilot 1.53 long); pogo Xinyangze YZ130115073P-01 C5157258 (2 mm
+  base, 7.3 free / 5.5 compressed per the listing, no drawing: sample).
+- The module is no longer DOSA in anything but its 58.4 x 22.9 outline
+  (no pins, own aux block, non-isolated). Screw positions are free and
+  should follow the module layout, not the DOSA corners (the DOSA pin 3
+  spot sits in the gate drive; no clear spot at the input end exists
+  with the current placement). Write a module interface spec (outline,
+  screws and nets, pads, aux block and map, 6 mm gap, part heights both
+  sides) and generate all footprints from it.
+- Input 48-60 V: OVLO to ~66-68 V on module (R3-R5) and plane (LM5069
+  divider), plane trips first. Keep the 100 V parts (bus surge clamp
+  must keep transients under 100 V). Recheck slot clamp D1 SMBJ60A
+  (60 V standoff = top of range).
+- Plane: vertical modules, one slot per column, all columns identical
+  (route one, copy: KiCad 10 multichannel repeat layout or a pcbkit
+  script). VBUS bus along the top, node connector at the bottom edge,
+  core (MCU, bucks, link, I2C mux) as its own column. "Up" is as drawn.
+  4-slot tile; 8 slots = two tiles, each with its own MCU.
+- Column to core interface: VBUS, GND, 3V3, SDA_n/SCL_n (TCA9548A mux
+  in the core, same addresses in every column), INT_n (open drain), ID_n.
+  Per column an I2C GPIO expander (TCA9535 class) for the slot control
+  and status lines; OV latch stays local hardware.
+- ID stays analog (option "a0"): resistor on the module, 10k pull-up and
+  100n in the column, trace to an MCU ADC pin (1k series). Open = no
+  module.
+- TEMP dropped (submerged modules sit at fluid temperature); per slot
+  the INA238 die temperature is free. Fluid temperature: the controller's
+  three 1-Wire connectors (maybe a DS18B20 per tile via the link cable).
+- SDA/SCL dropped from the aux. Aux shrinks to 5 contacts:
+  OV_KILL, PGOOD, ID, GND, RUN.
+- OV_KILL threshold 22.7 V: probably OK, depends on the nodes.
+- Energy per node, if wanted later: INA228 (energy accumulator) is
+  believed to be pin-compatible with the INA238; check before use.
+
+Open questions, for the user:
+1. Keep or revert abb9f50 (tags above).
+2. Off-the-shelf fallback: does it matter that a commercial eighth
+   brick (e.g. 24 V trimmed to 19.2 V, needs a TRIM footprint) could be
+   soldered into the plane? If yes: keep DOSA pin holes on the plane and
+   put the screws / pogos of our module where they avoid them. If no:
+   the module is free.
+3. Tile shape: 1x4 (~155 x 130 mm, all columns same orientation, even
+   cooling, connectors on one edge; recommended) or 2x2 (~100 x 220 mm,
+   top row in the bottom row's warm fluid). Depends on the pod envelope
+   and how planes sit in the box (6x8 or 8x8 slots per box).
+4. Node connectors (now Molex Mini-Fit Jr 2x4 39-28-1083: 2x +19 V,
+   2x GND, PWR_SW, RST_SW, PLED+/-): cable or direct mating, power and
+   front-panel signals in one connector or split, latching / mating
+   cycles, which edge, and the immersion fluid (connector plastics and
+   plating compatibility).
+5. Link cable: does it carry a 1-Wire line for a per-tile DS18B20?
+6. Aux block shape for 5 contacts (1x5 or 2x3) and where on the module.
+
+Suggested order once those are answered: ADR for the plane tile and
+module interface -> module rework (screws, aux, OVLO, drop TEMP / SDA
+SCL) -> plane column generator -> route one column -> copy.
+
+## Earlier: start here (written 2026-10-25 for the next session)
 
 State: PP-48-2S (power/pp-48-2s) is schematic-complete, routed, DRC 0
 errors (5 warnings: 4 starved_thermal at R107.2 U201.5 U102.1 C203.2,
