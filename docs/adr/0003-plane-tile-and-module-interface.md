@@ -66,8 +66,10 @@ rest of the plane rested on assumptions that no longer hold:
 6. **Mount**: four M2 screws through the module into SMT standoffs
    reflowed on the plane (Sinhoo SMTSO2060CTJ, C2915628); the screws
    carry VIN, GND and VOUT through clamped pads, with lock washers.
-   Screw positions follow the module layout, not the DOSA corners;
-   they are fixed in docs/pm-interface.md and every footprint (module,
+   Screw positions are not the DOSA corners; they are fixed in
+   docs/pm-interface.md, asymmetric so a module turned 180 degrees
+   cannot be screwed down (VIN on a GND or VOUT standoff), and the
+   250 W module re-placement clears them and every footprint (module,
    plane, bench carrier) is generated from that spec.
 7. **Aux**: 2x3 flat pads on the module underside, pogo pins on the
    plane (Xinyangze YZ130115073P-01, C5157258, one part per

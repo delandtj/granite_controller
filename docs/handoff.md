@@ -2,7 +2,29 @@
 
 Read this first, then docs/controller.md and docs/power-board.md.
 
-## Start here (2026-10-26 evening): decide on the mount commit first
+## Start here (2026-10-26 late): documents written, review them
+
+Open questions 1-8 below were answered by the user and steps 1-3 of
+the plan are drafted:
+- docs/plane-requirements.md (R1-R22)
+- docs/adr/0003-plane-tile-and-module-interface.md (Proposed; 4
+  review asks at the end of its Implementation Plan: names PP-48-4T /
+  PM-19V-250W, tile LM5069-1 vs -2, module edited in place or copied,
+  INT wired-OR vs per column)
+- docs/pm-interface.md (screw positions and nets, polarised pattern,
+  pads, 2x3 aux map, ID table, heights, what the module re-placement
+  must clear)
+abb9f50 is reverted (797cb1e); pmmount.py lives at tag pm-mount-drawn.
+
+Answers: 1 revert; 2 no DOSA fallback, module free; 3 tile 1x4; 4
+node connector split (power 2x3 / HCS, front panel separate); 5 no
+1-Wire on the link; 6 aux 2x3, spare = second GND; 7 protection chain
+confirmed, reverse polarity by keyed connector only; 8 module 250 W.
+
+Next: user reviews the three docs -> ADR Accepted -> step 4 (module
+update, slot column, core column, tile).
+
+## Earlier (2026-10-26 evening): decide on the mount commit first
 
 The last commit, abb9f50 "screwed PM module mount footprints", was drawn
 before the decisions it depends on (screw positions, aux map, plane
