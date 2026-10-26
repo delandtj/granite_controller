@@ -7,9 +7,11 @@ Read this first, then docs/controller.md and docs/power-board.md.
 State: PP-48-2S (power/pp-48-2s) is schematic-complete, routed, DRC 0
 errors (5 warnings: 4 starved_thermal at R107.2 U201.5 U102.1 C203.2,
 1 silk_edge at J1), ERC 0, board fields in sync with the schematic
-(drc --schematic-parity 0 mismatches). Nothing is ordered. Nothing is
-pushed: granite_controller master is 16 commits ahead of origin,
-~/Electronics/pcbkit is 5 ahead. Push only when asked.
+(drc --schematic-parity 0 mismatches). Nothing is ordered.
+granite_controller master was pushed 2026-10-26 (in sync with origin).
+~/Electronics/pcbkit main is still 5 commits ahead of origin, unpushed
+(pcbkit relink lives there; push it before working from another
+machine). Push only when asked.
 
 The pipeline, in order, whenever the schematic changes (all from
 power/pp-48-2s/):
@@ -28,11 +30,12 @@ or tools/gensch.py, never the sheets. If KiCad has the project open,
 reload before saving from the GUI (the board and sheets changed on
 disk several times on 2026-10-24).
 
-Uncommitted in the tree, not mine, left alone: pp-48-2s.kicad_pro
-(KiCad GUI set solder_mask_to_copper_clearance 0.005),
-fabrication-toolkit-options.json and production/ (a Fabrication
-Toolkit export made BEFORE the field sync, so its bom.csv has the old
-values and 92 empty LCSC cells: regenerate it, or use pcbkit jlcfab).
+2026-10-26: pp-48-2s.kicad_pro (solder_mask_to_copper_clearance 0.005,
+STEP export path) and fabrication-toolkit-options.json are committed.
+power/*/*.step and power/*/production/ are now gitignored (regenerable;
+the production/ export on the laptop was made BEFORE the field sync, so
+its bom.csv has old values and 92 empty LCSC cells: regenerate it, or
+use pcbkit jlcfab).
 
 NEXT, in the order I would take them:
 1. Parts: 58 of 174 footprints still have no LCSC number (the CA
