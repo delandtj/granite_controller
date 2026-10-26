@@ -2,7 +2,27 @@
 
 Read this first, then docs/controller.md and docs/power-board.md.
 
-## Start here (2026-10-26 late): documents written, review them
+## Start here (2026-10-26 night): PM-19V-250W layout in progress
+
+ADR 0003 and docs/pm-interface.md Accepted. Module work in the new
+project power/pm-19v-250w/ (pm-19v-200w kept a few days, then decide).
+Done, committed:
+- Schematic: J1 screw pads (pm:PM_Mount_M2, 1 VIN 2/3 GND 4 VOUT),
+  J2 2x3 aux (1 OV_KILL 2 PGOOD 3 ID 4 RUN 5/6 GND), TH1 gone, R16 22k,
+  OVLO R4/R5 13.7k/18.2k (38.5 / 67.5 V), R9/R10 7 mOhm (C20608751),
+  R8 13k, L1/L2 Coilcraft XAL1510-223 (consign), C24/C25 KEMET T523H
+  100u 35V 7360-20 (C2158991) on B. ERC = the 200 W baseline (5 known).
+- power/tools/pmmount.py regenerates the mount footprints from the spec
+  (polarised: S2/S3 2 mm inward; 180 degrees turned, no screw lines up).
+- Board rebuilt from the netlist: tools/place.py (new tables), tools/
+  power.py (new pours: In1 VIN feed from S1, GND islands with vias under
+  the input caps, VOUT round a GND island to S4). Flow: mkboard ->
+  place.py -> setrules -> power.py -> krt-route -> gndpour -> silk.
+Open: LTC7810 typ/max current sense threshold (assumed 67/75/83 mV; only
+67 known) - analog.com did not load. Stock of C22793 / C22892 / C31850
+not seen (API without stock). Routing result: see below / next block.
+
+## Earlier (2026-10-26 late): documents written, review them
 
 Open questions 1-8 below were answered by the user and steps 1-3 of
 the plan are drafted:
