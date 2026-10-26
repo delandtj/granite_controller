@@ -23,3 +23,7 @@ firmware/*recovery_token*
 
 # Cargo build output
 target/
+
+# KiCad STEP exports and JLC fabrication-toolkit output (regenerable)
+power/*/*.step
+power/*/production/
