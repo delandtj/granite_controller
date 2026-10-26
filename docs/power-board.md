@@ -256,9 +256,17 @@ themselves.
    plane-type agnostic), not a second slot kind on this plane.
 3. DECIDED 2026-10-23: 2, 4 and 8 slot planes of one design; 6 is a
    depopulated 8.
-4. Module form: the module is a brick soldered into the plane (see
-   "Mounting on the carrier"); the plane carries the slot's output
-   connector. A plug-in receptacle only on the bench carrier.
+4. Module form: CHANGED 2026-10-26: the module is screwed down, not
+   soldered (quick swap matters more than volume cost or a commercial
+   fallback for now; a soldered joint on a board that has been in the
+   dielectric fluid needs cleaning before rework). M2 screws through
+   the module into SMT standoffs reflowed on the plane (SMTSO-M2 series
+   at JLC), current through the clamped pads, on the DOSA positions
+   1, 3 or a spare GND point, 4 and 8 (5-7 are NC on our module, so the
+   3.81 mm pitch there does not matter). A soldered commercial brick
+   stops being a clean fallback. Was (2026-10-23): soldered DOSA pins,
+   plug-in receptacles only on the bench carrier. Open: RUN (pin 2) and
+   the aux row, see "Mounting on the carrier".
 5. Bus voltage target and supplies: confirm 48-54 V supply models,
    efficiency at 1.6-3 kW, current share, PMBus. Same for 19 V supplies,
    to settle the loss table with datasheet numbers.
