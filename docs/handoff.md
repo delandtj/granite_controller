@@ -76,6 +76,48 @@ Open questions, for the user:
 5. Link cable: does it carry a 1-Wire line for a per-tile DS18B20?
 6. Aux block shape for 5 contacts (1x5 or 2x3) and where on the module.
 
+7. Protection without fuses (fuses are rated in air: cooled in fluid
+   they blow late or not at all, arc in the fluid, and cannot be
+   replaced in the tank). Proposed chain, confirm:
+   | Box supply / branch | breaker or fuse OUTSIDE the fluid | by hand |
+   | Tile input | LM5069 + INA238 (or I2C hot-swap LM5066I / LTC4282, check stock) | software / auto-retry |
+   | Slot input | LM5069 + INA238, OV latch | software |
+   | Module output | buck current limit; PGOOD-loss -> slot latch (with start-up blanking); INA238 ALERT above ~210-220 W -> latch | software |
+   - Plane F1 (tile input fuse) -> tile hot-swap: shunt ~1.5 mOhm for a
+     30 A class limit, 2 FETs in parallel; reset by pulling UVLO low
+     (expander + FET, as on the slots), LM5069-1 latch-off or -2 retry.
+   - The core (MCU, expander, mux, link, 3V3 buck; 12 V aux buck
+     preferably too) must be fed from BEFORE the tile hot-swap, or a
+     tripped tile kills the MCU that has to reset it.
+   - Plane F2 (12 V aux 1.5 A fuse) -> drop; LM5164 (1 A) limits on its
+     own (check: hiccup or continuous limit); AUX_SNS shows a short.
+   - Reverse polarity was F1 + D1; LM5069 does not block reverse: keyed
+     input connector, or an ideal-diode controller + FET (~25 A path).
+   - Optional upgrade: eFuse on the module's 19 V output (~15 A, for
+     ~20-24 V; part not chosen) for an exact per-node limit.
+8. Module power class: nodes (Halo Gorgon) peak ~180 W = 9.5 A at 19 V,
+   the 200 W module has ~10% headroom. Proposal: size the module for
+   ~250 W (same LTC7810 two-phase, ~6.6 A per phase, current limit
+   ~18-20 A; recheck FETs, inductors, sense resistors, compensation at
+   full load). The module current limit cannot be lowered (boost peaks).
+   Plane at 250 W per slot:
+   - Slot input 5.5 A at 48 V (~7 A at 38 V UVLO): shunt, LM5069
+     (15.7 A limit), BSC070N10NS5 (~0.35 W), INA238 (~25 mV of 41 mV):
+     all fine as they are.
+   - Slot output ~13 A, up to 18-20 A in a fault until the latch acts:
+     node connector needs 3 contacts per polarity (Mini-Fit 2x5 / 2x6)
+     or Mini-Fit HCS terminals; cable 14 AWG (or 3x 16 AWG per
+     polarity). NODE copper: in the column layout VOUT screw to
+     connector is only 15-25 mm: wide pours on both outer layers, 15-20
+     stitching vias, solid (no thermal spoke) connections on standoff
+     and connector pads; 2 oz not needed for NODE.
+   - Tile VBUS: 4 x ~265 W = ~22 A at 48 V, ~28 A at 38 V (box 13-16 kW
+     at 12-16 tiles): 30 A class tile input connector, bus bar or 2 oz
+     copper for VBUS along the top (that is where heavy copper matters),
+     bus TVS still keeping surges under 100 V.
+   - Standoff joints: a clamped M2 joint is < 1 mOhm (~0.2 W at 20 A);
+     use lock washers so the clamp does not relax.
+
 Suggested order once those are answered: ADR for the plane tile and
 module interface -> module rework (screws, aux, OVLO, drop TEMP / SDA
 SCL) -> plane column generator -> route one column -> copy.
