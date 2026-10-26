@@ -254,21 +254,14 @@ class Sheet:
             o += prop("Value", s.value, vx, vy, justify=None, ang=fa)
         else:
             dirs = {s.pin_out(p["num"]) for p in s.pins}
-            if len(s.pins) == 1:           # one-pin part (standoff, pogo pin): reference beside it, away from the pin
-                side = "single"
-            elif len(s.pins) <= 2:
+            if len(s.pins) <= 2:
                 side = "right" if (y1 - y0) >= (x1 - x0) else "split"
             elif (0, -1) not in dirs: side = "above"
             elif (0, 1) not in dirs: side = "below"
             elif (1, 0) not in dirs: side = "right"
             elif (-1, 0) not in dirs: side = "left"
             else: side = "corner"          # pins on all four sides: top-right corner, outside
-            if side == "single":
-                px = s.pin_out(s.pins[0]["num"])[0]
-                rp = (x0 - 1.27 - tw(ref), cy) if px > 0 else (x1 + 1.27 + tw(ref), cy)
-                o += prop("Reference", ref, rp[0], rp[1], justify=None, ang=fa)
-                o += prop("Value", s.value, x, y, hide=True)
-            elif side == "split":          # two-pin part lying flat: reference above, value below
+            if side == "split":            # two-pin part lying flat: reference above, value below
                 rp, vp = (cx, y0 - 1.27), (cx, y1 + 1.905)
             elif side == "above":
                 rp, vp = (cx, y0 - 2.794), (cx, y0 - 1.27)
@@ -280,9 +273,8 @@ class Sheet:
                 rp, vp = (x0 - 1.27 - tw(ref), cy - 1.27), (x0 - 1.27 - tw(s.value), cy + 1.27)
             else:
                 rp, vp = (x1 + 1.27 + tw(ref), y0 - 2.794), (x1 + 1.27 + tw(s.value), y0 - 1.27)
-            if side != "single":
-                o += prop("Reference", ref, rp[0], rp[1], justify=None, ang=fa)
-                o += prop("Value", s.value, vp[0], vp[1], justify=None, ang=fa)
+            o += prop("Reference", ref, rp[0], rp[1], justify=None, ang=fa)
+            o += prop("Value", s.value, vp[0], vp[1], justify=None, ang=fa)
         o += prop("Footprint", s.fp, x, y, hide=True)
         o += prop("Datasheet", "", x, y, hide=True)
         o += prop("Description", s.desc, x, y, hide=True)

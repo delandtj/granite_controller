@@ -239,40 +239,6 @@ with {"keyword", "currentPage", "pageSize"}):
 - kicad-cli pcb drc --schematic-parity needs an absolute board path,
   or the schematic load asserts and parity is skipped silently.
 
-2026-10-26, screwed module mount drawn (power-board.md decision 4,
-generator power/tools/pmmount.py, run it after changing a dimension):
-- Module (pm:PM_Mount_M2, J1 now Conn_01x04): four M2 screws at the
-  DOSA corner pins, pads renumbered 1 VIN, 2 GND input end, 3 GND
-  output end, 4 VOUT; 2.4 mm plated holes, head pad 5.0 top, inner 4.0,
-  6.2 underneath (standoff face). Aux: pm:PM_Aux_Pads_2x04, 2x4 flat
-  2.2 mm B.Cu pads at 2.54, centre (+12.7, -8.255) from the module
-  centre = (141.9, 103.195), the only free underside patch. Map 1 OV_KILL
-  2 PGOOD 3 ID 4 TEMP 5 GND 6 SDA 7 SCL 8 RUN. RUN left J1 for J2.8.
-- Host (plane, carrier): one part per standoff / pogo pin, since JLC
-  places one part per designator. PM_Standoff_M2x6_SMTSO (Sinhoo
-  SMTSO2060CTJ C2915628, 5.56 body, 3.6 pilot, 3.75 plated hole, 6.4
-  pad with 4 paste apertures) and PM_Pogo_YZ130115073P (C5157258, 7.3
-  free / 5.5 compressed, 1.3 mm travel at the 6 mm gap; the datasheet
-  has no drawing, dims from the LCSC listing: check a sample). Board-only
-  PM_Module_Outline (MODn) draws the module on the silk. `pmmount.py
-  place` puts them at a module centre. Plane: SO101-104 PG101-107,
-  SO201-204 PG201-207 (no RUN pogo). Carrier: SO1-4, PG1-5 and PG8 (RUN);
-  JP2/JP3 (DOSA sense jumpers) removed with the DOSA pins.
-- sch/kicad.py: one-pin symbols get the reference beside the body and
-  a hidden value.
-- State: ERC 0 / parity 0 on all three. Copper is not redone:
-  plane 245 DRC / 18 unconnected (tracks under the module cross the new
-  standoff and pogo pads), carrier 15 / 6 (aux nets to reroute, one
-  OV_KILL track over SO2), module 142 / 6 (input end, below).
-- Module conflicts for the hand pass: screw 1 (VIN) underside hits
-  C1, C3 (VIN caps, 1.7 mm from centre vs 3.1 standoff face), D1, DRVCC
-  track; screw 2 (GND, the DOSA pin 3 spot) sits in the gate drive:
-  C9 C11 C19 R4 underside, BOOST1/2 DRVCC OVLO VIN_IC SW2 tracks and vias
-  on all layers. No clear spot at the input end exists (scanned at
-  0.5 mm). Top: C24 / C25 courtyards overlap the screw 3 / 4 heads (move
-  1 mm inward). Screws 3 and 4 copper are clear; aux pads clear.
-- Old DOSA footprints (Brick_Eighth_DOSA*) are still in the libs, unused.
-
 NEXT, in the order I would take them:
 1. Parts: 58 of 174 footprints still have no LCSC number (the CA
    caps, the brick socket pins, Molex, photoMOS alternatives...).
@@ -286,15 +252,15 @@ NEXT, in the order I would take them:
    power limit, docs/power-board.md "Per slot, numbers for the 15 A
    class".
 4. pcbkit jlcfab -> BOM / CPL, compare with production/.
-5. Screwed mount copper: module input end (C1 C3 and the gate drive
-   around screw 2, user hand-routes), plane tracks under the modules,
-   carrier aux nets. Lists in the 2026-10-26 mount block above.
+5. Module side (power/pm-19v-200w): the J2 aux header tails must
+   reach the plane across the brick pin shoulder standoff (long-tail
+   1.27 mm pins or a taller socket on the plane); pick the brick pin
+   part number. docs/power-board.md "Mounting on the carrier".
 6. 8-slot plane: the MCU pin table has ADC inputs for four slots
    only (S5-S8 ID / TEMP dangle); needed before gensch.py 8 is real.
 7. Cosmetic: three wire crossings on the slot sheet, four on the
    link sheet.
 
-Superseded 2026-10-26 by the screwed mount (above); kept for history.
 Question that came up at the end of 2026-10-24 and may come back:
 "what are the pins on the DOSA module place". Answer: the module PCB
 has 13 holes (J1 = 8 DOSA brick pins, J2 = 5 aux pins of our own),

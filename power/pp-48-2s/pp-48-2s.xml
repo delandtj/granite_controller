@@ -2,7 +2,7 @@
 <export version="E">
   <design>
     <source>/home/delandtj/Granite/Electronics/granite_controller/power/pp-48-2s/pp-48-2s.kicad_sch</source>
-    <date>2026-10-26T14:30:47</date>
+    <date>2026-10-26T11:38:56</date>
     <tool>Eeschema 10.0.7</tool>
     <sheet number="1" name="/" tstamps="/">
       <title_block>
@@ -2800,188 +2800,6 @@
         </unit>
       </units>
     </comp>
-    <comp ref="PG101">
-      <value>pogo</value>
-      <footprint>pp:PM_Pogo_YZ130115073P</footprint>
-      <description>PM module aux contact 1 OV_KILL: pogo pin on the module underside pad</description>
-      <fields>
-        <field name="LCSC">C5157258</field>
-        <field name="Footprint">pp:PM_Pogo_YZ130115073P</field>
-        <field name="Datasheet"/>
-        <field name="Description">PM module aux contact 1 OV_KILL: pogo pin on the module underside pad</field>
-      </fields>
-      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
-      <property name="LCSC" value="C5157258"/>
-      <property name="Sheetname" value="Slot 1"/>
-      <property name="Sheetfile" value="sheets/slot.kicad_sch"/>
-      <property name="ki_keywords" value="connector"/>
-      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
-      <sheetpath names="/Slot 1/" tstamps="/aaa06d0f-e85d-5ebc-a08f-3c600412c7e0/"/>
-      <tstamps>f55150e1-8ad9-58cd-977b-b617692bf91e</tstamps>
-      <units>
-        <unit name="A">
-          <pins>
-            <pin num="1"/>
-          </pins>
-        </unit>
-      </units>
-    </comp>
-    <comp ref="PG102">
-      <value>pogo</value>
-      <footprint>pp:PM_Pogo_YZ130115073P</footprint>
-      <description>PM module aux contact 2 PGOOD: pogo pin on the module underside pad</description>
-      <fields>
-        <field name="LCSC">C5157258</field>
-        <field name="Footprint">pp:PM_Pogo_YZ130115073P</field>
-        <field name="Datasheet"/>
-        <field name="Description">PM module aux contact 2 PGOOD: pogo pin on the module underside pad</field>
-      </fields>
-      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
-      <property name="LCSC" value="C5157258"/>
-      <property name="Sheetname" value="Slot 1"/>
-      <property name="Sheetfile" value="sheets/slot.kicad_sch"/>
-      <property name="ki_keywords" value="connector"/>
-      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
-      <sheetpath names="/Slot 1/" tstamps="/aaa06d0f-e85d-5ebc-a08f-3c600412c7e0/"/>
-      <tstamps>bc839a51-1def-5f63-9268-d89ca8fb5a60</tstamps>
-      <units>
-        <unit name="A">
-          <pins>
-            <pin num="1"/>
-          </pins>
-        </unit>
-      </units>
-    </comp>
-    <comp ref="PG103">
-      <value>pogo</value>
-      <footprint>pp:PM_Pogo_YZ130115073P</footprint>
-      <description>PM module aux contact 3 ID: pogo pin on the module underside pad</description>
-      <fields>
-        <field name="LCSC">C5157258</field>
-        <field name="Footprint">pp:PM_Pogo_YZ130115073P</field>
-        <field name="Datasheet"/>
-        <field name="Description">PM module aux contact 3 ID: pogo pin on the module underside pad</field>
-      </fields>
-      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
-      <property name="LCSC" value="C5157258"/>
-      <property name="Sheetname" value="Slot 1"/>
-      <property name="Sheetfile" value="sheets/slot.kicad_sch"/>
-      <property name="ki_keywords" value="connector"/>
-      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
-      <sheetpath names="/Slot 1/" tstamps="/aaa06d0f-e85d-5ebc-a08f-3c600412c7e0/"/>
-      <tstamps>7d4ae756-986f-5b55-bab0-e076d3c0839a</tstamps>
-      <units>
-        <unit name="A">
-          <pins>
-            <pin num="1"/>
-          </pins>
-        </unit>
-      </units>
-    </comp>
-    <comp ref="PG104">
-      <value>pogo</value>
-      <footprint>pp:PM_Pogo_YZ130115073P</footprint>
-      <description>PM module aux contact 4 TEMP: pogo pin on the module underside pad</description>
-      <fields>
-        <field name="LCSC">C5157258</field>
-        <field name="Footprint">pp:PM_Pogo_YZ130115073P</field>
-        <field name="Datasheet"/>
-        <field name="Description">PM module aux contact 4 TEMP: pogo pin on the module underside pad</field>
-      </fields>
-      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
-      <property name="LCSC" value="C5157258"/>
-      <property name="Sheetname" value="Slot 1"/>
-      <property name="Sheetfile" value="sheets/slot.kicad_sch"/>
-      <property name="ki_keywords" value="connector"/>
-      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
-      <sheetpath names="/Slot 1/" tstamps="/aaa06d0f-e85d-5ebc-a08f-3c600412c7e0/"/>
-      <tstamps>7b6621a1-d952-5ce8-abaa-cf19acbe39d5</tstamps>
-      <units>
-        <unit name="A">
-          <pins>
-            <pin num="1"/>
-          </pins>
-        </unit>
-      </units>
-    </comp>
-    <comp ref="PG105">
-      <value>pogo</value>
-      <footprint>pp:PM_Pogo_YZ130115073P</footprint>
-      <description>PM module aux contact 5 GND: pogo pin on the module underside pad</description>
-      <fields>
-        <field name="LCSC">C5157258</field>
-        <field name="Footprint">pp:PM_Pogo_YZ130115073P</field>
-        <field name="Datasheet"/>
-        <field name="Description">PM module aux contact 5 GND: pogo pin on the module underside pad</field>
-      </fields>
-      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
-      <property name="LCSC" value="C5157258"/>
-      <property name="Sheetname" value="Slot 1"/>
-      <property name="Sheetfile" value="sheets/slot.kicad_sch"/>
-      <property name="ki_keywords" value="connector"/>
-      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
-      <sheetpath names="/Slot 1/" tstamps="/aaa06d0f-e85d-5ebc-a08f-3c600412c7e0/"/>
-      <tstamps>ac263c2b-604a-5d42-8b86-4ba65ebcefe2</tstamps>
-      <units>
-        <unit name="A">
-          <pins>
-            <pin num="1"/>
-          </pins>
-        </unit>
-      </units>
-    </comp>
-    <comp ref="PG106">
-      <value>pogo</value>
-      <footprint>pp:PM_Pogo_YZ130115073P</footprint>
-      <description>PM module aux contact 6 SDA (reserved): pogo pin on the module underside pad; a module monitor must use 0x48-0x4F</description>
-      <fields>
-        <field name="LCSC">C5157258</field>
-        <field name="Footprint">pp:PM_Pogo_YZ130115073P</field>
-        <field name="Datasheet"/>
-        <field name="Description">PM module aux contact 6 SDA (reserved): pogo pin on the module underside pad; a module monitor must use 0x48-0x4F</field>
-      </fields>
-      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
-      <property name="LCSC" value="C5157258"/>
-      <property name="Sheetname" value="Slot 1"/>
-      <property name="Sheetfile" value="sheets/slot.kicad_sch"/>
-      <property name="ki_keywords" value="connector"/>
-      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
-      <sheetpath names="/Slot 1/" tstamps="/aaa06d0f-e85d-5ebc-a08f-3c600412c7e0/"/>
-      <tstamps>8f4293a9-63cb-5668-92be-592419788ded</tstamps>
-      <units>
-        <unit name="A">
-          <pins>
-            <pin num="1"/>
-          </pins>
-        </unit>
-      </units>
-    </comp>
-    <comp ref="PG107">
-      <value>pogo</value>
-      <footprint>pp:PM_Pogo_YZ130115073P</footprint>
-      <description>PM module aux contact 7 SCL (reserved): pogo pin on the module underside pad</description>
-      <fields>
-        <field name="LCSC">C5157258</field>
-        <field name="Footprint">pp:PM_Pogo_YZ130115073P</field>
-        <field name="Datasheet"/>
-        <field name="Description">PM module aux contact 7 SCL (reserved): pogo pin on the module underside pad</field>
-      </fields>
-      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
-      <property name="LCSC" value="C5157258"/>
-      <property name="Sheetname" value="Slot 1"/>
-      <property name="Sheetfile" value="sheets/slot.kicad_sch"/>
-      <property name="ki_keywords" value="connector"/>
-      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
-      <sheetpath names="/Slot 1/" tstamps="/aaa06d0f-e85d-5ebc-a08f-3c600412c7e0/"/>
-      <tstamps>503a7f91-2544-52ec-a90c-0a40e55037c2</tstamps>
-      <units>
-        <unit name="A">
-          <pins>
-            <pin num="1"/>
-          </pins>
-        </unit>
-      </units>
-    </comp>
     <comp ref="Q101">
       <value>BSC070N10NS5</value>
       <footprint>Package_TO_SOT_SMD:TDSON-8-1</footprint>
@@ -3687,110 +3505,6 @@
         </unit>
       </units>
     </comp>
-    <comp ref="SO101">
-      <value>M2x6 standoff</value>
-      <footprint>pp:PM_Standoff_M2x6_SMTSO</footprint>
-      <description>PM module mount: SMT M2 x 6 standoff, screw 1, module VIN; carries the module current</description>
-      <fields>
-        <field name="LCSC">C2915628</field>
-        <field name="Footprint">pp:PM_Standoff_M2x6_SMTSO</field>
-        <field name="Datasheet"/>
-        <field name="Description">PM module mount: SMT M2 x 6 standoff, screw 1, module VIN; carries the module current</field>
-      </fields>
-      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
-      <property name="LCSC" value="C2915628"/>
-      <property name="Sheetname" value="Slot 1"/>
-      <property name="Sheetfile" value="sheets/slot.kicad_sch"/>
-      <property name="ki_keywords" value="connector"/>
-      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
-      <sheetpath names="/Slot 1/" tstamps="/aaa06d0f-e85d-5ebc-a08f-3c600412c7e0/"/>
-      <tstamps>7d8f6802-d573-58e8-83ae-22a33eedf7ca</tstamps>
-      <units>
-        <unit name="A">
-          <pins>
-            <pin num="1"/>
-          </pins>
-        </unit>
-      </units>
-    </comp>
-    <comp ref="SO102">
-      <value>M2x6 standoff</value>
-      <footprint>pp:PM_Standoff_M2x6_SMTSO</footprint>
-      <description>PM module mount: SMT M2 x 6 standoff, screw 3, module GND (input end); carries the module current</description>
-      <fields>
-        <field name="LCSC">C2915628</field>
-        <field name="Footprint">pp:PM_Standoff_M2x6_SMTSO</field>
-        <field name="Datasheet"/>
-        <field name="Description">PM module mount: SMT M2 x 6 standoff, screw 3, module GND (input end); carries the module current</field>
-      </fields>
-      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
-      <property name="LCSC" value="C2915628"/>
-      <property name="Sheetname" value="Slot 1"/>
-      <property name="Sheetfile" value="sheets/slot.kicad_sch"/>
-      <property name="ki_keywords" value="connector"/>
-      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
-      <sheetpath names="/Slot 1/" tstamps="/aaa06d0f-e85d-5ebc-a08f-3c600412c7e0/"/>
-      <tstamps>15f44775-9236-5db5-8281-70ba2adced4d</tstamps>
-      <units>
-        <unit name="A">
-          <pins>
-            <pin num="1"/>
-          </pins>
-        </unit>
-      </units>
-    </comp>
-    <comp ref="SO103">
-      <value>M2x6 standoff</value>
-      <footprint>pp:PM_Standoff_M2x6_SMTSO</footprint>
-      <description>PM module mount: SMT M2 x 6 standoff, screw 4, module GND (output end); carries the module current</description>
-      <fields>
-        <field name="LCSC">C2915628</field>
-        <field name="Footprint">pp:PM_Standoff_M2x6_SMTSO</field>
-        <field name="Datasheet"/>
-        <field name="Description">PM module mount: SMT M2 x 6 standoff, screw 4, module GND (output end); carries the module current</field>
-      </fields>
-      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
-      <property name="LCSC" value="C2915628"/>
-      <property name="Sheetname" value="Slot 1"/>
-      <property name="Sheetfile" value="sheets/slot.kicad_sch"/>
-      <property name="ki_keywords" value="connector"/>
-      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
-      <sheetpath names="/Slot 1/" tstamps="/aaa06d0f-e85d-5ebc-a08f-3c600412c7e0/"/>
-      <tstamps>e2ecf775-ed5c-5f98-ab53-79ee3273fb38</tstamps>
-      <units>
-        <unit name="A">
-          <pins>
-            <pin num="1"/>
-          </pins>
-        </unit>
-      </units>
-    </comp>
-    <comp ref="SO104">
-      <value>M2x6 standoff</value>
-      <footprint>pp:PM_Standoff_M2x6_SMTSO</footprint>
-      <description>PM module mount: SMT M2 x 6 standoff, screw 8, module VOUT; carries the module current</description>
-      <fields>
-        <field name="LCSC">C2915628</field>
-        <field name="Footprint">pp:PM_Standoff_M2x6_SMTSO</field>
-        <field name="Datasheet"/>
-        <field name="Description">PM module mount: SMT M2 x 6 standoff, screw 8, module VOUT; carries the module current</field>
-      </fields>
-      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
-      <property name="LCSC" value="C2915628"/>
-      <property name="Sheetname" value="Slot 1"/>
-      <property name="Sheetfile" value="sheets/slot.kicad_sch"/>
-      <property name="ki_keywords" value="connector"/>
-      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
-      <sheetpath names="/Slot 1/" tstamps="/aaa06d0f-e85d-5ebc-a08f-3c600412c7e0/"/>
-      <tstamps>66395c49-57c3-5163-af88-2d4f6fdb4a45</tstamps>
-      <units>
-        <unit name="A">
-          <pins>
-            <pin num="1"/>
-          </pins>
-        </unit>
-      </units>
-    </comp>
     <comp ref="U101">
       <value>LM5069MM-2</value>
       <footprint>Package_SO:MSOP-10_3x3mm_P0.5mm</footprint>
@@ -3977,6 +3691,70 @@
             <pin num="2"/>
             <pin num="4"/>
             <pin num="3"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="X101">
+      <value>PM-19V-200W</value>
+      <footprint>pp:Brick_Eighth_DOSA_Plane</footprint>
+      <description>DOSA eighth brick, soldered pins; ON/OFF open = module on (the slot is switched upstream)</description>
+      <fields>
+        <field name="LCSC"/>
+        <field name="Footprint">pp:Brick_Eighth_DOSA_Plane</field>
+        <field name="Datasheet"/>
+        <field name="Description">DOSA eighth brick, soldered pins; ON/OFF open = module on (the slot is switched upstream)</field>
+      </fields>
+      <libsource lib="pp" part="PM_Brick_Socket" description="DOSA eighth-brick socket: 8 receptacle holes for a PM-19V-200W module"/>
+      <property name="LCSC" value=""/>
+      <property name="Sheetname" value="Slot 1"/>
+      <property name="Sheetfile" value="sheets/slot.kicad_sch"/>
+      <property name="ki_keywords" value="brick DOSA socket"/>
+      <sheetpath names="/Slot 1/" tstamps="/aaa06d0f-e85d-5ebc-a08f-3c600412c7e0/"/>
+      <tstamps>a598e5ea-45fe-528f-a0c7-9086fd92fb81</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="1"/>
+            <pin num="2"/>
+            <pin num="3"/>
+            <pin num="8"/>
+            <pin num="7"/>
+            <pin num="6"/>
+            <pin num="5"/>
+            <pin num="4"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="X102">
+      <value>J2 AUX</value>
+      <footprint>Connector_PinHeader_1.27mm:PinHeader_1x07_P1.27mm_Vertical</footprint>
+      <description>module J2 mate: OV_KILL PGOOD ID TEMP GND SDA SCL (6-7 reserved; a module monitor must use 0x48-0x4F)</description>
+      <fields>
+        <field name="LCSC"/>
+        <field name="Footprint">Connector_PinHeader_1.27mm:PinHeader_1x07_P1.27mm_Vertical</field>
+        <field name="Datasheet"/>
+        <field name="Description">module J2 mate: OV_KILL PGOOD ID TEMP GND SDA SCL (6-7 reserved; a module monitor must use 0x48-0x4F)</field>
+      </fields>
+      <libsource lib="Connector_Generic" part="Conn_01x07" description="Generic connector, single row, 01x07, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="LCSC" value=""/>
+      <property name="Sheetname" value="Slot 1"/>
+      <property name="Sheetfile" value="sheets/slot.kicad_sch"/>
+      <property name="ki_keywords" value="connector"/>
+      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
+      <sheetpath names="/Slot 1/" tstamps="/aaa06d0f-e85d-5ebc-a08f-3c600412c7e0/"/>
+      <tstamps>44e0d7f2-f732-5d04-baaf-35b0917b4d1f</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="1"/>
+            <pin num="2"/>
+            <pin num="3"/>
+            <pin num="4"/>
+            <pin num="5"/>
+            <pin num="6"/>
+            <pin num="7"/>
           </pins>
         </unit>
       </units>
@@ -4304,188 +4082,6 @@
             <pin num="4"/>
             <pin num="6"/>
             <pin num="8"/>
-          </pins>
-        </unit>
-      </units>
-    </comp>
-    <comp ref="PG201">
-      <value>pogo</value>
-      <footprint>pp:PM_Pogo_YZ130115073P</footprint>
-      <description>PM module aux contact 1 OV_KILL: pogo pin on the module underside pad</description>
-      <fields>
-        <field name="LCSC">C5157258</field>
-        <field name="Footprint">pp:PM_Pogo_YZ130115073P</field>
-        <field name="Datasheet"/>
-        <field name="Description">PM module aux contact 1 OV_KILL: pogo pin on the module underside pad</field>
-      </fields>
-      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
-      <property name="LCSC" value="C5157258"/>
-      <property name="Sheetname" value="Slot 2"/>
-      <property name="Sheetfile" value="sheets/slot.kicad_sch"/>
-      <property name="ki_keywords" value="connector"/>
-      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
-      <sheetpath names="/Slot 2/" tstamps="/19b36e46-4402-5f2d-8702-673bfa6ec517/"/>
-      <tstamps>f55150e1-8ad9-58cd-977b-b617692bf91e</tstamps>
-      <units>
-        <unit name="A">
-          <pins>
-            <pin num="1"/>
-          </pins>
-        </unit>
-      </units>
-    </comp>
-    <comp ref="PG202">
-      <value>pogo</value>
-      <footprint>pp:PM_Pogo_YZ130115073P</footprint>
-      <description>PM module aux contact 2 PGOOD: pogo pin on the module underside pad</description>
-      <fields>
-        <field name="LCSC">C5157258</field>
-        <field name="Footprint">pp:PM_Pogo_YZ130115073P</field>
-        <field name="Datasheet"/>
-        <field name="Description">PM module aux contact 2 PGOOD: pogo pin on the module underside pad</field>
-      </fields>
-      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
-      <property name="LCSC" value="C5157258"/>
-      <property name="Sheetname" value="Slot 2"/>
-      <property name="Sheetfile" value="sheets/slot.kicad_sch"/>
-      <property name="ki_keywords" value="connector"/>
-      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
-      <sheetpath names="/Slot 2/" tstamps="/19b36e46-4402-5f2d-8702-673bfa6ec517/"/>
-      <tstamps>bc839a51-1def-5f63-9268-d89ca8fb5a60</tstamps>
-      <units>
-        <unit name="A">
-          <pins>
-            <pin num="1"/>
-          </pins>
-        </unit>
-      </units>
-    </comp>
-    <comp ref="PG203">
-      <value>pogo</value>
-      <footprint>pp:PM_Pogo_YZ130115073P</footprint>
-      <description>PM module aux contact 3 ID: pogo pin on the module underside pad</description>
-      <fields>
-        <field name="LCSC">C5157258</field>
-        <field name="Footprint">pp:PM_Pogo_YZ130115073P</field>
-        <field name="Datasheet"/>
-        <field name="Description">PM module aux contact 3 ID: pogo pin on the module underside pad</field>
-      </fields>
-      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
-      <property name="LCSC" value="C5157258"/>
-      <property name="Sheetname" value="Slot 2"/>
-      <property name="Sheetfile" value="sheets/slot.kicad_sch"/>
-      <property name="ki_keywords" value="connector"/>
-      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
-      <sheetpath names="/Slot 2/" tstamps="/19b36e46-4402-5f2d-8702-673bfa6ec517/"/>
-      <tstamps>7d4ae756-986f-5b55-bab0-e076d3c0839a</tstamps>
-      <units>
-        <unit name="A">
-          <pins>
-            <pin num="1"/>
-          </pins>
-        </unit>
-      </units>
-    </comp>
-    <comp ref="PG204">
-      <value>pogo</value>
-      <footprint>pp:PM_Pogo_YZ130115073P</footprint>
-      <description>PM module aux contact 4 TEMP: pogo pin on the module underside pad</description>
-      <fields>
-        <field name="LCSC">C5157258</field>
-        <field name="Footprint">pp:PM_Pogo_YZ130115073P</field>
-        <field name="Datasheet"/>
-        <field name="Description">PM module aux contact 4 TEMP: pogo pin on the module underside pad</field>
-      </fields>
-      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
-      <property name="LCSC" value="C5157258"/>
-      <property name="Sheetname" value="Slot 2"/>
-      <property name="Sheetfile" value="sheets/slot.kicad_sch"/>
-      <property name="ki_keywords" value="connector"/>
-      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
-      <sheetpath names="/Slot 2/" tstamps="/19b36e46-4402-5f2d-8702-673bfa6ec517/"/>
-      <tstamps>7b6621a1-d952-5ce8-abaa-cf19acbe39d5</tstamps>
-      <units>
-        <unit name="A">
-          <pins>
-            <pin num="1"/>
-          </pins>
-        </unit>
-      </units>
-    </comp>
-    <comp ref="PG205">
-      <value>pogo</value>
-      <footprint>pp:PM_Pogo_YZ130115073P</footprint>
-      <description>PM module aux contact 5 GND: pogo pin on the module underside pad</description>
-      <fields>
-        <field name="LCSC">C5157258</field>
-        <field name="Footprint">pp:PM_Pogo_YZ130115073P</field>
-        <field name="Datasheet"/>
-        <field name="Description">PM module aux contact 5 GND: pogo pin on the module underside pad</field>
-      </fields>
-      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
-      <property name="LCSC" value="C5157258"/>
-      <property name="Sheetname" value="Slot 2"/>
-      <property name="Sheetfile" value="sheets/slot.kicad_sch"/>
-      <property name="ki_keywords" value="connector"/>
-      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
-      <sheetpath names="/Slot 2/" tstamps="/19b36e46-4402-5f2d-8702-673bfa6ec517/"/>
-      <tstamps>ac263c2b-604a-5d42-8b86-4ba65ebcefe2</tstamps>
-      <units>
-        <unit name="A">
-          <pins>
-            <pin num="1"/>
-          </pins>
-        </unit>
-      </units>
-    </comp>
-    <comp ref="PG206">
-      <value>pogo</value>
-      <footprint>pp:PM_Pogo_YZ130115073P</footprint>
-      <description>PM module aux contact 6 SDA (reserved): pogo pin on the module underside pad; a module monitor must use 0x48-0x4F</description>
-      <fields>
-        <field name="LCSC">C5157258</field>
-        <field name="Footprint">pp:PM_Pogo_YZ130115073P</field>
-        <field name="Datasheet"/>
-        <field name="Description">PM module aux contact 6 SDA (reserved): pogo pin on the module underside pad; a module monitor must use 0x48-0x4F</field>
-      </fields>
-      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
-      <property name="LCSC" value="C5157258"/>
-      <property name="Sheetname" value="Slot 2"/>
-      <property name="Sheetfile" value="sheets/slot.kicad_sch"/>
-      <property name="ki_keywords" value="connector"/>
-      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
-      <sheetpath names="/Slot 2/" tstamps="/19b36e46-4402-5f2d-8702-673bfa6ec517/"/>
-      <tstamps>8f4293a9-63cb-5668-92be-592419788ded</tstamps>
-      <units>
-        <unit name="A">
-          <pins>
-            <pin num="1"/>
-          </pins>
-        </unit>
-      </units>
-    </comp>
-    <comp ref="PG207">
-      <value>pogo</value>
-      <footprint>pp:PM_Pogo_YZ130115073P</footprint>
-      <description>PM module aux contact 7 SCL (reserved): pogo pin on the module underside pad</description>
-      <fields>
-        <field name="LCSC">C5157258</field>
-        <field name="Footprint">pp:PM_Pogo_YZ130115073P</field>
-        <field name="Datasheet"/>
-        <field name="Description">PM module aux contact 7 SCL (reserved): pogo pin on the module underside pad</field>
-      </fields>
-      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
-      <property name="LCSC" value="C5157258"/>
-      <property name="Sheetname" value="Slot 2"/>
-      <property name="Sheetfile" value="sheets/slot.kicad_sch"/>
-      <property name="ki_keywords" value="connector"/>
-      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
-      <sheetpath names="/Slot 2/" tstamps="/19b36e46-4402-5f2d-8702-673bfa6ec517/"/>
-      <tstamps>503a7f91-2544-52ec-a90c-0a40e55037c2</tstamps>
-      <units>
-        <unit name="A">
-          <pins>
-            <pin num="1"/>
           </pins>
         </unit>
       </units>
@@ -5195,110 +4791,6 @@
         </unit>
       </units>
     </comp>
-    <comp ref="SO201">
-      <value>M2x6 standoff</value>
-      <footprint>pp:PM_Standoff_M2x6_SMTSO</footprint>
-      <description>PM module mount: SMT M2 x 6 standoff, screw 1, module VIN; carries the module current</description>
-      <fields>
-        <field name="LCSC">C2915628</field>
-        <field name="Footprint">pp:PM_Standoff_M2x6_SMTSO</field>
-        <field name="Datasheet"/>
-        <field name="Description">PM module mount: SMT M2 x 6 standoff, screw 1, module VIN; carries the module current</field>
-      </fields>
-      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
-      <property name="LCSC" value="C2915628"/>
-      <property name="Sheetname" value="Slot 2"/>
-      <property name="Sheetfile" value="sheets/slot.kicad_sch"/>
-      <property name="ki_keywords" value="connector"/>
-      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
-      <sheetpath names="/Slot 2/" tstamps="/19b36e46-4402-5f2d-8702-673bfa6ec517/"/>
-      <tstamps>7d8f6802-d573-58e8-83ae-22a33eedf7ca</tstamps>
-      <units>
-        <unit name="A">
-          <pins>
-            <pin num="1"/>
-          </pins>
-        </unit>
-      </units>
-    </comp>
-    <comp ref="SO202">
-      <value>M2x6 standoff</value>
-      <footprint>pp:PM_Standoff_M2x6_SMTSO</footprint>
-      <description>PM module mount: SMT M2 x 6 standoff, screw 3, module GND (input end); carries the module current</description>
-      <fields>
-        <field name="LCSC">C2915628</field>
-        <field name="Footprint">pp:PM_Standoff_M2x6_SMTSO</field>
-        <field name="Datasheet"/>
-        <field name="Description">PM module mount: SMT M2 x 6 standoff, screw 3, module GND (input end); carries the module current</field>
-      </fields>
-      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
-      <property name="LCSC" value="C2915628"/>
-      <property name="Sheetname" value="Slot 2"/>
-      <property name="Sheetfile" value="sheets/slot.kicad_sch"/>
-      <property name="ki_keywords" value="connector"/>
-      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
-      <sheetpath names="/Slot 2/" tstamps="/19b36e46-4402-5f2d-8702-673bfa6ec517/"/>
-      <tstamps>15f44775-9236-5db5-8281-70ba2adced4d</tstamps>
-      <units>
-        <unit name="A">
-          <pins>
-            <pin num="1"/>
-          </pins>
-        </unit>
-      </units>
-    </comp>
-    <comp ref="SO203">
-      <value>M2x6 standoff</value>
-      <footprint>pp:PM_Standoff_M2x6_SMTSO</footprint>
-      <description>PM module mount: SMT M2 x 6 standoff, screw 4, module GND (output end); carries the module current</description>
-      <fields>
-        <field name="LCSC">C2915628</field>
-        <field name="Footprint">pp:PM_Standoff_M2x6_SMTSO</field>
-        <field name="Datasheet"/>
-        <field name="Description">PM module mount: SMT M2 x 6 standoff, screw 4, module GND (output end); carries the module current</field>
-      </fields>
-      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
-      <property name="LCSC" value="C2915628"/>
-      <property name="Sheetname" value="Slot 2"/>
-      <property name="Sheetfile" value="sheets/slot.kicad_sch"/>
-      <property name="ki_keywords" value="connector"/>
-      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
-      <sheetpath names="/Slot 2/" tstamps="/19b36e46-4402-5f2d-8702-673bfa6ec517/"/>
-      <tstamps>e2ecf775-ed5c-5f98-ab53-79ee3273fb38</tstamps>
-      <units>
-        <unit name="A">
-          <pins>
-            <pin num="1"/>
-          </pins>
-        </unit>
-      </units>
-    </comp>
-    <comp ref="SO204">
-      <value>M2x6 standoff</value>
-      <footprint>pp:PM_Standoff_M2x6_SMTSO</footprint>
-      <description>PM module mount: SMT M2 x 6 standoff, screw 8, module VOUT; carries the module current</description>
-      <fields>
-        <field name="LCSC">C2915628</field>
-        <field name="Footprint">pp:PM_Standoff_M2x6_SMTSO</field>
-        <field name="Datasheet"/>
-        <field name="Description">PM module mount: SMT M2 x 6 standoff, screw 8, module VOUT; carries the module current</field>
-      </fields>
-      <libsource lib="Connector_Generic" part="Conn_01x01" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
-      <property name="LCSC" value="C2915628"/>
-      <property name="Sheetname" value="Slot 2"/>
-      <property name="Sheetfile" value="sheets/slot.kicad_sch"/>
-      <property name="ki_keywords" value="connector"/>
-      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
-      <sheetpath names="/Slot 2/" tstamps="/19b36e46-4402-5f2d-8702-673bfa6ec517/"/>
-      <tstamps>66395c49-57c3-5163-af88-2d4f6fdb4a45</tstamps>
-      <units>
-        <unit name="A">
-          <pins>
-            <pin num="1"/>
-          </pins>
-        </unit>
-      </units>
-    </comp>
     <comp ref="U201">
       <value>LM5069MM-2</value>
       <footprint>Package_SO:MSOP-10_3x3mm_P0.5mm</footprint>
@@ -5489,6 +4981,70 @@
         </unit>
       </units>
     </comp>
+    <comp ref="X201">
+      <value>PM-19V-200W</value>
+      <footprint>pp:Brick_Eighth_DOSA_Plane</footprint>
+      <description>DOSA eighth brick, soldered pins; ON/OFF open = module on (the slot is switched upstream)</description>
+      <fields>
+        <field name="LCSC"/>
+        <field name="Footprint">pp:Brick_Eighth_DOSA_Plane</field>
+        <field name="Datasheet"/>
+        <field name="Description">DOSA eighth brick, soldered pins; ON/OFF open = module on (the slot is switched upstream)</field>
+      </fields>
+      <libsource lib="pp" part="PM_Brick_Socket" description="DOSA eighth-brick socket: 8 receptacle holes for a PM-19V-200W module"/>
+      <property name="LCSC" value=""/>
+      <property name="Sheetname" value="Slot 2"/>
+      <property name="Sheetfile" value="sheets/slot.kicad_sch"/>
+      <property name="ki_keywords" value="brick DOSA socket"/>
+      <sheetpath names="/Slot 2/" tstamps="/19b36e46-4402-5f2d-8702-673bfa6ec517/"/>
+      <tstamps>a598e5ea-45fe-528f-a0c7-9086fd92fb81</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="1"/>
+            <pin num="2"/>
+            <pin num="3"/>
+            <pin num="8"/>
+            <pin num="7"/>
+            <pin num="6"/>
+            <pin num="5"/>
+            <pin num="4"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="X202">
+      <value>J2 AUX</value>
+      <footprint>Connector_PinHeader_1.27mm:PinHeader_1x07_P1.27mm_Vertical</footprint>
+      <description>module J2 mate: OV_KILL PGOOD ID TEMP GND SDA SCL (6-7 reserved; a module monitor must use 0x48-0x4F)</description>
+      <fields>
+        <field name="LCSC"/>
+        <field name="Footprint">Connector_PinHeader_1.27mm:PinHeader_1x07_P1.27mm_Vertical</field>
+        <field name="Datasheet"/>
+        <field name="Description">module J2 mate: OV_KILL PGOOD ID TEMP GND SDA SCL (6-7 reserved; a module monitor must use 0x48-0x4F)</field>
+      </fields>
+      <libsource lib="Connector_Generic" part="Conn_01x07" description="Generic connector, single row, 01x07, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="LCSC" value=""/>
+      <property name="Sheetname" value="Slot 2"/>
+      <property name="Sheetfile" value="sheets/slot.kicad_sch"/>
+      <property name="ki_keywords" value="connector"/>
+      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
+      <sheetpath names="/Slot 2/" tstamps="/19b36e46-4402-5f2d-8702-673bfa6ec517/"/>
+      <tstamps>44e0d7f2-f732-5d04-baaf-35b0917b4d1f</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="1"/>
+            <pin num="2"/>
+            <pin num="3"/>
+            <pin num="4"/>
+            <pin num="5"/>
+            <pin num="6"/>
+            <pin num="7"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
   </components>
   <libparts>
     <libpart lib="74xGxx" part="74AUC1G74">
@@ -5555,22 +5111,6 @@
         <pin num="2" name="Pin_2" type="passive"/>
       </pins>
     </libpart>
-    <libpart lib="Connector_Generic" part="Conn_01x01">
-      <description>Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)</description>
-      <footprints>
-        <fp>Connector*:*_1x??_*</fp>
-      </footprints>
-      <fields>
-        <field name="Reference">J</field>
-        <field name="Value">Conn_01x01</field>
-        <field name="Footprint"/>
-        <field name="Datasheet"/>
-        <field name="Description">Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)</field>
-      </fields>
-      <pins>
-        <pin num="1" name="Pin_1" type="passive"/>
-      </pins>
-    </libpart>
     <libpart lib="Connector_Generic" part="Conn_01x02">
       <description>Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)</description>
       <footprints>
@@ -5606,6 +5146,28 @@
         <pin num="3" name="Pin_3" type="passive"/>
         <pin num="4" name="Pin_4" type="passive"/>
         <pin num="5" name="Pin_5" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Connector_Generic" part="Conn_01x07">
+      <description>Generic connector, single row, 01x07, script generated (kicad-library-utils/schlib/autogen/connector/)</description>
+      <footprints>
+        <fp>Connector*:*_1x??_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">Conn_01x07</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description">Generic connector, single row, 01x07, script generated (kicad-library-utils/schlib/autogen/connector/)</field>
+      </fields>
+      <pins>
+        <pin num="1" name="Pin_1" type="passive"/>
+        <pin num="2" name="Pin_2" type="passive"/>
+        <pin num="3" name="Pin_3" type="passive"/>
+        <pin num="4" name="Pin_4" type="passive"/>
+        <pin num="5" name="Pin_5" type="passive"/>
+        <pin num="6" name="Pin_6" type="passive"/>
+        <pin num="7" name="Pin_7" type="passive"/>
       </pins>
     </libpart>
     <libpart lib="Connector_Generic" part="Conn_02x04_Odd_Even">
@@ -6073,6 +5635,26 @@
         <pin num="5" name="D" type="passive"/>
       </pins>
     </libpart>
+    <libpart lib="pp" part="PM_Brick_Socket">
+      <description>DOSA eighth-brick socket: 8 receptacle holes for a PM-19V-200W module</description>
+      <fields>
+        <field name="Reference">X</field>
+        <field name="Value">PM_Brick_Socket</field>
+        <field name="Footprint">pp:Brick_Eighth_DOSA_Plane</field>
+        <field name="Datasheet"/>
+        <field name="Description">DOSA eighth-brick socket: 8 receptacle holes for a PM-19V-200W module</field>
+      </fields>
+      <pins>
+        <pin num="1" name="+VIN" type="power_in"/>
+        <pin num="2" name="ON/OFF" type="input"/>
+        <pin num="3" name="-VIN" type="passive"/>
+        <pin num="4" name="-VOUT" type="passive"/>
+        <pin num="5" name="SENSE-" type="passive"/>
+        <pin num="6" name="TRIM" type="passive"/>
+        <pin num="7" name="SENSE+" type="passive"/>
+        <pin num="8" name="+VOUT" type="power_out"/>
+      </pins>
+    </libpart>
     <libpart lib="pp" part="TLP176AM">
       <description>Photorelay, MOSFET output, 1-Form-A, 60V 0.7A, Toshiba TLP176AM (SO6 4-pin, pins 1/3/4/6)</description>
       <docs>https://toshiba.semicon-storage.com/ap-en/semiconductor/product/isolators-solid-state-relays/photorelay-mosfet-output/detail.TLP176AM.html</docs>
@@ -6359,9 +5941,9 @@
     </net>
     <net code="36" name="/S1_ID" class="Default">
       <node ref="C106" pin="1" pintype="passive"/>
-      <node ref="PG103" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
       <node ref="R115" pin="2" pintype="passive"/>
       <node ref="U3" pin="11" pinfunction="PA0_11" pintype="bidirectional"/>
+      <node ref="X102" pin="3" pinfunction="Pin_3_3" pintype="passive"/>
     </net>
     <net code="37" name="/S1_LCLR" class="Default">
       <node ref="Q104" pin="1" pinfunction="G_1" pintype="input"/>
@@ -6385,9 +5967,9 @@
       <node ref="U3" pin="30" pinfunction="PC6_30" pintype="bidirectional"/>
     </net>
     <net code="41" name="/S1_PG" class="Default">
-      <node ref="PG102" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
       <node ref="R114" pin="2" pintype="passive"/>
       <node ref="U6" pin="24" pinfunction="GPA3_24" pintype="bidirectional"/>
+      <node ref="X102" pin="2" pinfunction="Pin_2_2" pintype="passive"/>
     </net>
     <net code="42" name="/S1_PGD" class="Default">
       <node ref="R108" pin="2" pintype="passive"/>
@@ -6404,15 +5986,15 @@
     </net>
     <net code="45" name="/S1_TEMP" class="Default">
       <node ref="C107" pin="1" pintype="passive"/>
-      <node ref="PG104" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
       <node ref="R116" pin="2" pintype="passive"/>
       <node ref="U3" pin="12" pinfunction="PA1_12" pintype="bidirectional"/>
+      <node ref="X102" pin="4" pinfunction="Pin_4_4" pintype="passive"/>
     </net>
     <net code="46" name="/S2_ID" class="Default">
       <node ref="C206" pin="1" pintype="passive"/>
-      <node ref="PG203" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
       <node ref="R215" pin="2" pintype="passive"/>
       <node ref="U3" pin="13" pinfunction="PA2_13" pintype="bidirectional"/>
+      <node ref="X202" pin="3" pinfunction="Pin_3_3" pintype="passive"/>
     </net>
     <net code="47" name="/S2_LCLR" class="Default">
       <node ref="Q204" pin="1" pinfunction="G_1" pintype="input"/>
@@ -6436,9 +6018,9 @@
       <node ref="U3" pin="38" pinfunction="PD0_38" pintype="bidirectional"/>
     </net>
     <net code="51" name="/S2_PG" class="Default">
-      <node ref="PG202" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
       <node ref="R214" pin="2" pintype="passive"/>
       <node ref="U6" pin="4" pinfunction="GPB3_4" pintype="bidirectional"/>
+      <node ref="X202" pin="2" pinfunction="Pin_2_2" pintype="passive"/>
     </net>
     <net code="52" name="/S2_PGD" class="Default">
       <node ref="R208" pin="2" pintype="passive"/>
@@ -6455,9 +6037,9 @@
     </net>
     <net code="55" name="/S2_TEMP" class="Default">
       <node ref="C207" pin="1" pintype="passive"/>
-      <node ref="PG204" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
       <node ref="R216" pin="2" pintype="passive"/>
       <node ref="U3" pin="14" pinfunction="PA3_14" pintype="bidirectional"/>
+      <node ref="X202" pin="4" pinfunction="Pin_4_4" pintype="passive"/>
     </net>
     <net code="56" name="/SCL1" class="Default">
       <node ref="R27" pin="2" pintype="passive"/>
@@ -6465,13 +6047,13 @@
       <node ref="U4" pin="6" pinfunction="SCL2_6" pintype="bidirectional"/>
     </net>
     <net code="57" name="/SCL2" class="Default">
-      <node ref="PG107" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
-      <node ref="PG207" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
       <node ref="R24" pin="2" pintype="passive"/>
       <node ref="U102" pin="5" pinfunction="SCL_5" pintype="input"/>
       <node ref="U202" pin="5" pinfunction="SCL_5" pintype="input"/>
       <node ref="U3" pin="22" pinfunction="PB10_22" pintype="bidirectional"/>
       <node ref="U6" pin="12" pinfunction="SCK_12" pintype="input"/>
+      <node ref="X102" pin="7" pinfunction="Pin_7_7" pintype="passive"/>
+      <node ref="X202" pin="7" pinfunction="Pin_7_7" pintype="passive"/>
     </net>
     <net code="58" name="/SDA1" class="Default">
       <node ref="R26" pin="2" pintype="passive"/>
@@ -6479,13 +6061,13 @@
       <node ref="U4" pin="7" pinfunction="SDA2_7" pintype="bidirectional"/>
     </net>
     <net code="59" name="/SDA2" class="Default">
-      <node ref="PG106" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
-      <node ref="PG206" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
       <node ref="R23" pin="2" pintype="passive"/>
       <node ref="U102" pin="4" pinfunction="SDA_4" pintype="bidirectional"/>
       <node ref="U202" pin="4" pinfunction="SDA_4" pintype="bidirectional"/>
       <node ref="U3" pin="23" pinfunction="PB11_23" pintype="bidirectional"/>
       <node ref="U6" pin="13" pinfunction="SDA_13" pintype="bidirectional"/>
+      <node ref="X102" pin="6" pinfunction="Pin_6_6" pintype="passive"/>
+      <node ref="X202" pin="6" pinfunction="Pin_6_6" pintype="passive"/>
     </net>
     <net code="60" name="/Slot 1/CLRN" class="Default">
       <node ref="C105" pin="1" pintype="passive"/>
@@ -6506,7 +6088,7 @@
       <node ref="J101" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
       <node ref="J101" pin="2" pinfunction="Pin_2_2" pintype="passive"/>
       <node ref="R118" pin="1" pintype="passive"/>
-      <node ref="SO104" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
+      <node ref="X101" pin="8" pinfunction="+VOUT_8" pintype="power_out"/>
     </net>
     <net code="64" name="/Slot 1/ONL_A" class="Default">
       <node ref="D102" pin="2" pinfunction="A_2" pintype="passive"/>
@@ -6519,14 +6101,14 @@
       <node ref="Q101" pin="2" pinfunction="S_2" pintype="passive"/>
       <node ref="Q101" pin="3" pinfunction="S_3" pintype="passive"/>
       <node ref="R117" pin="1" pintype="passive"/>
-      <node ref="SO101" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
       <node ref="U101" pin="9" pinfunction="OUT_9" pintype="input"/>
       <node ref="U102" pin="8" pinfunction="Vbus_8" pintype="input"/>
+      <node ref="X101" pin="1" pinfunction="+VIN_1" pintype="power_in"/>
     </net>
     <net code="66" name="/Slot 1/OVK" class="Default">
-      <node ref="PG101" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
       <node ref="R113" pin="2" pintype="passive"/>
       <node ref="U103" pin="7" pinfunction="~{PRE}_7" pintype="input"/>
+      <node ref="X102" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
     </net>
     <net code="67" name="/Slot 1/OVLO" class="Default">
       <node ref="R105" pin="2" pintype="passive"/>
@@ -6602,7 +6184,7 @@
       <node ref="J201" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
       <node ref="J201" pin="2" pinfunction="Pin_2_2" pintype="passive"/>
       <node ref="R218" pin="1" pintype="passive"/>
-      <node ref="SO204" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
+      <node ref="X201" pin="8" pinfunction="+VOUT_8" pintype="power_out"/>
     </net>
     <net code="83" name="/Slot 2/ONL_A" class="Default">
       <node ref="D202" pin="2" pinfunction="A_2" pintype="passive"/>
@@ -6615,14 +6197,14 @@
       <node ref="Q201" pin="2" pinfunction="S_2" pintype="passive"/>
       <node ref="Q201" pin="3" pinfunction="S_3" pintype="passive"/>
       <node ref="R217" pin="1" pintype="passive"/>
-      <node ref="SO201" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
       <node ref="U201" pin="9" pinfunction="OUT_9" pintype="input"/>
       <node ref="U202" pin="8" pinfunction="Vbus_8" pintype="input"/>
+      <node ref="X201" pin="1" pinfunction="+VIN_1" pintype="power_in"/>
     </net>
     <net code="85" name="/Slot 2/OVK" class="Default">
-      <node ref="PG201" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
       <node ref="R213" pin="2" pintype="passive"/>
       <node ref="U203" pin="7" pinfunction="~{PRE}_7" pintype="input"/>
+      <node ref="X202" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
     </net>
     <net code="86" name="/Slot 2/OVLO" class="Default">
       <node ref="R205" pin="2" pintype="passive"/>
@@ -6763,8 +6345,6 @@
       <node ref="JP1" pin="2" pinfunction="B_2" pintype="passive"/>
       <node ref="JP2" pin="2" pinfunction="B_2" pintype="passive"/>
       <node ref="JP3" pin="2" pinfunction="B_2" pintype="passive"/>
-      <node ref="PG105" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
-      <node ref="PG205" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
       <node ref="Q102" pin="2" pinfunction="S_2" pintype="passive"/>
       <node ref="Q103" pin="2" pinfunction="S_2" pintype="passive"/>
       <node ref="Q104" pin="2" pinfunction="S_2" pintype="passive"/>
@@ -6791,10 +6371,6 @@
       <node ref="R4" pin="2" pintype="passive"/>
       <node ref="R5" pin="2" pintype="passive"/>
       <node ref="R7" pin="2" pintype="passive"/>
-      <node ref="SO102" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
-      <node ref="SO103" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
-      <node ref="SO202" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
-      <node ref="SO203" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
       <node ref="U1" pin="1" pinfunction="GND_1" pintype="power_in"/>
       <node ref="U1" pin="9" pinfunction="EP_9" pintype="passive"/>
       <node ref="U101" pin="5" pinfunction="GND_5" pintype="power_in"/>
@@ -6829,6 +6405,12 @@
       <node ref="U6" pin="15" pinfunction="A0_15" pintype="input"/>
       <node ref="U6" pin="16" pinfunction="A1_16" pintype="input"/>
       <node ref="U6" pin="17" pinfunction="A2_17" pintype="input"/>
+      <node ref="X101" pin="3" pinfunction="-VIN_3" pintype="passive"/>
+      <node ref="X101" pin="4" pinfunction="-VOUT_4" pintype="passive"/>
+      <node ref="X102" pin="5" pinfunction="Pin_5_5" pintype="passive"/>
+      <node ref="X201" pin="3" pinfunction="-VIN_3" pintype="passive"/>
+      <node ref="X201" pin="4" pinfunction="-VOUT_4" pintype="passive"/>
+      <node ref="X202" pin="5" pinfunction="Pin_5_5" pintype="passive"/>
       <node ref="Y1" pin="2" pinfunction="G_2" pintype="passive"/>
       <node ref="Y1" pin="4" pinfunction="G_4" pintype="passive"/>
     </net>
@@ -6960,6 +6542,30 @@
     </net>
     <net code="136" name="unconnected-(U203-~{Q}-Pad3)" class="Default">
       <node ref="U203" pin="3" pinfunction="~{Q}_3" pintype="output+no_connect"/>
+    </net>
+    <net code="137" name="unconnected-(X101-ON/OFF-Pad2)" class="Default">
+      <node ref="X101" pin="2" pinfunction="ON/OFF_2" pintype="input+no_connect"/>
+    </net>
+    <net code="138" name="unconnected-(X101-SENSE+-Pad7)" class="Default">
+      <node ref="X101" pin="7" pinfunction="SENSE+_7" pintype="passive+no_connect"/>
+    </net>
+    <net code="139" name="unconnected-(X101-SENSE--Pad5)" class="Default">
+      <node ref="X101" pin="5" pinfunction="SENSE-_5" pintype="passive+no_connect"/>
+    </net>
+    <net code="140" name="unconnected-(X101-TRIM-Pad6)" class="Default">
+      <node ref="X101" pin="6" pinfunction="TRIM_6" pintype="passive+no_connect"/>
+    </net>
+    <net code="141" name="unconnected-(X201-ON/OFF-Pad2)" class="Default">
+      <node ref="X201" pin="2" pinfunction="ON/OFF_2" pintype="input+no_connect"/>
+    </net>
+    <net code="142" name="unconnected-(X201-SENSE+-Pad7)" class="Default">
+      <node ref="X201" pin="7" pinfunction="SENSE+_7" pintype="passive+no_connect"/>
+    </net>
+    <net code="143" name="unconnected-(X201-SENSE--Pad5)" class="Default">
+      <node ref="X201" pin="5" pinfunction="SENSE-_5" pintype="passive+no_connect"/>
+    </net>
+    <net code="144" name="unconnected-(X201-TRIM-Pad6)" class="Default">
+      <node ref="X201" pin="6" pinfunction="TRIM_6" pintype="passive+no_connect"/>
     </net>
   </nets>
 </export>
