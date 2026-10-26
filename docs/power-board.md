@@ -303,10 +303,12 @@ Decisions:
    falls with several planes per controller and with plane types that
    do not exist yet. The MCU is a telemetry aggregator and command
    relay only; the safety chain stays in hardware (rules below).
-   STM32G0B1 (decided 2026-10-23): two I2C peripherals (slave toward the
-   controller, master toward the front ends), 16 ADC channels (ID and
-   TEMP of 8 slots), FDCAN for a later pod-wide link, Rust with
-   embassy-stm32. Powered from the bus through a 100 V buck (LM5164
+   STM32G070CBT6 since 2026-10-26 (was the G0B1, decided 2026-10-23;
+   no LQFP-48 G0B1 in stock at LCSC): two I2C peripherals (slave
+   toward the controller, master toward the front ends), 16 ADC
+   channels (ID and TEMP of 8 slots), 128 KB flash (bootloader plus
+   two image slots), Rust with embassy-stm32. No FDCAN: a later
+   pod-wide link needs another MCU or a separate CAN controller. Powered from the bus through a 100 V buck (LM5164
    class) to 3.3 V, never from the controller cable.
 3. The controller is plane-type agnostic: it enumerates planes by
    address, reads type, slot count and map version from the register

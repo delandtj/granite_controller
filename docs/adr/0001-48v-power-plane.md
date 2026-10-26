@@ -4,7 +4,8 @@
 **Date**: 2026-10-23
 **Updated**: 2026-10-23 (accepted; review asks answered: TLV message
 format over I2C, one node housing, STM32G0B1, policy on the controller
-and primitives on the plane)
+and primitives on the plane); 2026-10-26: plane MCU changed to
+STM32G070CBT6 (G0B1 out of stock at LCSC, see decision 3)
 
 Related: docs/power-board.md (the running spec, sections "Direction:
 48-54 V bus", "Power plane: PP-48-xS", "Front end part"),
@@ -546,7 +547,11 @@ Review asks, answered 2026-10-23:
    offsets). Decided; format above.
 2. Node connector: one Mini-Fit Jr 2x4 housing for power and front
    panel. Decided.
-3. STM32G0B1 as the plane MCU. Decided.
+3. STM32G0B1 as the plane MCU. Decided. Changed 2026-10-26 to the
+   STM32G070CBT6 (C529338, 2041 at LCSC; every LQFP-48 G0B1 at 0):
+   same LQFP-48 pinout for every pin the plane uses, 128 KB flash for
+   a bootloader plus two image slots. Lost: FDCAN, so the pod-wide
+   link needs another MCU or a separate CAN controller.
 4. Primitives on the plane, policy on the controller. Decided.
 
 ---

@@ -1,4 +1,4 @@
-# Handoff - granite controller (updated 2026-10-25)
+# Handoff - granite controller (updated 2026-10-26)
 
 Read this first, then docs/controller.md and docs/power-board.md.
 
@@ -9,9 +9,8 @@ errors (5 warnings: 4 starved_thermal at R107.2 U201.5 U102.1 C203.2,
 1 silk_edge at J1), ERC 0, board fields in sync with the schematic
 (drc --schematic-parity 0 mismatches). Nothing is ordered.
 granite_controller master was pushed 2026-10-26 (in sync with origin).
-~/Electronics/pcbkit main is still 5 commits ahead of origin, unpushed
-(pcbkit relink lives there; push it before working from another
-machine). Push only when asked.
+~/Electronics/pcbkit main is in sync with origin
+(github.com/delandtj/pcbkit). Push only when asked.
 
 The pipeline, in order, whenever the schematic changes (all from
 power/pp-48-2s/):
@@ -36,6 +35,32 @@ power/*/*.step and power/*/production/ are now gitignored (regenerable;
 the production/ export on the laptop was made BEFORE the field sync, so
 its bom.csv has old values and 92 empty LCSC cells: regenerate it, or
 use pcbkit jlcfab).
+
+2026-10-26, JLC stock check (live JLCPCB search; the lookup script was
+a scratch file, the API is POST
+https://jlcpcb.com/api/overseas-pcb-order/v1/shoppingCart/smtGood/selectSmtComponentList
+with {"keyword", "currentPage", "pageSize"}):
+- U3 changed from STM32G0B1CBT6 (0 in stock, every LQFP-48 G0B1 at 0
+  or <20) to STM32G070CBT6 (C529338, 2041). Pinout checked against the
+  KiCad symbols and embassy's stm32-metapac data: identical for every
+  pin in use (I2C1 PB6/PB7, I2C2 PB10/PB11, ADC PA0-7/PB0-1, HSE
+  PF0/PF1, SWD), pin 10 is plain NRST (was PF2-NRST). Pins 29 and 32
+  are not bonded on the G070, so S7_OFF / S7_LCLR (8-slot plane only)
+  moved to pins 37 (PA15) and 48 (PB9). Lost: FDCAN. ADR 0001 and
+  power-board.md updated. 2-slot board: only U3's value and LCSC
+  changed, DRC as above.
+- Still a problem: INA238 (C2868250) 0 in stock (plan was consigned /
+  Mouser); INA237AIDGSR C2864837 is pin-compatible, 50 in stock, 10x
+  the offset. L2 SRR1260-680M 0 in stock: CDRH127/LDNP-680MC
+  C2452974 (5987) or YPRH1209-680M C339957 (3484), check the pads.
+  Thin: L1 SRR1260-330M 95, C338133 615 (6 per board), MCP23017 812.
+- The 58 parts without LCSC: all passive values stocked (mostly
+  extended); F2 one-shot 046801.5NRHF C151143; Q101/Q201
+  BSC070N10NS5 C534364 (19567); J101/J201 Molex 39281083 C293503
+  (listing says right angle, check); J1 Phoenix 1715721 only 6 in
+  stock, MKDS 1,5/2-5,08 C5183929 (956) is the stocked one.
+- kicad-cli pcb drc --schematic-parity needs an absolute board path,
+  or the schematic load asserts and parity is skipped silently.
 
 NEXT, in the order I would take them:
 1. Parts: 58 of 174 footprints still have no LCSC number (the CA

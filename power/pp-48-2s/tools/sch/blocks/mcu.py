@@ -1,4 +1,4 @@
-"""MCU sheet: STM32G0B1 with decoupling, HSE crystal, NRST, SWD, run LED,
+"""MCU sheet: STM32G070 with decoupling, HSE crystal, NRST, SWD, run LED,
 plane address straps, I2C2 / EXP_IRQ pull-ups.
 
 Parts and pin -> net tables copied from gensch.py "# MCU" (slot pins of
@@ -18,15 +18,16 @@ RIGHT_PORTS = {"SCL2": "bidirectional", "SDA2": "bidirectional", "EXP_IRQ": "inp
 
 
 def mcu_nets(N):
+    # pins 29 and 32 are not bonded on the G070 (UCPD pins on the G071/G0B1)
     nets = {
         "1": "ADR0", "2": "ADR1", "3": "ADR2", "4": "+3V3", "5": "+3V3", "6": "+3V3", "7": "GND",
         "8": "OSC_IN", "9": "OSC_OUT", "10": "NRST",
         "11": "S1_ID", "12": "S1_TEMP", "13": "S2_ID", "14": "S2_TEMP", "15": "S3_ID", "16": "S3_TEMP", "17": "S4_ID", "18": "S4_TEMP",
         "19": "VBUS_SNS", "20": "AUX_SNS", "21": "NC",
         "22": "SCL2", "23": "SDA2", "24": "S5_OFF", "25": "S5_LCLR", "26": "S6_OFF", "27": "S6_LCLR",
-        "28": "INT_OUT", "29": "S7_OFF", "32": "S7_LCLR", "33": "S8_OFF", "34": "S8_LCLR",
+        "28": "INT_OUT", "29": "NC", "32": "NC", "33": "S8_OFF", "34": "S8_LCLR",
         "30": "S1_OFF", "31": "S1_LCLR", "38": "S2_OFF", "39": "S2_LCLR", "40": "S3_OFF", "41": "S3_LCLR", "42": "S4_OFF", "43": "S4_LCLR",
-        "35": "SWDIO", "36": "SWCLK", "37": "NC", "44": "EXP_IRQ", "45": "SCL1", "46": "SDA1", "47": "LED_RUN", "48": "NC",
+        "35": "SWDIO", "36": "SWCLK", "37": "S7_OFF", "44": "EXP_IRQ", "45": "SCL1", "46": "SDA1", "47": "LED_RUN", "48": "S7_LCLR",
     }
     # slots that do not exist on this plane size: leave their MCU pins unconnected
     for k, v in list(nets.items()):
@@ -46,8 +47,8 @@ def block(N=2):
     b = Block("MCU")
     X, Y = 160 * G, 130 * G            # U3 origin
     nets = mcu_nets(N)
-    u = b.sym("U3", "MCU_ST_STM32G0:STM32G0B1CBTx", "STM32G0B1CBT6", "Package_QFP:LQFP-48_7x7mm_P0.5mm", nets,
-              at=(X, Y), fields={"LCSC": "C2847904"},
+    u = b.sym("U3", "MCU_ST_STM32G0:STM32G070CBTx", "STM32G070CBT6", "Package_QFP:LQFP-48_7x7mm_P0.5mm", nets,
+              at=(X, Y), fields={"LCSC": "C529338"},
               desc="plane MCU: I2C1 slave to the controller (PB6/PB7), I2C2 master (PB10/PB11), ADC on PA0-7/PB0-1, SWD on PA13/PA14")
     pin = lambda n: u.pin_xy(n)
     XR, XL = X + 22 * G, X - 22 * G    # right / left pin ends
