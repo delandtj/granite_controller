@@ -1,7 +1,7 @@
 # Port module interface spec (PM-19V-250W and its hosts)
 
 **Date**: 2026-10-26
-**Status**: Proposed, with ADR 0003
+**Status**: Accepted with ADR 0003
 **Applies to**: the port module (`power/pm-19v-250w/`, new project from pm-19v-200w),
 the plane tile column, the bench carrier (`power/pm-bench-carrier/`).
 

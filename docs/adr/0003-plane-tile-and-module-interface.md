@@ -1,6 +1,6 @@
 # Plane tile of 4 columns and a screwed port module
 
-**Status**: Proposed
+**Status**: Accepted
 **Date**: 2026-10-26
 **Updated**: 2026-10-26 (review asks answered: names, LM5069-1, new
 module project, INT per column; decision 14 isolated aux added)
