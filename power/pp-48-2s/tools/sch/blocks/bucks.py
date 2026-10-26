@@ -46,8 +46,8 @@ def lm5164(b, gx, gy, u, vout, nets, rron, l, rfb1, cout, ca, rsuffix, cbase, lc
     xbst, xra, xl = 15, 17, 22
     b.sym(cc(0), "Device:C", "2.2n 50V", C0402, {"1": nets["bst"], "2": nets["sw"]}, at=P(xbst, -8), desc="bootstrap")
     b.sym(lref, "Device:L", l, "Inductor_SMD:L_12x12mm_H6mm", {"1": nets["sw"], "2": nets["vout"]}, at=P(xl, -2), rot=90,
-          fields={"LCSC": lcsc_l, "MPN": "Bourns SRR1260-%s" % ("330M" if l == "33u" else "680M")},
-          desc="shielded, Isat >= 1.5 A (Bourns SRR1260 class)")
+          fields={"LCSC": lcsc_l, "MPN": "Bourns SRR1260-330M" if l == "33u" else "Sumida CDRH127/LDNP-680MC"},
+          desc="shielded, Isat >= 1.5 A, 12x12 land pattern (SRR1260 / CDRH127 class)")
     b.wire(bst, [(u, "7"), P(12, -6), P(12, -13), P(xbst, -13), (cc(0), "1")])
     b.wire(sw, [(u, "8"), P(xbst, -2), (lref, "1")])
     b.wire(sw, [P(xbst, -2), (cc(0), "2")])
@@ -99,7 +99,7 @@ def block(N=2):
 
     # 12 V aux buck U2, fuse, connector, LED, aux sense
     P, rail = lm5164(b, *G2, "U2", "12 V aux for the controller", dict(en="EN2", ron="RON2", fb="FB2", bst="BST2", sw="SW2", inj="INJ2", vout="+12V"),
-                     "100k", "68u", "453k", "22u 25V", "2.2n", 9, 11)
+                     "100k", "68u", "453k", "22u 25V", "2.2n", 9, 11, lcsc_l="C2452974")
     b.sym("F2", "Device:Fuse", "1.5A", "Fuse:Fuse_1206_3216Metric", {"1": "+12V", "2": "V12_OUT"}, at=P(73, -2), rot=90,
           desc="aux output fuse")
     b.sym("J4", "Connector_Generic:Conn_01x02", "12V AUX OUT", "Connector_JST:JST_PH_B2B-PH-K_1x02_P2.00mm_Vertical",

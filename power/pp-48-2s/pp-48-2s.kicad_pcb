@@ -6701,7 +6701,7 @@
 				)
 			)
 		)
-		(property "Description" "shielded, Isat >= 1.5 A (Bourns SRR1260 class)"
+		(property "Description" "shielded, Isat >= 1.5 A, 12x12 land pattern (SRR1260 / CDRH127 class)"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -22915,7 +22915,7 @@
 				)
 			)
 		)
-		(property "Description" "shielded, Isat >= 1.5 A (Bourns SRR1260 class)"
+		(property "Description" "shielded, Isat >= 1.5 A, 12x12 land pattern (SRR1260 / CDRH127 class)"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -22928,7 +22928,7 @@
 				)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C2452974"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -22940,7 +22940,7 @@
 				)
 			)
 		)
-		(property "MPN" "Bourns SRR1260-680M"
+		(property "MPN" "Sumida CDRH127/LDNP-680MC"
 			(at 0 0 0)
 			(layer "F.SilkS")
 			(hide yes)

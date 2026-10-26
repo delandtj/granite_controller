@@ -2,7 +2,7 @@
 <export version="E">
   <design>
     <source>/home/delandtj/Granite/Electronics/granite_controller/power/pp-48-2s/pp-48-2s.kicad_sch</source>
-    <date>2026-10-26T11:31:38</date>
+    <date>2026-10-26T11:38:56</date>
     <tool>Eeschema 10.0.7</tool>
     <sheet number="1" name="/" tstamps="/">
       <title_block>
@@ -852,13 +852,13 @@
     <comp ref="L1">
       <value>33u</value>
       <footprint>Inductor_SMD:L_12x12mm_H6mm</footprint>
-      <description>shielded, Isat &gt;= 1.5 A (Bourns SRR1260 class)</description>
+      <description>shielded, Isat &gt;= 1.5 A, 12x12 land pattern (SRR1260 / CDRH127 class)</description>
       <fields>
         <field name="LCSC">C840528</field>
         <field name="MPN">Bourns SRR1260-330M</field>
         <field name="Footprint">Inductor_SMD:L_12x12mm_H6mm</field>
         <field name="Datasheet"/>
-        <field name="Description">shielded, Isat &gt;= 1.5 A (Bourns SRR1260 class)</field>
+        <field name="Description">shielded, Isat &gt;= 1.5 A, 12x12 land pattern (SRR1260 / CDRH127 class)</field>
       </fields>
       <libsource lib="Device" part="L" description="Inductor"/>
       <property name="LCSC" value="C840528"/>
@@ -881,17 +881,17 @@
     <comp ref="L2">
       <value>68u</value>
       <footprint>Inductor_SMD:L_12x12mm_H6mm</footprint>
-      <description>shielded, Isat &gt;= 1.5 A (Bourns SRR1260 class)</description>
+      <description>shielded, Isat &gt;= 1.5 A, 12x12 land pattern (SRR1260 / CDRH127 class)</description>
       <fields>
-        <field name="LCSC"/>
-        <field name="MPN">Bourns SRR1260-680M</field>
+        <field name="LCSC">C2452974</field>
+        <field name="MPN">Sumida CDRH127/LDNP-680MC</field>
         <field name="Footprint">Inductor_SMD:L_12x12mm_H6mm</field>
         <field name="Datasheet"/>
-        <field name="Description">shielded, Isat &gt;= 1.5 A (Bourns SRR1260 class)</field>
+        <field name="Description">shielded, Isat &gt;= 1.5 A, 12x12 land pattern (SRR1260 / CDRH127 class)</field>
       </fields>
       <libsource lib="Device" part="L" description="Inductor"/>
-      <property name="LCSC" value=""/>
-      <property name="MPN" value="Bourns SRR1260-680M"/>
+      <property name="LCSC" value="C2452974"/>
+      <property name="MPN" value="Sumida CDRH127/LDNP-680MC"/>
       <property name="Sheetname" value="Bucks"/>
       <property name="Sheetfile" value="sheets/bucks.kicad_sch"/>
       <property name="ki_keywords" value="inductor choke coil reactor magnetic"/>

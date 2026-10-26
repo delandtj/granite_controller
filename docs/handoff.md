@@ -51,8 +51,12 @@ with {"keyword", "currentPage", "pageSize"}):
   changed, DRC as above.
 - Still a problem: INA238 (C2868250) 0 in stock (plan was consigned /
   Mouser); INA237AIDGSR C2864837 is pin-compatible, 50 in stock, 10x
-  the offset. L2 SRR1260-680M 0 in stock: CDRH127/LDNP-680MC
-  C2452974 (5987) or YPRH1209-680M C339957 (3484), check the pads.
+  the offset. L2 SRR1260-680M 0 in stock: swapped to Sumida
+  CDRH127/LDNP-680MC C2452974 (5987; 92 mOhm typ, 2.6 A rated).
+  Datasheet land pattern 2.9 x 5.4 pads, 7.0 gap, 12.8 outside = the
+  L_12x12mm_H6mm pads exactly (centres +/-4.95), kept that footprint.
+  It is 8.0 mm tall (SRR1260: 6.0); nothing above it on the plane (L2
+  is clear of the X101/X201 brick outlines).
   Thin: L1 SRR1260-330M 95, C338133 615 (6 per board), MCP23017 812.
 - The 58 parts without LCSC: all passive values stocked (mostly
   extended); F2 one-shot 046801.5NRHF C151143; Q101/Q201
