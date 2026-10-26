@@ -8,7 +8,7 @@
 	(property "Reference" "REF**"
 		(at 0 -4.2 0)
 		(layer "F.Fab")
-		(uuid "1e799d9b-4e37-4de6-a71c-b05be83afef9")
+		(uuid "fbbc913a-176e-46da-96b8-5e657f92fdf8")
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -18,7 +18,7 @@
 	(property "Value" "PM_Standoff_M2x6_SMTSO"
 		(at 0 4.2 0)
 		(layer "F.Fab")
-		(uuid "43281eb4-1fce-4a30-b77f-c514f94a2c7c")
+		(uuid "891f5742-a45d-417d-a581-93013e80e058")
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -29,7 +29,7 @@
 		(at 0 0 0)
 		(layer "F.Fab")
 		(hide yes)
-		(uuid "658b9fe9-23b5-4ef0-98c9-01ecb4221938")
+		(uuid "56068213-8be0-4df1-b010-19c2c6585073")
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -40,7 +40,7 @@
 		(at 0 0 0)
 		(layer "F.Fab")
 		(hide yes)
-		(uuid "27b5a95c-a90a-4d65-91de-a500cb3e2311")
+		(uuid "ad4d551e-27c6-446f-be4e-056f666bdb4a")
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -58,7 +58,7 @@
 		)
 		(fill no)
 		(layer "F.CrtYd")
-		(uuid "2b24611f-3f97-4e14-ad71-cb5b882d539b")
+		(uuid "c3668e2f-96b3-4b4c-bbe1-ae7d47ed5cd1")
 	)
 	(fp_circle
 		(center 0 0)
@@ -69,35 +69,35 @@
 		)
 		(fill no)
 		(layer "F.Fab")
-		(uuid "59945227-e882-4f1d-b2a4-806e4dde7bc6")
+		(uuid "eeeb1f2e-9ed2-4bed-914b-cf0dbd6e25a9")
 	)
 	(pad "" smd rect
 		(at -2.6125 0)
 		(size 0.775 1.6)
 		(layers "F.Paste")
 		(thermal_bridge_angle 45)
-		(uuid "d440b095-838d-41cc-94aa-0e194aee520e")
+		(uuid "7eb24286-1c9b-4289-b726-3f60bd57da0a")
 	)
 	(pad "" smd rect
 		(at 0 -2.6125)
 		(size 1.6 0.775)
 		(layers "F.Paste")
 		(thermal_bridge_angle 45)
-		(uuid "22901ba0-e05c-4dc1-ad8b-e866ae941e4a")
+		(uuid "f755d36f-9c6d-469e-8370-9bdac7b3d67b")
 	)
 	(pad "" smd rect
 		(at 0 2.6125)
 		(size 1.6 0.775)
 		(layers "F.Paste")
 		(thermal_bridge_angle 45)
-		(uuid "96c6be49-8044-461e-aaad-85bc55176450")
+		(uuid "88015d5e-7071-47e0-b51c-a803da4ba679")
 	)
 	(pad "" smd rect
 		(at 2.6125 0)
 		(size 0.775 1.6)
 		(layers "F.Paste")
 		(thermal_bridge_angle 45)
-		(uuid "92d70983-0520-4c9e-b0fc-6d1ac0324be0")
+		(uuid "b89f9976-1042-42d7-a99f-fd03935c97e0")
 	)
 	(pad "1" thru_hole circle
 		(at 0 0)
@@ -105,7 +105,7 @@
 		(drill 3.75)
 		(layers "*.Cu" "*.Mask")
 		(remove_unused_layers no)
-		(uuid "efc285eb-036e-4164-9dc2-08f4c0a96d43")
+		(uuid "ae71ceff-1583-4615-a2f0-146e0655fe8e")
 		(padstack
 			(mode front_inner_back)
 			(layer "Inner"

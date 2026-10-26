@@ -8,7 +8,7 @@
 	(property "Reference" "REF**"
 		(at 0 -2 0)
 		(layer "F.Fab")
-		(uuid "7b196fdb-c245-497b-bcf4-f167e5687238")
+		(uuid "b6d1e463-afc4-4e49-92b0-46a367e2befc")
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -18,7 +18,7 @@
 	(property "Value" "PM_Pogo_YZ130115073P"
 		(at 0 2 0)
 		(layer "F.Fab")
-		(uuid "0cc0f160-c731-4394-b0a8-674d92d5b854")
+		(uuid "93a3fc75-74ce-4440-9b9b-58e4589e64e6")
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -29,7 +29,7 @@
 		(at 0 0 0)
 		(layer "F.Fab")
 		(hide yes)
-		(uuid "9d4c49c0-a357-4b6e-83a3-c17043aa2d29")
+		(uuid "3ebec3b4-ca14-40bc-83c2-1dec8818a44a")
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -40,7 +40,7 @@
 		(at 0 0 0)
 		(layer "F.Fab")
 		(hide yes)
-		(uuid "523e292d-cc2d-4bac-8535-1db469af73ca")
+		(uuid "8c3d7956-5a8f-401a-8c96-167ccb39f043")
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -58,7 +58,7 @@
 		)
 		(fill no)
 		(layer "F.CrtYd")
-		(uuid "05172ab1-13cd-4eb6-96a2-bf6cc8e5636c")
+		(uuid "41abc6bd-86e9-4985-b598-4cff5b35afb5")
 	)
 	(fp_circle
 		(center 0 0)
@@ -69,13 +69,13 @@
 		)
 		(fill no)
 		(layer "F.Fab")
-		(uuid "d3c2858f-0e69-4de1-9f26-61a9962aa3c7")
+		(uuid "0904f14b-584c-4314-8da4-45a704b519ce")
 	)
 	(pad "1" smd circle
 		(at 0 0)
 		(size 2.2 2.2)
 		(layers "F.Cu" "F.Mask" "F.Paste")
-		(uuid "3cee42ec-eb38-4b1d-b45f-328855953094")
+		(uuid "649079b7-fc94-4361-b603-12c426724c10")
 	)
 	(embedded_fonts no)
 )
