@@ -54,43 +54,54 @@ ORIGIN = {
     'C6': (148.15, 117.55, 0, 'B'),
     'C7': (143.3, 120.9, 0, 'B'),
     'C8': (148.15, 120.9, 0, 'B'),
+    # bottom, phase 2 bootstrap beside SW2 (short BOOST2 loop)
+    'D2': (126.0, 112.0, 0, 'B'),
+    'C19': (126.0, 114.4, 0, 'B'),
     # bottom, output polymers
-    'C24': (142.6, 110.5, 0, 'B'),
-    'C25': (152.0, 110.5, 180, 'B'),
+    'C24': (142.6, 110.5, 180, 'B'),     # VOUT pads of both polymers in the middle, under the VOUT pour
+    'C25': (152.0, 110.5, 0, 'B'),
     # top
-    'L1': (119.7, CY, 180, 'F'),
+    'L1': (118.7, CY, 180, 'F'),
     'L2': (135.95, CY, 0, 'F'),
     'R9': (146.1, 104.3, 270, 'F'),
     'R10': (146.1, 118.6, 90, 'F'),
     'C20': (150.73, 109.02, 0, 'F'),
-    'C21': (155.63, 109.02, 0, 'F'),
+    'C21': (155.63, 109.02, 180, 'F'),   # GND pads of C20-C23 in the middle column
     'C22': (150.73, 112.47, 0, 'F'),
-    'C23': (155.63, 112.47, 0, 'F'),
+    'C23': (155.63, 112.47, 180, 'F'),
 }
 # by courtyard centre; U1 rotation is chosen in main()
 COURTYARD = {
-    'U1': (118.95, 117.45, 180, 'B'),
+    'U1': (116.45, 116.0, 180, 'B'),      # 1.8 mm below for the phase 2 drive fan-out, a channel right
 }
 AUX = ('J2', CX + 12.70, CY - 7.85)   # pads on B.Cu in an F footprint
 
 # keep-clear boxes (switch-node and GND via fields), per side
 RESERVED = {
-    'B': [(124.0, 107.1, 127.0, 110.2),      # SW1 vias, under L1 pad 1
-          (129.5, 112.4, 132.3, 115.9),      # SW2 vias, under L2 pad 1
-          (132.2, 101.0, 133.6, 106.7),      # GND vias, Q2 sources
-          (124.3, 116.6, 125.7, 122.4)],     # GND vias, Q4 sources
-    'F': [(106.9, 100.3, 148.1, 104.7)],     # SNS1P pour along the top edge
+    'B': [(123.2, 106.2, 128.3, 110.7),      # SW1 pour and vias, below Q1/Q2
+          (132.2, 112.2, 134.5, 116.7),      # SW2 vias, above Q3's sources
+          (132.6, 104.9, 136.0, 106.9),      # GND vias, Q2 sources
+          (135.6, 107.1, 140.7, 113.6),      # C24 GND pour and vias
+          (124.2, 116.5, 125.9, 122.6),      # GND vias, Q4 sources
+          (121.7, 110.9, 124.1, 122.6),      # routing channel right of U1 (pins 1-12)
+          (106.9, 106.8, 117.3, 108.6),      # VIN pour band under C1-C4
+          (111.2, 121.2, 121.8, 122.95),     # fan-out below U1 (phase 2 drive pins)
+          (135.4, 114.0, 141.3, 116.1)],     # VIN vias (In1 feed), above Q3's drain
+    'F': [(106.9, 100.3, 148.1, 104.7),      # SNS1P pour along the top edge
+          (106.9, 106.8, 117.0, 108.4),      # VIN backbone vias under C1-C4 (B), keep F clear
+          (125.6, 104.8, 128.4, 118.2),      # SW1 vias right of L1 pad 1
+          (132.1, 106.9, 134.5, 118.2),      # SW2 vias right of L2 pad 1
+          (124.2, 118.2, 125.9, 122.6)],     # Q4 GND vias
 }
 
 # side, zones (x0, y0, x1, y1)
-B1 = (107.0, 107.1, 123.9, 112.1)     # middle band, left of the SW1 vias
+B1 = (107.0, 108.7, 123.0, 110.6)     # middle band, above U1, left of the SW1 vias
 B2 = (127.2, 107.1, 137.9, 112.2)     # middle band, between SW1 vias and C24
 B3 = (133.7, 100.3, 137.3, 106.9)     # top edge, right of Q2's GND vias
 B5 = (146.5, 100.3, 151.4, 106.9)     # top edge, right of the aux pads
-B6 = (107.0, 107.1, 113.6, 122.6)     # left of U1
-B7 = (124.2, 112.3, 129.4, 116.0)     # between U1, Q4 and the SW2 vias: phase 2 boost
-T1 = (100.4, 106.8, 111.4, 114.1)     # top, input end between S1 and S2
-T2 = (106.9, 104.8, 111.4, 106.7)     # top, below the SNS1P strip, left of L1
+B6 = (107.0, 108.7, 111.1, 122.6)     # left of U1
+B7 = (124.2, 110.9, 129.4, 116.0)     # above Q4, right of U1's routing channel: phase 2 boost
+T1 = (100.4, 106.8, 110.4, 114.1)     # top, input end between S1 and S2
 T3 = (106.9, 120.0, 139.0, 122.6)     # top, bottom strip under the inductors
 T4 = (148.3, 100.3, 151.4, 107.2)     # top, output end, beside S4
 T5 = (148.3, 114.3, 151.4, 122.6)     # top, output end, beside S3
@@ -102,17 +113,17 @@ ANCHOR = {
     'C10': ('3', (0, 90)), 'C12': ('47', (90, 0)), 'R6': ('47', (90, 0)), 'R7': ('47', (90, 0)),
     'R8': ('46', (90, 0)), 'C13': ('46', (90, 0)), 'C14': ('46', (90, 0)), 'C15': ('45', (90, 0)),
     'C16': ('15', (90, 0)), 'C17': ('16', (90, 0)),
-    'D1': ('40', (0, 90)), 'C18': ('40', (90, 0)), 'D2': ('21', (0, 90)), 'C19': ('21', (90, 0)),
-    'R4': ('32', (90, 0)), 'R5': ('9', (90, 0)), 'R3': ('32', (90, 0)),
+    'D1': ('40', (0, 90)), 'C18': ('40', (90, 0)),
+    'R5': ('9', (90, 0)),
 }
 
 SUPERVISION = ['U2', 'U3', 'C27', 'C28', 'R11', 'D3', 'C26', 'R12', 'R13', 'R14', 'R15', 'R16']
 # side, zones, refs, rotation for the rest
 PACK = [
-    ('F', [T1, T2, T4, T5, T3], SUPERVISION, 0),
-    ('B', [B6, B1, B2, B3, B5], ['R3'], 90),
+    ('F', [T1, T3], ['R3', 'R4'], 90),            # RUN divider: input end, beside VIN and U1's RUN pins
+    ('F', [T1, T4, T5, T3], SUPERVISION, 0),
     ('B', [B1, B2, B3, B5, B6], SUPERVISION, 0),
-    ('B', [B7, B2, B1, B6], ['D2', 'C19', 'C17'], 0),
+    ('B', [B7, B2, B1, B6, B3, B5], ['C17'], 0),
 ]
 
 

@@ -1,19 +1,24 @@
 #!/usr/bin/env python3
-"""Power copper for PM-19V-250W: outer-layer pours and via fields for the
-high-current nets, in a group "power" that krt-route keeps.
+"""Power copper for PM-19V-250W: outer-layer pours, an In1 VIN feed and via
+fields for the high-current nets, in a group "power" that krt-route keeps.
 Usage: power.py <in.kicad_pcb> <out.kicad_pcb>
 
-Run after tools/place.py. The inner planes (In1 VIN, In2 GND) and every
-small-signal net are left to krt-route; the GND pours on the outer layers
-to pcbkit gndpour after routing.
+Run after tools/place.py. In2 (solid GND) and every small-signal net are
+left to krt-route; the GND pours on the outer layers to pcbkit gndpour
+after routing.
 
-Current paths (10.5 A out, ~4 A in at 54 V):
-  VIN   J1.1 -> B.Cu pour -> C1-C4 -> Q1 drain; In1 -> C5-C8 -> Q3 drain
-  SW1   Q1 source + Q2 drain (B.Cu) -> 8 vias -> L1 pad 1 (F.Cu)
-  SW2   Q4 drain + Q3 source (B.Cu) -> 12 vias -> L2 pad 1 (F.Cu)
-  SNSx  L1/L2 pad 2 -> F.Cu pour -> R9/R10 pad 1
-  VOUT  R9/R10 pad 2 -> F.Cu pour -> C20-C25 -> J1.8
-  GND   Q2/Q4 sources -> via fields -> In2 plane -> caps, J1.3/J1.4
+Current paths (13.2 A out, ~5.5 A in at 48 V):
+  VIN   S1 (J1.1, all layers) -> B.Cu pour -> C1-C4 -> Q1 drain;
+        S1 -> In1 strip along the top edge and down the right -> vias
+        -> B.Cu pour -> C5-C8 -> Q3 drain
+  SW1   Q1 sources + Q2 drain (B.Cu) -> 12 vias -> F.Cu beside L1 pad 1
+  SW2   Q4 drain + Q3 sources (B.Cu) -> 8 vias -> F.Cu beside L2 pad 1
+  SNSx  L1 pad 2 -> F.Cu strip along the top edge -> R9 pad 1;
+        L2 pad 2 -> F.Cu along the bottom edge -> R10 pad 1
+  VOUT  R9/R10 pad 2 -> F.Cu pour round the C20-C23 GND island -> S4
+        (J1.4); C24/C25 (B.Cu) through a via column
+  GND   Q2/Q4 sources, C1-C8 (GND islands under the cap bodies), C24 ->
+        via fields -> In2 plane -> S2/S3 (J1.2/J1.3)
 """
 import sys
 
@@ -23,27 +28,52 @@ GROUP = 'power'
 CLEAR = 0.2          # copper clearance
 VIA = (0.6, 0.3)     # power via diameter, drill
 
-B, F = pcbnew.B_Cu, pcbnew.F_Cu
+B, F, IN1 = pcbnew.B_Cu, pcbnew.F_Cu, pcbnew.In1_Cu
+
+
+def rect(x0, y0, x1, y1):
+    return [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+
 
 # net, layer, priority, polygon (mm)
 ZONES = [
-    # bottom edge dips to 108.3 left of C27 so the pour wraps under C3.2 to
-    # J1.1 (the C1/C3 GND pads leave no room between them); R1.2 and D1.1
-    # sit just below 108.3
-    ('/VIN', B, 3, [(102.4, 100.3), (120.6, 100.3), (120.6, 107.0), (108.6, 107.0), (108.6, 108.3),
-                    (102.4, 108.3)]),
-    ('/VIN', B, 3, [(135.2, 114.6), (150.6, 114.6), (150.6, 122.6), (135.2, 122.6)]),
-    ('/SW1', B, 4, [(121.0, 100.3), (127.9, 100.3), (127.9, 106.6), (126.0, 106.6), (126.0, 110.0),
-                    (123.9, 110.0), (123.9, 106.6), (122.6, 106.6), (122.6, 105.3), (121.0, 105.3)]),
-    ('/SW2', B, 4, [(127.9, 113.3), (132.7, 113.3), (132.7, 117.6), (135.0, 117.6), (135.0, 122.6),
-                    (127.9, 122.6)]),
-    ('/SW1', F, 4, [(121.4, 106.7), (125.95, 106.7), (125.95, 116.2), (121.4, 116.2)]),
-    ('/SW2', F, 4, [(126.25, 106.7), (132.55, 106.7), (132.55, 116.2), (126.25, 116.2)]),
-    ('/SNS1P', F, 4, [(114.8, 100.3), (140.1, 100.3), (140.1, 106.4), (117.7, 106.4), (117.7, 116.2),
-                      (114.8, 116.2)]),
-    ('/SNS2P', F, 4, [(132.8, 106.7), (136.0, 106.7), (136.0, 116.4), (140.2, 116.4), (140.2, 122.6),
-                      (132.8, 122.6)]),
-    ('/VOUT', F, 3, [(140.5, 100.3), (154.2, 100.3), (154.2, 122.6), (140.5, 122.6)]),
+    # phase 1 input: round the bottom of C1-C4 (their GND islands leave no
+    # path between the rows), up to the VIN pads and Q1's drain
+    ('/VIN', B, 3, [(100.4, 100.4), (122.2, 100.4), (122.2, 106.35), (117.2, 106.35), (117.2, 108.5),
+                    (100.4, 108.5)]),
+    # phase 2 input: over the top of C5-C8, Q3's drain
+    ('/VIN', B, 3, [(135.6, 113.9), (147.5, 113.9), (147.5, 122.7), (135.6, 122.7)]),
+    # In1 feed from S1 to phase 2
+    ('/VIN', IN1, 3, [(100.4, 100.4), (144.0, 100.4), (144.0, 116.3), (137.9, 116.3), (137.9, 104.6),
+                      (100.4, 104.6)]),
+    # GND islands under the input caps, one via each under the body
+    ('GND', B, 5, rect(107.45, 100.5, 110.05, 106.75)),      # C1/C3
+    ('GND', B, 5, rect(112.3, 100.5, 114.9, 106.75)),        # C2/C4
+    ('GND', B, 5, rect(142.85, 116.1, 145.45, 122.35)),      # C5/C7
+    ('GND', B, 5, rect(147.7, 116.1, 150.3, 122.35)),        # C6/C8
+    # Q2 sources (BG1 escapes below the left part), Q4 sources, C24 GND
+    ('GND', B, 4, [(130.5, 100.4), (137.4, 100.4), (137.4, 106.9), (132.0, 106.9), (132.0, 105.3),
+                   (130.5, 105.3)]),
+    ('GND', B, 4, rect(124.1, 117.7, 127.5, 122.7)),
+    ('GND', B, 4, rect(135.7, 107.2, 140.6, 113.5)),
+    # switch nodes: TG1 escapes left of the SW1 tail, TG2 right of SW2's
+    ('/SW1', B, 4, [(123.0, 100.4), (129.8, 100.4), (129.8, 106.6), (128.3, 106.6), (128.3, 110.7),
+                    (125.4, 110.7), (125.4, 106.6), (124.5, 106.6), (124.5, 105.3), (123.0, 105.3)]),
+    ('/SW2', B, 4, [(128.2, 122.7), (134.9, 122.7), (134.9, 117.75), (133.5, 117.75), (133.5, 116.4),
+                    (134.4, 116.4), (134.4, 112.2), (132.2, 112.2), (132.2, 116.4), (128.2, 116.4)]),
+    ('/SW1', F, 4, rect(122.2, 104.9, 128.4, 118.2)),
+    ('/SW2', F, 4, [(128.9, 104.9), (132.3, 104.9), (132.3, 107.2), (134.5, 107.2), (134.5, 118.2),
+                    (128.9, 118.2)]),
+    # sense nodes
+    ('/SNS1P', F, 4, [(111.6, 100.4), (147.95, 100.4), (147.95, 104.6), (115.2, 104.6), (115.2, 118.2),
+                      (111.6, 118.2)]),
+    ('/SNS2P', F, 4, rect(139.4, 118.0, 148.2, 122.6)),
+    # output: R9/R10 -> C20/C22 -> over the top -> S4 and C21/C23; the GND
+    # island between the MLCC columns runs down to S3
+    ('/VOUT', F, 3, [(144.0, 106.3), (148.25, 106.3), (148.25, 100.4), (158.3, 100.4), (158.3, 113.95),
+                     (155.4, 113.95), (155.4, 107.1), (151.0, 107.1), (151.0, 116.5), (144.0, 116.5)]),
+    ('GND', F, 5, rect(151.4, 107.4, 155.0, 114.6)),
+    ('/VOUT', B, 4, rect(144.5, 107.3, 150.1, 113.4)),
 ]
 
 # net, candidate via centres (kept only where they clear every pad and via)
@@ -51,12 +81,22 @@ def grid(xs, ys):
     return [(x, y) for x in xs for y in ys]
 
 
+# pitch >= 0.85: two vias closer than 2 r + CLEAR (0.8) are refused
 VIAS = [
-    ('/SW1', grid([124.6, 125.5], [107.0, 107.9, 108.8, 109.7])),
-    ('/SW2', grid([129.2, 130.1, 131.0, 131.9], [113.6, 114.5, 115.4])),
-    ('/VIN', grid([136.0, 137.0, 138.0, 139.0, 140.0], [115.25])),
-    ('GND', grid([130.45, 131.35], [101.4, 102.3, 103.2, 104.1, 105.0])),
-    ('GND', grid([125.4], [118.2, 119.1, 120.0, 120.9, 121.8])),
+    ('/SW1', grid([126.1, 126.95, 127.8], [107.3, 108.2, 109.1, 110.0])),
+    ('/SW2', grid([132.7, 133.6], [112.6, 113.5, 114.4, 115.3])),
+    # 107.7 row: stepping stones under the C1-C4 GND islands for the backbone
+    ('/VIN', grid([138.25, 139.1], [114.6, 115.5]) + grid([143.4], [114.5, 115.4]) +
+     grid([107.2, 112.2, 115.6, 116.5], [107.7])),
+    # input cap GND islands: under the cap bodies (C2/C4: not at 101.95,
+    # it would block the SNS1P backbone along the top edge)
+    ('GND', grid([109.6], [101.95, 103.6, 105.3]) + grid([114.45], [103.6])),
+    ('GND', grid([143.5], [117.55, 119.2, 120.9]) + grid([148.4], [117.55, 119.2, 120.9])),
+    # Q2 sources: right of L2 pad 1, below the SNS1P strip
+    ('GND', grid([132.9, 133.8, 134.7, 135.6], [105.4, 106.3])),
+    ('GND', grid([124.6, 125.45], [118.6, 119.5, 120.4, 121.3, 122.2])),
+    ('GND', grid([136.3, 137.2], [108.0, 109.2, 110.4, 111.6, 112.8])),
+    ('/VOUT', grid([147.3], [108.7, 109.6, 110.5, 111.4, 112.3])),
 ]
 
 
@@ -160,13 +200,16 @@ def backbones(board, grp, width=0.3):
             if not p.IsOnCopperLayer():
                 continue      # paste-only apertures (TDSON-8)
             bb = p.GetBoundingBox()
-            lay = 'TH' if p.GetAttribute() == pcbnew.PAD_ATTRIB_PTH else ('B' if fp.IsFlipped() else 'F')
+            lay = ('TH' if p.GetAttribute() == pcbnew.PAD_ATTRIB_PTH else
+                   'B' if p.IsOnLayer(B) else 'F')      # by pad layer: J2's pads are B.Cu in an F footprint
             others.append((tomm(bb.GetLeft()), tomm(bb.GetTop()), tomm(bb.GetRight()), tomm(bb.GetBottom()),
                            p.GetNetname(), lay, p))
     vias = [(tomm(t.GetPosition().x), tomm(t.GetPosition().y), t.GetNetname())
             for t in board.GetTracks() if t.Type() == pcbnew.PCB_VIA_T]
     nets = board.GetNetsByName()
     for net, layer, prio, pts in ZONES:
+        if layer not in (B, F):
+            continue                  # In1 feed: joined by S1 and the vias
         side = 'B' if layer == B else 'F'
         nodes = [((o[0] + o[2]) / 2, (o[1] + o[3]) / 2) for o in others
                  if o[4] == net and o[5] in (side, 'TH') and inside(pts, (o[0] + o[2]) / 2, (o[1] + o[3]) / 2)]
