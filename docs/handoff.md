@@ -18,6 +18,17 @@ Done, committed:
   power.py (new pours: In1 VIN feed from S1, GND islands with vias under
   the input caps, VOUT round a GND island to S4). Flow: mkboard ->
   place.py -> setrules -> power.py -> krt-route -> gndpour -> silk.
+- U1 area reorganised for hand routing (a80808b): U1 small passives
+  0402, VFB/ITH1 parts above pins 45-47, corridor above drive pins
+  37-42 and a TG1 lane free (In1 vias go under L1's body, x 115.4-122.2,
+  the only F-free spot there), C18/C19 beside SW1/SW2. KRT: 22/32, 14
+  opens, all at U1 pins (TG1 TG2 BOOST1 BOOST2 DRVCC INTVCC RUN OVLO
+  VIN_IC VFB): the user routes these by hand in KiCad. Then: gndpour,
+  silk, connlabels, DRC, jlcfab.
+- Gotcha: a backgrounded `cd dir && pcbkit krt-route` ran in the session
+  cwd and routed granite_controller in ~/.cache (stopped at the diff
+  step, the board was not copied back). Run krt-route in the foreground
+  with PCBKIT_CONFIG=$PWD/pcbkit.toml. `krt-route -h` starts a real run.
 Open: LTC7810 typ/max current sense threshold (assumed 67/75/83 mV; only
 67 known) - analog.com did not load. Stock of C22793 / C22892 / C31850
 not seen (API without stock). Routing result: see below / next block.
