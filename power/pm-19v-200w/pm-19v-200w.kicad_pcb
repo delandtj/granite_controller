@@ -687,6 +687,17 @@
 				)
 			)
 		)
+		(property "LCSC" "C2904240"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "8ce36327-807a-4021-8f3b-e267831c6292")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/4d778c10-d25e-4083-9135-d801f1f53e78")
 		(sheetname "pm-19v-200w")
 		(sheetfile "pm-19v-200w.kicad_sch")
@@ -833,6 +844,17 @@
 				(font
 					(size 1 1)
 					(thickness 0.15)
+				)
+			)
+		)
+		(property "LCSC" "C778721"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "2d652eca-b70a-48e7-8962-1e2aa4682e19")
+			(effects
+				(font
+					(size 1.27 1.27)
 				)
 			)
 		)
@@ -983,6 +1005,17 @@
 				(font
 					(size 1 1)
 					(thickness 0.15)
+				)
+			)
+		)
+		(property "LCSC" "C14663"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "76b5b7da-bccb-4a4a-acc7-4195188de0dd")
+			(effects
+				(font
+					(size 1.27 1.27)
 				)
 			)
 		)
@@ -1301,6 +1334,17 @@
 				(font
 					(size 1 1)
 					(thickness 0.15)
+				)
+			)
+		)
+		(property "LCSC" "C116625"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "e4d38bbf-61cf-402d-adb1-5b3308fb5f06")
+			(effects
+				(font
+					(size 1.27 1.27)
 				)
 			)
 		)
@@ -1648,6 +1692,17 @@
 				)
 			)
 		)
+		(property "LCSC" "C17713"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "e8049af4-373b-4fb6-8ca2-7feeeaa49d07")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/10cd6817-a833-4f5b-898f-81e4aa691d5b")
 		(sheetname "pm-19v-200w")
 		(sheetfile "pm-19v-200w.kicad_sch")
@@ -1966,6 +2021,17 @@
 				)
 			)
 		)
+		(property "LCSC" "C778721"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "bdae3f51-7daf-4453-aa8a-915a20635401")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/804e1e27-295f-496f-b2a6-5b06f1b6050e")
 		(sheetname "pm-19v-200w")
 		(sheetfile "pm-19v-200w.kicad_sch")
@@ -2112,6 +2178,17 @@
 				(font
 					(size 1 1)
 					(thickness 0.15)
+				)
+			)
+		)
+		(property "LCSC" "C116625"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "f38bbacb-52d7-4841-8c33-8c1344ef895e")
+			(effects
+				(font
+					(size 1.27 1.27)
 				)
 			)
 		)
@@ -2456,6 +2533,17 @@
 				(font
 					(size 1 1)
 					(thickness 0.15)
+				)
+			)
+		)
+		(property "LCSC" "C778721"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "da092885-d46f-40c8-b953-3789dd07f13f")
+			(effects
+				(font
+					(size 1.27 1.27)
 				)
 			)
 		)
@@ -2804,6 +2892,17 @@
 				(font
 					(size 1 1)
 					(thickness 0.15)
+				)
+			)
+		)
+		(property "LCSC" "C778721"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "401b2560-6c47-4ceb-b844-6cdf13f94844")
+			(effects
+				(font
+					(size 1.27 1.27)
 				)
 			)
 		)
@@ -3195,6 +3294,17 @@
 				)
 			)
 		)
+		(property "LCSC" "C2904240"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "0004b069-4282-4db2-9077-46a2357ec8ed")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/fc84010e-17d2-420a-917d-f070946cab6c")
 		(sheetname "pm-19v-200w")
 		(sheetfile "pm-19v-200w.kicad_sch")
@@ -3342,6 +3452,17 @@
 				(font
 					(size 1 1)
 					(thickness 0.15)
+				)
+			)
+		)
+		(property "LCSC" "C14663"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "d57bd2c0-76c7-40a0-8822-998b54bdb182")
+			(effects
+				(font
+					(size 1.27 1.27)
 				)
 			)
 		)
@@ -3500,6 +3621,17 @@
 				(justify mirror)
 			)
 		)
+		(property "LCSC" "C5449052"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "27ed72a9-2360-4c3d-8287-a66fe3dc69ba")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/7cf15fa8-1182-4fd0-a86d-e0973d6a97f8")
 		(sheetname "pm-19v-200w")
 		(sheetfile "pm-19v-200w.kicad_sch")
@@ -3654,6 +3786,17 @@
 					(thickness 0.15)
 				)
 				(justify mirror)
+			)
+		)
+		(property "LCSC" "C5370002"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "089c9652-bc21-452b-b723-b2102d4d15f7")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
 			)
 		)
 		(path "/7791d526-9b11-43af-bc32-d4928028f89d")
@@ -3812,6 +3955,17 @@
 				(justify mirror)
 			)
 		)
+		(property "LCSC" "C5449052"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "25c0ab6b-2794-4c2b-b3a5-83bb90c68c6c")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/fa8a7cda-40e8-4f40-ac34-cf6968fd19cc")
 		(sheetname "pm-19v-200w")
 		(sheetfile "pm-19v-200w.kicad_sch")
@@ -3968,6 +4122,17 @@
 				(justify mirror)
 			)
 		)
+		(property "LCSC" "C22865"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "612e70fe-b6a9-4f1e-ba37-ca34b5355ffd")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/a1ab15ff-7f5a-4682-b3ec-4c24425cf979")
 		(sheetname "pm-19v-200w")
 		(sheetfile "pm-19v-200w.kicad_sch")
@@ -4112,6 +4277,17 @@
 					(thickness 0.15)
 				)
 				(justify mirror)
+			)
+		)
+		(property "LCSC" "C534364"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "989b8758-106f-461b-847e-ff540fe39f23")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
 			)
 		)
 		(path "/f2229d15-2846-4a65-b530-690004144069")
@@ -4466,6 +4642,17 @@
 				(justify mirror)
 			)
 		)
+		(property "LCSC" "C107713"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "4f799d42-df64-4032-ab3c-7975471220d2")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/4f9bd056-2c2b-49a2-b340-090924ee21a0")
 		(sheetname "pm-19v-200w")
 		(sheetfile "pm-19v-200w.kicad_sch")
@@ -4750,6 +4937,17 @@
 				(justify mirror)
 			)
 		)
+		(property "LCSC" "C94904"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "fa93ca42-9292-43d2-9469-dbb9df04f86b")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/4b13d7d0-fb9e-4234-a3e7-8871521aac3f")
 		(sheetname "pm-19v-200w")
 		(sheetfile "pm-19v-200w.kicad_sch")
@@ -4904,6 +5102,17 @@
 					(thickness 0.15)
 				)
 				(justify mirror)
+			)
+		)
+		(property "LCSC" "C380328"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "e52bf887-8005-416e-a8ba-09085df2a406")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
 			)
 		)
 		(path "/036e9e2d-0f2f-4df6-9b9b-f2549fde3fa3")
@@ -5062,6 +5271,17 @@
 				(justify mirror)
 			)
 		)
+		(property "LCSC" "C14663"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "ad14c8e3-cd99-4d39-953a-08f671ab532a")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/936fee1c-a293-4dd5-a25d-9340bf038e13")
 		(sheetname "pm-19v-200w")
 		(sheetfile "pm-19v-200w.kicad_sch")
@@ -5216,6 +5436,17 @@
 					(thickness 0.15)
 				)
 				(justify mirror)
+			)
+		)
+		(property "LCSC" "C100040"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "874f75d2-5b3b-4a89-b479-a723e1d4b5de")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
 			)
 		)
 		(path "/336fee18-d550-49d0-a4dd-3a575cef9c98")
@@ -5374,6 +5605,17 @@
 				(justify mirror)
 			)
 		)
+		(property "LCSC" "C5449052"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "fc03404e-eb46-4bdd-85d2-5bca548952ea")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/514fdb8c-771f-4f5d-a834-36ceb91c7c5b")
 		(sheetname "pm-19v-200w")
 		(sheetfile "pm-19v-200w.kicad_sch")
@@ -5528,6 +5770,17 @@
 					(thickness 0.15)
 				)
 				(justify mirror)
+			)
+		)
+		(property "LCSC" "C22823"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "30c89148-a482-4a6a-b0e0-b9ada5a93b3f")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
 			)
 		)
 		(path "/073afa9f-a2f7-4e90-a2fe-1de82f2db2a0")
@@ -5686,6 +5939,17 @@
 				(justify mirror)
 			)
 		)
+		(property "LCSC" "C25804"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "4bee058a-bff6-4933-a8b2-e6b0de17a372")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/2ed80cc7-7b18-4dee-a336-020fa9429c5f")
 		(sheetname "pm-19v-200w")
 		(sheetfile "pm-19v-200w.kicad_sch")
@@ -5840,6 +6104,17 @@
 					(thickness 0.15)
 				)
 				(justify mirror)
+			)
+		)
+		(property "LCSC" "C14663"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "57679895-0c2b-48a6-858c-a337ad68ce3c")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
 			)
 		)
 		(path "/5aef1955-98c4-4d83-9b2c-7d54130cfb01")
@@ -5998,6 +6273,17 @@
 				(justify mirror)
 			)
 		)
+		(property "LCSC" "C22827"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "733a536b-2633-4e85-9483-caa8a7542e55")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/18a97690-edd0-4ec3-b3ef-19086cef0676")
 		(sheetname "pm-19v-200w")
 		(sheetfile "pm-19v-200w.kicad_sch")
@@ -6152,6 +6438,17 @@
 					(thickness 0.15)
 				)
 				(justify mirror)
+			)
+		)
+		(property "LCSC" "C1635"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "843f97b8-57af-468f-b8a6-0599b52166ff")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
 			)
 		)
 		(path "/bbb6bfb7-3998-4a54-870d-7e45b5c30b75")
@@ -6310,6 +6607,17 @@
 				(justify mirror)
 			)
 		)
+		(property "LCSC" "C5449052"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "d55ad539-04c7-4a22-a71d-909d5d8ff89a")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/5bbcecad-078d-41c7-947e-cb7064a8b8ef")
 		(sheetname "pm-19v-200w")
 		(sheetfile "pm-19v-200w.kicad_sch")
@@ -6464,6 +6772,17 @@
 					(thickness 0.15)
 				)
 				(justify mirror)
+			)
+		)
+		(property "LCSC" "C22898"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "fca126be-caae-4526-814e-3d3339cb0c9f")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
 			)
 		)
 		(path "/c68afe53-2fd6-4453-bbce-afc4a662d99c")
@@ -6622,6 +6941,17 @@
 				(justify mirror)
 			)
 		)
+		(property "LCSC" "C13564"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "6927a317-8e78-49e2-ab27-c403467cf87e")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/66a46943-5c6f-4bc5-b2ef-d6c30ad06870")
 		(sheetname "pm-19v-200w")
 		(sheetfile "pm-19v-200w.kicad_sch")
@@ -6776,6 +7106,17 @@
 					(thickness 0.15)
 				)
 				(justify mirror)
+			)
+		)
+		(property "LCSC" "C14663"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "a3c1be69-b392-4ef3-812e-bdc24f89ece8")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
 			)
 		)
 		(path "/d0f22434-d642-409d-b598-2dc6b8236567")
@@ -6934,6 +7275,17 @@
 				(justify mirror)
 			)
 		)
+		(property "LCSC" "C374074"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "62a01afd-6609-4aa3-ab83-b4f4d80306d3")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/a5e98f7f-436a-4aa8-9b87-8075a5fff3eb")
 		(sheetname "pm-19v-200w")
 		(sheetfile "pm-19v-200w.kicad_sch")
@@ -7087,6 +7439,17 @@
 					(thickness 0.15)
 				)
 				(justify mirror)
+			)
+		)
+		(property "LCSC" "C247164"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "62cbd797-6e9d-4553-be14-31cd57aeca0d")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
 			)
 		)
 		(path "/422aba94-d222-4391-9338-bba946eccadb")
@@ -7245,6 +7608,17 @@
 				(justify mirror)
 			)
 		)
+		(property "LCSC" "C25804"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "ecb7dd54-1d33-4ba3-8767-b6491e63eb2b")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/8c52828f-ac80-4035-b4af-d70e8e6cdee0")
 		(sheetname "pm-19v-200w")
 		(sheetfile "pm-19v-200w.kicad_sch")
@@ -7398,6 +7772,17 @@
 					(thickness 0.15)
 				)
 				(justify mirror)
+			)
+		)
+		(property "LCSC" "C5449052"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "2650433c-1eb9-4af6-8939-13a13a62ad44")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
 			)
 		)
 		(path "/3ee28e7a-f575-4f75-b349-eb9e908c8070")
@@ -7556,6 +7941,17 @@
 				(justify mirror)
 			)
 		)
+		(property "LCSC" "C14663"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "e56477e9-1588-4e36-8387-3bf6ce04a13d")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/c61b232f-7d3e-4e78-b515-1f30b3a5079d")
 		(sheetname "pm-19v-200w")
 		(sheetfile "pm-19v-200w.kicad_sch")
@@ -7701,6 +8097,17 @@
 					(thickness 0.15)
 				)
 				(justify mirror)
+			)
+		)
+		(property "LCSC" "C82466"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "c6e65cac-92e1-48ab-acf7-f1c7bb5ab8b2")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
 			)
 		)
 		(path "/0c1f9bc1-45b8-49ea-94bf-cf65f75f79f7")
@@ -7987,6 +8394,17 @@
 				(justify mirror)
 			)
 		)
+		(property "LCSC" "C5449052"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "ed46bfb8-4a79-4a1d-8836-87dba6eb07b6")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/5ef384dd-9aea-4296-81a1-57414bc518cb")
 		(sheetname "pm-19v-200w")
 		(sheetfile "pm-19v-200w.kicad_sch")
@@ -8131,6 +8549,17 @@
 					(thickness 0.15)
 				)
 				(justify mirror)
+			)
+		)
+		(property "LCSC" "C534364"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "c094fd7b-5f46-4a3a-a482-6f2fff922c65")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
 			)
 		)
 		(path "/95676f5d-8183-4a10-bc4f-d41477dbb129")
@@ -8494,6 +8923,17 @@
 				(justify mirror)
 			)
 		)
+		(property "LCSC" "C100040"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "16a2f668-5df0-44ae-b8c9-66cff1838e60")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/aa47f62f-2347-4b61-9b89-f05f07c3b3b1")
 		(sheetname "pm-19v-200w")
 		(sheetfile "pm-19v-200w.kicad_sch")
@@ -8650,6 +9090,17 @@
 				(justify mirror)
 			)
 		)
+		(property "LCSC" "C22859"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "803524e4-5d76-45e5-a142-d559e66e7fd2")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/bf25ff53-43c9-428d-86dc-b7a2425b35fb")
 		(sheetname "pm-19v-200w")
 		(sheetfile "pm-19v-200w.kicad_sch")
@@ -8795,6 +9246,17 @@
 					(thickness 0.15)
 				)
 				(justify mirror)
+			)
+		)
+		(property "LCSC" "C534364"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "f9c0312d-cbb0-4237-bd67-6a0f3d0fff20")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
 			)
 		)
 		(path "/a218d0c9-edb1-4d37-9fe6-b677b6e5bfc5")
@@ -9158,6 +9620,17 @@
 				(justify mirror)
 			)
 		)
+		(property "LCSC" "C25804"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "ac72aca0-294e-4ab4-a6df-0b5edc32121c")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/af0f75f7-0e74-4175-b55f-c6d3d3c1afd5")
 		(sheetname "pm-19v-200w")
 		(sheetfile "pm-19v-200w.kicad_sch")
@@ -9312,6 +9785,17 @@
 					(thickness 0.15)
 				)
 				(justify mirror)
+			)
+		)
+		(property "LCSC" "C581067"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "e5e6852b-5f7c-4151-8460-587aef8ac53c")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
 			)
 		)
 		(path "/096a0ebc-6855-4215-b78c-43df390d8f97")
@@ -10157,6 +10641,17 @@
 				(justify mirror)
 			)
 		)
+		(property "LCSC" "C25804"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "7b150848-aac8-49ec-976c-0cd199747db7")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/c8aa9283-7f77-4b9d-9a6e-949b1733700f")
 		(sheetname "pm-19v-200w")
 		(sheetfile "pm-19v-200w.kicad_sch")
@@ -10313,6 +10808,17 @@
 				(justify mirror)
 			)
 		)
+		(property "LCSC" "C22870"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "f05047b0-7089-470a-abce-9b447c89f2db")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/ebfe96b8-9af9-4236-955d-f7b6917ad4ac")
 		(sheetname "pm-19v-200w")
 		(sheetfile "pm-19v-200w.kicad_sch")
@@ -10458,6 +10964,17 @@
 					(thickness 0.15)
 				)
 				(justify mirror)
+			)
+		)
+		(property "LCSC" "C82466"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "70a5f058-55b4-4e04-9ef0-cbc8f0ed6e5a")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
 			)
 		)
 		(path "/c55e2e56-5213-4e22-802e-33c10d9dd9d9")
@@ -10744,6 +11261,17 @@
 				(justify mirror)
 			)
 		)
+		(property "LCSC" "C22809"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "ac553248-2faf-4473-8aaf-058bd0da04a7")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/59d08438-a6a8-431f-8aab-8a923d151c45")
 		(sheetname "pm-19v-200w")
 		(sheetfile "pm-19v-200w.kicad_sch")
@@ -10900,6 +11428,17 @@
 				(justify mirror)
 			)
 		)
+		(property "LCSC" "C5449052"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "5dab46f2-d4c7-4253-a776-ed438f1b9549")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/ca5961cf-49bf-436c-a17a-d923b5c9e0e3")
 		(sheetname "pm-19v-200w")
 		(sheetfile "pm-19v-200w.kicad_sch")
@@ -11045,6 +11584,17 @@
 					(thickness 0.15)
 				)
 				(justify mirror)
+			)
+		)
+		(property "LCSC" "C534364"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "46abf086-361b-460f-8cb2-fc75394bd34d")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
 			)
 		)
 		(path "/294619ba-9672-481d-a077-842fee6f1f8f")
@@ -11408,6 +11958,17 @@
 				(justify mirror)
 			)
 		)
+		(property "LCSC" "C354262"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "963f15d5-0049-474b-9ff5-9b076053f2cc")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(path "/d98d7c5b-e25b-486e-811e-6b6011deaf9a")
 		(sheetname "pm-19v-200w")
 		(sheetfile "pm-19v-200w.kicad_sch")
@@ -11561,6 +12122,17 @@
 					(thickness 0.15)
 				)
 				(justify mirror)
+			)
+		)
+		(property "LCSC" "C5449052"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "cfc3ec15-98c1-4e3e-9db5-b8d54bbfc7e6")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
 			)
 		)
 		(path "/32b7e9d4-6056-4a09-8be9-f3e648513ea0")

@@ -63,6 +63,27 @@ with {"keyword", "currentPage", "pageSize"}):
   BSC070N10NS5 C534364 (19567); J101/J201 Molex 39281083 C293503
   (listing says right angle, check); J1 Phoenix 1715721 only 6 in
   stock, MKDS 1,5/2-5,08 C5183929 (956) is the stocked one.
+- PM-19V-200W LCSC pass (fields in the hand-drawn schematic, synced to
+  the board with pp-48-2s/tools/syncfields.py; ERC/DRC unchanged, parity
+  0): 52 of 58 parts. Flagged: U1 LTC7810ELXE C581067 only 13 at JLC
+  (~$31; consign from ADI/DigiKey); U2/U3 MCP65R46T-1202E/CHY C116625 0
+  in stock (the -2402 2.4 V ref variant has 90, but the dividers assume
+  1.21 V); C20-C23 GMK325BJ226MM-P C778721 is X5R (no 22u 35V X7R 1210
+  at JLC). Left empty, decisions: L1/L2 XAL1010-223 not at JLC (no
+  22 uH >= 12 A in 10x10 there either: consign Coilcraft, or SRP1265A-220M
+  C2041465 13.5x12.5 = new footprint); C24/C25 100u 35V polymer: no D
+  case (7343-31) part, KEMET T523H107M035APE070 C2158991 is H case
+  (7360-20, new footprint); J1/J2 pins hand-fitted.
+- Brick pins (DigiKey research 2026-10-26): module small pins Mill-Max
+  3136-3-00-80-00-00-08-0 (tin) / -15- (gold): .040" body .145" below a
+  .078" flange, .180" tail, wants a .044" (1.12 mm) hole, our J1 drills
+  1.3 / 1.9 are ~0.2 mm loose. No stock .062" pin with a .100" shoulder
+  and .145" body found (4357-0-00-80-00-00-03-0 has .084" below the
+  flange). Carrier receptacles: 0331-0-15-15-18-27-10-0 (DK ED90084-ND,
+  ~$0.44 @100, 32k stock, flange 2.29, height 3.81) and
+  9372-0-15-15-23-27-10-0 (DK ED1048-ND, ~$0.80 @100, 80k stock, accepts
+  1.14-1.65 mm, flange 3.0, height 3.05). J2 1.27 mm: no long-tail
+  header found (Mill-Max 850 tails 2.9-3.1 mm).
 - kicad-cli pcb drc --schematic-parity needs an absolute board path,
   or the schematic load asserts and parity is skipped silently.
 
