@@ -2,6 +2,8 @@
 
 **Status**: Proposed
 **Date**: 2026-10-26
+**Updated**: 2026-10-26 (review asks answered: names, LM5069-1, new
+module project, INT per column; decision 14 isolated aux added)
 
 Related: docs/plane-requirements.md (R1-R22, what this must meet),
 docs/pm-interface.md (module mechanics and aux contacts, generated
@@ -56,6 +58,12 @@ rest of the plane rested on assumptions that no longer hold:
    The expander carries the slot's control and status lines (enable,
    latch clear, PGD, PGOOD, latch state, photoMOS drive, LED sense).
    The OV latch stays local hardware, never in the expander path.
+   INT_n: each column's expander INT goes to its own MCU interrupt
+   pin (4 pins; the G070 has them). The MCU knows the column without
+   a scan, and a stuck INT blinds only its own column. Rejected:
+   wired-OR (one stuck INT hides the rest) and a TCA9545A mux that
+   ORs the INTs (only 4 channels, the tile front end would move
+   upstream of it). The column is the same either way.
 4. **ID stays analog**: a resistor on the module, 10k pull-up and
    100 nF in the column, 1k series to an MCU ADC pin. Open = no
    module.
@@ -69,7 +77,7 @@ rest of the plane rested on assumptions that no longer hold:
    Screw positions are not the DOSA corners; they are fixed in
    docs/pm-interface.md, asymmetric so a module turned 180 degrees
    cannot be screwed down (VIN on a GND or VOUT standoff), and the
-   250 W module re-placement clears them and every footprint (module,
+   250 W module re-placement clears them. Every footprint (module,
    plane, bench carrier) is generated from that spec.
 7. **Aux**: 2x3 flat pads on the module underside, pogo pins on the
    plane (Xinyangze YZ130115073P-01, C5157258, one part per
@@ -86,10 +94,10 @@ rest of the plane rested on assumptions that no longer hold:
    | Module output | buck current limit; PGOOD loss -> slot latch (start-up blanking); INA238 ALERT above ~210-220 W input -> slot latch | MCU |
 
    - The core (MCU, mux, expanders, link isolator, 3V3 buck, 12 V aux
-     buck) is fed from ahead of the tile hot-swap.
+     supply) is fed from ahead of the tile hot-swap.
    - F1 (plane input fuse) becomes the tile hot-swap. F2 (12 V aux
-     fuse) is dropped; the LM5164 limits on its own, AUX_SNS shows a
-     short.
+     fuse) is dropped; the isolated aux supply limits on its own,
+     AUX_SNS shows a short.
    - Reverse polarity: keyed tile input connector only.
 9. **Input window 48-60 V**: OVLO ~66-68 V on the module (R3-R5
    divider) and on the plane (LM5069 dividers), the plane tripping
@@ -118,7 +126,24 @@ rest of the plane rested on assumptions that no longer hold:
     isolated I2C link and TLV format to the controller, safety rules
     1-6 (default ON in hardware, MCU never in the safety chain), node
     front-panel primitives on the plane, the 12 V aux for the
-    controller.
+    controller (now isolated, decision 14).
+14. **Ground boundary: the controller side never shares the bus
+    ground.** Power world: bus, tiles, modules, nodes (non-isolated
+    modules, node GND = bus GND). Outside world: controller,
+    Ethernet, USB service port, 1-Wire probes. Two things cross the
+    boundary and both are isolated:
+    - the I2C link and EXP_INT, through the ISO1640-class isolator on
+      the tile (as ADR 0001);
+    - the 12 V aux for the controller, from an isolated 48-60 V ->
+      12 V supply (~12 W, flyback or an off-the-shelf module, 1.5 kV
+      class functional isolation), replacing the non-isolated LM5164
+      aux buck of ADR 0001. With the LM5164 the aux return tied the
+      controller's GND to the bus GND and the I2C isolator isolated
+      nothing.
+    The node front-panel signals are already isolated (photoMOS,
+    opto). This is functional isolation, not a safety barrier: the
+    bus is SELV/ES1 at or below 60 V DC. The bus is earthed at one
+    point, at the supply.
 
 ---
 
@@ -129,7 +154,7 @@ rest of the plane rested on assumptions that no longer hold:
     |
     +--> core feed (ahead of the tile hot-swap)
     |      LM5164 -> 3V3 (MCU, mux, expanders, iso side)
-    |      LM5164 -> 12 V aux -> controller
+    |      isolated 12 V aux -> controller (ground boundary)
     |
     +--> tile hot-swap (LM5069, 1.5 mOhm, 2 FET) + INA238 + TVS
            |
@@ -156,12 +181,13 @@ rest of the plane rested on assumptions that no longer hold:
 1. **Core column** (one per tile)
    - STM32G070CBT6: I2C slave to the controller behind the isolator,
      I2C master to the TCA9548A; ADC for ID_1..4, bus and aux
-     voltages; INT_1..4 inputs (or one wired-OR, see open questions).
+     voltages; INT_1..4 on four interrupt pins, one per column.
    - TCA9548A: channels 0-3 to the columns, channel 4 to the tile
      front end (INA238, tile expander).
    - Tile hot-swap and its INA238; tile expander (or MCU GPIO) for the
      tile UVLO reset FET.
-   - LM5164 3V3 and 12 V aux, both ahead of the tile hot-swap.
+   - LM5164 3V3 and the isolated 12 V aux supply, both ahead of the
+     tile hot-swap.
    - Link connector (isolated I2C + EXP_INT) and 12 V aux connector.
 2. **Slot column** (x4, identical)
    - Front end: LM5069-2, 3.5 mOhm shunt, BSC070N10NS5, INA238,
@@ -362,12 +388,9 @@ Review asks (answered 2026-10-26):
 3. Module: new project `power/pm-19v-250w/`, copied from
    `power/pm-19v-200w/`, which stays for a few days until it is clear
    nothing in it is needed.
-4. INT: open, being explained. Options: wired-OR to one MCU pin
-   (MCU reads all four expanders; one stuck INT hides the others),
-   INT_n per column to 4 MCU pins (recommended: pins are free, a
-   stuck column only blinds itself), or a TCA9545A mux that ORs the
-   four INTs and reports the channel (one pin, but the tile front end
-   moves upstream of the mux). The column is the same in all three.
+4. INT: INT_n per column to 4 MCU pins (decision 3).
+5. Added in review: isolated 12 V aux, controller side never on the
+   bus ground (decision 14).
 
 ---
 
@@ -383,7 +406,6 @@ Review asks (answered 2026-10-26):
 - [ ] INA238 ALERT threshold (210-220 W input) and whether it latches
   or only reports.
 - [ ] Tile hot-swap reset path (LM5069-1 latch-off, decided).
-- [ ] INT: per column, wired-OR, or TCA9545A (review ask 4).
 - [ ] D1 SMBJ60A at 60 V standoff vs the new range (SMBJ64A?).
 - [ ] OV_KILL at 22.7 V against the node's input rating.
 - [ ] Spare aux contact: second GND or something useful.

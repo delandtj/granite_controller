@@ -80,6 +80,10 @@ middle of drawing.
 
 - R20. Controller to tile: isolated I2C, TLV message format of ADR
   0001, unchanged.
+- R20a. Nothing on the controller side (controller, Ethernet, USB
+  service port, 1-Wire probes) shares the bus ground: the I2C link and
+  the 12 V aux both cross an isolation barrier (functional, not
+  safety: the bus is SELV at or below 60 V DC).
 - R21. Node connector: power and front-panel signals split. Power 3
   contacts per polarity (Mini-Fit Jr 2x3 or HCS class), 14 AWG.
   Front panel (PWR_SW, RST_SW, PLED) on a small separate latching
