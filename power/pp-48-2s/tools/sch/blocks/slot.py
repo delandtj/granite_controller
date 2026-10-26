@@ -9,11 +9,11 @@ TEMP (out), and the bus SDA2 SCL2. VBUS, +3V3 and GND are power
 symbols; OUT and NODE are local nets with a PWR_FLAG each.
 
 Flow: 48 V enters top left, through the shunt pair and the pass FET
-along the top rail into the brick X1 (middle); the 19 V NODE leaves on
+along the top rail into the module standoffs SO1-SO4 (middle); the 19 V NODE leaves on
 the right to the node connector J1. LM5069 under the FET with its
 dividers on the left and timer / power / PGD parts on the right; INA238
-under the shunt; enable chain and OV latch under the LM5069; the J2
-mate X2 under the brick; photoMOS and LED-sense opto around J1.
+under the shunt; enable chain and OV latch under the LM5069; the aux
+pogo pins PG1-PG7 under the module; photoMOS and LED-sense opto around J1.
 
 Coordinates are in grid units of 1.27 mm (P(x, y)).
 """
@@ -101,13 +101,26 @@ def block(N=2):
         fields={"LCSC": "C8545"}, desc="MCU clears the latch: drive high -> Q4 pulls /CLR low")
     R(12, "100k", R0402, {"1": "LCLR", "2": "GND"}, (118, 131), desc="Q4 gate pull-down: MCU dead = latch not cleared")
 
-    # ========================================================== brick socket and its J2 mate
-    sym("X1", "pp:PM_Brick_Socket", "PM-19V-200W", "pp:Brick_Eighth_DOSA_Plane",
-        {"1": "OUT", "2": "NC", "3": "GND", "4": "GND", "5": "NC", "6": "NC", "7": "NC", "8": "NODE"},
-        (166, 38), desc="DOSA eighth brick, soldered pins; ON/OFF open = module on (the slot is switched upstream)")
-    sym("X2", "Connector_Generic:Conn_01x07", "J2 AUX", "Connector_PinHeader_1.27mm:PinHeader_1x07_P1.27mm_Vertical",
-        {"1": "OVK", "2": "PG", "3": "ID", "4": "TEMP", "5": "GND", "6": "SDA2", "7": "SCL2"}, (168, 70),
-        desc="module J2 mate: OV_KILL PGOOD ID TEMP GND SDA SCL (6-7 reserved; a module monitor must use 0x48-0x4F)")
+    # ========================================================== module mount: standoffs and pogo pins
+    # one part per standoff / pogo pin (JLC places one part per designator), each drawn where
+    # the old brick socket / aux header had that pin; board positions from
+    # power/tools/pmmount.py host_parts()
+    def single(ref, value, fp, net, pin, right, lcsc, desc):
+        x, y = pin                                      # pin end in mm; the Conn_01x01 pin is 5.08 mm from its origin
+        sym(ref, "Connector_Generic:Conn_01x01", value, fp, {"1": net},
+            (round((x + (-5.08 if right else 5.08)) / G), round(y / G)), mirror="y" if right else None,
+            fields={"LCSC": lcsc}, desc=desc)
+    for ref, net, pin, right, what in (("SO1", "OUT", (193.04, 40.64), False, "screw 1, module VIN"),
+                                       ("SO2", "GND", (193.04, 50.8), False, "screw 3, module GND (input end)"),
+                                       ("SO3", "GND", (228.6, 55.88), True, "screw 4, module GND (output end)"),
+                                       ("SO4", "NODE", (228.6, 40.64), True, "screw 8, module VOUT")):
+        single(ref, "M2x6 standoff", "pp:PM_Standoff_M2x6_SMTSO", net, pin, right, "C2915628",
+               "PM module mount: SMT M2 x 6 standoff, %s; carries the module current" % what)
+    for i, (net, what) in enumerate((("OVK", "OV_KILL"), ("PG", "PGOOD"), ("ID", "ID"), ("TEMP", "TEMP"),
+                                     ("GND", "GND"), ("SDA2", "SDA (reserved)"), ("SCL2", "SCL (reserved)"))):
+        single("PG%d" % (i + 1), "pogo", "pp:PM_Pogo_YZ130115073P", net, (208.28, 81.28 + 2.54 * i), False,
+               "C5157258", "PM module aux contact %d %s: pogo pin on the module underside pad%s"
+               % (i + 1, what, "; a module monitor must use 0x48-0x4F" if i == 5 else ""))
     R(13, "10k", R0402, {"1": "+3V3", "2": "OVK"}, (150, 53), desc="OV_KILL pull-up (module comparator is open drain)")
     R(14, "10k", R0402, {"1": "+3V3", "2": "PG"}, (156, 63), desc="module PGOOD pull-up")
     R(15, "10k", R0402, {"1": "+3V3", "2": "ID"}, (148, 77), desc="ID divider top (module resistor to GND)")
@@ -147,7 +160,7 @@ def block(N=2):
     wire("SENSE", ("U1", "1"), ("Q1", "5"))
     wire("GATE", ("Q1", "4"), ("U1", "10"))
     name("GATE", (98, 40))
-    wire("OUT", ("Q1", "1"), ("X1", "1"))
+    wire("OUT", ("Q1", "1"), ("SO1", "1"))
     wire("OUT", ("U1", "9"), ("Q1", "1"))
     wire("OUT", (102, 42), (50, 42), ("U2", "8"))                   # INA238 VBUS reads the slot output
     for x, ref, pin in ((112, "D1", "2"), (122, "C2", "1"), (134, "R17", "1")):
@@ -156,11 +169,11 @@ def block(N=2):
     wire("ONL_A", ("R17", "2"), ("D2", "2"))
     name("ONL_A", (134, 43))
     wire("GND", (134, 52), ("D2", "1"))                             # GND below the LED arrows
-    wire("NODE", ("X1", "8"), ("J1", "1"))
+    wire("NODE", ("SO4", "1"), ("J1", "1"))
     wire("NODE", (220, 32), (220, 28), (234, 28), ("J1", "2"))
     for x, ref in ((192, "C8"), (204, "R18")):
         wire("NODE", (x, 32), (ref, "1"))
-    # no PWR_FLAG on NODE: X1.8 (+VOUT) is a power output and drives it (a flag would be a power-output conflict)
+    # no PWR_FLAG on NODE: SO4 (module VOUT) is a power output and drives it (a flag would be a power-output conflict)
     wire("NL_A", ("R18", "2"), ("D3", "2"))
     name("NL_A", (204, 42))
     wire("GND", (204, 50), ("D3", "1"))
@@ -182,8 +195,8 @@ def block(N=2):
     wire("GND", (32, 64), ("U2", "7"))
     port("A1", "input", "right", (54, 72))
     port("A0", "input", "right", (54, 74))
-    wire("SDA2", ("X2", "6"), (158, 138), ("U2", "4"))              # I2C along the bottom
-    wire("SCL2", ("X2", "7"), (160, 140), ("U2", "5"))
+    wire("SDA2", ("PG6", "1"), (158, 138), ("U2", "4"))              # I2C along the bottom
+    wire("SCL2", ("PG7", "1"), (160, 140), ("U2", "5"))
     wire("SDA2", (44, 138), (12, 138))
     wire("SCL2", (42, 140), (12, 140))
     port("SDA2", "bidirectional", "left", (12, 138))
@@ -204,15 +217,15 @@ def block(N=2):
     wire("LCLR", ("Q4", "1"), (118, 127), ("R12", "1"))            # MCU drives the Q4 gate
     wire("LCLR", (118, 127), (102, 127))
     port("LCLR", "input", "left", (102, 127))
-    wire("OVK", ("X2", "1"), (162, 56), ("R13", "2"), (136, 56), (136, 80), (114, 80), ("U3", "7"))
+    wire("OVK", ("PG1", "1"), (162, 56), ("R13", "2"), (136, 56), (136, 80), (114, 80), ("U3", "7"))
 
-    # ========================================================== X2 module signals
-    wire("PG", ("X2", "2"), ("R14", "2"))
+    # ========================================================== module aux signals
+    wire("PG", ("PG2", "1"), ("R14", "2"))
     port("PG", "output", "left", (152, 66))
-    wire("ID", ("X2", "3"), (154, 82), ("R15", "2"))
+    wire("ID", ("PG3", "1"), (154, 82), ("R15", "2"))
     wire("ID", (148, 82), ("C6", "1"))
     port("ID", "output", "left", (144, 82))
-    wire("TEMP", ("X2", "4"), (156, 98), ("R16", "2"))
+    wire("TEMP", ("PG4", "1"), (156, 98), ("R16", "2"))
     wire("TEMP", (140, 98), ("C7", "1"))
     port("TEMP", "output", "left", (136, 98))
 

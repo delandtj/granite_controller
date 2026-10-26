@@ -254,7 +254,7 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Connector_Generic:Conn_01x07"
+		(symbol "Connector_Generic:Conn_01x01"
 			(pin_names
 				(offset 1.016)
 				(hide yes)
@@ -265,7 +265,7 @@
 			(in_pos_files yes)
 			(duplicate_pin_numbers_are_jumpers no)
 			(property "Reference" "J"
-				(at 0 10.16 0)
+				(at 0 2.54 0)
 				(show_name no)
 				(do_not_autoplace no)
 				(effects
@@ -274,8 +274,8 @@
 					)
 				)
 			)
-			(property "Value" "Conn_01x07"
-				(at 0 -10.16 0)
+			(property "Value" "Conn_01x01"
+				(at 0 -2.54 0)
 				(show_name no)
 				(do_not_autoplace no)
 				(effects
@@ -306,7 +306,7 @@
 					)
 				)
 			)
-			(property "Description" "Generic connector, single row, 01x07, script generated (kicad-library-utils/schlib/autogen/connector/)"
+			(property "Description" "Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -339,49 +339,16 @@
 					)
 				)
 			)
-			(symbol "Conn_01x07_1_1"
+			(symbol "Conn_01x01_1_1"
 				(rectangle
-					(start -1.27 8.89)
-					(end 1.27 -8.89)
+					(start -1.27 1.27)
+					(end 1.27 -1.27)
 					(stroke
 						(width 0.254)
 						(type default)
 					)
 					(fill
 						(type background)
-					)
-				)
-				(rectangle
-					(start -1.27 7.747)
-					(end 0 7.493)
-					(stroke
-						(width 0.1524)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(rectangle
-					(start -1.27 5.207)
-					(end 0 4.953)
-					(stroke
-						(width 0.1524)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(rectangle
-					(start -1.27 2.667)
-					(end 0 2.413)
-					(stroke
-						(width 0.1524)
-						(type default)
-					)
-					(fill
-						(type none)
 					)
 				)
 				(rectangle
@@ -395,41 +362,8 @@
 						(type none)
 					)
 				)
-				(rectangle
-					(start -1.27 -2.413)
-					(end 0 -2.667)
-					(stroke
-						(width 0.1524)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(rectangle
-					(start -1.27 -4.953)
-					(end 0 -5.207)
-					(stroke
-						(width 0.1524)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(rectangle
-					(start -1.27 -7.493)
-					(end 0 -7.747)
-					(stroke
-						(width 0.1524)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
 				(pin passive line
-					(at -5.08 7.62 0)
+					(at -5.08 0 0)
 					(length 3.81)
 					(name "Pin_1"
 						(effects
@@ -439,114 +373,6 @@
 						)
 					)
 					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at -5.08 5.08 0)
-					(length 3.81)
-					(name "Pin_2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at -5.08 2.54 0)
-					(length 3.81)
-					(name "Pin_3"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "3"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at -5.08 0 0)
-					(length 3.81)
-					(name "Pin_4"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "4"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at -5.08 -2.54 0)
-					(length 3.81)
-					(name "Pin_5"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "5"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at -5.08 -5.08 0)
-					(length 3.81)
-					(name "Pin_6"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "6"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at -5.08 -7.62 0)
-					(length 3.81)
-					(name "Pin_7"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "7"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -3580,239 +3406,6 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "pp:PM_Brick_Socket"
-			(pin_names
-				(offset 1.016)
-			)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(in_pos_files yes)
-			(duplicate_pin_numbers_are_jumpers no)
-			(property "Reference" "X"
-				(at 0 11.43 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Value" "PM_Brick_Socket"
-				(at 0 -11.43 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Footprint" "pp:Brick_Eighth_DOSA_Plane"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Datasheet" ""
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Description" "DOSA eighth-brick socket: 8 receptacle holes for a PM-19V-200W module"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "ki_keywords" "brick DOSA socket"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(symbol "PM_Brick_Socket_0_1"
-				(rectangle
-					(start -12.7 -10.16)
-					(end 12.7 10.16)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type background)
-					)
-				)
-			)
-			(symbol "PM_Brick_Socket_1_1"
-				(pin power_in line
-					(at -17.78 7.62 0)
-					(length 5.08)
-					(name "+VIN"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin input line
-					(at -17.78 2.54 0)
-					(length 5.08)
-					(name "ON/OFF"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at -17.78 -2.54 0)
-					(length 5.08)
-					(name "-VIN"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "3"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin power_out line
-					(at 17.78 7.62 180)
-					(length 5.08)
-					(name "+VOUT"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "8"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 17.78 2.54 180)
-					(length 5.08)
-					(name "SENSE+"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "7"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 17.78 0 180)
-					(length 5.08)
-					(name "TRIM"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "6"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 17.78 -2.54 180)
-					(length 5.08)
-					(name "SENSE-"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "5"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 17.78 -7.62 180)
-					(length 5.08)
-					(name "-VOUT"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "4"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-		)
 		(symbol "pp:TLP176AM"
 			(exclude_from_sim no)
 			(in_bom yes)
@@ -6007,22 +5600,6 @@
 	(no_connect
 		(at 129.54 132.08)
 		(uuid "a3ddbf29-21ae-5667-a18f-7e1960db5f59")
-	)
-	(no_connect
-		(at 193.04 45.72)
-		(uuid "36872a93-8880-54bb-a014-549aaffdff0a")
-	)
-	(no_connect
-		(at 228.6 50.8)
-		(uuid "db943b4e-705f-52be-a536-c130cebf89ae")
-	)
-	(no_connect
-		(at 228.6 48.26)
-		(uuid "d475551b-4fe6-52cd-bb0a-c55c7177c66e")
-	)
-	(no_connect
-		(at 228.6 45.72)
-		(uuid "55e32db2-cf2b-5697-acf8-21a95b5e414b")
 	)
 	(hierarchical_label "PGD"
 		(shape output)
@@ -8916,8 +8493,8 @@
 		)
 	)
 	(symbol
-		(lib_id "pp:PM_Brick_Socket")
-		(at 210.82 48.26 0)
+		(lib_id "Connector_Generic:Conn_01x01")
+		(at 198.12 40.64 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -8925,9 +8502,9 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "a598e5ea-45fe-528f-a0c7-9086fd92fb81")
-		(property "Reference" "X101"
-			(at 210.82 35.306 0)
+		(uuid "7d8f6802-d573-58e8-83ae-22a33eedf7ca")
+		(property "Reference" "SO101"
+			(at 203.16 40.64 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -8936,18 +8513,20 @@
 				)
 			)
 		)
-		(property "Value" "PM-19V-200W"
-			(at 210.82 36.83 0)
+		(property "Value" "M2x6 standoff"
+			(at 198.12 40.64 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
+				(justify left)
 			)
 		)
-		(property "Footprint" "pp:Brick_Eighth_DOSA_Plane"
-			(at 210.82 48.26 0)
+		(property "Footprint" "pp:PM_Standoff_M2x6_SMTSO"
+			(at 198.12 40.64 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -8959,7 +8538,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 210.82 48.26 0)
+			(at 198.12 40.64 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -8970,8 +8549,8 @@
 				(justify left)
 			)
 		)
-		(property "Description" "DOSA eighth brick, soldered pins; ON/OFF open = module on (the slot is switched upstream)"
-			(at 210.82 48.26 0)
+		(property "Description" "PM module mount: SMT M2 x 6 standoff, screw 1, module VIN; carries the module current"
+			(at 198.12 40.64 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -8982,8 +8561,8 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
-			(at 210.82 48.26 0)
+		(property "LCSC" "C2915628"
+			(at 198.12 40.64 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -8995,44 +8574,607 @@
 			)
 		)
 		(pin "1"
-			(uuid "390d1ee3-a827-5963-a4d6-ba867b6e03a3")
-		)
-		(pin "2"
-			(uuid "4efd7c8b-318a-5414-952f-5a40fe89fdab")
-		)
-		(pin "3"
-			(uuid "f5a56d14-134c-5e17-804f-b74f91420ec4")
-		)
-		(pin "8"
-			(uuid "16e0ce25-ee03-56b5-b9a1-8a5e78eff176")
-		)
-		(pin "7"
-			(uuid "3f069ead-1a62-5ab0-9157-4379e5358fdd")
-		)
-		(pin "6"
-			(uuid "adc84b6f-6c80-5c9c-bdbb-926f5e9b37c8")
-		)
-		(pin "5"
-			(uuid "bfc18af0-caab-58d8-9e4b-60c50a36d844")
-		)
-		(pin "4"
-			(uuid "6f396b31-2d30-5e96-9ae6-4434d7b80e46")
+			(uuid "c4c822ac-1b40-5237-9129-8809c7206cd9")
 		)
 		(instances
 			(project "pp-48-2s"
 				(path "/445f1778-c0ef-541a-b071-d20513e63be2/aaa06d0f-e85d-5ebc-a08f-3c600412c7e0"
-					(reference "X101")
+					(reference "SO101")
 					(unit 1)
 				)
 				(path "/445f1778-c0ef-541a-b071-d20513e63be2/19b36e46-4402-5f2d-8702-673bfa6ec517"
-					(reference "X201")
+					(reference "SO201")
 					(unit 1)
 				)
 			)
 		)
 	)
 	(symbol
-		(lib_id "Connector_Generic:Conn_01x07")
+		(lib_id "Connector_Generic:Conn_01x01")
+		(at 198.12 50.8 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "15f44775-9236-5db5-8281-70ba2adced4d")
+		(property "Reference" "SO102"
+			(at 203.16 50.8 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "M2x6 standoff"
+			(at 198.12 50.8 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "pp:PM_Standoff_M2x6_SMTSO"
+			(at 198.12 50.8 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Datasheet" ""
+			(at 198.12 50.8 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Description" "PM module mount: SMT M2 x 6 standoff, screw 3, module GND (input end); carries the module current"
+			(at 198.12 50.8 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "LCSC" "C2915628"
+			(at 198.12 50.8 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "1"
+			(uuid "31c5dcf0-314e-55cc-afb8-c9af43e3089b")
+		)
+		(instances
+			(project "pp-48-2s"
+				(path "/445f1778-c0ef-541a-b071-d20513e63be2/aaa06d0f-e85d-5ebc-a08f-3c600412c7e0"
+					(reference "SO102")
+					(unit 1)
+				)
+				(path "/445f1778-c0ef-541a-b071-d20513e63be2/19b36e46-4402-5f2d-8702-673bfa6ec517"
+					(reference "SO202")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Connector_Generic:Conn_01x01")
+		(at 223.52 55.88 0)
+		(mirror y)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "e2ecf775-ed5c-5f98-ab53-79ee3273fb38")
+		(property "Reference" "SO103"
+			(at 218.48 55.88 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "M2x6 standoff"
+			(at 223.52 55.88 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "pp:PM_Standoff_M2x6_SMTSO"
+			(at 223.52 55.88 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Datasheet" ""
+			(at 223.52 55.88 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Description" "PM module mount: SMT M2 x 6 standoff, screw 4, module GND (output end); carries the module current"
+			(at 223.52 55.88 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "LCSC" "C2915628"
+			(at 223.52 55.88 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "1"
+			(uuid "028910ae-73ac-5dfc-a1de-b89ba9fb0353")
+		)
+		(instances
+			(project "pp-48-2s"
+				(path "/445f1778-c0ef-541a-b071-d20513e63be2/aaa06d0f-e85d-5ebc-a08f-3c600412c7e0"
+					(reference "SO103")
+					(unit 1)
+				)
+				(path "/445f1778-c0ef-541a-b071-d20513e63be2/19b36e46-4402-5f2d-8702-673bfa6ec517"
+					(reference "SO203")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Connector_Generic:Conn_01x01")
+		(at 223.52 40.64 0)
+		(mirror y)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "66395c49-57c3-5163-af88-2d4f6fdb4a45")
+		(property "Reference" "SO104"
+			(at 218.48 40.64 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "M2x6 standoff"
+			(at 223.52 40.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "pp:PM_Standoff_M2x6_SMTSO"
+			(at 223.52 40.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Datasheet" ""
+			(at 223.52 40.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Description" "PM module mount: SMT M2 x 6 standoff, screw 8, module VOUT; carries the module current"
+			(at 223.52 40.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "LCSC" "C2915628"
+			(at 223.52 40.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "1"
+			(uuid "c98d925f-7d72-5f86-b563-e29a6f0e52d1")
+		)
+		(instances
+			(project "pp-48-2s"
+				(path "/445f1778-c0ef-541a-b071-d20513e63be2/aaa06d0f-e85d-5ebc-a08f-3c600412c7e0"
+					(reference "SO104")
+					(unit 1)
+				)
+				(path "/445f1778-c0ef-541a-b071-d20513e63be2/19b36e46-4402-5f2d-8702-673bfa6ec517"
+					(reference "SO204")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Connector_Generic:Conn_01x01")
+		(at 213.36 81.28 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "f55150e1-8ad9-58cd-977b-b617692bf91e")
+		(property "Reference" "PG101"
+			(at 218.4 81.28 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "pogo"
+			(at 213.36 81.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "pp:PM_Pogo_YZ130115073P"
+			(at 213.36 81.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Datasheet" ""
+			(at 213.36 81.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Description" "PM module aux contact 1 OV_KILL: pogo pin on the module underside pad"
+			(at 213.36 81.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "LCSC" "C5157258"
+			(at 213.36 81.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "1"
+			(uuid "69ed4846-7ad5-560e-a50b-b4e1246bd7b6")
+		)
+		(instances
+			(project "pp-48-2s"
+				(path "/445f1778-c0ef-541a-b071-d20513e63be2/aaa06d0f-e85d-5ebc-a08f-3c600412c7e0"
+					(reference "PG101")
+					(unit 1)
+				)
+				(path "/445f1778-c0ef-541a-b071-d20513e63be2/19b36e46-4402-5f2d-8702-673bfa6ec517"
+					(reference "PG201")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Connector_Generic:Conn_01x01")
+		(at 213.36 83.82 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "bc839a51-1def-5f63-9268-d89ca8fb5a60")
+		(property "Reference" "PG102"
+			(at 218.4 83.82 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "pogo"
+			(at 213.36 83.82 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "pp:PM_Pogo_YZ130115073P"
+			(at 213.36 83.82 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Datasheet" ""
+			(at 213.36 83.82 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Description" "PM module aux contact 2 PGOOD: pogo pin on the module underside pad"
+			(at 213.36 83.82 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "LCSC" "C5157258"
+			(at 213.36 83.82 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "1"
+			(uuid "d66e4abc-4940-5b0c-ba11-4401d729e1db")
+		)
+		(instances
+			(project "pp-48-2s"
+				(path "/445f1778-c0ef-541a-b071-d20513e63be2/aaa06d0f-e85d-5ebc-a08f-3c600412c7e0"
+					(reference "PG102")
+					(unit 1)
+				)
+				(path "/445f1778-c0ef-541a-b071-d20513e63be2/19b36e46-4402-5f2d-8702-673bfa6ec517"
+					(reference "PG202")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Connector_Generic:Conn_01x01")
+		(at 213.36 86.36 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "7d4ae756-986f-5b55-bab0-e076d3c0839a")
+		(property "Reference" "PG103"
+			(at 218.4 86.36 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "pogo"
+			(at 213.36 86.36 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "pp:PM_Pogo_YZ130115073P"
+			(at 213.36 86.36 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Datasheet" ""
+			(at 213.36 86.36 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Description" "PM module aux contact 3 ID: pogo pin on the module underside pad"
+			(at 213.36 86.36 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "LCSC" "C5157258"
+			(at 213.36 86.36 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "1"
+			(uuid "9824c093-dcc4-544b-a309-6e8c761605ae")
+		)
+		(instances
+			(project "pp-48-2s"
+				(path "/445f1778-c0ef-541a-b071-d20513e63be2/aaa06d0f-e85d-5ebc-a08f-3c600412c7e0"
+					(reference "PG103")
+					(unit 1)
+				)
+				(path "/445f1778-c0ef-541a-b071-d20513e63be2/19b36e46-4402-5f2d-8702-673bfa6ec517"
+					(reference "PG203")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Connector_Generic:Conn_01x01")
 		(at 213.36 88.9 0)
 		(unit 1)
 		(body_style 1)
@@ -9041,9 +9183,9 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "44e0d7f2-f732-5d04-baaf-35b0917b4d1f")
-		(property "Reference" "X102"
-			(at 211.455 77.216 0)
+		(uuid "7b6621a1-d952-5ce8-abaa-cf19acbe39d5")
+		(property "Reference" "PG104"
+			(at 218.4 88.9 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -9052,17 +9194,19 @@
 				)
 			)
 		)
-		(property "Value" "J2 AUX"
-			(at 211.455 78.74 0)
+		(property "Value" "pogo"
+			(at 213.36 88.9 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
+				(justify left)
 			)
 		)
-		(property "Footprint" "Connector_PinHeader_1.27mm:PinHeader_1x07_P1.27mm_Vertical"
+		(property "Footprint" "pp:PM_Pogo_YZ130115073P"
 			(at 213.36 88.9 0)
 			(hide yes)
 			(show_name no)
@@ -9086,7 +9230,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "module J2 mate: OV_KILL PGOOD ID TEMP GND SDA SCL (6-7 reserved; a module monitor must use 0x48-0x4F)"
+		(property "Description" "PM module aux contact 4 TEMP: pogo pin on the module underside pad"
 			(at 213.36 88.9 0)
 			(hide yes)
 			(show_name no)
@@ -9098,7 +9242,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C5157258"
 			(at 213.36 88.9 0)
 			(hide yes)
 			(show_name no)
@@ -9111,34 +9255,307 @@
 			)
 		)
 		(pin "1"
-			(uuid "d416ccc2-861f-58b7-8e28-3d958fac8ec9")
-		)
-		(pin "2"
-			(uuid "e6d7f962-47bb-59ab-aa3c-8eba8ad0dd3c")
-		)
-		(pin "3"
-			(uuid "9eb197b9-8da5-5d0a-9bd9-756a531603d5")
-		)
-		(pin "4"
-			(uuid "315c5693-e88c-5e30-b326-ad136b7a06f8")
-		)
-		(pin "5"
-			(uuid "dea6925f-32ad-55bc-9347-c6c782166df7")
-		)
-		(pin "6"
-			(uuid "ba20c09d-ac46-5c5d-8282-48f1c8083cac")
-		)
-		(pin "7"
-			(uuid "515fac81-b691-5d5e-aa2d-69a6efc7e655")
+			(uuid "8c51ebe6-dffd-5456-a45d-e1b4ec189c9c")
 		)
 		(instances
 			(project "pp-48-2s"
 				(path "/445f1778-c0ef-541a-b071-d20513e63be2/aaa06d0f-e85d-5ebc-a08f-3c600412c7e0"
-					(reference "X102")
+					(reference "PG104")
 					(unit 1)
 				)
 				(path "/445f1778-c0ef-541a-b071-d20513e63be2/19b36e46-4402-5f2d-8702-673bfa6ec517"
-					(reference "X202")
+					(reference "PG204")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Connector_Generic:Conn_01x01")
+		(at 213.36 91.44 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "ac263c2b-604a-5d42-8b86-4ba65ebcefe2")
+		(property "Reference" "PG105"
+			(at 218.4 91.44 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "pogo"
+			(at 213.36 91.44 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "pp:PM_Pogo_YZ130115073P"
+			(at 213.36 91.44 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Datasheet" ""
+			(at 213.36 91.44 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Description" "PM module aux contact 5 GND: pogo pin on the module underside pad"
+			(at 213.36 91.44 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "LCSC" "C5157258"
+			(at 213.36 91.44 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "1"
+			(uuid "24109e70-c04e-5a38-b884-96cd9a4d2475")
+		)
+		(instances
+			(project "pp-48-2s"
+				(path "/445f1778-c0ef-541a-b071-d20513e63be2/aaa06d0f-e85d-5ebc-a08f-3c600412c7e0"
+					(reference "PG105")
+					(unit 1)
+				)
+				(path "/445f1778-c0ef-541a-b071-d20513e63be2/19b36e46-4402-5f2d-8702-673bfa6ec517"
+					(reference "PG205")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Connector_Generic:Conn_01x01")
+		(at 213.36 93.98 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "8f4293a9-63cb-5668-92be-592419788ded")
+		(property "Reference" "PG106"
+			(at 218.4 93.98 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "pogo"
+			(at 213.36 93.98 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "pp:PM_Pogo_YZ130115073P"
+			(at 213.36 93.98 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Datasheet" ""
+			(at 213.36 93.98 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Description" "PM module aux contact 6 SDA (reserved): pogo pin on the module underside pad; a module monitor must use 0x48-0x4F"
+			(at 213.36 93.98 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "LCSC" "C5157258"
+			(at 213.36 93.98 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "1"
+			(uuid "c11202bc-dfb3-5636-887e-05cfe736132c")
+		)
+		(instances
+			(project "pp-48-2s"
+				(path "/445f1778-c0ef-541a-b071-d20513e63be2/aaa06d0f-e85d-5ebc-a08f-3c600412c7e0"
+					(reference "PG106")
+					(unit 1)
+				)
+				(path "/445f1778-c0ef-541a-b071-d20513e63be2/19b36e46-4402-5f2d-8702-673bfa6ec517"
+					(reference "PG206")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Connector_Generic:Conn_01x01")
+		(at 213.36 96.52 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "503a7f91-2544-52ec-a90c-0a40e55037c2")
+		(property "Reference" "PG107"
+			(at 218.4 96.52 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "pogo"
+			(at 213.36 96.52 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "pp:PM_Pogo_YZ130115073P"
+			(at 213.36 96.52 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Datasheet" ""
+			(at 213.36 96.52 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Description" "PM module aux contact 7 SCL (reserved): pogo pin on the module underside pad"
+			(at 213.36 96.52 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "LCSC" "C5157258"
+			(at 213.36 96.52 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "1"
+			(uuid "7305d63b-3560-5234-832c-033425fc1f24")
+		)
+		(instances
+			(project "pp-48-2s"
+				(path "/445f1778-c0ef-541a-b071-d20513e63be2/aaa06d0f-e85d-5ebc-a08f-3c600412c7e0"
+					(reference "PG107")
+					(unit 1)
+				)
+				(path "/445f1778-c0ef-541a-b071-d20513e63be2/19b36e46-4402-5f2d-8702-673bfa6ec517"
+					(reference "PG207")
 					(unit 1)
 				)
 			)

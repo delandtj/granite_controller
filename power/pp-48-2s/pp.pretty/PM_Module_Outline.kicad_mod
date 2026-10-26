@@ -1,0 +1,141 @@
+(footprint "PM_Module_Outline"
+	(version 20260206)
+	(generator "pcbnew")
+	(generator_version "10.0")
+	(layer "F.Cu")
+	(descr "PM module outline on the host (board-only, no pads): body, screw numbers, aux block; place at the module centre, rotated with the standoffs and pogo pins (pmmount.host_parts)")
+	(tags "PM module outline")
+	(property "Reference" "REF**"
+		(at 0 -13.2 0)
+		(layer "F.SilkS")
+		(uuid "7df5230f-5bd7-4a1d-8c0b-0377c0e80f32")
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+	)
+	(property "Value" "PM_Module_Outline"
+		(at 0 13.2 0)
+		(layer "F.Fab")
+		(uuid "c802e68a-c485-4abe-9f36-5d7c297852c1")
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "eaeac5aa-02b2-48f7-9f27-072266c09147")
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "cda494ea-280c-4032-ae8b-98e952ade93d")
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+	)
+	(attr board_only exclude_from_pos_files exclude_from_bom)
+	(duplicate_pad_numbers_are_jumpers no)
+	(fp_rect
+		(start -29.2 -11.45)
+		(end 29.2 11.45)
+		(stroke
+			(width 0.15)
+			(type dash)
+		)
+		(fill no)
+		(layer "F.SilkS")
+		(uuid "3c0eeee5-8772-445b-83eb-941fee92c414")
+	)
+	(fp_rect
+		(start -29.2 -11.45)
+		(end 29.2 11.45)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(fill no)
+		(layer "F.Fab")
+		(uuid "483a07a3-9c56-4039-92a1-9f505f6d7ae2")
+	)
+	(fp_rect
+		(start 7.62 -10.795)
+		(end 17.78 -5.715)
+		(stroke
+			(width 0.1)
+			(type dash)
+		)
+		(fill no)
+		(layer "F.Fab")
+		(uuid "311acf70-1ac4-4e47-83e6-2478e3e05fe9")
+	)
+	(fp_text user "1"
+		(at -21.8 -7.62 0)
+		(layer "F.SilkS")
+		(uuid "6b685866-8213-40ec-bd22-105e1bfabe4e")
+		(effects
+			(font
+				(size 0.8 0.8)
+				(thickness 0.12)
+			)
+		)
+	)
+	(fp_text user "2"
+		(at -21.8 7.62 0)
+		(layer "F.SilkS")
+		(uuid "17779f1e-23dc-4c77-944b-09d6869c3db3")
+		(effects
+			(font
+				(size 0.8 0.8)
+				(thickness 0.12)
+			)
+		)
+	)
+	(fp_text user "4"
+		(at 21.8 -7.62 0)
+		(layer "F.SilkS")
+		(uuid "a29a3ddc-6cf6-4a68-83e5-1097adb65019")
+		(effects
+			(font
+				(size 0.8 0.8)
+				(thickness 0.12)
+			)
+		)
+	)
+	(fp_text user "3"
+		(at 21.8 7.62 0)
+		(layer "F.SilkS")
+		(uuid "55a49648-ed7b-4277-bd42-097f74f2c96e")
+		(effects
+			(font
+				(size 0.8 0.8)
+				(thickness 0.12)
+			)
+		)
+	)
+	(fp_text user "AUX"
+		(at 12.7 -4.915 0)
+		(layer "F.Fab")
+		(uuid "e0041a0f-a38a-49f3-8df7-482190411ffc")
+		(effects
+			(font
+				(size 0.6 0.6)
+				(thickness 0.12)
+			)
+		)
+	)
+	(embedded_fonts no)
+)
