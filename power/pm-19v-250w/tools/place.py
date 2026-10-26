@@ -105,7 +105,7 @@ B2 = (128.4, 107.1, 135.6, 112.2)     # middle band, between the SW2 tail and th
 B3 = (133.7, 100.3, 137.3, 106.9)     # top edge, right of Q4's GND vias
 B5 = (146.5, 100.3, 151.4, 106.9)     # top edge, right of the aux pads
 B6 = (107.0, 108.7, 109.1, 122.6)     # left of U1: analog network (VFB, ITH1, SS1), INTVCC, OVLO
-BIN = (100.4, 106.9, 106.9, 114.0)    # bottom, input end between the S1 and S2 keep-outs
+BIN = (100.4, 108.5, 106.9, 114.0)    # bottom, input end between S1 and S2, below the VIN pour
 TOPL = (109.4, 108.65, 114.3, 110.8)  # above pins 13-16: ITH2, SS2
 CH = (119.7, 112.9, 124.1, 120.9)     # right of U1, beside VIN_IC / RUN / DRVCC (pins 35-26)
 T1 = (100.4, 106.8, 110.4, 114.1)     # top, input end between S1 and S2
@@ -121,19 +121,20 @@ T5 = (148.3, 114.3, 151.4, 122.6)     # top, output end, beside S3
 # bootstraps right of the routing channel next to their switch nodes.
 ANCHOR = {}
 
-SUPERVISION = ['U2', 'U3', 'C27', 'C28', 'R11', 'D3', 'C26', 'R12', 'R13', 'R14', 'R15', 'R16']
+SUPERVISION = ['U2', 'U3', 'C27', 'C28', 'R11', 'D3', 'C26', 'R12', 'R13', 'R14', 'R15']
 # side, zones, refs, rotation
 PACK = [
+    # supervision block, input end, top: comparators, their dividers, VAUX supply, RUN divider
     ('F', [T1], ['U2', 'U3'], 0),
-    ('F', [T1, T6, T3], ['R3', 'R4'], 90),        # RUN divider: input end, beside VIN
-    ('F', [T1, T6, T3], ['R3', 'R4'], 0),
+    ('F', [T1, T6, T3], ['R12', 'R13', 'R14', 'R15', 'C27', 'C28'], 90),       # 0402s
+    ('F', [T6, T3, T1], ['R11', 'D3', 'C26'], 90),
     ('F', [T1, T6, T3, T7, T4, T5], SUPERVISION, 0),
-    ('F', [T1, T6, T3, T7, T4, T5], SUPERVISION, 90),
+    ('B', [BIN], ['R3', 'R4', 'R5', 'C15'], 90),     # RUN / OVLO divider and SS1, input end
+    ('B', [B3, B5], ['R16'], 90),                     # ID resistor beside J2.3
     ('B', [B6], ['R6', 'R7', 'C12', 'R8', 'C13', 'C14', 'C15', 'C10', 'R5'], 90),   # 0402s
     ('B', [TOPL], ['C16', 'C17'], 90),
     ('B', [TOPL, B6], ['C10', 'R5'], 90),
     ('B', [TOPL, B6], ['C10', 'R5'], 0),
-    ('B', [BIN], ['C15', 'R5'], 90),                         # SS1, OVLO: slow and DC
     ('B', [CH], ['C9', 'R1'], 90),
     ('B', [B6, TOPL, CH, B2, B3, B5], ['R6', 'R7', 'C12', 'R8', 'C13', 'C14', 'C15', 'C10', 'R5',
                                       'C16', 'C17', 'C9', 'R1'], 0),

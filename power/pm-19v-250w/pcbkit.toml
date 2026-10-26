@@ -34,7 +34,7 @@ via = [0.5, 0.2]
 track_width = 0.2
 same_net_pad_clearance = 0.15
 signal_layers = ["F.Cu", "In1.Cu", "B.Cu"]
-keep_groups = ["power"]
+keep_groups = ["power", "hand"]
 # gate drive and bootstrap only: GND, VIN, VOUT and the switch nodes are
 # pours and planes (tools/power.py, [krt] planes), their router legs are taps
 power_nets = ["/VIN", "/TG1", "/TG2", "/BG1", "/BG2", "/BOOST1", "/BOOST2", "/DRVCC"]
