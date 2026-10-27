@@ -2,7 +2,27 @@
 
 Read this first, then docs/controller.md and docs/power-board.md.
 
-## Start here (2026-10-27, later): PM-19V-250W cost and parts findings
+## Start here (2026-10-27, evening): L1/L2 APS1510, bench carrier rev 0.2
+
+- PM-19V-250W: L1/L2 are now COILANK APS1510M220F (C49261404, JLC
+  stock) on the unchanged XAL1510 footprint (fit check below). Silk
+  done (tools/silk_labels.py). Controller stays LTC7810 (below).
+- Bench carrier rev 0.2 (power/pm-bench-carrier/, docs/power-board.md
+  "Bench carrier"): DOSA socket X1 and aux socket X2 replaced by the
+  screwed mount: SO1-SO4 standoffs (C2915628) and PG1-PG6 pogos
+  (C5157258) at pmmount.host_parts(165, 127.5, 0), MOD1 outline;
+  JP2/JP3 (sense) and TEMP (R9, TP10) removed, RUN on PG4. VOUT trunks
+  4 mm. Flow unchanged (pcbkit.toml header); tools/place.py now imports
+  power/tools/pmmount.py. ERC 0, DRC 0 errors / 0 unconnected / parity
+  clean (2 terminal silk-edge warnings). Next: `pcbkit jlcfab` for both
+  boards, check CPL rotations, measure a pogo sample (height), order.
+- Gotchas this session: `pcbkit krt-route -h` does not print help, it
+  routes the project board in place. The kicad MCP `sch_delete_symbol`
+  also deletes every wire ending on the symbol's pins, including long
+  bus segments (it cut the carrier's VIN/VOUT buses; restored, then
+  edited the .kicad_sch by script instead).
+
+## Earlier (2026-10-27, later): PM-19V-250W cost and parts findings
 
 The routed board (1192e81, next section) is unchanged; this is costing
 and part choice, no board edits yet.

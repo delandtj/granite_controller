@@ -1,4 +1,4 @@
-# pcbkit settings for the PM-19V-200W bench carrier (overrides the
+# pcbkit settings for the PM module bench carrier (overrides the
 # granite_controller pcbkit.toml two levels up). 2L JLC, 130 x 55 mm.
 #
 # Board flow: mkboard -> outline -> setrules -> tools/place.py -> gndpour ->
@@ -40,7 +40,7 @@ track_width = 0.25
 same_net_pad_clearance = 0.15
 signal_layers = ["F.Cu", "B.Cu"]
 keep_groups = ["power", "gnd-stitch"]
-# VIN_J / VIN carry ~5 A, VOUT 10.5 A: 2.5 mm on F.Cu and B.Cu; +5V is the aux rail
+# VIN_J / VIN carry ~5.5-7 A (2.5 mm), VOUT 13.2 A (4.0 mm), F.Cu and B.Cu; +5V is the aux rail
 # the VIN / VOUT trunks are hand-drawn by tools/power.py (group "power"); KRT only adds the taps
 power_nets = ["+5V"]
 power_widths = [0.4]
@@ -61,12 +61,10 @@ group = "gnd-stitch"
 fill = true
 
 [silk]
-hide_prefixes = ["H", "TP"]      # test points carry their net name as a silk legend (tools/legend.py)
-order = ["J", "X"]
-relax_prefixes = ["J", "X"]
+hide_prefixes = ["H", "TP", "SO", "PG", "MOD"]   # TPs carry their net name (tools/legend.py); the mount is drawn by MOD1
+order = ["J"]
+relax_prefixes = ["J"]
 
 [connlabels]
-names = { J1 = "VIN 40-60V", J2 = "VOUT 19V", X2 = "AUX", JP1 = "OFF" }
+names = { J1 = "VIN 40-60V", J2 = "VOUT 19V", JP1 = "OFF" }
 
-[connlabels.legends]
-X2 = ["OV", "PG", "ID", "T", "G"]

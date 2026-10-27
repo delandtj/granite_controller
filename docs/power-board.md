@@ -662,16 +662,16 @@ carrier. Numbers below are from the SynQor NQ90W90EPx10 (rev D,
 
 #### Bench carrier: PM-BENCH-CARRIER
 
-KiCad project `power/pm-bench-carrier/` (rev 0.1, 2026-10-22): the
-board the module plugs into on the bench, until the 48 V power board
-exists. 130 x 55 mm, 2 layers, bench only (wet electrolytics, not for
-immersion). Schematic ERC clean, board routed, DRC clean (only the two
-"silk clipped by edge" warnings from the terminal blocks that overhang
-the edges by design). Not yet ordered. `pcbkit jlcfab` run 2026-10-22:
-gerbers, BOM (15 lines, 20 SMD parts with LCSC numbers in the
-schematic and board) and CPL in `fab/` (gitignored, regenerate). Hand
-assembly: the receptacles, X2, J1, J2, JP1, C1, C2, C4, the test loops.
-LCSC: fuse C44479 (0451010.MRL, 10 A: the 8 A is not stocked), TVS
+KiCad project `power/pm-bench-carrier/` (rev 0.2, 2026-10-27; rev 0.1
+of 2026-10-22 had the DOSA socket of the PM-19V-200W): the board the
+module screws onto on the bench, until the 48 V power board exists.
+130 x 55 mm, 2 layers, bench only (wet electrolytics, not for
+immersion). Schematic ERC 0, board routed (KRT), DRC 0 errors, 0
+unconnected, schematic parity clean (only the two "silk clipped by edge"
+warnings from the terminal blocks that overhang the edges by design).
+Not yet ordered; `pcbkit jlcfab` to rerun for rev 0.2. Hand assembly:
+J1, J2, JP1, C1, C2, C4, the test loops. LCSC: standoff C2915628, pogo
+C5157258, fuse C44479 (0451010.MRL, 10 A: the 8 A is not stocked), TVS
 C353345, zener C27131, 2N7002 C8545, C3 C55151, C5 C2918502, C6 C15849,
 R1 C17943, R2 C17414, R3 C270956, 100k C25803, 3.3k C22978, 10k C25804,
 green LEDs C2297, red LED C84256. The CPL rotations of D1, D2, Q1, F1
@@ -679,41 +679,39 @@ and the four LEDs are written uncorrected (no entry in pcbkit's
 KiCad-to-EasyEDA table for these footprint/LCSC pairs): check them in
 the JLC placement preview before ordering.
 
-- X1: the eight DOSA holes with solder-mount Mill-Max receptacles so
-  modules can be swapped: 0331 (accepts 0.94-1.09 mm pins, 1.85 mm
-  hole, 12 A) on pins 1-3 and 5-7, 9372 (accepts 1.14-1.65 mm pins,
-  2.64 mm hole, 18 A) on the 10 A pins 4 and 8. Pads 2.7 / 3.6 mm.
-  Pin 1 top left as on the module. X2: 1.27 mm 5-pin socket at the
-  module's J2 position (22.2 mm left of the brick centre, pin 1 at the
-  brick's centre line), inside the brick outline.
+- Mount (docs/pm-interface.md, positions from power/tools/pmmount.py
+  host_parts at module centre (165, 127.5), rotation 0, input end
+  left): SO1-SO4 M2 x 6 SMT standoffs (S1 VIN, S2 GND input, S3 GND
+  output, S4 VOUT; they carry the power, S2/S3 solid to the GND pour),
+  PG1-PG6 pogo pins under the module's aux pads A1-A6 (OV_KILL, PGOOD,
+  ID, RUN, GND, GND), MOD1 the board-only silk outline with the screw
+  numbers and "VIN". Nothing else under the outline (host parts there
+  max 2.0 mm; only tracks and tented vias).
 - J1: 5.08 mm screw terminal (Phoenix MKDS 3/2, 24 A) for the lab
   supply, 40-60 V; nano2 fuse 8 A 125 V (F1), SMBJ60A TVS, 2 x 100 uF
   100 V electrolytic + 2.2 uF 1210 at pin 1, "VIN" LED (27k from VIN).
   J2: same terminal for the electronic load, 100 uF 35 V + 10 uF, "VOUT"
   LED (10k from VOUT). Input current limit on the supply ~6 A, load OVP
   ~22 V.
-- Kelvin test points at the socket pins for efficiency measurement:
-  TP1 VIN_K / TP2 GNDIN_K at pins 1 / 3, TP3 VOUT_K / TP4 GNDOUT_K at
-  pins 8 / 4 (all 2.5 mm loops; the GND loops sit below the brick's
+- Kelvin test points at the standoffs for efficiency measurement:
+  TP1 VIN_K / TP2 GNDIN_K at S1 / S2, TP3 VOUT_K / TP4 GNDOUT_K at
+  S4 / S3 (all 2.5 mm loops; the GND loops sit below the module's
   bottom edge, the live ones above its top edge).
 - Aux 5 V rail: 10k 1 W (2512) from VIN into a 5.1 V zener, ~5 mA at
   54 V: pull-ups and LEDs only. PWR and OV_KILL / PGOOD are open-drain
   on the module and must not be pulled above ~5 V.
-- Module signals (X2): OV_KILL with 100k pull-up, "OV" LED lit when
+- Module signals (pogos): OV_KILL with 100k pull-up, "OV" LED lit when
   low; PGOOD with 100k pull-up, 2N7002 so the "PGOOD" LED is lit when
-  high; ID and TEMP with 10k pull-ups to 5 V (a voltmeter at TP9 / TP10
-  reads the module's ID resistor / NTC as a divider, the same way the
-  carrier ADC will). Test points on every signal, TP5 a spare GND loop,
+  high; ID with a 10k pull-up to 5 V (a voltmeter at TP9 reads the
+  module's ID resistor as a divider: 22k = PM-19V-250W, about 3.4 V).
+  No TEMP: the 250 W module has no NTC. Test points on every signal, TP5 a spare GND loop,
   TP11 the 5 V rail.
-- JP1 (2-pin header, "OFF"): jumper on pulls RUN (pin 2) to GND = module
-  off; open = on. TP6 RUN.
-- JP2 / JP3: open solder jumpers from Sense+ / Sense- (pins 7 / 5) to
-  VOUT / GND, for an off-the-shelf brick that wants its sense pins
-  connected; Trim (pin 6) unconnected. Leave open for PM-19V-200W.
+- JP1 (2-pin header, "OFF"): jumper on pulls RUN (PG4, the module's
+  UVLO divider node) to GND = module off; open = on. TP6 RUN.
 - No input cut-off on OV_KILL: the module is tested without a front
   end, so for the shorted-top-FET test the electronic load's OVP and the
   supply's current limit are the protection.
-- Copper: VIN (2.5 mm) and VOUT (3 mm) trunks on both layers drawn by
+- Copper: VIN (2.5 mm) and VOUT (4 mm, 13.2 A at 250 W) trunks on both layers drawn by
   tools/power.py (group "power"; KRT only adds the small taps); GND is
   the pour on both layers (pcbkit gndpour) with solid zone connection
   on the 10 A pads (tools/place.py). The pour is made before routing
