@@ -167,7 +167,7 @@
 				)
 			)
 		)
-		(property "Value" "22u XAL1510-223"
+		(property "Value" "22u APS1510M220F"
 			(at 0 9.15 180)
 			(layer "F.Fab")
 			(uuid "1f8f2e22-9483-4578-b195-10fc86bc6097")
@@ -209,6 +209,17 @@
 				(font
 					(size 1 1)
 					(thickness 0.15)
+				)
+			)
+		)
+		(property "LCSC" "C49261404"
+			(at 0 0 0)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "ffcc1cca-abdf-463b-ad24-cba4b9c2381d")
+			(effects
+				(font
+					(size 1.27 1.27)
 				)
 			)
 		)
@@ -3440,7 +3451,7 @@
 				)
 			)
 		)
-		(property "Value" "22u XAL1510-223"
+		(property "Value" "22u APS1510M220F"
 			(at 0 9.15 0)
 			(layer "F.Fab")
 			(uuid "aae78415-7f7e-46a7-9a3a-4e455ab53397")
@@ -3482,6 +3493,17 @@
 				(font
 					(size 1 1)
 					(thickness 0.15)
+				)
+			)
+		)
+		(property "LCSC" "C49261404"
+			(at 0 0 0)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "a5637d52-80ee-4b32-b786-3a0985ef2863")
+			(effects
+				(font
+					(size 1.27 1.27)
 				)
 			)
 		)
