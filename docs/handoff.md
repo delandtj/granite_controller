@@ -62,6 +62,19 @@ polymer plus 2-4 more 1210 22 uF (~$5 less, ~2x droop); a cheaper 2 mm
 class polymer; aluminum polymer cans fail the height limit. Needs the
 real load-step size on the 19 V bus to decide.
 
+Controller: KEEP the LTC7810 (user decision 2026-10-27). Cheaper
+controllers are all single-phase, which would be another board (new power
+stage, one 13 A phase with paralleled FETs, more output caps, all routing
+around U1 redone). There is no cheap 2-phase part at 100 V: LM5143 is 65 V,
+LM5170 is a bidirectional current controller that needs an outer voltage
+loop. The ADR 0003 rule (surges under 100 V, 100 V parts) also rules out
+the 80 V LM5148/LM5149 ($1.05, deep stock). Candidates for a possible
+single-phase volume revision, JLC 2026-10-27: LM5116 (100 V, HTSSOP-20,
+C13755, $2.14, 20,659 stock), SCT82A30 (100 V, QFN-20, C6041259, $2.48,
+1,911), LM5146 (100 V, QFN-20, C3188679, $1.96, 46). Saving ~$17 per
+board; worth it only at volume, after the first boards show the real
+thermals and load steps.
+
 Consignment (explained to the user): buy parts elsewhere, register in
 JLC Parts Manager, ship to Shenzhen with spares for attrition (~$20-50
 courier), JLC stores them for PCBA. Alternative: JLC Global Sourcing.
