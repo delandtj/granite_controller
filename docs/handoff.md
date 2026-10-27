@@ -14,8 +14,14 @@ Read this first, then docs/controller.md and docs/power-board.md.
   JP2/JP3 (sense) and TEMP (R9, TP10) removed, RUN on PG4. VOUT trunks
   4 mm. Flow unchanged (pcbkit.toml header); tools/place.py now imports
   power/tools/pmmount.py. ERC 0, DRC 0 errors / 0 unconnected / parity
-  clean (2 terminal silk-edge warnings). Next: `pcbkit jlcfab` for both
-  boards, check CPL rotations, measure a pogo sample (height), order.
+  clean (2 terminal silk-edge warnings).
+- `pcbkit jlcfab` run for both boards (fab/, gitignored). LTC7810: use
+  JLC's stock, no consignment (user decision 2026-10-27): C581067
+  LTC7810ELXE, 13 in stock at $32.52, already in the BOM. That caps the
+  first module order at 13 boards (or 2 more with C690213, H grade).
+  Before ordering: check the CPL rotations in JLC's preview (module U1,
+  Q1-Q4, U2/U3, D1-D3, C24/C25; carrier D1, D2, Q1, F1, LEDs), replace
+  or source U2/U3 (C116625) and C13 (C77025), measure a pogo sample.
 - Gotchas this session: `pcbkit krt-route -h` does not print help, it
   routes the project board in place. The kicad MCP `sch_delete_symbol`
   also deletes every wire ending on the symbol's pins, including long
@@ -98,7 +104,7 @@ thermals and load steps.
 Consignment (explained to the user): buy parts elsewhere, register in
 JLC Parts Manager, ship to Shenzhen with spares for attrition (~$20-50
 courier), JLC stores them for PCBA. Alternative: JLC Global Sourcing.
-With the APS1510 only the LTC7810 needs consigning.
+With the APS1510 and the JLC-stocked LTC7810 (decided later the same day) nothing needs consigning.
 
 Next steps (ask the user which):
 1. Decide the inductor: overlay the APS1510 land pattern on the XAL1510
