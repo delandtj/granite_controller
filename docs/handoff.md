@@ -4,6 +4,20 @@ Read this first, then docs/controller.md and docs/power-board.md.
 
 ## Start here (2026-10-27, evening): L1/L2 APS1510, bench carrier rev 0.2
 
+Next session, in order (state: 8 local commits on master up to this
+one, NOT pushed; push only when the user asks):
+1. Module U2/U3 (MCP65R46T-1202E/CHY, C116625) and C13 (2.2n, C77025):
+   0 stock at LCSC. Find stocked replacements (U2/U3: open-drain
+   comparator with 1.2 V reference, SOT-23-6 footprint if possible),
+   update schematic + board fields, rerun jlcfab in power/pm-19v-250w.
+2. Upload both fab/ sets to JLC, check the CPL rotations in the preview
+   (list below), get real PCB + PCBA quotes (replace the estimates in
+   the costing section).
+3. Order a pogo sample (C5157258) or measure one: height not frozen.
+4. Still open, not blocking a first order: C24/C25 polymer vs ceramic
+   (needs the 19 V bus load step), APS1510 L-vs-I curve from COILANK,
+   review KRT's VIN_IC / DRVCC->D1 loop right of U1 on the module.
+
 - PM-19V-250W: L1/L2 are now COILANK APS1510M220F (C49261404, JLC
   stock) on the unchanged XAL1510 footprint (fit check below). Silk
   done (tools/silk_labels.py). Controller stays LTC7810 (below).
