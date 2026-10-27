@@ -1,12 +1,13 @@
 # Port module interface spec (PM-19V-250W and its hosts)
 
-**Date**: 2026-10-26
+**Date**: 2026-10-26, amended 2026-10-27 (aux: 1.27 mm header and
+socket instead of flat pads and pogos; gap 7.0 mm)
 **Status**: Accepted with ADR 0003
 **Applies to**: the port module (`power/pm-19v-250w/`, new project from pm-19v-200w),
 the plane tile column, the bench carrier (`power/pm-bench-carrier/`).
 
-Every mount footprint (module screw pads and aux pads, host standoffs
-and pogos, host silk outline) is generated from the numbers in this
+Every mount footprint (module screw pads and aux header, host standoffs
+and aux socket, host silk outline) is generated from the numbers in this
 file. Change a number here first, then regenerate; never edit a
 generated footprint by hand.
 
@@ -66,48 +67,74 @@ it, pad n = Sn, so the pattern cannot be placed wrong:
 - Solid connection to the pour (no thermal spokes) on every layer.
 
 Host standoff (one part per designator, JLC places one part each):
-- Sinhoo SMTSO2060CTJ, LCSC C2915628: M2 thread, 6.0 mm length,
-  5.56 mm body, 3.6 mm pilot 1.53 mm long.
+- Sinhoo SMTSO2070CTJ, LCSC C2916355: M2 thread, 7.0 mm length,
+  5.56 mm body, 3.6 mm pilot 1.53 mm long (same family and footprint
+  as the 6.0 mm SMTSO2060CTJ, C2915628, it replaced).
 - Plated hole 3.75 mm for the pilot, round pad 6.4 mm, 4 paste
   apertures (as drawn at tag pm-mount-drawn), solid to the pour.
 - 8-12 stitching vias around the pad to the inner planes.
 
 Hardware: M2 x 5 pan or cheese head, A2 stainless, with a spring lock
 washer (DIN 127 / split ring) under the head. Engagement: 5 - 1.6
-(PCB) - 0.5 (washer) = 2.9 mm. Torque: 0.25 Nm (to confirm on a
+(PCB) - 0.5 (washer) = 2.9 mm (the screw goes into the standoff's top,
+so the standoff length does not change it). Torque: 0.25 Nm (to confirm on a
 sample). Check: is the standoff thread through or blind, and how deep.
 
 ## Aux contacts
 
-Six flat pads on the module B side, six pogo pins on the host. Signals
-only, never power.
+A 2x3 1.27 mm board-to-board pair: SMT pin header on the module B side,
+SMT socket on the host. Signals only, never power. (Was, to 2026-10-27:
+flat pads on the module and pogo pins on the host. Dropped: the pogo
+C5157258 turned out to be through-hole and too short for the gap, the
+stocked SMT pogos have 0.08-0.25 um gold, and a pin tip on a pad is the
+fussier contact; a socket grips and wipes.)
 
-| Pad | Net | x | y | Direction | Note |
+| Pin | Net | x | y | Direction | Note |
 |---|---|---|---|---|---|
-| A1 | OV_KILL | +10.16 | -9.12 | module -> host | open drain, low = overvoltage, sets the slot latch |
-| A5 | GND | +12.70 | -9.12 | | reference for ID and the open drains |
-| A2 | PGOOD | +15.24 | -9.12 | module -> host | open drain, high = good |
-| A3 | ID | +10.16 | -6.58 | module -> host | resistor to GND, table below |
-| A6 | GND | +12.70 | -6.58 | | the spare, second GND |
-| A4 | RUN | +15.24 | -6.58 | host -> module | open = on, host pulls low = off |
+| A1 | OV_KILL | +12.065 | -9.12 | module -> host | open drain, low = overvoltage, sets the slot latch |
+| A2 | PGOOD | +13.335 | -9.12 | module -> host | open drain, high = good |
+| A5 | GND | +12.065 | -7.85 | | reference for ID and the open drains |
+| A6 | GND | +13.335 | -7.85 | | the second GND |
+| A3 | ID | +12.065 | -6.58 | module -> host | resistor to GND, table below |
+| A4 | RUN | +13.335 | -6.58 | host -> module | open = on, host pulls low = off |
 
-Pads are numbered by function (signals 1-4, GND 5-6), not by position;
-module footprint pm:PM_Aux_Pads_2x03 (schematic J2, pin n = An), host
-pogo designators follow the same numbers.
+Pins are numbered by function (signals 1-4, GND 5-6), not by the
+makers' numbering; positions are the contact (pin) centres in the
+module frame, block centre (+12.70, -7.85), 1.27 mm both ways, rows
+along y, GND in the middle row. Module footprint pm:PM_Aux_Header_2x03_P1.27
+(schematic J2, pin n = An), host footprint carrier:PM_Aux_Socket_2x03_P1.27
+(one part, pin n = An). The parts are symmetric: a 180 degree
+placement error changes nothing, a 90 degree one does.
 
-- Pitch 2.54 mm both ways; block centre (+12.70, -7.85). Lies on the
-  module's B side under the output sense resistor, clear of the
-  B-side parts (Q2, R12, C26, C5 in the current layout).
-- Module pad: 2.2 mm round, ENIG, solder mask opening 2.4 mm, no paste.
-  No vias in the pad.
-- Host pogo: Xinyangze YZ130115073P-01, LCSC C5157258, 2 mm base, 7.3
-  mm free / 5.5 mm fully compressed (from the LCSC listing, no
-  drawing: measure a sample before freezing). At the 6.0 mm gap it
-  travels 1.3 mm and has 0.5 mm left.
+- Module header: hanxia HX PZ1.27-2x3P TP, LCSC C41376035 (second
+  source Hong Cheng HC-PZ127-7.2L-2x3PS, C27985144). Plastic from 0.5
+  to 1.5 mm off the module, pins 4.0 mm above it: tip 5.5 mm off the
+  module. SMT legs outward in x, pads 2.50 x 0.74 at x +/-2.00 from the
+  block centre (6.50 outer span), with paste: the header is reflowed on
+  the module's B side with the other B parts. The footprint is drawn F
+  side mirrored in y and flipped top-bottom onto B (rotation 0).
+- Host socket: hanxia HX PM1.27-2x3P TP, LCSC C41397112 (second
+  source Hong Cheng HC-PM127-4.3H-2x3PS-02A, C42163098). 4.60 mm tall
+  over the PCB, pads 2.05 x 0.76 at x +/-1.975 (6.00 outer span).
+- Mating at the 7.0 mm gap: pin tip 1.5 mm above the host, 3.1 mm into
+  the socket. Header plastic would seat at a 6.1 mm gap, pins bottom
+  at ~6.2, the upper contact point is ~2.5 mm deep (lost above ~7.6):
+  ~0.8 mm margin to bottoming, ~0.6 mm wipe past the upper contact
+  point, tolerance stack ~+/-0.4 RSS. The contact depths are scaled
+  from the makers' drawings (not dimensioned): mate one sample pair at
+  7.0 mm before a volume order. Plating "gold flash", thickness not
+  stated.
+- Module side: vias between the pad columns (x 141.15-142.65 on the
+  250 W board) are fine, the header plastic sits over them, tented.
 - Host side: OV_KILL and PGOOD pulled up in the column (open = good,
   so an absent module reads "good"; presence comes from ID). RUN is
   the module's UVLO divider node (~1.9 V at 60 V in): the host only
   ever pulls it low through an open drain, never drives it high.
+- Lost contact: OV_KILL, PGOOD and RUN all fail unsafe when a pin
+  opens (no OV kill, "good", module on). ID opens to "no module".
+  Rule for every host: ID open (or out of the table) = slot fault, the
+  slot stays off or is latched off. A module whose aux contact is gone
+  then cannot run unsupervised.
 
 ID table (module resistor to GND, host 10k pull-up to 3V3, 1k series,
 100 nF):
@@ -124,10 +151,11 @@ ID table (module resistor to GND, host 10k pull-up to 3V3, 1k series,
 
 ## Gap and part heights
 
-- Gap module B surface to host F surface: 6.0 mm (the standoff length).
+- Gap module B surface to host F surface: 7.0 mm (the standoff length;
+  was 6.0 to 2026-10-27, raised for the aux header and socket).
 - Module B side: parts max 2.7 mm (1210 caps at 100 V are the tallest).
 - Host under the module outline: parts max 2.0 mm, and none within
-  1.0 mm of a standoff body or a pogo. That leaves 1.3 mm air.
+  1.0 mm of a standoff body or the aux socket. That leaves 2.3 mm air.
 - Module F side: parts max 12 mm (inductors; recheck with the 250 W
   inductors). No part taller than 1.5 mm within 6.5 mm diameter of a
   screw (head, washer and screwdriver access).
@@ -155,8 +183,9 @@ current board.
 ## Generator
 
 power/tools/pmmount.py holds the numbers above in one table and emits:
-- module: PM_Mount_M2 (all four screws), PM_Aux_Pads_2x03;
-- host: PM_Standoff_M2x6_SMTSO, PM_Pogo_YZ130115073P,
+- module: PM_Mount_M2 (all four screws), PM_Aux_Header_2x03_P1.27;
+- host: PM_Standoff_M2x7_SMTSO, PM_Aux_Socket_2x03_P1.27,
   PM_Module_Outline (silk outline with S1 marker and the input end
   marked "VIN");
-- `place`: puts a host set at a module centre and rotation.
+- `place`: puts a host set (standoffs, socket, outline) at a module
+  centre and rotation.

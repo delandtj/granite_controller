@@ -9,11 +9,285 @@
 		(date "2026-10-27")
 		(rev "0.2")
 		(company "Granite")
-		(comment 1 "Screwed PM mount (4 M2 SMT standoffs, 6 pogo pins), lab supply in, electronic load out")
+		(comment 1 "Screwed PM mount (4 M2 x 7 SMT standoffs, 2x3 1.27 mm aux socket), lab supply in, electronic load out")
 		(comment 2 "Kelvin test points, status LEDs, ON/OFF jumper, ID readout")
 		(comment 3 "Bench only: not an immersion board")
 	)
 	(lib_symbols
+	(symbol "Connector_Generic:Conn_01x06"
+			(pin_names
+				(offset 1.016)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "J"
+				(at 0 7.62 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "Conn_01x06"
+				(at 0 -10.16 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "Generic connector, single row, 01x06, script generated (kicad-library-utils/schlib/autogen/connector/)"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "connector"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_fp_filters" "Connector*:*_1x??_*"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "Conn_01x06_1_1"
+				(rectangle
+					(start -1.27 6.35)
+					(end 1.27 -8.89)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+				(rectangle
+					(start -1.27 5.207)
+					(end 0 4.953)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -1.27 2.667)
+					(end 0 2.413)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -1.27 0.127)
+					(end 0 -0.127)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -1.27 -2.413)
+					(end 0 -2.667)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -1.27 -4.953)
+					(end 0 -5.207)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -1.27 -7.493)
+					(end 0 -7.747)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(pin passive line
+					(at -5.08 5.08 0)
+					(length 3.81)
+					(name "Pin_1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 2.54 0)
+					(length 3.81)
+					(name "Pin_2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 0 0)
+					(length 3.81)
+					(name "Pin_3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 -2.54 0)
+					(length 3.81)
+					(name "Pin_4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 -5.08 0)
+					(length 3.81)
+					(name "Pin_5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 -7.62 0)
+					(length 3.81)
+					(name "Pin_6"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "6"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 	(symbol "Connector_Generic:Conn_01x01"
 		(pin_names
 			(offset 1.016)
@@ -3567,7 +3841,7 @@
 		)
 		(uuid "9a8b7427-472b-5be5-bfe5-c13d0120f3f2")
 	)
-	(text "SO1-SO4: M2 x 6 SMT standoffs (C2915628), screws S1 VIN, S2 GND in, S3 GND out, S4 VOUT; they carry the power."
+	(text "SO1-SO4: M2 x 7 SMT standoffs (C2916355, 7.0 mm module gap), screws S1 VIN, S2 GND in, S3 GND out, S4 VOUT; they carry the power."
 		(exclude_from_sim no)
 		(at 25.4 167.64 0)
 		(effects
@@ -3578,7 +3852,7 @@
 		)
 		(uuid "239238f7-31e8-513c-81f8-168ca8e3fcf9")
 	)
-	(text "    PG1-PG6: pogo pins (C5157258) on the module aux pads A1-A6 (OV_KILL, PGOOD, ID, RUN, GND, GND)."
+	(text "    J3: 2x3 1.27 mm SMT socket (C41397112), the module aux header plugs in; pin n = An (OV_KILL, PGOOD, ID, RUN, GND, GND)."
 		(exclude_from_sim no)
 		(at 25.4 171.45 0)
 		(effects
@@ -7932,11 +8206,11 @@
 			(at 116.84 54.61 0)
 			(effects (font (size 1.27 1.27)))
 		)
-		(property "Footprint" "carrier:PM_Standoff_M2x6_SMTSO"
+		(property "Footprint" "carrier:PM_Standoff_M2x7_SMTSO"
 			(at 116.84 50.8 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "LCSC" "C2915628" (at 116.84 50.8 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "LCSC" "C2916355" (at 116.84 50.8 0) (hide yes) (effects (font (size 1.27 1.27))))
 		(property "Datasheet" "~"
 			(at 116.84 50.8 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
@@ -7966,11 +8240,11 @@
 			(at 116.84 64.77 0)
 			(effects (font (size 1.27 1.27)))
 		)
-		(property "Footprint" "carrier:PM_Standoff_M2x6_SMTSO"
+		(property "Footprint" "carrier:PM_Standoff_M2x7_SMTSO"
 			(at 116.84 60.96 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "LCSC" "C2915628" (at 116.84 60.96 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "LCSC" "C2916355" (at 116.84 60.96 0) (hide yes) (effects (font (size 1.27 1.27))))
 		(property "Datasheet" "~"
 			(at 116.84 60.96 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
@@ -8001,11 +8275,11 @@
 			(at 142.24 69.85 0)
 			(effects (font (size 1.27 1.27)))
 		)
-		(property "Footprint" "carrier:PM_Standoff_M2x6_SMTSO"
+		(property "Footprint" "carrier:PM_Standoff_M2x7_SMTSO"
 			(at 142.24 66.04 180)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "LCSC" "C2915628" (at 142.24 66.04 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "LCSC" "C2916355" (at 142.24 66.04 0) (hide yes) (effects (font (size 1.27 1.27))))
 		(property "Datasheet" "~"
 			(at 142.24 66.04 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
@@ -8036,11 +8310,11 @@
 			(at 142.24 54.61 0)
 			(effects (font (size 1.27 1.27)))
 		)
-		(property "Footprint" "carrier:PM_Standoff_M2x6_SMTSO"
+		(property "Footprint" "carrier:PM_Standoff_M2x7_SMTSO"
 			(at 142.24 50.8 180)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "LCSC" "C2915628" (at 142.24 50.8 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "LCSC" "C2916355" (at 142.24 50.8 0) (hide yes) (effects (font (size 1.27 1.27))))
 		(property "Datasheet" "~"
 			(at 142.24 50.8 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
@@ -8049,249 +8323,6 @@
 			(project "pm-bench-carrier"
 				(path "/b3c1d2e4-5f60-4a71-8b92-0c1d2e3f4a5b"
 					(reference "SO4") (unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Connector_Generic:Conn_01x01")
-		(at 71.12 114.3 0)
-		(mirror y)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "45468f8a-fa6d-4eb3-8863-760bb34c4fd4")
-		(property "Reference" "PG1"
-			(at 65.4 114.3 0)
-			(effects (font (size 1.27 1.27)) (justify right))
-		)
-		(property "Value" "A1 OV_KILL"
-			(at 71.12 114.3 0)
-			(effects (font (size 1.27 1.27)) (hide yes))
-		)
-		(property "Footprint" "carrier:PM_Pogo_YZ130115073P"
-			(at 71.12 114.3 180)
-			(effects (font (size 1.27 1.27)) (hide yes))
-		)
-		(property "LCSC" "C5157258" (at 71.12 114.3 0) (hide yes) (effects (font (size 1.27 1.27))))
-		(property "Datasheet" "~"
-			(at 71.12 114.3 0)
-			(effects (font (size 1.27 1.27)) (hide yes))
-		)
-		(instances
-			(project "pm-bench-carrier"
-				(path "/b3c1d2e4-5f60-4a71-8b92-0c1d2e3f4a5b"
-					(reference "PG1") (unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Connector_Generic:Conn_01x01")
-		(at 71.12 116.84 0)
-		(mirror y)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "63187b75-df2b-4545-bf54-b6c50afe38a6")
-		(property "Reference" "PG2"
-			(at 65.4 116.84 0)
-			(effects (font (size 1.27 1.27)) (justify right))
-		)
-		(property "Value" "A2 PGOOD"
-			(at 71.12 116.84 0)
-			(effects (font (size 1.27 1.27)) (hide yes))
-		)
-		(property "Footprint" "carrier:PM_Pogo_YZ130115073P"
-			(at 71.12 116.84 180)
-			(effects (font (size 1.27 1.27)) (hide yes))
-		)
-		(property "LCSC" "C5157258" (at 71.12 116.84 0) (hide yes) (effects (font (size 1.27 1.27))))
-		(property "Datasheet" "~"
-			(at 71.12 116.84 0)
-			(effects (font (size 1.27 1.27)) (hide yes))
-		)
-		(instances
-			(project "pm-bench-carrier"
-				(path "/b3c1d2e4-5f60-4a71-8b92-0c1d2e3f4a5b"
-					(reference "PG2") (unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Connector_Generic:Conn_01x01")
-		(at 71.12 119.38 0)
-		(mirror y)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "1577b1df-52de-479d-a9ee-13cd77b89af4")
-		(property "Reference" "PG3"
-			(at 65.4 119.38 0)
-			(effects (font (size 1.27 1.27)) (justify right))
-		)
-		(property "Value" "A3 ID"
-			(at 71.12 119.38 0)
-			(effects (font (size 1.27 1.27)) (hide yes))
-		)
-		(property "Footprint" "carrier:PM_Pogo_YZ130115073P"
-			(at 71.12 119.38 180)
-			(effects (font (size 1.27 1.27)) (hide yes))
-		)
-		(property "LCSC" "C5157258" (at 71.12 119.38 0) (hide yes) (effects (font (size 1.27 1.27))))
-		(property "Datasheet" "~"
-			(at 71.12 119.38 0)
-			(effects (font (size 1.27 1.27)) (hide yes))
-		)
-		(instances
-			(project "pm-bench-carrier"
-				(path "/b3c1d2e4-5f60-4a71-8b92-0c1d2e3f4a5b"
-					(reference "PG3") (unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Connector_Generic:Conn_01x01")
-		(at 71.12 121.92 0)
-		(mirror y)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "589e23c4-1cc8-428c-ba8a-7048c9a307c0")
-		(property "Reference" "PG4"
-			(at 65.4 121.92 0)
-			(effects (font (size 1.27 1.27)) (justify right))
-		)
-		(property "Value" "A4 RUN"
-			(at 71.12 121.92 0)
-			(effects (font (size 1.27 1.27)) (hide yes))
-		)
-		(property "Footprint" "carrier:PM_Pogo_YZ130115073P"
-			(at 71.12 121.92 180)
-			(effects (font (size 1.27 1.27)) (hide yes))
-		)
-		(property "LCSC" "C5157258" (at 71.12 121.92 0) (hide yes) (effects (font (size 1.27 1.27))))
-		(property "Datasheet" "~"
-			(at 71.12 121.92 0)
-			(effects (font (size 1.27 1.27)) (hide yes))
-		)
-		(instances
-			(project "pm-bench-carrier"
-				(path "/b3c1d2e4-5f60-4a71-8b92-0c1d2e3f4a5b"
-					(reference "PG4") (unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Connector_Generic:Conn_01x01")
-		(at 71.12 124.46 0)
-		(mirror y)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "5ff97ad8-bda1-4fdf-8db5-896aadea9ad6")
-		(property "Reference" "PG5"
-			(at 65.4 124.46 0)
-			(effects (font (size 1.27 1.27)) (justify right))
-		)
-		(property "Value" "A5 GND"
-			(at 71.12 124.46 0)
-			(effects (font (size 1.27 1.27)) (hide yes))
-		)
-		(property "Footprint" "carrier:PM_Pogo_YZ130115073P"
-			(at 71.12 124.46 180)
-			(effects (font (size 1.27 1.27)) (hide yes))
-		)
-		(property "LCSC" "C5157258" (at 71.12 124.46 0) (hide yes) (effects (font (size 1.27 1.27))))
-		(property "Datasheet" "~"
-			(at 71.12 124.46 0)
-			(effects (font (size 1.27 1.27)) (hide yes))
-		)
-		(instances
-			(project "pm-bench-carrier"
-				(path "/b3c1d2e4-5f60-4a71-8b92-0c1d2e3f4a5b"
-					(reference "PG5") (unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Connector_Generic:Conn_01x01")
-		(at 71.12 130.81 0)
-		(mirror y)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "cb881059-e367-4cd7-98f5-f6858c07e02a")
-		(property "Reference" "PG6"
-			(at 65.4 130.81 0)
-			(effects (font (size 1.27 1.27)) (justify right))
-		)
-		(property "Value" "A6 GND"
-			(at 71.12 130.81 0)
-			(effects (font (size 1.27 1.27)) (hide yes))
-		)
-		(property "Footprint" "carrier:PM_Pogo_YZ130115073P"
-			(at 71.12 128.27 180)
-			(effects (font (size 1.27 1.27)) (hide yes))
-		)
-		(property "LCSC" "C5157258" (at 71.12 130.81 0) (hide yes) (effects (font (size 1.27 1.27))))
-		(property "Datasheet" "~"
-			(at 71.12 130.81 0)
-			(effects (font (size 1.27 1.27)) (hide yes))
-		)
-		(instances
-			(project "pm-bench-carrier"
-				(path "/b3c1d2e4-5f60-4a71-8b92-0c1d2e3f4a5b"
-					(reference "PG6") (unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:GND")
-		(at 78.74 130.81 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "0c2340bd-06e2-44cb-a3ed-985e109b69b4")
-		(property "Reference" "#PWR18"
-			(at 78.74 134.62 0)
-			(effects (font (size 1.27 1.27)) (hide yes))
-		)
-		(property "Value" "GND"
-			(at 78.74 134.62 0)
-			(effects (font (size 1.27 1.27)))
-		)
-		(property "Footprint" ""
-			(at 78.74 130.81 0)
-			(effects (font (size 1.27 1.27)) (hide yes))
-		)
-		(property "Datasheet" "~"
-			(at 78.74 128.27 0)
-			(effects (font (size 1.27 1.27)) (hide yes))
-		)
-		(instances
-			(project "pm-bench-carrier"
-				(path "/b3c1d2e4-5f60-4a71-8b92-0c1d2e3f4a5b"
-					(reference "#PWR18") (unit 1)
 				)
 			)
 		)
@@ -8556,10 +8587,57 @@
 		(stroke (width 0) (type solid))
 		(uuid "f620d3c2-866c-56ec-ae08-a5067b76bdaa")
 	)
+	(symbol
+		(lib_id "Connector_Generic:Conn_01x06")
+		(at 71.12 119.38 0)
+		(mirror y)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "1a4e30d1-c4a0-499a-b32a-c3cac3b33855")
+		(property "Reference" "J3"
+			(at 71.12 110.49 0)
+			(effects (font (size 1.27 1.27)))
+		)
+		(property "Value" "Aux socket 2x3 1.27"
+			(at 71.12 129.54 0)
+			(effects (font (size 1.27 1.27)))
+		)
+		(property "Footprint" "carrier:PM_Aux_Socket_2x03_P1.27"
+			(at 71.12 119.38 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C41397112" (at 71.12 119.38 0) (hide yes) (effects (font (size 1.27 1.27))))
+		(property "Datasheet" "~"
+			(at 71.12 119.38 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(pin "1" (uuid "d5dacc92-eb38-44a8-972f-ca8e30f07481"))
+		(pin "2" (uuid "4dce778e-aea9-4f7a-adfd-6ed4c777b307"))
+		(pin "3" (uuid "d5e72918-b78c-4606-b28e-816e1aa0384e"))
+		(pin "4" (uuid "64f185a3-d420-4f3d-820f-c6bfc383f2ac"))
+		(pin "5" (uuid "2d489a9e-472a-401e-8a4a-ad74576ae83f"))
+		(pin "6" (uuid "d440d21b-836f-4ea1-958d-d97d03eadd80"))
+		(instances
+			(project "pm-bench-carrier"
+				(path "/b3c1d2e4-5f60-4a71-8b92-0c1d2e3f4a5b"
+					(reference "J3") (unit 1)
+				)
+			)
+		)
+	)
 	(wire
-		(pts (xy 76.2 130.81) (xy 78.74 130.81))
+		(pts (xy 76.2 124.46) (xy 76.2 127))
 		(stroke (width 0) (type solid))
-		(uuid "84a9e491-d9a5-4eea-a749-74aa287eb0e0")
+		(uuid "9c184fa0-1420-45c0-b33d-8d901352b27e")
+	)
+	(junction
+		(at 76.2 124.46)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "054729eb-a11e-4f7a-829f-e28ca1a8841d")
 	)
 	(sheet_instances
 		(path "/"

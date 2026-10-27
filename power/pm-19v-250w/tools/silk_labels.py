@@ -3,8 +3,8 @@
 - J1 (all four screw pads in one footprint): reference hidden, each screw
   gets its net (S1 VIN, S2 GND, S3 GND, S4 VOUT, docs/pm-interface.md) on
   both sides, at the first free spot around the screw.
-- J2 (aux pads, B.Cu only in an F footprint): reference moved to
-  B.Silkscreen next to the pads.
+- J2 (1.27 mm aux header on B): reference on B.Silkscreen next to its
+  pads, at the first free spot below, left or right of them.
 Free = clear of pads, other silk and the board edge (vias are tented). Everything goes
 in group "labels"; a re-run replaces it.
 Usage: silk_labels.py <board.kicad_pcb>   (in place)

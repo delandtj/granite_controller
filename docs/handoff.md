@@ -13,17 +13,25 @@ one, NOT pushed; push only when the user asks):
 2. Upload both fab/ sets to JLC, check the CPL rotations in the preview
    (list below), get real PCB + PCBA quotes (replace the estimates in
    the costing section).
-3. Aux contacts under review (2026-10-27): the pogo C5157258 is wrong
-   for the job (its drawing YZ130115073P-01 shows a through-hole tail,
-   6.5 mm free above the board, only 0.5 mm compressed at the 6.0 mm
-   gap, 3u" Au). User finds pogos finicky: replacing them with a 2x3
-   SMT header (module B side) + SMT socket (host), 2.54 mm preferred,
-   1.27 mm possible; LCSC search for a stocked pair and a matching
-   standoff length is running. Parts from LCSC stock only (no global
-   sourcing, no consignment). Pogo fallback if needed: C5157408
-   (YZR0017-15070-01, SMT, 7.0 free / 6.00 working / 5.50 limit).
-   Host rule to add to docs/pm-interface.md: ID open = slot fault,
-   slot off (OV_KILL, PGOOD and RUN all fail unsafe on a lost contact).
+3. Aux contacts DONE (2026-10-27, user decision): pogos dropped for a
+   2x3 1.27 mm SMT header on the module B side (J2, C41376035) into a
+   2x3 1.27 mm SMT socket on the host (carrier J3, C41397112), gap
+   7.0 mm with Sinhoo SMTSO2070CTJ standoffs (C2916355). Spec:
+   docs/pm-interface.md "Aux contacts"; ADR 0003 decisions 6/7 amended.
+   pmmount.py generates PM_Aux_Header_2x03_P1.27 / PM_Aux_Socket_2x03_P1.27
+   / PM_Standoff_M2x7_SMTSO (old pads, pogo and M2x6 footprints removed).
+   Module: J2 swapped in place, tools/route_aux.py (handroute) moves
+   PGOOD's via and adds a GND via between the pad columns; DRC as
+   before (16 starved thermals, was 17), 0 unconnected, parity clean.
+   Carrier: schematic PG1-PG6 -> J3 (Conn_01x06, pin n = An), board
+   rebuilt by the pcbkit.toml flow (8 B.Cu VIN stubs left by the
+   second gndpour deleted), DRC 0 errors / 0 unconnected / parity
+   clean. jlcfab rerun for both. Still to do: mate one header/socket
+   sample at 7.0 mm (contact depths are scaled from drawings, not
+   dimensioned); CPL rotations of J2 (module, bottom), J3 and SO1-SO4
+   in JLC's preview (a 180 degree error on J2/J3 is harmless, 90 is
+   not). Host rule now in the spec: ID open = slot fault.
+   Parts from LCSC stock only (user: no global sourcing, no consignment).
 4. PM-19V-200W is obsolete (user, 2026-10-27): superseded by
    PM-19V-250W, not for order, no further work (silk never tidied, on
    purpose). Kept in power/pm-19v-200w/ for reference only, see its
@@ -46,8 +54,8 @@ one, NOT pushed; push only when the user asks):
   done (tools/silk_labels.py). Controller stays LTC7810 (below).
 - Bench carrier rev 0.2 (power/pm-bench-carrier/, docs/power-board.md
   "Bench carrier"): DOSA socket X1 and aux socket X2 replaced by the
-  screwed mount: SO1-SO4 standoffs (C2915628) and PG1-PG6 pogos
-  (C5157258) at pmmount.host_parts(165, 127.5, 0), MOD1 outline;
+  screwed mount: SO1-SO4 standoffs (now C2916355, 7.0 mm) and the aux
+  socket J3 (was PG1-PG6 pogos) at pmmount.host_parts(165, 127.5, 0), MOD1 outline;
   JP2/JP3 (sense) and TEMP (R9, TP10) removed, RUN on PG4. VOUT trunks
   4 mm. Flow unchanged (pcbkit.toml header); tools/place.py now imports
   power/tools/pmmount.py. ERC 0, DRC 0 errors / 0 unconnected / parity
@@ -58,7 +66,7 @@ one, NOT pushed; push only when the user asks):
   first module order at 13 boards (or 2 more with C690213, H grade).
   Before ordering: check the CPL rotations in JLC's preview (module U1,
   Q1-Q4, U2/U3, D1-D3, C24/C25; carrier D1, D2, Q1, F1, LEDs), replace
-  or source U2/U3 (C116625) and C13 (C77025), measure a pogo sample.
+  or source U2/U3 (C116625) and C13 (C77025), mate an aux header/socket sample.
 - Gotchas this session: `pcbkit krt-route -h` does not print help, it
   routes the project board in place. The kicad MCP `sch_delete_symbol`
   also deletes every wire ending on the symbol's pins, including long

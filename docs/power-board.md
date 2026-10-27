@@ -670,21 +670,22 @@ immersion). Schematic ERC 0, board routed (KRT), DRC 0 errors, 0
 unconnected, schematic parity clean (only the two "silk clipped by edge"
 warnings from the terminal blocks that overhang the edges by design).
 Not yet ordered; `pcbkit jlcfab` to rerun for rev 0.2. Hand assembly:
-J1, J2, JP1, C1, C2, C4, the test loops. LCSC: standoff C2915628, pogo
-C5157258, fuse C44479 (0451010.MRL, 10 A: the 8 A is not stocked), TVS
+J1, J2, JP1, C1, C2, C4, the test loops. LCSC: standoff C2916355
+(M2 x 7), aux socket C41397112, fuse C44479 (0451010.MRL, 10 A: the 8 A is not stocked), TVS
 C353345, zener C27131, 2N7002 C8545, C3 C55151, C5 C2918502, C6 C15849,
 R1 C17943, R2 C17414, R3 C270956, 100k C25803, 3.3k C22978, 10k C25804,
-green LEDs C2297, red LED C84256. The CPL rotations of D1, D2, Q1, F1
-and the four LEDs are written uncorrected (no entry in pcbkit's
+green LEDs C2297, red LED C84256. The CPL rotations of D1, D2, Q1, F1,
+J3, SO1-SO4 and the four LEDs are written uncorrected (no entry in pcbkit's
 KiCad-to-EasyEDA table for these footprint/LCSC pairs): check them in
 the JLC placement preview before ordering.
 
 - Mount (docs/pm-interface.md, positions from power/tools/pmmount.py
   host_parts at module centre (165, 127.5), rotation 0, input end
-  left): SO1-SO4 M2 x 6 SMT standoffs (S1 VIN, S2 GND input, S3 GND
-  output, S4 VOUT; they carry the power, S2/S3 solid to the GND pour),
-  PG1-PG6 pogo pins under the module's aux pads A1-A6 (OV_KILL, PGOOD,
-  ID, RUN, GND, GND), MOD1 the board-only silk outline with the screw
+  left): SO1-SO4 M2 x 7 SMT standoffs (7.0 mm module gap; S1 VIN, S2
+  GND input, S3 GND output, S4 VOUT; they carry the power, S2/S3 solid
+  to the GND pour), J3 the 2x3 1.27 mm SMT aux socket the module's
+  header plugs into (pin n = An: OV_KILL, PGOOD, ID, RUN, GND, GND;
+  was PG1-PG6 pogo pins to 2026-10-27), MOD1 the board-only silk outline with the screw
   numbers and "VIN". Nothing else under the outline (host parts there
   max 2.0 mm; only tracks and tented vias).
 - J1: 5.08 mm screw terminal (Phoenix MKDS 3/2, 24 A) for the lab
@@ -700,13 +701,13 @@ the JLC placement preview before ordering.
 - Aux 5 V rail: 10k 1 W (2512) from VIN into a 5.1 V zener, ~5 mA at
   54 V: pull-ups and LEDs only. PWR and OV_KILL / PGOOD are open-drain
   on the module and must not be pulled above ~5 V.
-- Module signals (pogos): OV_KILL with 100k pull-up, "OV" LED lit when
+- Module signals (J3): OV_KILL with 100k pull-up, "OV" LED lit when
   low; PGOOD with 100k pull-up, 2N7002 so the "PGOOD" LED is lit when
   high; ID with a 10k pull-up to 5 V (a voltmeter at TP9 reads the
   module's ID resistor as a divider: 22k = PM-19V-250W, about 3.4 V).
   No TEMP: the 250 W module has no NTC. Test points on every signal, TP5 a spare GND loop,
   TP11 the 5 V rail.
-- JP1 (2-pin header, "OFF"): jumper on pulls RUN (PG4, the module's
+- JP1 (2-pin header, "OFF"): jumper on pulls RUN (J3.4, the module's
   UVLO divider node) to GND = module off; open = on. TP6 RUN.
 - No input cut-off on OV_KILL: the module is tested without a front
   end, so for the shorted-top-FET test the electronic load's OVP and the

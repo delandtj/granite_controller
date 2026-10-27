@@ -1,24 +1,24 @@
-(footprint "PM_Standoff_M2x6_SMTSO"
+(footprint "PM_Standoff_M2x7_SMTSO"
 	(version 20260206)
 	(generator "pcbnew")
 	(generator_version "10.0")
 	(layer "F.Cu")
-	(descr "SMT M2 x 6 threaded standoff (Sinhoo SMTSO2060CTJ, LCSC C2915628: 5.56 mm body, 3.6 mm pilot 1.53 mm long) in a 3.75 mm plated hole, 6.4 mm solder pad with four paste apertures; carries the PM module current through the clamped pad")
+	(descr "SMT M2 x 7 threaded standoff (Sinhoo SMTSO2070CTJ, LCSC C2916355: 5.56 mm body, 3.6 mm pilot 1.53 mm long) in a 3.75 mm plated hole, 6.4 mm solder pad with four paste apertures; carries the PM module current through the clamped pad; sets the 7.0 mm module gap")
 	(tags "standoff SMTSO M2 PM module mount")
 	(property "Reference" "REF**"
 		(at 0 -4.2 0)
 		(layer "F.Fab")
-		(uuid "fbbc913a-176e-46da-96b8-5e657f92fdf8")
+		(uuid "1a087c03-2998-4311-873d-1c62e1c8183d")
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
 		)
 	)
-	(property "Value" "PM_Standoff_M2x6_SMTSO"
+	(property "Value" "PM_Standoff_M2x7_SMTSO"
 		(at 0 4.2 0)
 		(layer "F.Fab")
-		(uuid "891f5742-a45d-417d-a581-93013e80e058")
+		(uuid "5220af67-12ae-4ffa-946e-15966556f780")
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -29,7 +29,7 @@
 		(at 0 0 0)
 		(layer "F.Fab")
 		(hide yes)
-		(uuid "56068213-8be0-4df1-b010-19c2c6585073")
+		(uuid "df30a3e0-7b21-4efe-991d-4af701429297")
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -40,7 +40,7 @@
 		(at 0 0 0)
 		(layer "F.Fab")
 		(hide yes)
-		(uuid "ad4d551e-27c6-446f-be4e-056f666bdb4a")
+		(uuid "3ecbd5a7-d317-4e7d-a2bf-444652380e83")
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -58,7 +58,7 @@
 		)
 		(fill no)
 		(layer "F.CrtYd")
-		(uuid "c3668e2f-96b3-4b4c-bbe1-ae7d47ed5cd1")
+		(uuid "26397f00-7319-4635-b9cf-2a58d2e73cfd")
 	)
 	(fp_circle
 		(center 0 0)
@@ -69,35 +69,35 @@
 		)
 		(fill no)
 		(layer "F.Fab")
-		(uuid "eeeb1f2e-9ed2-4bed-914b-cf0dbd6e25a9")
+		(uuid "62909157-baab-4648-94ff-a290a1c61fef")
 	)
 	(pad "" smd rect
 		(at -2.6125 0)
 		(size 0.775 1.6)
 		(layers "F.Paste")
 		(thermal_bridge_angle 45)
-		(uuid "7eb24286-1c9b-4289-b726-3f60bd57da0a")
+		(uuid "f11fede9-e1ba-4349-8b8b-c251d0f14a44")
 	)
 	(pad "" smd rect
 		(at 0 -2.6125)
 		(size 1.6 0.775)
 		(layers "F.Paste")
 		(thermal_bridge_angle 45)
-		(uuid "f755d36f-9c6d-469e-8370-9bdac7b3d67b")
+		(uuid "4f531623-ef26-41d9-bb2a-482585bea61b")
 	)
 	(pad "" smd rect
 		(at 0 2.6125)
 		(size 1.6 0.775)
 		(layers "F.Paste")
 		(thermal_bridge_angle 45)
-		(uuid "88015d5e-7071-47e0-b51c-a803da4ba679")
+		(uuid "bfbb482e-8f9d-4950-be1d-61bebc344299")
 	)
 	(pad "" smd rect
 		(at 2.6125 0)
 		(size 0.775 1.6)
 		(layers "F.Paste")
 		(thermal_bridge_angle 45)
-		(uuid "b89f9976-1042-42d7-a99f-fd03935c97e0")
+		(uuid "790f0940-ddcf-4be9-8adc-b76f3f8f7993")
 	)
 	(pad "1" thru_hole circle
 		(at 0 0)
@@ -105,7 +105,7 @@
 		(drill 3.75)
 		(layers "*.Cu" "*.Mask")
 		(remove_unused_layers no)
-		(uuid "ae71ceff-1583-4615-a2f0-146e0655fe8e")
+		(uuid "3430ff6b-d6ff-4f60-b532-22c5ce3f9a89")
 		(padstack
 			(mode front_inner_back)
 			(layer "Inner"

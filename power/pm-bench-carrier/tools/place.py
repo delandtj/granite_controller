@@ -3,7 +3,7 @@
 Usage: place.py <in.kicad_pcb> <out.kicad_pcb>
 
 Screwed PM mount in the middle (module centre (165, 127.5), rotation 0, input
-end left): standoffs SO1-SO4 and pogo pins PG1-PG6 at the positions
+end left): standoffs SO1-SO4 and the aux socket J3 at the positions
 power/tools/pmmount.py derives from docs/pm-interface.md, plus the board-only
 silk outline MOD1. Input terminal and bulk caps on the left, output terminal
 and caps on the right, status LEDs along the top edge, aux 5 V rail and
@@ -69,10 +69,9 @@ PLACE = {
 
 MOUNT = pmmount.host_parts(CX, CY, 0)
 PLACE.update({'SO%s' % n: (*MOUNT['S' + n], 0) for n in '1234'})
-PLACE.update({'PG%d' % n: (*MOUNT['A%d' % n], 0) for n in range(1, 7)})
+PLACE['J3'] = (*MOUNT['AUX'], 0)
 
-SOLID = [('SO2', '1'), ('SO3', '1'), ('J1', '2'), ('J2', '2'), ('TP2', '1'), ('TP4', '1'),
-         ('PG5', '1'), ('PG6', '1')]
+SOLID = [('SO2', '1'), ('SO3', '1'), ('J1', '2'), ('J2', '2'), ('TP2', '1'), ('TP4', '1')]
 
 
 def mm(v):

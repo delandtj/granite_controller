@@ -61,7 +61,7 @@ group = "gnd-stitch"
 fill = true
 
 [silk]
-hide_prefixes = ["H", "TP", "SO", "PG", "MOD"]   # TPs carry their net name (tools/legend.py); the mount is drawn by MOD1
+hide_prefixes = ["H", "TP", "SO", "MOD"]   # TPs carry their net name (tools/legend.py); the mount is drawn by MOD1
 order = ["J"]
 relax_prefixes = ["J"]
 

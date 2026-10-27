@@ -3,7 +3,9 @@
 **Status**: Accepted
 **Date**: 2026-10-26
 **Updated**: 2026-10-26 (review asks answered: names, LM5069-1, new
-module project, INT per column; decision 14 isolated aux added)
+module project, INT per column; decision 14 isolated aux added);
+2026-10-27 (decisions 6 and 7: aux contacts are a 1.27 mm header and
+socket, not pads and pogos; standoffs 7.0 mm)
 
 Related: docs/plane-requirements.md (R1-R22, what this must meet),
 docs/pm-interface.md (module mechanics and aux contacts, generated
@@ -72,18 +74,24 @@ rest of the plane rested on assumptions that no longer hold:
    18-20 A). OVLO raised to ~66-68 V. TEMP (NTC) and SDA/SCL dropped.
    Not DOSA except the 58.4 x 22.9 outline; non-isolated; no pins.
 6. **Mount**: four M2 screws through the module into SMT standoffs
-   reflowed on the plane (Sinhoo SMTSO2060CTJ, C2915628); the screws
+   reflowed on the plane (Sinhoo SMTSO2070CTJ, C2916355, 7.0 mm gap;
+   was SMTSO2060CTJ, 6.0 mm, to 2026-10-27); the screws
    carry VIN, GND and VOUT through clamped pads, with lock washers.
    Screw positions are not the DOSA corners; they are fixed in
    docs/pm-interface.md, asymmetric so a module turned 180 degrees
    cannot be screwed down (VIN on a GND or VOUT standoff), and the
    250 W module re-placement clears them. Every footprint (module,
    plane, bench carrier) is generated from that spec.
-7. **Aux**: 2x3 flat pads on the module underside, pogo pins on the
-   plane (Xinyangze YZ130115073P-01, C5157258, one part per
-   designator). Contacts: OV_KILL, PGOOD, ID, GND, RUN, one spare
-   (second GND unless the spec finds a use). RUN leaves the power
-   contacts.
+7. **Aux**: a 2x3 1.27 mm SMT pin header on the module underside
+   (C41376035) plugs into a 2x3 1.27 mm SMT socket on the plane
+   (C41397112), both LCSC stock. Contacts: OV_KILL, PGOOD, ID, GND,
+   RUN, second GND. RUN leaves the power contacts. Any host treats ID
+   open as a slot fault (a lost aux contact fails the other three
+   signals unsafe). Was, to 2026-10-27: flat pads and pogo pins
+   (C5157258); dropped because that pogo is through-hole and too
+   short for the gap, the stocked SMT pogos carry flash gold only, and
+   a gripping, wiping socket contact is the steadier one for a module
+   bolted down for years. Parts from LCSC stock only.
 8. **Protection, no fuses in the fluid**:
 
    | Level | Device | Reset |
@@ -167,7 +175,7 @@ rest of the plane rested on assumptions that no longer hold:
        TCA9535                                             link conn
        module                                              12 V aux
        (screwed,
-        pogo aux)
+        1.27 aux)
        photoMOS x2
        LED sense
            |            |            |            |
@@ -194,7 +202,7 @@ rest of the plane rested on assumptions that no longer hold:
      UVLO/EN chain with OV latch and the expander's open drain.
    - TCA9535: EN, latch clear, PGD, PGOOD, latch state, PWR/RST
      photoMOS drive, LED sense; INT to INT_n.
-   - Module site: 4 standoffs, 6 pogos, module outline on silk.
+   - Module site: 4 standoffs, the aux socket, module outline on silk.
    - ID: 10k pull-up, 100 nF, 1k series to ID_n.
    - Node power connector and front-panel connector at the bottom.
 3. **Port module PM-19V-250W** (`power/pm-19v-250w/`, new project
@@ -285,14 +293,16 @@ inside 400 kHz I2C.
 - No commercial module drops in.
 
 ### Risks
-- **Pogo pins in fluid**: contact resistance and corrosion of the flat
-  pads over time. Mitigation: ENIG on both, signals only (no power
-  through pogos), sample in the soak test.
+- **Aux connector in fluid**: contact resistance of gold-flash
+  contacts over time. Mitigation: a gripping, wiping socket contact,
+  signals only (no power through it), ID open = slot fault, sample in
+  the soak test.
 - **Standoff joint relaxing**: thermal cycling loosens the M2 clamp
   on 13-20 A contacts. Mitigation: lock washers, torque spec, check
   the joint resistance on the bench after cycling.
-- **Pogo part has no drawing** (dims from the LCSC listing).
-  Mitigation: order samples before freezing pad positions.
+- **Aux pair contact depth is scaled, not dimensioned** (the makers'
+  drawings show it but give no number). Mitigation: mate a sample pair
+  at the 7.0 mm gap before a volume order.
 - **Tile hot-swap SOA at 30 A**: two FETs in parallel share badly in
   linear mode. Mitigation: size one FET for the full SOA, the second
   only for conduction loss; check against the LM5069 power limit.
@@ -364,15 +374,16 @@ reserved for VBUS along the top.
 ### Known unknowns and how the plan absorbs them
 - Pod envelope: default 1x4 at ~155 x 130 mm. Pivot to 2x2 if the
   box cannot take 155 mm.
-- Pogo pin dimensions: default from the LCSC listing. Pivot when the
-  samples measure differently.
+- Aux pair mating depth: default 3.1 mm at the 7.0 mm gap (scaled
+  from the drawings). Pivot to the 6.6 mm standoff (C2916353) if a
+  sample makes poor contact at 7.0.
 - LM5069-1 vs -2 at tile level: default -1 (latch). Pivot if field
   experience shows nuisance trips.
 - Fluid compatibility of connectors: default Mini-Fit (nylon, tin).
   Pivot on a soak-test failure.
 
 ### The mechanical work
-- Module: OVLO divider, remove NTC and SDA/SCL, aux pads, screw pads,
+- Module: OVLO divider, remove NTC and SDA/SCL, aux header, screw pads,
   250 W rework of FETs, inductors, sense resistors, compensation.
 - Generator for mount footprints from docs/pm-interface.md
   (pmmount.py at tag pm-mount-drawn as a start).

@@ -3,12 +3,12 @@
 	(generator "pcbnew")
 	(generator_version "10.0")
 	(layer "F.Cu")
-	(descr "PM module outline on the host (board-only, no pads): body, screw numbers, aux block; place at the module centre, rotated with the standoffs and pogo pins (pmmount.host_parts)")
+	(descr "PM module outline on the host (board-only, no pads): body, screw numbers, aux block; place at the module centre, rotated with the standoffs and the aux socket (pmmount.host_parts)")
 	(tags "PM module outline")
 	(property "Reference" "REF**"
 		(at 0 -13.2 0)
 		(layer "F.SilkS")
-		(uuid "d2a2186c-1658-4e30-b5cc-1cdf901cb77e")
+		(uuid "5104b08e-840f-4d1a-aee5-26599feb4785")
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -18,7 +18,7 @@
 	(property "Value" "PM_Module_Outline"
 		(at 0 13.2 0)
 		(layer "F.Fab")
-		(uuid "91b7b775-e979-4037-9425-2bf00c6c06f9")
+		(uuid "9394bdf9-394e-4c3d-8028-afa67571ed3e")
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -29,7 +29,7 @@
 		(at 0 0 0)
 		(layer "F.Fab")
 		(hide yes)
-		(uuid "f8295e48-f440-41d0-bbee-b0b97b1b4ed8")
+		(uuid "b0ceb932-fb47-47ff-b1e1-f1b9a311690f")
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -40,7 +40,7 @@
 		(at 0 0 0)
 		(layer "F.Fab")
 		(hide yes)
-		(uuid "5b8ea7c1-2c2c-4158-9a5c-da35879d1cfa")
+		(uuid "d3182d98-787e-4773-acb9-b99438f93915")
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -58,7 +58,7 @@
 		)
 		(fill no)
 		(layer "F.SilkS")
-		(uuid "e0f406c2-0460-4c73-acbd-dd95fa857c5d")
+		(uuid "83fc1228-d897-446b-8d5e-e10192835081")
 	)
 	(fp_rect
 		(start -29.2 -11.45)
@@ -69,23 +69,23 @@
 		)
 		(fill no)
 		(layer "F.Fab")
-		(uuid "57d50ffa-3866-4862-8867-68cf7fbcd8b6")
+		(uuid "f28165ec-3c4d-4677-bc18-57a5b19566b2")
 	)
 	(fp_rect
-		(start 8.89 -10.39)
-		(end 16.51 -5.31)
+		(start 11.2 -9.955)
+		(end 14.2 -5.745)
 		(stroke
 			(width 0.1)
 			(type dash)
 		)
 		(fill no)
 		(layer "F.Fab")
-		(uuid "421c8b88-5784-4678-af4b-1bc87310b6d6")
+		(uuid "d05acc60-a2ad-4257-a78e-37d01ab7755e")
 	)
 	(fp_text user "1"
 		(at -21.7 -7.95 0)
 		(layer "F.SilkS")
-		(uuid "3c0fcb1a-84ed-4c2d-8244-46efdddbf082")
+		(uuid "2521e4ae-5b05-4d4e-96e2-5d63aa9f7b40")
 		(effects
 			(font
 				(size 0.8 0.8)
@@ -96,7 +96,7 @@
 	(fp_text user "VIN"
 		(at -21.7 -5.95 0)
 		(layer "F.SilkS")
-		(uuid "00bed79a-139e-4fc9-9480-90f68efa03c0")
+		(uuid "6e95b802-29b7-4eea-be39-f0efa941bba5")
 		(effects
 			(font
 				(size 0.8 0.8)
@@ -107,7 +107,7 @@
 	(fp_text user "2"
 		(at -21.7 5.95 0)
 		(layer "F.SilkS")
-		(uuid "2236cb95-7512-4ff4-85d3-204cc97fde1c")
+		(uuid "1ed6d442-e45f-4d3f-bcea-530c8ce9d17a")
 		(effects
 			(font
 				(size 0.8 0.8)
@@ -118,7 +118,7 @@
 	(fp_text user "4"
 		(at 21.7 -7.95 0)
 		(layer "F.SilkS")
-		(uuid "1aa94179-a88a-4560-9ba6-2406aa0657f7")
+		(uuid "2cdb76ef-1366-4b6a-9648-944bad453ca3")
 		(effects
 			(font
 				(size 0.8 0.8)
@@ -129,7 +129,7 @@
 	(fp_text user "3"
 		(at 21.7 5.95 0)
 		(layer "F.SilkS")
-		(uuid "2278a777-8ee0-4964-ab66-4633b4801978")
+		(uuid "c8de8489-d4de-4bd7-ad8b-7664dd29ab0b")
 		(effects
 			(font
 				(size 0.8 0.8)
@@ -138,9 +138,9 @@
 		)
 	)
 	(fp_text user "AUX"
-		(at 12.7 -4.51 0)
+		(at 12.7 -4.945 0)
 		(layer "F.Fab")
-		(uuid "a0e92841-875d-4340-9784-2f7b9f351298")
+		(uuid "ac0735f3-1566-4796-a344-b9e29b5419bc")
 		(effects
 			(font
 				(size 0.6 0.6)

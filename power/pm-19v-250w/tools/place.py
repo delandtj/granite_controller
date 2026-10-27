@@ -5,7 +5,7 @@ Usage: place.py <in.kicad_pcb> <out.kicad_pcb>
 Board origin (100, 100), module centre (129.2, 111.45); input end on the
 left, output end on the right. Mount and aux pads per docs/pm-interface.md
 (J1 = PM_Mount_M2 at the module centre, screws S1 VIN top left, S2 GND
-bottom left, S3 GND bottom right, S4 VOUT top right; J2 = aux pads on B at
+bottom left, S3 GND bottom right, S4 VOUT top right; J2 = 1.27 mm aux header on B at
 (+12.70, -7.85)). Nothing but J1's own copper inside the screw keep-outs
 (6.8 mm diameter, both sides).
 
@@ -121,7 +121,7 @@ ORIGIN.update(SMALL)
 COURTYARD = {
     'U1': (114.45, 116.1, 0, 'B'),        # drive groups at the right ends of both rows, facing their FETs
 }
-AUX = ('J2', CX + 12.70, CY - 7.85)   # pads on B.Cu in an F footprint
+AUX = ('J2', CX + 12.70, CY - 7.85)   # 1.27 mm aux header, on B
 
 # keep-clear boxes (switch-node and GND via fields), per side
 RESERVED = {
@@ -261,7 +261,7 @@ def main(src, dst):
         boxes['B'].append(pb)
     ref, x, y = AUX
     fp = fps[ref]
-    orient(fp, 0, 'F')
+    orient(fp, 0, 'B')
     fp.SetPosition(pcbnew.VECTOR2I(mm(x), mm(y)))
     c = fp.GetCourtyard(pcbnew.B_CrtYd).BBox()
     boxes['B'].append((tomm(c.GetLeft()), tomm(c.GetTop()), tomm(c.GetRight()), tomm(c.GetBottom())))
