@@ -199,7 +199,8 @@ Layout now (tools/place.py SMALL table, tools/power.py pours):
   route_drive.py --save -> handroute route_input.py --save -> group_hand.py
   (now groups every non-power track) -> krt-route -> handroute
   route_post.py --save (KRT rips ITH1/C13 despite keep_groups; this puts
-  them back) -> gndpour -> silk -> tools/silk_labels.py (in place: J1 ref
+  them back) -> handroute route_aux.py --save (J2 header, 2026-10-27)
+  -> gndpour -> silk -> tools/silk_labels.py (in place: J1 ref
   hidden, screw nets VIN/GND/GND/VOUT on both sides, J2 ref on B by its
   pads; no room for VOUT on B; no connlabels, it would put J2 on F).
 DRC: 0 unconnected, 0 clearance/short; 17 starved thermals (J1 screw via
