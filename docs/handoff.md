@@ -13,8 +13,22 @@ one, NOT pushed; push only when the user asks):
 2. Upload both fab/ sets to JLC, check the CPL rotations in the preview
    (list below), get real PCB + PCBA quotes (replace the estimates in
    the costing section).
-3. Order a pogo sample (C5157258) or measure one: height not frozen.
-4. Still open, not blocking a first order: C24/C25 polymer vs ceramic
+3. Aux contacts under review (2026-10-27): the pogo C5157258 is wrong
+   for the job (its drawing YZ130115073P-01 shows a through-hole tail,
+   6.5 mm free above the board, only 0.5 mm compressed at the 6.0 mm
+   gap, 3u" Au). User finds pogos finicky: replacing them with a 2x3
+   SMT header (module B side) + SMT socket (host), 2.54 mm preferred,
+   1.27 mm possible; LCSC search for a stocked pair and a matching
+   standoff length is running. Parts from LCSC stock only (no global
+   sourcing, no consignment). Pogo fallback if needed: C5157408
+   (YZR0017-15070-01, SMT, 7.0 free / 6.00 working / 5.50 limit).
+   Host rule to add to docs/pm-interface.md: ID open = slot fault,
+   slot off (OV_KILL, PGOOD and RUN all fail unsafe on a lost contact).
+4. PM-19V-200W is obsolete (user, 2026-10-27): superseded by
+   PM-19V-250W, not for order, no further work (silk never tidied, on
+   purpose). Kept in power/pm-19v-200w/ for reference only, see its
+   README.md. Any future lower-power module will be a new design.
+5. Still open, not blocking a first order: C24/C25 polymer vs ceramic
    (needs the 19 V bus load step), APS1510 L-vs-I curve from COILANK,
    review KRT's VIN_IC / DRVCC->D1 loop right of U1 on the module.
 
@@ -191,7 +205,8 @@ supervision routes; the VOUT strip loss.
 ## Earlier (2026-10-26 night): PM-19V-250W layout in progress
 
 ADR 0003 and docs/pm-interface.md Accepted. Module work in the new
-project power/pm-19v-250w/ (pm-19v-200w kept a few days, then decide).
+project power/pm-19v-250w/ (pm-19v-200w: obsolete since 2026-10-27,
+kept for reference only).
 Done, committed:
 - Schematic: J1 screw pads (pm:PM_Mount_M2, 1 VIN 2/3 GND 4 VOUT),
   J2 2x3 aux (1 OV_KILL 2 PGOOD 3 ID 4 RUN 5/6 GND), TH1 gone, R16 22k,
@@ -790,7 +805,8 @@ Power expansion (docs/power-board.md, all decisions dated there):
   port by running each LTC7810 channel as its own single-phase port.
   Open decision: ports per module.
 
-First port module PM-19V-200W, KiCad project `power/pm-19v-200w/`:
+First port module PM-19V-200W, KiCad project `power/pm-19v-200w/`
+(OBSOLETE since 2026-10-27, superseded by PM-19V-250W; history only):
 - Schematic (rev 0.1, wired, A3): LTC7810 two-phase 200 kHz/phase, 19.0 V
   (180k/10k), UVLO 38 / OVLO 62.7 V, gate drive 10 V, EXTVCC = VOUT,
   spread spectrum off; independent OV_KILL (>22.7 V) and PGOOD (>17.3 V)
