@@ -115,10 +115,13 @@ Layout now (tools/place.py SMALL table, tools/power.py pours):
   route_drive.py --save -> handroute route_input.py --save -> group_hand.py
   (now groups every non-power track) -> krt-route -> handroute
   route_post.py --save (KRT rips ITH1/C13 despite keep_groups; this puts
-  them back) -> gndpour.
+  them back) -> gndpour -> silk -> tools/silk_labels.py (in place: J1 ref
+  hidden, screw nets VIN/GND/GND/VOUT on both sides, J2 ref on B by its
+  pads; no room for VOUT on B; no connlabels, it would put J2 on F).
 DRC: 0 unconnected, 0 clearance/short; 17 starved thermals (J1 screw via
-rings, R7.2, J2.6: connected anyway), silk not redone (run silk,
-connlabels), 2 dangling VIN stepping-stone vias at y 107.7 (B backbone
+rings, R7.2, J2.6: connected anyway), silk clean (2026-10-27: 0 overlap,
+0 over copper; D1's own outline clipped at the bottom edge, J2's B.Fab
+"1" not mirrored), 2 dangling VIN stepping-stone vias at y 107.7 (B backbone
 helpers), gndpour placed 0 stitching vias (board too dense for its rules).
 Review asks: KRT's VIN_IC / DRVCC->D1 loop right of U1; output-end
 supervision routes; the VOUT strip loss.
