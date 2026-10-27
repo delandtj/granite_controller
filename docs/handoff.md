@@ -33,6 +33,22 @@ selectSmtComponentList; LCSC search API is blocked for scripts):
   vs ~41 V across it at 60 V in, ~48.5 V at the 67.5 V OVLO; footprint
   not yet overlaid on pm.pretty's XAL1510 one; immersion compatibility
   of the metal-dust core coating unknown.
+- Fit check 2026-10-27 (COILANK APS-F datasheet, LCSC pdf for
+  C49261404): APS1510 body 16.5 +-0.3 (along the terminals) x 15.5
+  +-0.3 (across) x 10.0 max; bottom terminals 13.2 x 3.2 with a 7.4 gap
+  (outer 13.8). The XAL1510 pads (3.18 x 13.2 at +-5.3, outer 13.78)
+  cover the terminals almost 1:1, so no footprint change is needed
+  (COILANK's own land is bigger: 4.5 x 15.0 pads, 6.0 gap; optional).
+  Worst-case body 15.8 x 16.8 sits inside the existing courtyard
+  (15.9 x 16.9) at the current L1/L2 positions: 1.45 mm body to body,
+  3.1 mm to the top/bottom edges, 0.28-0.4 mm to R9, U2, U3, C27, R6,
+  R10 courtyards (same as now), >= 5.3 mm from the screw keep-outs.
+  Height 10.0 max is under the 12 mm limit. The datasheet has no L-vs-I
+  curve; with Isat = 40 % drop at 18.7 A a soft metal-dust roll-off
+  gives roughly 15-17 uH at 12 A (estimate, not data) vs ~17-18 uH for
+  the XAL1510-223. Still open: the 55 V rating (48.5 V across it at
+  OVLO plus SW ringing), immersion. APS1513 lands on the same pads
+  (terminal gap 7.0, 0.2 mm off the inner pad edge) but is 13 mm tall.
 - Ruled out: APS1513M220F (13.86 mOhm, 22 A, but 13 mm > 12 mm limit),
   Bourns SRP1513CA-220M (same, $7.34, 22 stock), COILMX MTF1810-220M
   (18.3 mm, does not fit between L1 and L2), 12-13 mm class (22-42 mOhm,
