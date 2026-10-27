@@ -18,6 +18,15 @@ one, NOT pushed; push only when the user asks):
    (needs the 19 V bus load step), APS1510 L-vs-I curve from COILANK,
    review KRT's VIN_IC / DRVCC->D1 loop right of U1 on the module.
 
+- PM-19V-250W BG2 (2026-10-27): no vias any more. The old Q4 gate via
+  sat 0.2 mm from L1's SW1 pad (L1 pad 1 covers all of F.Cu over Q4's
+  gate, no better spot within 4 mm); an SW1-BG2 short kills Q4 and U1.
+  BG2 now runs on B.Cu only (U1 and Q4 both on B): y 111.45 under L2
+  between D2's pads, up the right of Q4 to pin 4, >= 0.375 mm to other
+  copper, In2 GND above it. R1's VIN via moved 121.9,111.6 -> 112.2 to
+  make room. tools/route_drive.py and route_input.py match the board.
+  DRC unchanged (the 17 starved thermals as before), 0 unconnected,
+  parity clean. fab/ is stale: rerun jlcfab.
 - PM-19V-250W: L1/L2 are now COILANK APS1510M220F (C49261404, JLC
   stock) on the unchanged XAL1510 footprint (fit check below). Silk
   done (tools/silk_labels.py). Controller stays LTC7810 (below).

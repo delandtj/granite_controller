@@ -1,6 +1,6 @@
 """Hand route plan for U1's gate drive (pcbkit handroute), U1 rot 0 at (114.45, 116.1).
-Top pair (Q3/Q4, phase 2): TG2 / SW2 / BOOST2 on B.Cu over the top of U1, BG2 down to
-In1 and up at Q4's gate. Bottom pair (Q1/Q2, phase 1): TG1 and BG1 on In1 lanes under
+Top pair (Q3/Q4, phase 2): TG2 / SW2 / BOOST2 on B.Cu over the top of U1, BG2 on B.Cu
+under L2 to Q4's gate. Bottom pair (Q1/Q2, phase 1): TG1 and BG1 on In1 lanes under
 U1, SW1 on an F.Cu lane along the bottom edge to L1 pad 1, BOOST1 under BG1's via to D1.
 Run: pcbkit handroute <board> tools/route_drive.py [--save]
 """
@@ -16,12 +16,10 @@ OPS = [
     ('trk', '/SW2', 'B.Cu', [(114.97, 110.2), (114.97, 109.4), (115.37, 109.0), (125.8, 109.0)], W),
     ('trk', '/BOOST2', 'B.Cu', [(115.7, 111.938), (115.7, 110.2)], W),
     ('trk', '/BOOST2', 'B.Cu', [(115.93, 110.2), (116.13, 110.0), (120.55, 110.0), (120.9, 110.35), (120.9, 110.65)], W),
-    ('trk', '/BG2', 'B.Cu', [(117.2, 111.938), (117.2, 110.75)], W),
-    ('via', '/BG2', (117.2, 110.75), *V),
-    ('trk', '/BG2', 'In1.Cu', [(117.2, 110.75), (117.2, 106.1), (118.3, 105.0), (127.85, 105.0), (128.6, 105.75),
-                               (128.6, 106.75)], W),
-    ('via', '/BG2', (128.6, 106.75), *V),
-    ('trk', '/BG2', 'B.Cu', [(128.6, 106.75), (130.35, 106.75), (130.95, 106.15), (131.2, 105.9)], W),
+    # BG2 stays on B.Cu, no via: a via at Q4's gate would sit 0.2 mm from L1's SW1 pad (F.Cu covers
+    # the whole gate area) and an SW1-BG2 short takes out Q4 and U1. Under L2 between D2's pads, In2
+    # GND above it, up the right of Q4 to the gate
+    ('trk', '/BG2', 'B.Cu', [(117.2, 111.938), (117.2, 111.45), (128.8, 111.45), (131.2, 109.05), (131.2, 105.905)], W),
     ('trk', '/DRVCC', 'B.Cu', [(118.612, 113.85), (120.88, 113.85), (120.88, 112.75)], W),   # pin 26 - C11.1 - D2.2
     # bottom pair, phase 1
     ('trk', '/TG1', 'B.Cu', [(114.7, 120.263), (114.7, 121.1), (114.3, 121.5), (113.85, 121.95)], 0.2),

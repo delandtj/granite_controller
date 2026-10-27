@@ -48,7 +48,7 @@ ZONES = [
     # phase 2 input: over the top of C5-C8, Q3's drain
     ('/VIN', B, 3, [(135.6, 113.9), (147.5, 113.9), (147.5, 122.7), (135.6, 122.7)]),
     # In1 feed from S1 to phase 2
-    # (bottom edge at 104.2: RUN runs along under it, above BG2's In1 lane)
+    # (bottom edge at 104.2: RUN runs along under it)
     ('/VIN', IN1, 3, [(100.4, 100.4), (144.0, 100.4), (144.0, 116.3), (137.9, 116.3), (137.9, 104.2),
                       (100.4, 104.2)]),
     # GND islands under the input caps, one via each under the body

@@ -63,7 +63,7 @@ OPS = [
     ('trk', '/RUN', 'B.Cu', [(117.1, 113.15), (117.1, 116.85), (118.0, 116.85)], W),
     ('trk', '/RUN', 'B.Cu', [(117.1, 115.35), (118.0, 115.35)], W),
     # RUN to J2.4: F under L2's body, In1 under the VIN strip, B below J2's pads
-    # (round BG2's via; the In1 via between C4 and Q3's drain, below the VOUT strip)
+    # (the In1 via between C4 and Q3's drain, below the VOUT strip)
     ('trk', '/RUN', 'F.Cu', [(117.1, 113.15), (117.1, 111.85), (116.6, 111.35), (116.6, 110.15), (117.0, 109.75),
                              (117.0, 105.0)], W),
     ('via', '/RUN', (117.0, 105.0), *V),
@@ -76,11 +76,11 @@ OPS = [
     ('via', '/VOUT', (111.6, 118.5), *V),
     ('trk', '/SNS1P', 'B.Cu', [(111.7, 119.6), (111.7, 119.4), (112.05, 119.05), (112.45, 119.05)], W),
     ('via', '/SNS1P', (112.45, 119.05), *V),
-    # VIN for R1 (VIN_IC filter): In1 from the VIN strip, left of RUN's via and
-    # BG2, under L2 past BG2's via, to a via between C11 and R1
-    ('trk', '/VIN', 'In1.Cu', [(116.4, 104.0), (116.4, 111.6), (121.9, 111.6)], W),
-    ('via', '/VIN', (121.9, 111.6), *V),
-    ('trk', '/VIN', 'B.Cu', [(121.9, 111.6), (121.9, 112.9), (122.05, 113.05), (122.05, 115.25), (122.925, 115.25)], W),
+    # VIN for R1 (VIN_IC filter): In1 from the VIN strip, left of RUN's via,
+    # under L2 to a via between C11 and R1 (below BG2's B.Cu lane at y 111.45)
+    ('trk', '/VIN', 'In1.Cu', [(116.4, 104.0), (116.4, 111.6), (121.3, 111.6), (121.9, 112.2)], W),
+    ('via', '/VIN', (121.9, 112.2), *V),
+    ('trk', '/VIN', 'B.Cu', [(121.9, 112.2), (121.9, 112.9), (122.05, 113.05), (122.05, 115.25), (122.925, 115.25)], W),
     # SENSE1- to R9 pad 2: F under L2 to a via below U1's pin 36, In1 band
     # between TG1 and the Q2 GND vias to a via right of C6 (B under R9 is
     # C5-C8), back on F under R9's body to the inner edge of pad 2
