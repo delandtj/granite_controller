@@ -2,6 +2,66 @@
 
 Read this first, then docs/controller.md and docs/power-board.md.
 
+## Start here (2026-10-27, later): PM-19V-250W cost and parts findings
+
+The routed board (1192e81, next section) is unchanged; this is costing
+and part choice, no board edits yet.
+
+Cost per board (BOM: power/pm-19v-250w/production/bom.csv, LCSC prices
+pulled 2026-10-27 via wmsc.lcsc.com/ftps/wm/product/detail?productCode=):
+- LCSC parts without L1/L2: $49.56 at 5 boards, $44.58 at 100. The
+  LTC7810 (C581067) is $32.55 at LCSC with 13 in stock; the user found
+  it at $19 at Digikey. With that: parts ~$36 (5) / ~$32 (100).
+- Second-largest line: C24/C25 Kemet T523H107M035APE070 polymers,
+  $5.67 each ($11.34 per board).
+- Estimates, not quotes: PCB + JLC two-sided assembly ~$27-39 per board
+  at 5, ~$5-8 at 100. Total with the Digikey LTC7810 ~$70-82 (5),
+  ~$42-45 (100); with the inductor swap below ~$65-75 / ~$40.
+- LCSC stock 0 on 2026-10-27: MCP65R46T-1202E/CHY (C116625, U2/U3),
+  C77025 (C13 2.2n); basic parts C25804, C25744, C1523, C14663 show 0
+  at LCSC but JLC basic stock is separate (not checked).
+
+Inductor alternative (JLC library scan, 15-33 uH, ~12,000 parts, via
+POST jlcpcb.com/api/overseas-pcb-order/v1/shoppingCart/smtGood/
+selectSmtComponentList; LCSC search API is blocked for scripts):
+- COILANK APS1510M220F (C49261404): 16.5 x 15.5 x 10.0 mm max, 22 uH,
+  DCR 15.8 mOhm max, Irms 14 A, Isat 18.7 A (at ~40 % drop), 303 in
+  stock, $2.40. Looks like an XAL1510 clone. JLC also stocks the
+  Coilcraft XAL1510-223MED (C3911658) at $17.89, 29 in stock.
+- Open on the APS1510: Isat is defined at ~40 % drop (Coilcraft 10-30 %),
+  check L at ~12 A (worst-case current limit); absolute maximum 55 V DC
+  vs ~41 V across it at 60 V in, ~48.5 V at the 67.5 V OVLO; footprint
+  not yet overlaid on pm.pretty's XAL1510 one; immersion compatibility
+  of the metal-dust core coating unknown.
+- Ruled out: APS1513M220F (13.86 mOhm, 22 A, but 13 mm > 12 mm limit),
+  Bourns SRP1513CA-220M (same, $7.34, 22 stock), COILMX MTF1810-220M
+  (18.3 mm, does not fit between L1 and L2), 12-13 mm class (22-42 mOhm,
+  Isat ~12 A).
+
+Ceramic instead of the polymers (question only, not decided): ripple is
+fine with ceramics (~10 mV), but a 6 A step at ~30 kHz crossover droops
+~1 V instead of ~0.15 V, the polymer ESR damps the module-cable-node
+ceramic LC, and the compensation would need retuning. Options: one
+polymer plus 2-4 more 1210 22 uF (~$5 less, ~2x droop); a cheaper 2 mm
+class polymer; aluminum polymer cans fail the height limit. Needs the
+real load-step size on the 19 V bus to decide.
+
+Consignment (explained to the user): buy parts elsewhere, register in
+JLC Parts Manager, ship to Shenzhen with spares for attrition (~$20-50
+courier), JLC stores them for PCBA. Alternative: JLC Global Sourcing.
+With the APS1510 only the LTC7810 needs consigning.
+
+Next steps (ask the user which):
+1. Decide the inductor: overlay the APS1510 land pattern on the XAL1510
+   footprint, read its L-vs-I curve at 12 A, check the 55 V rating
+   margin; if OK, change L1/L2 LCSC field to C49261404.
+2. Decide C24/C25 (keep two, one + ceramics, or a cheaper polymer) once
+   the 19 V bus load step is known.
+3. Replace or source U2/U3 (MCP65R46 out at LCSC) and C13 (C77025).
+4. Board finishing: silk + connlabels, review the KRT routes (VIN_IC /
+   DRVCC->D1 loop right of U1, comparator cluster), then jlcfab and get
+   real JLC PCB + PCBA quotes to replace the estimates above.
+
 ## Start here (2026-10-27): PM-19V-250W routed, 0 opens, awaiting review
 
 Found and fixed (user chose both fixes):
