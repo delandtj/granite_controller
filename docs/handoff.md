@@ -1,8 +1,53 @@
-# Handoff - granite controller (updated 2026-10-26)
+# Handoff - granite controller (updated 2026-10-27)
 
 Read this first, then docs/controller.md and docs/power-board.md.
 
-## Start here (2026-10-26 night): PM-19V-250W layout in progress
+## Start here (2026-10-27): PM-19V-250W routed, 0 opens, awaiting review
+
+Found and fixed (user chose both fixes):
+- Phase 2's output current ran L2 pad 2 -> SNS2P F.Cu strip along the top
+  edge -> R10 at the output end, ~30 mm, necked to 1.5 mm by a redundant
+  1.6 mm VIN trace KRT had added on F (it ignores the In1 VIN pour), and
+  U1's SENSE2+ was tapped at L2 pad 2, so the strip drop (~6 mOhm, ~80 mV
+  at 12.5 A) sat inside the 67 mV sense loop. Now R10 sits upright left of
+  L2 pad 2 (pad 1 bridged to L2 pad 2 by a short SNS2P pour), pad 2 feeds
+  a VOUT riser and the VOUT strip along the top edge; the strip drop is
+  outside the sense loop (still ~4 mOhm / ~0.6 W at full load: a candidate
+  for doubling on another layer). No VIN trace on F any more: /VIN is no
+  longer a KRT power net (pcbkit.toml).
+- Input end ripped up and routed by hand (tools/route_input.py).
+
+Layout now (tools/place.py SMALL table, tools/power.py pours):
+- Kelvin taps from the inner pad edges, under the resistor bodies: SENSE2+/-
+  from R10 (short, F then B to pins 13/12); SENSE1+/- from R9: pins 1/48
+  out under U1's body, F under L2, In1 (SENSE1- in a band between TG1 and
+  the Q2 GND vias; SENSE1+ along the bottom edge), F under R9's body from
+  vias right of C6/C8 (B under R9 is C5-C8). BG1's via moved to (123.6,
+  119.6) to open that In1 band (tools/route_drive.py).
+- U1's compensation network on F under U1's left side (VFB/ITH/SS lanes
+  from pins 47/46/45 on B to staggered vias); C14 on B in the corner.
+  EXTVCC and R6/C12 take VOUT from R10 pad 2; C16/C17 over pins 15/16;
+  INTVCC (pins 14, 8, 3) under U1's body.
+- RUN and NDRV cross under U1 on In1 (RUN above, NDRV below, the order of
+  their pins); RUN to J2.4 via F under L2 and In1 under the VIN strip
+  (In1 VIN strip bottom edge now y 104.2); R1's VIN feed on In1.
+- Comparators U2/U3 moved to the output end in R10's old spot (F, a hole
+  in the VOUT pour), dividers and VAUX zener supply on B right of J2.
+  OV_KILL/PGOOD/U2-/U3+/VAUX there are KRT-routed (hand attempts ran out
+  of room; KRT's result is short and 45-degree, review it).
+- Flow: mkboard -> place.py -> setrules -> power.py -> handroute
+  route_drive.py --save -> handroute route_input.py --save -> group_hand.py
+  (now groups every non-power track) -> krt-route -> handroute
+  route_post.py --save (KRT rips ITH1/C13 despite keep_groups; this puts
+  them back) -> gndpour.
+DRC: 0 unconnected, 0 clearance/short; 17 starved thermals (J1 screw via
+rings, R7.2, J2.6: connected anyway), silk not redone (run silk,
+connlabels), 2 dangling VIN stepping-stone vias at y 107.7 (B backbone
+helpers), gndpour placed 0 stitching vias (board too dense for its rules).
+Review asks: KRT's VIN_IC / DRVCC->D1 loop right of U1; output-end
+supervision routes; the VOUT strip loss.
+
+## Earlier (2026-10-26 night): PM-19V-250W layout in progress
 
 ADR 0003 and docs/pm-interface.md Accepted. Module work in the new
 project power/pm-19v-250w/ (pm-19v-200w kept a few days, then decide).

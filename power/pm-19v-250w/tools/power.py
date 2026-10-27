@@ -13,10 +13,14 @@ Current paths (13.2 A out, ~5.5 A in at 48 V):
         -> B.Cu pour -> C5-C8 -> Q3 drain
   SW2   Q3 sources + Q4 drain (B.Cu, top pair) -> 12 vias -> F.Cu beside L2 pad 1
   SW1   Q2 drain + Q1 sources (B.Cu, bottom pair) -> 8 vias -> F.Cu beside L1 pad 1
-  SNSx  L1 pad 2 -> F.Cu strip along the top edge -> R9 pad 1;
-        L2 pad 2 -> F.Cu along the bottom edge -> R10 pad 1
-  VOUT  R9/R10 pad 2 -> F.Cu pour round the C20-C23 GND island -> S4
-        (J1.4); C24/C25 (B.Cu) through a via column
+  SNS1  L1 pad 2 -> F.Cu pour along the bottom edge -> R9 pad 1 (output end)
+  SNS2  L2 pad 2 -> short F.Cu bridge -> R10 pad 1 (input end)
+  VOUT  R10 pad 2 -> F.Cu riser and strip along the top edge -> output end;
+        R9 pad 2 -> F.Cu band -> C20-C23 round their GND island -> S4
+        (J1.4); C24/C25 (B.Cu) through a via column right of C20/C22.
+        The comparators sit in a hole in the VOUT pour beside J2.
+  Sense taps are Kelvin: the pours stop at the inner pad edges of R9/R10,
+  the sense traces leave from under the resistor bodies.
   GND   Q2/Q4 sources, C1-C8 (GND islands under the cap bodies), C24 ->
         via fields -> In2 plane -> S2/S3 (J1.2/J1.3)
 """
@@ -44,8 +48,9 @@ ZONES = [
     # phase 2 input: over the top of C5-C8, Q3's drain
     ('/VIN', B, 3, [(135.6, 113.9), (147.5, 113.9), (147.5, 122.7), (135.6, 122.7)]),
     # In1 feed from S1 to phase 2
-    ('/VIN', IN1, 3, [(100.4, 100.4), (144.0, 100.4), (144.0, 116.3), (137.9, 116.3), (137.9, 104.6),
-                      (100.4, 104.6)]),
+    # (bottom edge at 104.2: RUN runs along under it, above BG2's In1 lane)
+    ('/VIN', IN1, 3, [(100.4, 100.4), (144.0, 100.4), (144.0, 116.3), (137.9, 116.3), (137.9, 104.2),
+                      (100.4, 104.2)]),
     # GND islands under the input caps, one via each under the body
     ('GND', B, 5, rect(107.45, 100.5, 110.05, 106.75)),      # C1/C3
     ('GND', B, 5, rect(112.3, 100.5, 114.9, 106.75)),        # C2/C4
@@ -64,16 +69,20 @@ ZONES = [
     ('/SW2', F, 4, rect(122.2, 104.9, 128.4, 118.2)),
     ('/SW1', F, 4, [(128.9, 104.9), (132.3, 104.9), (132.3, 107.2), (134.5, 107.2), (134.5, 118.2),
                     (128.9, 118.2)]),
-    # sense nodes
-    ('/SNS2P', F, 4, [(111.6, 100.4), (147.95, 100.4), (147.95, 104.6), (115.2, 104.6), (115.2, 118.2),
-                      (111.6, 118.2)]),
-    ('/SNS1P', F, 4, rect(139.4, 118.0, 148.2, 122.6)),
-    # output: R9/R10 -> C20/C22 -> over the top -> S4 and C21/C23; the GND
-    # island between the MLCC columns runs down to S3
-    ('/VOUT', F, 3, [(144.0, 106.3), (148.25, 106.3), (148.25, 100.4), (158.3, 100.4), (158.3, 113.95),
-                     (155.4, 113.95), (155.4, 107.1), (151.0, 107.1), (151.0, 116.5), (144.0, 116.5)]),
+    # sense nodes: L2 pad 2 and the bridge to R10 pad 1; L1 pad 2 round to
+    # R9 pad 1, clear of the space under R9's body (Kelvin vias)
+    ('/SNS2P', F, 4, [(106.6, 111.15), (111.6, 111.15), (111.6, 104.65), (115.2, 104.65), (115.2, 118.2),
+                      (111.6, 118.2), (111.6, 112.8), (106.6, 112.8)]),
+    ('/SNS1P', F, 4, [(139.4, 118.0), (144.3, 118.0), (144.3, 120.85), (148.2, 120.85), (148.2, 122.6),
+                      (139.4, 122.6)]),
+    # output: R10 pad 2 -> riser left of L2 -> strip along the top edge ->
+    # S4 and C20-C23; R9 pad 2 -> band under the comparators -> C20/C22;
+    # the GND island between the MLCC columns runs down to S3
+    ('/VOUT', F, 3, [(107.1, 100.4), (158.3, 100.4), (158.3, 113.95), (155.4, 113.95), (155.4, 107.1),
+                     (151.0, 107.1), (151.0, 116.5), (144.0, 116.5), (144.0, 114.4), (148.55, 114.4),
+                     (148.55, 104.6), (111.6, 104.6), (111.6, 106.75), (107.1, 106.75)]),
     ('GND', F, 5, rect(151.4, 107.4, 155.0, 114.6)),
-    ('/VOUT', B, 4, rect(144.5, 107.3, 150.1, 113.4)),
+    ('/VOUT', B, 4, rect(144.5, 107.3, 150.9, 113.4)),
 ]
 
 # net, candidate via centres (kept only where they clear every pad and via)
@@ -86,10 +95,11 @@ VIAS = [
     ('/SW2', grid([126.1, 126.95, 127.8], [107.3, 108.2, 109.1, 110.0])),
     ('/SW1', grid([132.7, 133.6], [112.6, 113.5, 114.4, 115.3])),
     # 107.7 row: stepping stones under the C1-C4 GND islands for the backbone
+    # (none at 116.5: RUN runs up there on F to its In1 via between C4 and Q3)
     ('/VIN', grid([138.25, 139.1], [114.6, 115.5]) + grid([143.4], [114.5, 115.4]) +
-     grid([107.2, 112.2, 115.6, 116.5], [107.7])),
+     grid([107.2, 112.2, 115.6], [107.7])),
     # input cap GND islands: under the cap bodies (C2/C4: not at 101.95,
-    # it would block the SNS1P backbone along the top edge)
+    # it would cut the VOUT strip and its backbone along the top edge)
     ('GND', grid([109.6], [101.95, 103.6, 105.3]) + grid([114.45], [103.6])),
     ('GND', grid([143.5], [117.55, 119.2, 120.9]) + grid([148.4], [117.55, 119.2, 120.9])),
     # Q2 sources: right of L2 pad 1, below the SNS1P strip
@@ -97,8 +107,12 @@ VIAS = [
     # bottom low side (Q2) sources; rows 118.6 and 122.2 left free for BG1's via and TG1's In1 lane
     ('GND', grid([124.6, 125.45], [119.5, 120.4, 121.3])),
     ('GND', grid([136.3, 137.2], [108.0, 109.2, 110.4, 111.6, 112.8])),
-    ('/VOUT', grid([147.3], [108.7, 109.6, 110.5, 111.4, 112.3])),
+    ('/VOUT', grid([150.4], [108.0, 108.9, 109.8, 110.7, 111.6, 112.5])),
 ]
+
+# boxes (layer, x0, y0, x1, y1) the backbones keep out of: RUN's via
+# between C4 and Q3's drain (tools/route_input.py)
+BACKBONE_KEEP = [(B, 116.55, 104.45, 117.45, 105.55)]
 
 
 def mm(v):
@@ -224,6 +238,8 @@ def backbones(board, grp, width=0.3):
                 x = a[0] + (b[0] - a[0]) * i / steps
                 y = a[1] + (b[1] - a[1]) * i / steps
                 if not inside(pts, x, y):
+                    return False
+                if any(k[0] == layer and k[1] < x < k[3] and k[2] < y < k[4] for k in BACKBONE_KEEP):
                     return False
                 m = width / 2 + CLEAR
                 for o in others:

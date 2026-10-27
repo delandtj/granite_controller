@@ -16,10 +16,18 @@ C5-C8. U1 bottom left. The output polymers C24/C25 (2.0 mm high) in the
 middle band at the output end, between the aux pads and phase 2.
 
 Top: L1 and L2 (XAL1510, 16 x 17 mm) side by side, switch pads facing
-each other over the switch-node vias; sense resistors R9/R10 upright at
-the output end (pad 2 toward the middle, VOUT); output MLCCs C20-C23 in the
-middle band between the S4 and S3 keep-outs; the output supervision at the
-input end.
+each other over the switch-node vias. R9 upright at the output end beside
+L1 pad 2; R10 upright at the input end beside L2 pad 2 (its pad 1 joins
+L2 pad 2 through a short bridge, pad 2 feeds the VOUT strip along the top
+edge), so both phases sense across their own resistor and the strip drop
+stays outside the sense loop. Output MLCCs C20-C23 in the middle band
+between the S4 and S3 keep-outs.
+
+Small parts are placed by hand (SMALL): U1's compensation network on top
+under its left side, where the vias to U1's left and bottom pins land; the
+RUN/OVLO divider on the bottom between the screws; the output supervision
+(comparators U2/U3 on top in R10's old spot, their dividers and the VAUX
+zener supply on the bottom beside J2), next to J2 and VOUT.
 
 Fixed parts are placed by footprint origin (MOSFETs, inductors, caps,
 sense resistors: origin = body centre) or by courtyard centre (U1); the
@@ -67,13 +75,48 @@ ORIGIN = {
     # top
     'L2': (118.7, CY, 180, 'F'),
     'L1': (135.95, CY, 0, 'F'),
-    'R10': (146.1, 104.3, 270, 'F'),
+    'R10': (108.5, 109.0, 90, 'F'),      # pad 1 (SNS2P) down, toward L2 pad 2; pad 2 (VOUT) up
     'R9': (146.1, 118.6, 90, 'F'),
     'C20': (150.73, 109.02, 0, 'F'),
     'C21': (155.63, 109.02, 180, 'F'),   # GND pads of C20-C23 in the middle column
     'C22': (150.73, 112.47, 0, 'F'),
     'C23': (155.63, 112.47, 180, 'F'),
 }
+# small parts by footprint origin (ref: x, y, rotation, side)
+SMALL = {
+    # top, input end under U1's left side: compensation network round the
+    # vias from pins 45-47 (SS1, ITH1, VFB1); R6/C12 take VOUT from R10
+    'R6': (109.95, 118.95, 270, 'F'),
+    'C12': (108.85, 118.95, 270, 'F'),
+    'R8': (107.3, 120.8, 180, 'F'),
+    'C13': (105.8, 122.2, 180, 'F'),
+    'C15': (107.92, 122.2, 180, 'F'),
+    'R7': (112.6, 122.2, 0, 'F'),
+    # bottom, input end: RUN/OVLO divider between S1 and S2 (R3 pad 1 in
+    # the VIN pour), INTVCC cap at pin 3, ITH2/SS2 caps over pins 15/16
+    'R3': (101.4, 110.4, 270, 'B'),
+    'R4': (104.15, 111.9, 0, 'B'),
+    'R5': (106.7, 111.9, 0, 'B'),
+    'C10': (108.3, 117.85, 180, 'B'),
+    'C14': (108.2, 120.55, 180, 'B'),    # ITH1 cap at its via, in the corner under U1
+    'C16': (112.55, 109.65, 90, 'B'),
+    'C17': (113.6, 109.65, 90, 'B'),
+    # top, output end: comparators in R10's old spot, beside J2
+    'U2': (146.25, 106.85, 180, 'F'),
+    'C27': (145.2, 109.2, 180, 'F'),     # VAUX pad toward C28
+    'C28': (147.3, 109.2, 0, 'F'),
+    'U3': (146.25, 112.25, 0, 'F'),
+    # bottom, output end right of J2: comparator dividers in a 2 x 2 grid
+    # (U3's top row, U2's below), VAUX zener supply beside them
+    'R14': (146.95, 101.5, 90, 'B'),
+    'R15': (148.15, 101.5, 270, 'B'),
+    'R12': (146.95, 104.0, 270, 'B'),
+    'R13': (148.15, 104.0, 90, 'B'),
+    'R11': (150.3, 102.2, 270, 'B'),
+    'C26': (150.4, 104.6, 0, 'B'),
+    'D3': (149.0, 106.2, 0, 'B'),
+}
+ORIGIN.update(SMALL)
 # by courtyard centre; U1 rotation is chosen in main()
 COURTYARD = {
     'U1': (114.45, 116.1, 0, 'B'),        # drive groups at the right ends of both rows, facing their FETs
@@ -92,7 +135,7 @@ RESERVED = {
           (106.9, 106.8, 117.3, 108.3),      # VIN pour band under C1-C4
           (109.2, 121.2, 119.6, 122.95),     # fan-out below U1
           (135.4, 114.0, 141.3, 116.1)],     # VIN vias (In1 feed), above Q3's drain
-    'F': [(106.9, 100.3, 148.1, 104.7),      # SNS2P pour along the top edge
+    'F': [(106.9, 100.3, 148.1, 104.7),      # VOUT strip along the top edge
           (112.0, 120.0, 131.0, 122.95),     # drive vias and the SW1 lane along the bottom edge
           (106.9, 106.8, 117.0, 108.4),      # VIN backbone vias under C1-C4 (B), keep F clear
           (125.6, 104.8, 128.4, 118.2),      # SW1 vias right of L1 pad 1
@@ -104,16 +147,7 @@ RESERVED = {
 B2 = (128.4, 107.1, 135.6, 112.2)     # middle band, between the SW2 tail and the C24 GND field
 B3 = (133.7, 100.3, 137.3, 106.9)     # top edge, right of Q4's GND vias
 B5 = (146.5, 100.3, 151.4, 106.9)     # top edge, right of the aux pads
-B6 = (107.0, 108.7, 109.1, 122.6)     # left of U1: analog network (VFB, ITH1, SS1), INTVCC, OVLO
-BIN = (100.4, 108.5, 106.9, 114.0)    # bottom, input end between S1 and S2, below the VIN pour
-TOPL = (109.4, 108.65, 114.3, 110.8)  # above pins 13-16: ITH2, SS2
 CH = (119.7, 112.9, 124.1, 120.9)     # right of U1, beside VIN_IC / RUN / DRVCC (pins 35-26)
-T1 = (100.4, 106.8, 110.4, 114.1)     # top, input end between S1 and S2
-T3 = (106.9, 120.0, 112.0, 122.6)     # top, bottom strip, input end (x 112-131 is the SW1 lane and drive vias)
-T6 = (106.95, 114.2, 110.6, 119.9)    # top, input end between the S2 keep-out and L2
-T7 = (131.0, 120.0, 139.0, 122.6)     # top, bottom strip right of the SW1 lane
-T4 = (148.3, 100.3, 151.4, 107.2)     # top, output end, beside S4
-T5 = (148.3, 114.3, 151.4, 122.6)     # top, output end, beside S3
 
 # U1's own parts by function, so its pins keep clear lanes for hand routing
 # (the gate drive): nothing above the phase 1 drive pins 37-42 (corridor in
@@ -121,24 +155,11 @@ T5 = (148.3, 114.3, 151.4, 122.6)     # top, output end, beside S3
 # bootstraps right of the routing channel next to their switch nodes.
 ANCHOR = {}
 
-SUPERVISION = ['U2', 'U3', 'C27', 'C28', 'R11', 'D3', 'C26', 'R12', 'R13', 'R14', 'R15']
-# side, zones, refs, rotation
+# side, zones, refs, rotation (what SMALL does not place)
 PACK = [
-    # supervision block, input end, top: comparators, their dividers, VAUX supply, RUN divider
-    ('F', [T1], ['U2', 'U3'], 0),
-    ('F', [T1, T6, T3], ['R12', 'R13', 'R14', 'R15', 'C27', 'C28'], 90),       # 0402s
-    ('F', [T6, T3, T1], ['R11', 'D3', 'C26'], 90),
-    ('F', [T1, T6, T3, T7, T4, T5], SUPERVISION, 0),
-    ('B', [BIN], ['R3', 'R4', 'R5', 'C15'], 90),     # RUN / OVLO divider and SS1, input end
     ('B', [B3, B5], ['R16'], 90),                     # ID resistor beside J2.3
-    ('B', [B6], ['R6', 'R7', 'C12', 'R8', 'C13', 'C14', 'C15', 'C10', 'R5'], 90),   # 0402s
-    ('B', [TOPL], ['C16', 'C17'], 90),
-    ('B', [TOPL, B6], ['C10', 'R5'], 90),
-    ('B', [TOPL, B6], ['C10', 'R5'], 0),
     ('B', [CH], ['C9', 'R1'], 90),
-    ('B', [B6, TOPL, CH, B2, B3, B5], ['R6', 'R7', 'C12', 'R8', 'C13', 'C14', 'C15', 'C10', 'R5',
-                                      'C16', 'C17', 'C9', 'R1'], 0),
-    ('B', [B3, B5, B2], SUPERVISION, 0),
+    ('B', [CH, B2, B3, B5], ['C9', 'R1'], 0),
 ]
 
 
