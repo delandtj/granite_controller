@@ -13,10 +13,13 @@ plane B side), VBUS on In2, core at the left end, rotating SDA/SCL
 channel so columns are identical, INT polled, ID through a per-column
 I2C ADC. Decided (user): end cap with a second 30 A hot-swap for N = 6/8
 (8 slots draw ~56 A at 38 V), plane mounting holes at the ends only.
-Still open: front-panel connector part, ID ADC part. N = 2/4: narrow end strip
-(~8 mm) with the right-hand holes (user). Next: confirm
-the Mini-Fit Jr 2x3 RA depth and front-panel connector width (they set
-height and pitch), then gensch column block.
+N = 2/4: narrow end strip (~8 mm) with the right-hand holes. Parts
+(user, 2026-10-28): node power Degson DG128 2-pole screw terminal
+(C711349, user makes the cables to the node's DC-ATX converter), front
+panel JST GH 1x4 (C189895), ID ADC ADC121C027 (C2670157), 25 mm pitch;
+plane ~72 mm tall. Open: confirm the DG128 drawing (depth, rising
+clamp, side entry). Next: gensch
+column block, then place and route one column.
 
 ## Start here (2026-10-27, evening): L1/L2 APS1510, bench carrier rev 0.2
 

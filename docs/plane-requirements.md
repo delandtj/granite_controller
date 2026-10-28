@@ -88,10 +88,11 @@ middle of drawing.
   service port, 1-Wire probes) shares the bus ground: the I2C link and
   the 12 V aux both cross an isolation barrier (functional, not
   safety: the bus is SELV at or below 60 V DC).
-- R21. Node connector: power and front-panel signals split. Power 3
-  contacts per polarity (Mini-Fit Jr 2x3 or HCS class), 14 AWG.
-  Front panel (PWR_SW, RST_SW, PLED) on a small separate latching
-  connector.
+- R21. Node connector: power and front-panel signals split. Power on
+  a 2-pole screw terminal, >= 15 A, 14 AWG; the user makes the cables
+  to the node's 19 V DC-ATX converter (amended 2026-10-28, ADR 0004;
+  was Mini-Fit Jr 2x3). Front panel (PWR_SW, RST_SW, PLED) on a small
+  separate latching connector.
 - R22. Commercial eighth bricks do not need to fit a slot. The module
   keeps the 58.4 x 22.9 mm outline only.
 

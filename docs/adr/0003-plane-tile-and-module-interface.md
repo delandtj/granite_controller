@@ -1,7 +1,7 @@
 # Plane tile of 4 columns and a screwed port module
 
 **Status**: Accepted; decisions 1, 2, 3 (INT_n, ID_n lines) and 4
-(ID read path) superseded by ADR 0004 (proposed 2026-10-28: N = 2/4/6/8
+(ID read path), and 11 (node connector) superseded by ADR 0004 (proposed 2026-10-28: N = 2/4/6/8
 columns at 25 mm, front end under the module, rotating channel)
 **Date**: 2026-10-26
 **Updated**: 2026-10-26 (review asks answered: names, LM5069-1, new

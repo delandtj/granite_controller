@@ -3,11 +3,12 @@
 **Status**: Proposed
 **Date**: 2026-10-28
 **Updated**: 2026-10-28 (user: end cap for N = 6/8, mounting holes at
-the ends only)
+the ends only, narrow end strip for N = 2/4; node power on a 2-pole
+screw terminal, front panel on JST GH, ID ADC ADC121C027, 25 mm pitch)
 
 Related: docs/adr/0003-plane-tile-and-module-interface.md (decisions
-1-4 are replaced here, 5-14 stand), docs/plane-requirements.md (R7-R9
-amended), docs/pm-interface.md (module outline, screws, aux, host
+1-4 and 11 are replaced here, 5-10 and 12-14 stand),
+docs/plane-requirements.md (R7-R9a, R21 amended), docs/pm-interface.md (module outline, screws, aux, host
 height limits: unchanged).
 
 ---
@@ -35,14 +36,30 @@ connector edge).
 
 ## Decision
 
-1. **Column**: 25.0 mm pitch, ~75 mm tall, one per slot. Module
+1. **Column**: 25.0 mm pitch, ~72 mm tall, one per slot. Module
    vertical, input end up (host rotation 270 as in pm-interface.md).
-   Height budget: 1.5 mm edge to module, 58.4 mm module, ~2 mm, ~13 mm
-   node connectors (Mini-Fit Jr 2x3 right angle; depth to confirm on
-   the drawing). The pitch is set by the bottom edge: Mini-Fit Jr 2x3
-   RA (~16 mm) plus a latching front-panel connector (JST GH 1x4 RA
-   class, ~7.5 mm). Standoff pads of neighbouring modules are 4.7 mm
-   apart.
+   Height budget: 1.5 mm edge to module, 58.4 mm module, ~1.5 mm,
+   10.2 mm node power terminal. The module (22.9 mm) sets the pitch;
+   the bottom-edge connectors take ~18 mm of it. Standoff pads of
+   neighbouring modules are 4.7 mm apart.
+1a. **Node connectors (replaces ADR 0003 decision 11 and R21's
+   Mini-Fit)**, both at the bottom edge, wire/cable entry from the
+   edge:
+   - Power: 2-pole 5.0 mm screw terminal, Degson
+     DG128-5.0-02P-14-00A(H), LCSC C711349 (16k stock). UL 15 A / 300
+     V, IEC 18 A, 12-24 AWG; 10.0 wide, <= 10.2 deep, 14.1 tall; PA66,
+     tin-plated brass pins, nickel-plated cage. 14 AWG pair. The user
+     makes the cables (screw terminal to the 19 V DC plug of the
+     node's DC-ATX converter). Second source to verify: Degson
+     DG500-5.08 (C691859). Still to confirm on the part: rising clamp
+     and side wire entry.
+   - Front panel (PWR_SW, RST_SW, PLED+, PLED-): JST GH 1x4 side entry
+     SM04B-GHS-TB (C189895), clone XUNPU WAFER-GH1.25-4PWB (C3029379);
+     8.25 wide, ~4 deep, positive latch; cable housing GHR-04V-S
+     (C160418), crimp SSHL-002T-P0.2 (C189897).
+   - Rejected on the way: Mini-Fit Jr 2x3 RA (21.3 mm deep to the rear
+     pads, plane ~83 mm), PCB DC jacks (none stocked above 10 A at
+     >= 24 V in the width).
 2. **Front end under its own module.** LM5069-2, pass FET (TDSON-8),
    shunt (2512), INA238, TCA9535, the ID ADC and the small passives sit
    on the plane F side inside the module outline (max 2.0 mm, >= 1.0
@@ -69,7 +86,9 @@ connector edge).
    core-side P1..P7 (a jog of one pair per column); far-side P7 ends.
    At the core, Pk is the segment of column k+1. Every column has the
    same copper, no column is special, unused positions end at the far
-   edge. 16 tracks at 0.35 mm pitch: a ~7 mm band. 3V3 and GND run
+   edge. 16 tracks at 0.35 mm pitch: a ~6 mm band on In2 under the
+   lower part of the module, between the aux socket and S3/S4, so it
+   adds no height (to confirm in the column layout). 3V3 and GND run
    straight through the band (same copper per column).
 6. **Two lines per column (replaces ADR 0003 decisions 3 and 4 in
    part)**: SDA_n and SCL_n only.
@@ -78,7 +97,10 @@ connector edge).
      nothing in the safety chain uses INT (OV latch, current limits
      and PGOOD latch are local hardware).
    - ID_n becomes digital: a single-channel I2C ADC per column
-     (ADC081C021 class, LCSC stock to check) reads the module's ID
+     (TI ADC121C027, TSOT-23-6, LCSC C2670157, 9k stock; VA is the
+     reference, so the reading is ratiometric to 3V3; address 0x50 /
+     0x51 / 0x52 by one pin, clear of the INA238 and TCA9535; second
+     source MCP3221A5T-I/OT, C36310, 0x4D, datasheet to check) reads the module's ID
      divider (10k pull-up, 100 nF as before). Same address in every
      column, behind the mux. The ID table and "ID open = slot fault"
      rule of pm-interface.md are unchanged; the MCU applies them to
@@ -98,7 +120,7 @@ connector edge).
 8. **Plane mounting**: holes at the ends only (core block and, for
    N = 6/8, the end cap; for N = 2/4 a narrow end strip, ~8 mm, with a
    hole pair). No hole strip
-   along the top: height stays ~75 mm.
+   along the top: height stays ~72 mm.
 
 ---
 
@@ -113,15 +135,15 @@ connector edge).
 | iso12V | :end  : |         |         |         |        | 58.4
 | 3V3    | module  | module  |         | module  |        |  |
 | HS A   |   [aux] |   [aux] |         |   [aux] |        |  |
+|<= P0..P7 rotating channel (In2, under the modules) =>|   |  |
 |        | S4   S3 | S4   S3 |         | S4   S3 |        |  |
-|<= P0..P7 rotating channel (In2), 3V3, GND ======>|        |  ~7
-| [30A][link][12V] |[MF2x3][fp]  ...   |         | [30A]  | ~13
+| [30A][link][12V] |[TB2][GH]   ...    |         | [30A]  | ~12
 +--------+---------+---------+-- ... --+---------+--------+  -
-                                                      ~75 mm total
+                                                      ~72 mm total
 ```
 
-Approximate sizes: N=2 ~90 x 75, N=4 ~140 x 75, N=6 ~215 x 75, N=8
-~265 x 75 mm (with end cap).
+Approximate sizes: N=2 ~100 x 72, N=4 ~150 x 72, N=6 ~215 x 72, N=8
+~265 x 72 mm (core ~40, end strip ~8 or end cap ~25).
 
 ---
 
@@ -161,7 +183,7 @@ Approximate sizes: N=2 ~90 x 75, N=4 ~140 x 75, N=6 ~215 x 75, N=8
 ## Consequences
 
 ### Positive
-- Plane height ~75 mm instead of ~130 mm.
+- Plane height ~72 mm instead of ~130 mm.
 - One column layout serves every variant and every position.
 - Two signal lines per column; MCU pin count no longer grows with N.
 
@@ -178,13 +200,16 @@ Approximate sizes: N=2 ~90 x 75, N=4 ~140 x 75, N=6 ~215 x 75, N=8
 - **Heat under the module**: the pass FET (~0.35 W) and shunt sit in
   the 7 mm gap with little fluid flow. Mitigation: FET drain pad into
   the In2/B copper; check the INA238 die temperature on the bench.
-- **Board flex at 265 mm**: Mini-Fit mating force on a long board held
-  at the ends only (decision 8). Mitigation: support the connector
+- **Board flex at 265 mm**: screwdriver force on the terminals of a
+  long board held at the ends only (decision 8). Mitigation: support the connector
   edge while mating; if it still flexes, a stiffener bar on the B side
   (no height change) before a top hole strip (height -> ~80 mm).
-- **Mini-Fit RA depth and front-panel connector width** set the pitch
-  and the height; confirm both on the drawings before the column is
-  drawn.
+- **Terminal depth and clamp type** come from one Degson drawing
+  (the LCSC PDFs were not readable by script): confirm depth, wire
+  entry and rising clamp on the part before the column is drawn.
+- **Screw terminal in fluid**: a clamp that relaxes over years.
+  Mitigation: rising clamp, ferrules on the 14 AWG, torque 0.4 Nm,
+  check in the soak test.
 
 ---
 
@@ -193,6 +218,7 @@ Approximate sizes: N=2 ~90 x 75, N=4 ~140 x 75, N=6 ~215 x 75, N=8
 - [x] Input per 4 columns with an end cap for N = 6/8 (decision 7).
 - [x] Plane mounting: holes at the ends only (decision 8).
 - [x] N = 2/4 right-hand end: hole pair in a narrow end strip (~8 mm).
-- [ ] Front-panel connector part (latching, fluid compatible, fits in
-      ~8 mm of pitch).
-- [ ] ID ADC part (LCSC stock).
+- [x] Front-panel connector: JST GH 1x4 (decision 1a).
+- [x] ID ADC: ADC121C027 (decision 6).
+- [x] Node power: DG128 2-pole screw terminal (decision 1a).
+- [ ] DG128 drawing check (depth, clamp, entry) and second source.
