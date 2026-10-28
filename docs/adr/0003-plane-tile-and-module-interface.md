@@ -157,6 +157,14 @@ rest of the plane rested on assumptions that no longer hold:
     Confirmed 2026-10-28 (user): the isolated 12 V aux stays and the
     controller is adapted to a 12 V input (it is built for 19 V today);
     see the controller revisit in docs/handoff.md.
+    Implementation (user 2026-10-29, INTERIM): an off-the-shelf 6 W
+    isolated module, URB4812YMD-6WR3 class (18-75 V in, 12 V 0.5 A,
+    1.5 kV DC I/O, 25.4 x 25.4 x 11.7 mm DIP, pins 1 GND, 2 Vin, 3 +Vo,
+    5 0V; LCSC C5369743, a YLPTEC part with the Mornsun pin-out), with
+    Cin 22 uF / 100 V + 2.2 uF and Cout 10 uF per the Mornsun datasheet.
+    It stands in for the own Fly-Buck the user chose (LM5161 + coupled
+    inductor, ~5 W; the controller draws ~0.7 W idle): REVISIT when a
+    coupled inductor with >= 1.5 kV isolation is found at LCSC.
 
 ---
 

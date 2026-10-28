@@ -5,9 +5,16 @@ ripple injection), fed from VIN (the bus at the input connector, ahead of
 the tile hot-swap) so the core stays up and reports when the hot-swap
 trips (ADR 0003). Load: ~20 mA per column (INA238, TCA9535, ADC,
 photoMOS / opto LEDs, pull-ups) plus the MCU, ~0.2 A at N = 8.
-The isolated 12 V aux for the controller (ADR 0003 decision 14, own
-Fly-Buck / flyback, ~5 W) goes on this sheet too: not drawn yet, its
-coupled inductor / transformer is not chosen (LCSC stock).
+Isolated 12 V aux for the controller (ADR 0003 decision 14): U2, an
+off-the-shelf 6 W isolated module, URB4812YMD-6WR3 class (18-75 V in,
+12 V 0.5 A out, 1.5 kV DC I/O, 1 x 1 inch DIP, pins 1 GND, 2 Vin, 3 +Vo,
+5 0V), also from VIN. Caps as the Mornsun datasheet's Fig. 2 (Cin
+10-47 uF / 100 V, Cout 10 uF); short-circuit protection is the module's
+(continuous, self-recovering), so no output fuse. The output side is the
+controller's world: CTRL_12V / CTRL_GND to J4, never tied to GND.
+INTERIM (user 2026-10-29): the module stands in for the own Fly-Buck the
+user chose (LM5161 + isolated coupled inductor, ~5 W); revisit when a
+coupled inductor with >= 1.5 kV isolation is found at LCSC.
 """
 from sch.draw import Block, R0402, R0603, R0805, C0402, C0603, C1210, LED0603
 
@@ -96,4 +103,34 @@ def block(N=2):
     b.wire("GND", [P(75, 17), ("D3", "1")])          # GND below the LED arrows
     b.name("LED33_A", at=P(75, 8))
     b.text("3V3 BUCK  U1 LM5164, 200 kHz, from VIN", P(-34, -30))
+
+    # isolated 12 V aux U2: 1 x 1 inch module (interim, see the docstring)
+    b.power("CTRL_12V", "power:+12V", value="CTRL_12V")
+    b.power("CTRL_GND", "power:GND", value="CTRL_GND")
+    Q = lambda x, y: (x * G, y * G)
+    b.sym("C11", "Device:C_Polarized", "22u 100V", "Capacitor_SMD:CP_Elec_10x10", {"1": "VIN", "2": "GND"}, at=Q(20, 94),
+          desc="module input bulk (datasheet Cin 10-47 uF / 100 V), aluminium electrolytic")
+    b.sym("C12", "Device:C", "2.2u 100V", C1210, {"1": "VIN", "2": "GND"}, at=Q(32, 94),
+          fields={"LCSC": "C338133"}, desc="module input HF, at the Vin pin")
+    b.sym("U2", "pp:DCDC_Iso_1x1_Single", "URB4812YMD-6WR3", "pp48:Converter_DCDC_1x1in_THT",
+          {"1": "GND", "2": "VIN", "3": "CTRL_12V", "5": "CTRL_GND"}, at=Q(56, 96),
+          fields={"LCSC": "C5369743", "MPN": "URB4812YMD-6WR3 (Mornsun pin-out; LCSC lists a YLPTEC part)"},
+          desc="isolated 12 V 0.5 A aux for the controller, 1.5 kV DC I/O; INTERIM for the own Fly-Buck, revisit")
+    b.sym("C13", "Device:C", "10u 50V", C1210, {"1": "CTRL_12V", "2": "CTRL_GND"}, at=Q(76, 94),
+          desc="module output (datasheet Cout 10 uF; max 470 uF incl. the controller's input)")
+    b.sym("R9", "Device:R", "4.7k", R0603, {"1": "CTRL_12V", "2": "LED12_A"}, at=Q(86, 93), desc="12V LED")
+    b.sym("D5", "Device:LED", "GREEN 12V", LED0603, {"1": "CTRL_GND", "2": "LED12_A"}, at=Q(86, 102), rot=90,
+          fields={"LCSC": "C2297"})
+    b.sym("J4", "Connector_Generic:Conn_01x02", "12V AUX OUT", "Connector_JST:JST_PH_B2B-PH-K_1x02_P2.00mm_Vertical",
+          {"1": "CTRL_12V", "2": "CTRL_GND"}, at=Q(104, 86), fields={"LCSC": "C131337"},
+          desc="isolated 12 V to the controller (controller input to be adapted to 12 V)")
+    b.wire("VIN", [Q(14, 86), Q(20, 86), ("C11", "1"), Q(20, 86), Q(32, 86), ("C12", "1"), Q(32, 86), Q(46, 86),
+                   Q(46, 94), ("U2", "2")])
+    b.wire("CTRL_12V", [Q(70, 86), Q(66, 86), Q(66, 94), ("U2", "3"), Q(66, 94), Q(66, 86), Q(76, 86), ("C13", "1"),
+                        Q(76, 86), Q(86, 86), ("R9", "1"), Q(86, 86), ("J4", "1")])
+    b.wire("CTRL_GND", [Q(98, 93), Q(98, 88), ("J4", "2")])
+    b.wire("LED12_A", [("R9", "2"), ("D5", "2")])
+    b.wire("CTRL_GND", [Q(86, 107), ("D5", "1")])
+    b.name("LED12_A", at=Q(86, 98))
+    b.text("ISOLATED 12 V AUX  U2 6 W module from VIN (interim for the own Fly-Buck, revisit)", Q(11, 80))
     return b.finish()

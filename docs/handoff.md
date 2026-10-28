@@ -11,12 +11,23 @@ the controller is also built for a 19 V input: adapt it to the plane's
 isolated 12 V aux (ADR 0003 decision 14, kept). Revisit what the
 controller keeps (ESP32, Ethernet, probes, link master to the planes).
 
+Open, revisit (user 2026-10-29): the isolated 12 V aux is an INTERIM
+off-the-shelf module (U2 URB4812YMD-6WR3 class, LCSC C5369743 YLPTEC,
+44 in stock in a search snapshot, 6 W, 1 x 1 inch DIP; footprint
+pp48:Converter_DCDC_1x1in_THT drawn from the Mornsun datasheet, check
+it against the YLPTEC datasheet). The user's choice is an own Fly-Buck
+(LM5161 C468246 + coupled inductor >= 1.5 kV isolation); swap back
+when such an inductor is found at LCSC. Also open on that sheet: C11
+22 uF / 100 V electrolytic (CP_Elec_10x10) and C13 10 uF / 50 V 1210
+have no LCSC code yet. J4 (JST PH 2, pin 1 CTRL_12V, pin 2 CTRL_GND)
+is the controller's 12 V input: match it in the controller revisit.
+
 Core sheets STARTED (2026-10-28): power/pp-48/tools/sch/blocks mcu.py
 (PP-48-2S MCU cut down: I2C1 slave link, I2C2 master to mux + front end,
 TILE_OFF / TILE_PGD / TILE_AL / MUX_RST, TILE2_* for the end cap at
 N = 6/8, VIN_SNS), mux.py (TCA9548A 0x70, channel k = column k+1, reset
 FET), link.py (PP-48-2S as is), supplies.py (LM5164 3V3 from VIN, ahead
-of the tile hot-swap). ERC: only VIN_SNS / TILE_* open (input sheet not
+of the tile hot-swap; isolated 12 V module U2, 2026-10-29). ERC: only VIN_SNS / TILE_* open (input sheet not
 drawn). Board not regenerated yet (no core parts on it). Decided (user):
 input connector Amass XT90; isolated 12 V aux = own converter (~5 W;
 controller measured 0.037 A at 19 V without I2C / extensions). Open,
