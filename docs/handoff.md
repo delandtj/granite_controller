@@ -18,8 +18,21 @@ N = 2/4: narrow end strip (~8 mm) with the right-hand holes. Parts
 (C711349, user makes the cables to the node's DC-ATX converter), front
 panel JST GH 1x4 (C189895), ID ADC ADC121C027 (C2670157), 25 mm pitch;
 plane ~72 mm tall. Open: confirm the DG128 drawing (depth, rising
-clamp, side entry). Next: gensch
-column block, then place and route one column.
+clamp, side entry). Column schematic
+STARTED (2026-10-28): power/pp-48/ (new project; engine copied from
+pp-48-2s/tools/sch plus Block.tie for local-label ties), `tools/gensch.py N`
+(N = 2/4/6/8) writes pp-48.kicad_sch + sheets/column.kicad_sch (one file,
+N instances, refs +100 per column). Column = PP-48-2S slot front end /
+INA238 / enable chain / OV latch unchanged, plus SO1-SO4 + J3 aux socket,
+TCA9535 (C130204, 0x20; P0 out OFF LCLR RUNOFF PWRD RSTD, P1 in PGD PG LQ
+LED OVK INA_AL, INT unused), ADC121C027 (0x51, ADR0 GND; KiCad symbol
+ADC101C021CIMK is pin-equal), Q5 on the module RUN pin, segment pull-ups,
+DG128 terminal J1, GH J2. Slot ON / node LEDs dropped (tank). Not drawn:
+PGOOD-loss latch with blanking, INA238 ALERT latch (both only to the
+expander). ERC: 4 dangling COLn_SDA/SCL labels (core not drawn) + DG128
+footprint missing from pp48.pretty (pmmount.py now also writes the host
+mount footprints there). Next: user review of the column sheet, DG128
+footprint, then core sheet (mux, MCU, link, bucks, tile hot-swap).
 
 ## Start here (2026-10-27, evening): L1/L2 APS1510, bench carrier rev 0.2
 

@@ -35,7 +35,8 @@ centre (+12.70, -7.85), columns 1.27 apart in x, rows 1.27 apart in y):
   5 GND     (+12.065, -7.85)  6 GND   (+13.335, -7.85)
   3 ID      (+12.065, -6.58)  4 RUN   (+13.335, -6.58)
 
-Usage: pmmount.py   (writes into ../pm-19v-250w/pm.pretty, ../pm-bench-carrier/carrier.pretty)
+Usage: pmmount.py   (writes into ../pm-19v-250w/pm.pretty, ../pm-bench-carrier/carrier.pretty,
+       ../pp-48/pp48.pretty)
        pmmount.py place <board> <lib> <cx> <cy> <rot> <ref base> <socket ref> [old,refs]
 """
 import math
@@ -47,6 +48,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 LIBS = {
     'pm': os.path.join(HERE, '..', 'pm-19v-250w', 'pm.pretty'),
     'carrier': os.path.join(HERE, '..', 'pm-bench-carrier', 'carrier.pretty'),
+    'pp48': os.path.join(HERE, '..', 'pp-48', 'pp48.pretty'),
 }
 
 BODY_W, BODY_H = 58.4, 22.9
@@ -343,7 +345,8 @@ def main():
         return place(a[0], a[1], float(a[2]), float(a[3]), int(a[4]), int(a[5]), a[6], a[7].split(',') if len(a) > 7 else [])
     io = pcbnew.PCB_IO_KICAD_SEXPR()
     for lib, fps in (('pm', [module_mount(), module_aux()]),
-                     ('carrier', [host_outline(), host_standoff(), host_socket()])):
+                     ('carrier', [host_outline(), host_standoff(), host_socket()]),
+                     ('pp48', [host_outline(), host_standoff(), host_socket()])):
         for fp in fps:
             io.FootprintSave(LIBS[lib], fp)
             path = os.path.join(LIBS[lib], fp.GetFPID().GetLibItemName().wx_str() + '.kicad_mod')

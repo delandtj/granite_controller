@@ -1,0 +1,134 @@
+(footprint "PM_Aux_Socket_2x03_P1.27"
+	(version 20260206)
+	(generator "pcbnew")
+	(generator_version "10.0")
+	(layer "F.Cu")
+	(descr "PM module aux socket on the host (docs/pm-interface.md): 2x3 1.27 mm SMT female header 4.6 mm, hanxia HX PM1.27-2x3P TP (LCSC C41397112); pins numbered by function (1 OV_KILL 2 PGOOD 3 ID 4 RUN 5 GND 6 GND, GND in the middle row)")
+	(tags "PM module aux socket 1.27")
+	(property "Reference" "REF**"
+		(at 0 -3.155 0)
+		(layer "F.Fab")
+		(uuid "c0496c3b-64c7-4a5b-b9ce-f11d8360d107")
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+	)
+	(property "Value" "PM_Aux_Socket_2x03_P1.27"
+		(at 0 3.155 0)
+		(layer "F.Fab")
+		(uuid "aa0cfe9e-2288-4bc7-a288-52efb66ee1fd")
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "312224e1-e736-4f2e-aaf5-4022eae7c565")
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "2eead09b-bdae-4597-a8e9-eb365f6e154e")
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+	)
+	(attr smd)
+	(duplicate_pad_numbers_are_jumpers no)
+	(fp_rect
+		(start -3.25 -2.355)
+		(end 3.25 2.355)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(fill no)
+		(layer "F.CrtYd")
+		(uuid "377ce2f6-df26-4147-af43-0bedf8d5e223")
+	)
+	(fp_rect
+		(start -1.5 -2.105)
+		(end 1.5 2.105)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(fill no)
+		(layer "F.Fab")
+		(uuid "032f1020-919a-4d42-bb69-1529f3d5666a")
+	)
+	(fp_text user "1"
+		(at -1.535 -1.27 0)
+		(layer "F.Fab")
+		(uuid "65565b83-9201-4575-a801-2c66a97b588f")
+		(effects
+			(font
+				(size 0.5 0.5)
+				(thickness 0.12)
+			)
+		)
+	)
+	(pad "1" smd roundrect
+		(at -1.975 -1.27)
+		(size 2.049999 0.76)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.25)
+		(thermal_bridge_angle 45)
+		(uuid "468a1278-f0c9-43ed-8248-1d229c4cd400")
+	)
+	(pad "2" smd roundrect
+		(at 1.975 -1.27)
+		(size 2.049999 0.76)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.25)
+		(thermal_bridge_angle 45)
+		(uuid "bf6b7339-24de-430e-88c8-679923e25d8b")
+	)
+	(pad "3" smd roundrect
+		(at -1.975 1.27)
+		(size 2.049999 0.76)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.25)
+		(thermal_bridge_angle 45)
+		(uuid "cd506a9e-946e-4666-9efe-3039bb373bc5")
+	)
+	(pad "4" smd roundrect
+		(at 1.975 1.27)
+		(size 2.049999 0.76)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.25)
+		(thermal_bridge_angle 45)
+		(uuid "8cea3924-1bdb-4898-9468-95cb575a15a2")
+	)
+	(pad "5" smd roundrect
+		(at -1.975 0)
+		(size 2.049999 0.76)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.25)
+		(thermal_bridge_angle 45)
+		(uuid "566408a2-5040-4459-bbd8-004547273677")
+	)
+	(pad "6" smd roundrect
+		(at 1.975 0)
+		(size 2.049999 0.76)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.25)
+		(thermal_bridge_angle 45)
+		(uuid "b86806c6-bf4c-45a2-ade3-2b5de511edb6")
+	)
+	(embedded_fonts no)
+)
