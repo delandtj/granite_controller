@@ -33,9 +33,8 @@ Sheet order now Input, Supplies, MCU, Mux, Link. LCSC still to check
 for this sheet: XT90PW-M (no code), SMDJ60A (no code), 4 mOhm 2W 2512
 (no code; fallback 4 x 7 mOhm C2904232 = 1.75 mOhm, limit 27.7-35.1 A),
 LM5069MM-1 C486026 (stock), BSC040N10NS5 C534334, C1 47u 100V
-electrolytic (no code). Open question: aluminium electrolytics (C1 here,
-C11 on Supplies) in the immersion fluid; swap to ceramics if the fluid
-attacks the seals. Board not regenerated with the core yet.
+electrolytic (no code). Aluminium electrolytics in the immersion fluid
+are fine (user 2026-10-29). Board not regenerated with the core yet.
 
 Core sheets STARTED (2026-10-28): power/pp-48/tools/sch/blocks mcu.py
 (PP-48-2S MCU cut down: I2C1 slave link, I2C2 master to mux + front end,
