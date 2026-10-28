@@ -2,7 +2,7 @@
 <export version="E">
   <design>
     <source>/home/delandtj/Granite/Electronics/granite_controller/power/pp-48/pp-48.kicad_sch</source>
-    <date>2026-10-28T17:03:04</date>
+    <date>2026-10-28T18:32:12</date>
     <tool>Eeschema 10.0.7</tool>
     <sheet number="1" name="/" tstamps="/">
       <title_block>
@@ -1460,12 +1460,12 @@
     <comp ref="U105">
       <value>TCA9535PWR</value>
       <footprint>Package_SO:TSSOP-24_4.4x7.8mm_P0.65mm</footprint>
-      <description>slot GPIO, address 0x20 (A0-A2 GND); P0 out: OFF LCLR RUNOFF PWRD RSTD, P1 in: PGD PG LQ LED OVK INA_AL; INT unused (polled)</description>
+      <description>slot GPIO, address 0x20 (A0-A2 GND); pins by board side: P00 INA_AL in, P05 PWRD out, P06 RSTD out, P07 LED in; P17 OFF out, P16 PGD in, P15 LQ in, P14 LCLR out, P13 OVK in, P12 PG in, P11 RUNOFF out; INT unused (polled)</description>
       <fields>
         <field name="LCSC">C130204</field>
         <field name="Footprint">Package_SO:TSSOP-24_4.4x7.8mm_P0.65mm</field>
         <field name="Datasheet"/>
-        <field name="Description">slot GPIO, address 0x20 (A0-A2 GND); P0 out: OFF LCLR RUNOFF PWRD RSTD, P1 in: PGD PG LQ LED OVK INA_AL; INT unused (polled)</field>
+        <field name="Description">slot GPIO, address 0x20 (A0-A2 GND); pins by board side: P00 INA_AL in, P05 PWRD out, P06 RSTD out, P07 LED in; P17 OFF out, P16 PGD in, P15 LQ in, P14 LCLR out, P13 OVK in, P12 PG in, P11 RUNOFF out; INT unused (polled)</field>
       </fields>
       <libsource lib="Interface_Expansion" part="TCA9535PWR" description="16-bit I/O expander, I2C and SMBus interface, interrupts, w/o pull-ups, TSSOP-24 package"/>
       <property name="LCSC" value="C130204"/>
@@ -2993,12 +2993,12 @@
     <comp ref="U205">
       <value>TCA9535PWR</value>
       <footprint>Package_SO:TSSOP-24_4.4x7.8mm_P0.65mm</footprint>
-      <description>slot GPIO, address 0x20 (A0-A2 GND); P0 out: OFF LCLR RUNOFF PWRD RSTD, P1 in: PGD PG LQ LED OVK INA_AL; INT unused (polled)</description>
+      <description>slot GPIO, address 0x20 (A0-A2 GND); pins by board side: P00 INA_AL in, P05 PWRD out, P06 RSTD out, P07 LED in; P17 OFF out, P16 PGD in, P15 LQ in, P14 LCLR out, P13 OVK in, P12 PG in, P11 RUNOFF out; INT unused (polled)</description>
       <fields>
         <field name="LCSC">C130204</field>
         <field name="Footprint">Package_SO:TSSOP-24_4.4x7.8mm_P0.65mm</field>
         <field name="Datasheet"/>
-        <field name="Description">slot GPIO, address 0x20 (A0-A2 GND); P0 out: OFF LCLR RUNOFF PWRD RSTD, P1 in: PGD PG LQ LED OVK INA_AL; INT unused (polled)</field>
+        <field name="Description">slot GPIO, address 0x20 (A0-A2 GND); pins by board side: P00 INA_AL in, P05 PWRD out, P06 RSTD out, P07 LED in; P17 OFF out, P16 PGD in, P15 LQ in, P14 LCLR out, P13 OVK in, P12 PG in, P11 RUNOFF out; INT unused (polled)</field>
       </fields>
       <libsource lib="Interface_Expansion" part="TCA9535PWR" description="16-bit I/O expander, I2C and SMBus interface, interrupts, w/o pull-ups, TSSOP-24 package"/>
       <property name="LCSC" value="C130204"/>
@@ -3596,23 +3596,23 @@
     <net code="10" name="/Column 1/INA_AL" class="Default">
       <node ref="R125" pin="2" pintype="passive"/>
       <node ref="U102" pin="3" pinfunction="~{Alert}_3" pintype="open_collector"/>
-      <node ref="U105" pin="18" pinfunction="P15_18" pintype="bidirectional"/>
+      <node ref="U105" pin="4" pinfunction="P00_4" pintype="bidirectional"/>
     </net>
     <net code="11" name="/Column 1/LCLR" class="Default">
       <node ref="Q104" pin="1" pinfunction="G_1" pintype="input"/>
       <node ref="R112" pin="1" pintype="passive"/>
-      <node ref="U105" pin="5" pinfunction="P01_5" pintype="bidirectional"/>
+      <node ref="U105" pin="17" pinfunction="P14_17" pintype="bidirectional"/>
     </net>
     <net code="12" name="/Column 1/LED" class="Default">
       <node ref="R122" pin="2" pintype="passive"/>
-      <node ref="U105" pin="16" pinfunction="P13_16" pintype="bidirectional"/>
+      <node ref="U105" pin="11" pinfunction="P07_11" pintype="bidirectional"/>
       <node ref="U108" pin="4" pintype="passive"/>
     </net>
     <net code="13" name="/Column 1/LQ" class="Default">
       <node ref="Q103" pin="1" pinfunction="G_1" pintype="input"/>
       <node ref="R110" pin="1" pintype="passive"/>
       <node ref="U103" pin="5" pinfunction="Q_5" pintype="output"/>
-      <node ref="U105" pin="15" pinfunction="P12_15" pintype="bidirectional"/>
+      <node ref="U105" pin="18" pinfunction="P15_18" pintype="bidirectional"/>
     </net>
     <net code="14" name="/Column 1/NODE" class="Default">
       <node ref="J101" pin="2" pinfunction="Pin_2_2" pintype="passive"/>
@@ -3621,7 +3621,7 @@
     <net code="15" name="/Column 1/OFF" class="Default">
       <node ref="Q102" pin="1" pinfunction="G_1" pintype="input"/>
       <node ref="R109" pin="1" pintype="passive"/>
-      <node ref="U105" pin="4" pinfunction="P00_4" pintype="bidirectional"/>
+      <node ref="U105" pin="20" pinfunction="P17_20" pintype="bidirectional"/>
     </net>
     <net code="16" name="/Column 1/OUT" class="Default">
       <node ref="C102" pin="1" pintype="passive"/>
@@ -3637,7 +3637,7 @@
       <node ref="J103" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
       <node ref="R113" pin="2" pintype="passive"/>
       <node ref="U103" pin="7" pinfunction="~{PRE}_7" pintype="input"/>
-      <node ref="U105" pin="17" pinfunction="P14_17" pintype="bidirectional"/>
+      <node ref="U105" pin="16" pinfunction="P13_16" pintype="bidirectional"/>
     </net>
     <net code="18" name="/Column 1/OVLO" class="Default">
       <node ref="R105" pin="2" pintype="passive"/>
@@ -3647,12 +3647,12 @@
     <net code="19" name="/Column 1/PG" class="Default">
       <node ref="J103" pin="2" pinfunction="Pin_2_2" pintype="passive"/>
       <node ref="R114" pin="2" pintype="passive"/>
-      <node ref="U105" pin="14" pinfunction="P11_14" pintype="bidirectional"/>
+      <node ref="U105" pin="15" pinfunction="P12_15" pintype="bidirectional"/>
     </net>
     <net code="20" name="/Column 1/PGD" class="Default">
       <node ref="R108" pin="2" pintype="passive"/>
       <node ref="U101" pin="8" pinfunction="PGD_8" pintype="open_collector"/>
-      <node ref="U105" pin="13" pinfunction="P10_13" pintype="bidirectional"/>
+      <node ref="U105" pin="19" pinfunction="P16_19" pintype="bidirectional"/>
     </net>
     <net code="21" name="/Column 1/PLED_A" class="Default">
       <node ref="R121" pin="2" pintype="passive"/>
@@ -3672,7 +3672,7 @@
     </net>
     <net code="25" name="/Column 1/PWRD" class="Default">
       <node ref="R119" pin="1" pintype="passive"/>
-      <node ref="U105" pin="7" pinfunction="P03_7" pintype="bidirectional"/>
+      <node ref="U105" pin="9" pinfunction="P05_9" pintype="bidirectional"/>
     </net>
     <net code="26" name="/Column 1/PWRD_A" class="Default">
       <node ref="R119" pin="2" pintype="passive"/>
@@ -3684,7 +3684,7 @@
     </net>
     <net code="28" name="/Column 1/RSTD" class="Default">
       <node ref="R120" pin="1" pintype="passive"/>
-      <node ref="U105" pin="8" pinfunction="P04_8" pintype="bidirectional"/>
+      <node ref="U105" pin="10" pinfunction="P06_10" pintype="bidirectional"/>
     </net>
     <net code="29" name="/Column 1/RSTD_A" class="Default">
       <node ref="R120" pin="2" pintype="passive"/>
@@ -3701,7 +3701,7 @@
     <net code="32" name="/Column 1/RUNOFF" class="Default">
       <node ref="Q105" pin="1" pinfunction="G_1" pintype="input"/>
       <node ref="R123" pin="1" pintype="passive"/>
-      <node ref="U105" pin="6" pinfunction="P02_6" pintype="bidirectional"/>
+      <node ref="U105" pin="14" pinfunction="P11_14" pintype="bidirectional"/>
     </net>
     <net code="33" name="/Column 1/SENSE" class="Default">
       <node ref="Q101" pin="5" pinfunction="D_5" pintype="passive"/>
@@ -3744,23 +3744,23 @@
     <net code="40" name="/Column 2/INA_AL" class="Default">
       <node ref="R225" pin="2" pintype="passive"/>
       <node ref="U202" pin="3" pinfunction="~{Alert}_3" pintype="open_collector"/>
-      <node ref="U205" pin="18" pinfunction="P15_18" pintype="bidirectional"/>
+      <node ref="U205" pin="4" pinfunction="P00_4" pintype="bidirectional"/>
     </net>
     <net code="41" name="/Column 2/LCLR" class="Default">
       <node ref="Q204" pin="1" pinfunction="G_1" pintype="input"/>
       <node ref="R212" pin="1" pintype="passive"/>
-      <node ref="U205" pin="5" pinfunction="P01_5" pintype="bidirectional"/>
+      <node ref="U205" pin="17" pinfunction="P14_17" pintype="bidirectional"/>
     </net>
     <net code="42" name="/Column 2/LED" class="Default">
       <node ref="R222" pin="2" pintype="passive"/>
-      <node ref="U205" pin="16" pinfunction="P13_16" pintype="bidirectional"/>
+      <node ref="U205" pin="11" pinfunction="P07_11" pintype="bidirectional"/>
       <node ref="U208" pin="4" pintype="passive"/>
     </net>
     <net code="43" name="/Column 2/LQ" class="Default">
       <node ref="Q203" pin="1" pinfunction="G_1" pintype="input"/>
       <node ref="R210" pin="1" pintype="passive"/>
       <node ref="U203" pin="5" pinfunction="Q_5" pintype="output"/>
-      <node ref="U205" pin="15" pinfunction="P12_15" pintype="bidirectional"/>
+      <node ref="U205" pin="18" pinfunction="P15_18" pintype="bidirectional"/>
     </net>
     <net code="44" name="/Column 2/NODE" class="Default">
       <node ref="J201" pin="2" pinfunction="Pin_2_2" pintype="passive"/>
@@ -3769,7 +3769,7 @@
     <net code="45" name="/Column 2/OFF" class="Default">
       <node ref="Q202" pin="1" pinfunction="G_1" pintype="input"/>
       <node ref="R209" pin="1" pintype="passive"/>
-      <node ref="U205" pin="4" pinfunction="P00_4" pintype="bidirectional"/>
+      <node ref="U205" pin="20" pinfunction="P17_20" pintype="bidirectional"/>
     </net>
     <net code="46" name="/Column 2/OUT" class="Default">
       <node ref="C202" pin="1" pintype="passive"/>
@@ -3785,7 +3785,7 @@
       <node ref="J203" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
       <node ref="R213" pin="2" pintype="passive"/>
       <node ref="U203" pin="7" pinfunction="~{PRE}_7" pintype="input"/>
-      <node ref="U205" pin="17" pinfunction="P14_17" pintype="bidirectional"/>
+      <node ref="U205" pin="16" pinfunction="P13_16" pintype="bidirectional"/>
     </net>
     <net code="48" name="/Column 2/OVLO" class="Default">
       <node ref="R205" pin="2" pintype="passive"/>
@@ -3795,12 +3795,12 @@
     <net code="49" name="/Column 2/PG" class="Default">
       <node ref="J203" pin="2" pinfunction="Pin_2_2" pintype="passive"/>
       <node ref="R214" pin="2" pintype="passive"/>
-      <node ref="U205" pin="14" pinfunction="P11_14" pintype="bidirectional"/>
+      <node ref="U205" pin="15" pinfunction="P12_15" pintype="bidirectional"/>
     </net>
     <net code="50" name="/Column 2/PGD" class="Default">
       <node ref="R208" pin="2" pintype="passive"/>
       <node ref="U201" pin="8" pinfunction="PGD_8" pintype="open_collector"/>
-      <node ref="U205" pin="13" pinfunction="P10_13" pintype="bidirectional"/>
+      <node ref="U205" pin="19" pinfunction="P16_19" pintype="bidirectional"/>
     </net>
     <net code="51" name="/Column 2/PLED_A" class="Default">
       <node ref="R221" pin="2" pintype="passive"/>
@@ -3820,7 +3820,7 @@
     </net>
     <net code="55" name="/Column 2/PWRD" class="Default">
       <node ref="R219" pin="1" pintype="passive"/>
-      <node ref="U205" pin="7" pinfunction="P03_7" pintype="bidirectional"/>
+      <node ref="U205" pin="9" pinfunction="P05_9" pintype="bidirectional"/>
     </net>
     <net code="56" name="/Column 2/PWRD_A" class="Default">
       <node ref="R219" pin="2" pintype="passive"/>
@@ -3832,7 +3832,7 @@
     </net>
     <net code="58" name="/Column 2/RSTD" class="Default">
       <node ref="R220" pin="1" pintype="passive"/>
-      <node ref="U205" pin="8" pinfunction="P04_8" pintype="bidirectional"/>
+      <node ref="U205" pin="10" pinfunction="P06_10" pintype="bidirectional"/>
     </net>
     <net code="59" name="/Column 2/RSTD_A" class="Default">
       <node ref="R220" pin="2" pintype="passive"/>
@@ -3849,7 +3849,7 @@
     <net code="62" name="/Column 2/RUNOFF" class="Default">
       <node ref="Q205" pin="1" pinfunction="G_1" pintype="input"/>
       <node ref="R223" pin="1" pintype="passive"/>
-      <node ref="U205" pin="6" pinfunction="P02_6" pintype="bidirectional"/>
+      <node ref="U205" pin="14" pinfunction="P11_14" pintype="bidirectional"/>
     </net>
     <net code="63" name="/Column 2/SENSE" class="Default">
       <node ref="Q201" pin="5" pinfunction="D_5" pintype="passive"/>
@@ -3976,20 +3976,20 @@
     <net code="68" name="unconnected-(U103-~{Q}-Pad3)" class="Default">
       <node ref="U103" pin="3" pinfunction="~{Q}_3" pintype="output+no_connect"/>
     </net>
-    <net code="69" name="unconnected-(U105-P05-Pad9)" class="Default">
-      <node ref="U105" pin="9" pinfunction="P05_9" pintype="bidirectional+no_connect"/>
+    <net code="69" name="unconnected-(U105-P01-Pad5)" class="Default">
+      <node ref="U105" pin="5" pinfunction="P01_5" pintype="bidirectional+no_connect"/>
     </net>
-    <net code="70" name="unconnected-(U105-P06-Pad10)" class="Default">
-      <node ref="U105" pin="10" pinfunction="P06_10" pintype="bidirectional+no_connect"/>
+    <net code="70" name="unconnected-(U105-P02-Pad6)" class="Default">
+      <node ref="U105" pin="6" pinfunction="P02_6" pintype="bidirectional+no_connect"/>
     </net>
-    <net code="71" name="unconnected-(U105-P07-Pad11)" class="Default">
-      <node ref="U105" pin="11" pinfunction="P07_11" pintype="bidirectional+no_connect"/>
+    <net code="71" name="unconnected-(U105-P03-Pad7)" class="Default">
+      <node ref="U105" pin="7" pinfunction="P03_7" pintype="bidirectional+no_connect"/>
     </net>
-    <net code="72" name="unconnected-(U105-P16-Pad19)" class="Default">
-      <node ref="U105" pin="19" pinfunction="P16_19" pintype="bidirectional+no_connect"/>
+    <net code="72" name="unconnected-(U105-P04-Pad8)" class="Default">
+      <node ref="U105" pin="8" pinfunction="P04_8" pintype="bidirectional+no_connect"/>
     </net>
-    <net code="73" name="unconnected-(U105-P17-Pad20)" class="Default">
-      <node ref="U105" pin="20" pinfunction="P17_20" pintype="bidirectional+no_connect"/>
+    <net code="73" name="unconnected-(U105-P10-Pad13)" class="Default">
+      <node ref="U105" pin="13" pinfunction="P10_13" pintype="bidirectional+no_connect"/>
     </net>
     <net code="74" name="unconnected-(U105-~{INT}-Pad1)" class="Default">
       <node ref="U105" pin="1" pinfunction="~{INT}_1" pintype="open_collector+no_connect"/>
@@ -3997,20 +3997,20 @@
     <net code="75" name="unconnected-(U203-~{Q}-Pad3)" class="Default">
       <node ref="U203" pin="3" pinfunction="~{Q}_3" pintype="output+no_connect"/>
     </net>
-    <net code="76" name="unconnected-(U205-P05-Pad9)" class="Default">
-      <node ref="U205" pin="9" pinfunction="P05_9" pintype="bidirectional+no_connect"/>
+    <net code="76" name="unconnected-(U205-P01-Pad5)" class="Default">
+      <node ref="U205" pin="5" pinfunction="P01_5" pintype="bidirectional+no_connect"/>
     </net>
-    <net code="77" name="unconnected-(U205-P06-Pad10)" class="Default">
-      <node ref="U205" pin="10" pinfunction="P06_10" pintype="bidirectional+no_connect"/>
+    <net code="77" name="unconnected-(U205-P02-Pad6)" class="Default">
+      <node ref="U205" pin="6" pinfunction="P02_6" pintype="bidirectional+no_connect"/>
     </net>
-    <net code="78" name="unconnected-(U205-P07-Pad11)" class="Default">
-      <node ref="U205" pin="11" pinfunction="P07_11" pintype="bidirectional+no_connect"/>
+    <net code="78" name="unconnected-(U205-P03-Pad7)" class="Default">
+      <node ref="U205" pin="7" pinfunction="P03_7" pintype="bidirectional+no_connect"/>
     </net>
-    <net code="79" name="unconnected-(U205-P16-Pad19)" class="Default">
-      <node ref="U205" pin="19" pinfunction="P16_19" pintype="bidirectional+no_connect"/>
+    <net code="79" name="unconnected-(U205-P04-Pad8)" class="Default">
+      <node ref="U205" pin="8" pinfunction="P04_8" pintype="bidirectional+no_connect"/>
     </net>
-    <net code="80" name="unconnected-(U205-P17-Pad20)" class="Default">
-      <node ref="U205" pin="20" pinfunction="P17_20" pintype="bidirectional+no_connect"/>
+    <net code="80" name="unconnected-(U205-P10-Pad13)" class="Default">
+      <node ref="U205" pin="13" pinfunction="P10_13" pintype="bidirectional+no_connect"/>
     </net>
     <net code="81" name="unconnected-(U205-~{INT}-Pad1)" class="Default">
       <node ref="U205" pin="1" pinfunction="~{INT}_1" pintype="open_collector+no_connect"/>

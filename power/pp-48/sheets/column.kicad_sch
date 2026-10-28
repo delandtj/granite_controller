@@ -6450,24 +6450,24 @@
 		(uuid "626a5cab-2d6a-53c4-965b-1f2838e8427d")
 	)
 	(no_connect
-		(at 119.38 220.98)
-		(uuid "dddaa049-0c83-571b-ac27-23c676b2a887")
+		(at 119.38 210.82)
+		(uuid "077ef5dd-6e83-5c07-97b7-f814469df5fb")
 	)
 	(no_connect
-		(at 119.38 223.52)
-		(uuid "95fd61b6-2744-5bea-af69-a741e234df8e")
+		(at 119.38 213.36)
+		(uuid "3e1806d2-ec05-59aa-9678-fdee4aad0c3e")
 	)
 	(no_connect
-		(at 119.38 226.06)
-		(uuid "5ef982bc-60d5-5d67-9614-43ff47f3b10f")
+		(at 119.38 215.9)
+		(uuid "ccd83674-9ff2-5421-b356-e0f695ffb666")
 	)
 	(no_connect
-		(at 119.38 246.38)
-		(uuid "9cc5a587-6553-502d-908f-6fe7ed68915c")
+		(at 119.38 218.44)
+		(uuid "4bca2847-e9dd-592b-8761-b0bd7669d6ca")
 	)
 	(no_connect
-		(at 119.38 248.92)
-		(uuid "325202c2-d836-59be-9d82-500c9017c0b1")
+		(at 119.38 231.14)
+		(uuid "ad401ead-e4d6-55ea-ab73-ff0d685c35d2")
 	)
 	(hierarchical_label "SDA"
 		(shape bidirectional)
@@ -6791,7 +6791,7 @@
 		)
 		(uuid "00165732-5226-5dda-bbfc-e27f451bcb2a")
 	)
-	(label "OFF"
+	(label "INA_AL"
 		(at 119.38 208.28 0)
 		(effects
 			(font
@@ -6799,59 +6799,39 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "790f02cb-5425-50a5-a24a-93865e1dae53")
-	)
-	(label "LCLR"
-		(at 119.38 210.82 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "a75fa6e2-9d82-5df5-9327-a97790599696")
-	)
-	(label "RUNOFF"
-		(at 119.38 213.36 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "8be3d65f-72b9-5c42-b0b6-55e86f647f02")
+		(uuid "a7e231d6-1b7e-50e8-8f4e-a52ffc85b174")
 	)
 	(label "PWRD"
-		(at 119.38 215.9 0)
+		(at 119.38 220.98 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
 			(justify left bottom)
 		)
-		(uuid "73d3c572-e4bb-5f9a-86f3-0b854bfa3aa3")
+		(uuid "874ee5c4-033e-56f5-85df-0e0744c577ea")
 	)
 	(label "RSTD"
-		(at 119.38 218.44 0)
+		(at 119.38 223.52 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
 			(justify left bottom)
 		)
-		(uuid "e0d9afb5-69b6-55b0-b4d4-434604b644d6")
+		(uuid "6fd512c4-a8c8-56e0-ae1d-555f70d0bebd")
 	)
-	(label "PGD"
-		(at 119.38 231.14 0)
+	(label "LED"
+		(at 119.38 226.06 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
 			(justify left bottom)
 		)
-		(uuid "feb7e784-b136-5dc9-af8f-1bca359dc491")
+		(uuid "c488c030-f6ec-5dec-932f-2e0afb36970d")
 	)
-	(label "PG"
+	(label "RUNOFF"
 		(at 119.38 233.68 0)
 		(effects
 			(font
@@ -6859,9 +6839,9 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "ca10b4f5-0f45-5662-a2b1-0f3e0025cabf")
+		(uuid "28a271a5-f95b-5e4d-bc5b-3c12ce2ddd9d")
 	)
-	(label "LQ"
+	(label "PG"
 		(at 119.38 236.22 0)
 		(effects
 			(font
@@ -6869,9 +6849,9 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "66b0426d-61e2-5c3d-9b2e-bf8edebff8d8")
+		(uuid "c26c76f8-e7ab-5d74-93f3-e595d61355de")
 	)
-	(label "LED"
+	(label "OVK"
 		(at 119.38 238.76 0)
 		(effects
 			(font
@@ -6879,9 +6859,9 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "b60eac04-ca7b-565a-8752-89de13d518ca")
+		(uuid "35a42268-35e8-5896-8d54-ff707875b862")
 	)
-	(label "OVK"
+	(label "LCLR"
 		(at 119.38 241.3 0)
 		(effects
 			(font
@@ -6889,9 +6869,9 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "ab237a28-c980-5b48-a607-6ffa61710783")
+		(uuid "a426d685-362c-5d99-bcce-2d5e2a1b97c1")
 	)
-	(label "INA_AL"
+	(label "LQ"
 		(at 119.38 243.84 0)
 		(effects
 			(font
@@ -6899,7 +6879,27 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "bf963551-9c9e-5af8-8d37-09915e604b0e")
+		(uuid "cbe52514-0808-53b1-823e-8b51ab5b2da1")
+	)
+	(label "PGD"
+		(at 119.38 246.38 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "af401443-81f1-5255-ab5a-2f478ee54d94")
+	)
+	(label "OFF"
+		(at 119.38 248.92 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "9067c3f9-3964-5cc3-a950-a67987238de0")
 	)
 	(label "ID_F"
 		(at 27.94 222.25 180)
@@ -11895,7 +11895,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "slot GPIO, address 0x20 (A0-A2 GND); P0 out: OFF LCLR RUNOFF PWRD RSTD, P1 in: PGD PG LQ LED OVK INA_AL; INT unused (polled)"
+		(property "Description" "slot GPIO, address 0x20 (A0-A2 GND); pins by board side: P00 INA_AL in, P05 PWRD out, P06 RSTD out, P07 LED in; P17 OFF out, P16 PGD in, P15 LQ in, P14 LCLR out, P13 OVK in, P12 PG in, P11 RUNOFF out; INT unused (polled)"
 			(at 101.6 228.6 0)
 			(hide yes)
 			(show_name no)

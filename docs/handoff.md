@@ -37,20 +37,24 @@ by tools/place.py (one column table, copied +100 refs / +25 mm), unrouted,
 no core. pcbkit.toml (4L jlc04161h-7628, no corner holes); flow: gensch ->
 netlist -> mkboard -> outline -> setrules -> place.py. DG128 footprint
 hand-written in pp48.pretty from the Degson spec numbers (verify on a
-sample). Column 1 ROUTED (first pass, 2026-10-28) and copied: flow is
-place.py -> tools/route_hand.py (group "hand": VBUS / SENSE / OUT / NODE
-pours, shunt vias, gate, INA238 Kelvin, In2 channel + taps, +3V3 trunk,
-"column-edge" rule areas on F/B) -> pcbkit krt-route (all columns, planes
-In1 GND / In2 VBUS) -> krt-reroute as needed -> tools/copycol.py (column 1
-copper -> columns 2..N, nets renamed). GND is F / In1 / B pours in
-the hand group (user: "make a zone of that"), so KRT taps pads instead of
-routing GND; route_hand.py must run again after KRT (it moved the In2
-+3V3 trunk to B.Cu). DRC on the copied board: no clearance / short / edge
-errors; open: /Column n/OVK (U103 pin 7, the latch /PRE, boxed in), F GND
-islands (stitching to do), 4 starved thermals, 0.1 mm KRT stubs (prune). The autorouted
-signal copper is dense spaghetti (expander lines crossing the column,
-front-panel lines from the B photoMOS down to J2): placement rework by
-signal flow is the next step, not more router passes.
+sample). Column 1 ROUTED (2026-10-28, after the placement rework by signal flow)
+and copied: expander U5 in the middle with its pins reassigned by board
+side (schematic U5 description has the map: P17 OFF, P16 PGD, P15 LQ,
+P14 LCLR, P13 OVK, P12 PG, P11 RUNOFF, P00 INA_AL, P05 PWRD, P06 RSTD,
+P07 LED), enable chain + latch right of it under the LM5069, ID ADC /
+RUN FET / pull-ups around the socket, photoMOS + opto back on B lower
+left. Flow (pcbkit.toml header): place.py -> route_hand.py (group "hand":
+power pours, shunt vias, gate, INA238 Kelvin, In2 channel + taps, +3V3
+trunk, GND pours F / In1 / B, "column-edge" rule areas) -> pcbkit
+krt-route (plane pass In2 VBUS only) -> route_hand.py again (KRT moves
+kept copper) -> copycol.py -> gndstitch.py (one via per floating F / B
+GND island). GND as pours before routing: KRT skips zone-owning nets, so
+no GND tracks (a plane-tapped GND took 640 stubs and broke signal
+routes; pcbkit gndpour finds no stitch room under the module). DRC on
+the copied board: 0 unconnected, no clearance / short / edge errors;
+6 starved thermals (U103 pin 1, C104, C110 GND per column), dangling
+channel / trunk ends (core not drawn), one 0.6 mm +3V3 stub at U103
+per column. Router copy is column 1 only: 565 items.
 
 ## Start here (2026-10-27, evening): L1/L2 APS1510, bench carrier rev 0.2
 

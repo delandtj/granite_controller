@@ -14,7 +14,8 @@ sch/blocks/slot.py) unchanged, at the same coordinates. What changed:
   0x20 (A0-A2 GND), ADC121C027 0x51 (ADR0 GND). SDA and SCL are the only
   ports; the segment pull-ups are in the column.
 - The TCA9535 carries the slot's control and status lines (port 0 out:
-  OFF LCLR RUNOFF PWRD RSTD; port 1 in: PGD PG LQ LED OVK INA_AL). They are
+  OFF LCLR RUNOFF PWRD RSTD, inputs PGD PG LQ LED OVK INA_AL; pins chosen by
+  the side of the board each signal goes to, see U5's description). They are
   tied to the front end by local labels, not wires. INT is not used (the MCU
   polls). At reset the expander pins are inputs: OFF, LCLR and RUNOFF fall
   to their 100k pull-downs (slot ON, latch kept, module running) and the
@@ -172,10 +173,10 @@ def block():
     R(27, "4.7k", R0402, {"1": "+3V3", "2": "SCL"}, (26, 132), desc="segment SCL pull-up")
     sym("U5", "Interface_Expansion:TCA9535PWR", "TCA9535PWR", "Package_SO:TSSOP-24_4.4x7.8mm_P0.65mm",
         {"1": "NC", "2": "GND", "3": "GND", "21": "GND", "22": "SCL", "23": "SDA", "24": "+3V3", "12": "GND",
-         "4": "OFF", "5": "LCLR", "6": "RUNOFF", "7": "PWRD", "8": "RSTD", "9": "NC", "10": "NC", "11": "NC",
-         "13": "PGD", "14": "PG", "15": "LQ", "16": "LED", "17": "OVK", "18": "INA_AL", "19": "NC", "20": "NC"},
+         "4": "INA_AL", "5": "NC", "6": "NC", "7": "NC", "8": "NC", "9": "PWRD", "10": "RSTD", "11": "LED",
+         "13": "NC", "14": "RUNOFF", "15": "PG", "16": "OVK", "17": "LCLR", "18": "LQ", "19": "PGD", "20": "OFF"},
         (80, 180), fields={"LCSC": "C130204"},
-        desc="slot GPIO, address 0x20 (A0-A2 GND); P0 out: OFF LCLR RUNOFF PWRD RSTD, P1 in: PGD PG LQ LED OVK INA_AL; INT unused (polled)")
+        desc="slot GPIO, address 0x20 (A0-A2 GND); pins by board side: P00 INA_AL in, P05 PWRD out, P06 RSTD out, P07 LED in; P17 OFF out, P16 PGD in, P15 LQ in, P14 LCLR out, P13 OVK in, P12 PG in, P11 RUNOFF out; INT unused (polled)")
     C(9, "100n", C0402, {"1": "+3V3", "2": "GND"}, (92, 152), desc="TCA9535 VCC")
     sym("U4", "Analog_ADC:ADC101C021CIMK", "ADC121C027CIMK", "Package_TO_SOT_SMD:TSOT-23-6",
         {"1": "+3V3", "2": "GND", "3": "ID_F", "4": "GND", "5": "SCL", "6": "SDA"}, (40, 175),
@@ -274,7 +275,7 @@ def block():
     tie("LED", (208, 72), 180)
 
     # ========================================================== expander and ADC ends of the ties
-    for pin in ("4", "5", "6", "7", "8", "13", "14", "15", "16", "17", "18"):
+    for pin in ("4", "9", "10", "11", "14", "15", "16", "17", "18", "19", "20"):
         b.tie(b.syms["U5"].nets[pin], ("U5", pin))
     wire("ID_F", ("U4", "3"), (26, 175), ("C6", "1"))
     tie("ID_F", (22, 175), 180)

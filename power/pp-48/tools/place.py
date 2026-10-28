@@ -40,27 +40,33 @@ COL = {
     'U1': (19.5, 19.5, 0, F),
     'R3': (14.0, 20.5, 90, F), 'R4': (14.0, 23.5, 90, F),
     'R5': (11.5, 20.5, 90, F), 'R6': (11.5, 23.5, 90, F),
-    'R7': (21.5, 23.0, 0, F), 'C1': (18.5, 23.0, 0, F), 'R8': (16.5, 24.5, 90, F),
+    'R7': (21.5, 23.0, 0, F), 'C1': (18.5, 23.0, 0, F), 'R8': (23.8, 25.2, 90, F),
     # INA238, top left
     'U2': (4.5, 13.0, 270, F), 'C3': (1.6, 13.0, 90, F), 'R25': (7.5, 12.0, 90, F),   # IN+ / IN- pins face the shunts' bottom ends
-    # enable chain and OV latch, middle
-    'Q2': (4.0, 27.0, 0, F), 'R9': (4.0, 30.5, 0, F),
-    'Q3': (8.5, 27.0, 0, F), 'R10': (8.5, 30.5, 0, F),
-    'U3': (13.0, 27.5, 0, F), 'C4': (13.0, 30.5, 0, F),
-    'R11': (16.5, 28.0, 90, F), 'C5': (18.5, 28.0, 90, F),
-    'Q4': (21.5, 27.5, 0, F), 'R12': (21.5, 31.0, 0, F),
-    # expander, ID ADC, module-signal pull-ups, lower half
-    'U5': (7.0, 39.0, 0, F), 'C9': (7.0, 44.5, 0, F),
-    'U4': (13.5, 36.5, 0, F), 'C10': (12.5, 39.5, 0, F), 'C11': (12.5, 41.0, 0, F),
-    'C6': (15.0, 40.0, 90, F), 'R24': (15.0, 43.0, 90, F),
-    'R15': (17.5, 35.5, 90, F), 'R13': (19.5, 35.5, 90, F), 'R14': (21.5, 35.5, 90, F),
-    'Q5': (13.5, 46.5, 0, F), 'R23': (13.5, 50.0, 0, F),
-    'R26': (11.0, 57.0, 270, F), 'R27': (12.6, 57.0, 270, F),    # segment pull-ups at the In2 channel tap
-    # B side under the module: tall parts
+    # enable chain and OV latch: right of the expander, under the LM5069 (UVLO spine) and above
+    # the socket (OV_KILL comes up from its top row)
+    'Q2': (15.5, 27.0, 0, F), 'R9': (15.5, 29.8, 0, F),
+    'Q3': (19.5, 27.0, 0, F), 'R10': (19.5, 29.8, 0, F),
+    'U3': (18.0, 33.5, 0, F), 'C4': (15.2, 33.5, 90, F),
+    'R11': (21.2, 32.8, 90, F), 'C5': (22.8, 32.8, 90, F),
+    'Q4': (21.5, 36.6, 0, F), 'R12': (18.0, 36.8, 0, F),
+    'R13': (23.6, 39.6, 90, F),
+    # expander in the middle: outputs / inputs on the side they go to (tools/sch/blocks/column.py U5)
+    'U5': (10.0, 36.5, 0, F), 'C9': (12.0, 31.2, 0, F),
+    # ID ADC, RUN FET and module-signal pull-ups around the socket (pins: top row ID GND OVK,
+    # bottom row RUN GND PG, at u 19.08 / 20.35 / 21.62)
+    'R15': (17.2, 39.4, 90, F), 'R24': (16.2, 41.6, 0, F),
+    'U4': (14.6, 44.2, 0, F), 'C6': (17.2, 44.6, 90, F),
+    'C10': (12.4, 47.2, 90, F), 'C11': (13.8, 47.2, 90, F),
+    'Q5': (19.4, 49.2, 0, F), 'R23': (16.4, 49.6, 90, F),
+    'R14': (23.6, 46.6, 90, F),
+    'R26': (11.0, 57.0, 270, F), 'R27': (12.6, 57.0, 270, F),     # segment pull-ups at the In2 channel tap
+    # B side under the module: clamp and cap by S1; photoMOS and opto in the lower left, next to
+    # the expander's PWRD / RSTD / LED pins and above the GH connector
     'D1': (13.0, 5.0, 0, B), 'C2': (13.0, 9.0, 180, B),         # clamp and cap between S2 (GND) and S1 (VIN)
-    'U6': (6.0, 24.0, 0, B), 'R19': (6.0, 20.5, 0, B),
-    'U7': (16.0, 24.0, 0, B), 'R20': (16.0, 27.8, 0, B),
-    'U8': (6.0, 29.5, 0, B), 'R21': (11.0, 29.5, 90, B), 'R22': (12.5, 29.5, 90, B),
+    'U8': (6.0, 41.0, 0, B), 'R21': (11.4, 41.0, 90, B), 'R22': (12.8, 41.0, 90, B),
+    'U6': (6.0, 45.6, 0, B), 'R19': (11.4, 45.6, 90, B),
+    'U7': (6.0, 50.2, 0, B), 'R20': (11.4, 50.2, 90, B),
     # bottom edge, entry faces down
     'J2': (6.0, 68.5, 0, F),
     'J1': (15.5, 66.8, 0, F),

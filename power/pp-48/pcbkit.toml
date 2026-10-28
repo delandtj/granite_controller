@@ -47,6 +47,9 @@ keep_groups = ["hand"]
 # OUT's 7 A path is the hand pours; the router only adds the sense taps (U1 OUT, INA238 VBUS)
 power_nets = ["+3V3"]
 power_widths = [0.3]
-# GND: F / In1 / B pours drawn by tools/route_hand.py (kept group), so KRT taps pads instead of routing GND
+# GND: F / In1 / B pours drawn by tools/route_hand.py (kept group): KRT then skips GND (no GND
+# tracks; a plane-tapped GND took 640 stubs and cost signal routes); tools/gndstitch.py ties F / B
+# islands to In1 after the copy
 planes = { nets = ["VBUS"], layers = ["In2.Cu"], via = [0.6, 0.3] }
 ground = { net = "GND", width = 0.4 }
+
