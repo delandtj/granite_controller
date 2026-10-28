@@ -538,7 +538,7 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Device:D_TVS"
+		(symbol "Device:D_Zener"
 			(pin_numbers
 				(hide yes)
 			)
@@ -561,7 +561,7 @@
 					)
 				)
 			)
-			(property "Value" "D_TVS"
+			(property "Value" "D_Zener"
 				(at 0 -2.54 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -593,7 +593,7 @@
 					)
 				)
 			)
-			(property "Description" "Bidirectional transient-voltage-suppression diode"
+			(property "Description" "Zener diode"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -604,7 +604,7 @@
 					)
 				)
 			)
-			(property "ki_keywords" "diode TVS thyrector"
+			(property "ki_keywords" "diode"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -626,22 +626,10 @@
 					)
 				)
 			)
-			(symbol "D_TVS_0_1"
+			(symbol "D_Zener_0_1"
 				(polyline
 					(pts
-						(xy -2.54 1.27) (xy -2.54 -1.27) (xy 2.54 1.27) (xy 2.54 -1.27) (xy -2.54 1.27)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0.508 1.27) (xy 0 1.27) (xy 0 -1.27) (xy -0.508 -1.27)
+						(xy -1.27 -1.27) (xy -1.27 1.27) (xy -0.762 1.27)
 					)
 					(stroke
 						(width 0.254)
@@ -663,12 +651,24 @@
 						(type none)
 					)
 				)
+				(polyline
+					(pts
+						(xy 1.27 -1.27) (xy 1.27 1.27) (xy -1.27 0) (xy 1.27 -1.27)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
 			)
-			(symbol "D_TVS_1_1"
+			(symbol "D_Zener_1_1"
 				(pin passive line
 					(at -3.81 0 0)
 					(length 2.54)
-					(name "A1"
+					(name "K"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -686,7 +686,7 @@
 				(pin passive line
 					(at 3.81 0 180)
 					(length 2.54)
-					(name "A2"
+					(name "A"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -3405,8 +3405,8 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:D_TVS")
-		(at 35.56 68.58 90)
+		(lib_id "Device:D_Zener")
+		(at 35.56 68.58 270)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -3459,7 +3459,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "bus TVS 3 kW: 60 V standoff, breakdown >= 66.7 V, clamp 96.8 V; LCSC code to check"
+		(property "Description" "bus TVS 3 kW, unidirectional: cathode (pad 1) on VIN; 60 V standoff, breakdown >= 66.7 V, clamp 96.8 V; LCSC code to check"
 			(at 35.56 68.58 0)
 			(hide yes)
 			(show_name no)
@@ -4396,9 +4396,9 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "4de455d8-7ad9-503c-8432-300b98bc6483")
-		(property "Reference" "R3"
-			(at 122.666 106.68 0)
+		(uuid "d788a5bd-a3d7-5a24-b196-cb7ba1f22885")
+		(property "Reference" "R33"
+			(at 123.166 106.68 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -4466,15 +4466,15 @@
 			)
 		)
 		(pin "1"
-			(uuid "dd7f131f-494d-533c-9771-a3a62974149c")
+			(uuid "c5459670-56b4-56c3-905f-8b8d699d9397")
 		)
 		(pin "2"
-			(uuid "0c3764bd-071b-51d5-a182-b60f07d7b0f5")
+			(uuid "dd26fee9-fe3c-576f-8939-eaca22b171c6")
 		)
 		(instances
 			(project "pp-48"
 				(path "/cf0d5c0a-6642-53ea-ac93-0bbad631a43a/e269b960-91e5-5c21-9cb3-23d8112f0bf9"
-					(reference "R3")
+					(reference "R33")
 					(unit 1)
 				)
 			)
@@ -4490,9 +4490,9 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "7b34618f-e68d-5a2a-915b-ad09d12820bb")
-		(property "Reference" "R4"
-			(at 122.666 116.84 0)
+		(uuid "672d2394-63cf-59b2-a93d-4a1ca1876ce0")
+		(property "Reference" "R34"
+			(at 123.166 116.84 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -4560,15 +4560,15 @@
 			)
 		)
 		(pin "1"
-			(uuid "728239f6-c21c-5240-a0d9-d54a2b1cf54e")
+			(uuid "4352fdfb-3470-5af2-aa4e-cafe7c32b6f2")
 		)
 		(pin "2"
-			(uuid "0ee5f8eb-ea52-5cc9-b173-4469fff1c8f6")
+			(uuid "f5b269d1-45a1-5a60-8664-c483281214cb")
 		)
 		(instances
 			(project "pp-48"
 				(path "/cf0d5c0a-6642-53ea-ac93-0bbad631a43a/e269b960-91e5-5c21-9cb3-23d8112f0bf9"
-					(reference "R4")
+					(reference "R34")
 					(unit 1)
 				)
 			)
@@ -4584,9 +4584,9 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "cae892e1-8015-50a7-acfc-3bcc4ee0f53f")
-		(property "Reference" "R5"
-			(at 132.826 88.9 0)
+		(uuid "0926dba5-c57f-5eb0-b4a8-495e9e04cab5")
+		(property "Reference" "R35"
+			(at 133.326 88.9 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -4654,15 +4654,15 @@
 			)
 		)
 		(pin "1"
-			(uuid "ab2a5104-a322-5fe4-91bb-1b24421f7cef")
+			(uuid "f9be0a9f-6ace-56f3-b6cb-f5da84f66203")
 		)
 		(pin "2"
-			(uuid "23123fdb-7e14-5981-a913-a469c1495214")
+			(uuid "9f8882b8-0aa0-5923-a3f6-86637a5cf69b")
 		)
 		(instances
 			(project "pp-48"
 				(path "/cf0d5c0a-6642-53ea-ac93-0bbad631a43a/e269b960-91e5-5c21-9cb3-23d8112f0bf9"
-					(reference "R5")
+					(reference "R35")
 					(unit 1)
 				)
 			)
@@ -4678,9 +4678,9 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "13e1a05b-1131-5916-85f0-272eb3307178")
-		(property "Reference" "R6"
-			(at 132.826 99.06 0)
+		(uuid "81254962-841b-5f52-bb84-11d2788b635c")
+		(property "Reference" "R36"
+			(at 133.326 99.06 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -4748,15 +4748,15 @@
 			)
 		)
 		(pin "1"
-			(uuid "026f0c6f-0195-509a-9b47-59e120a676d1")
+			(uuid "3c0508f8-770c-5aa1-95e6-95b1c8be51ca")
 		)
 		(pin "2"
-			(uuid "67ee0161-cde0-5075-a64d-f969869f8eed")
+			(uuid "f48c1b3f-8cdc-58ed-8e01-5b5f690b5b79")
 		)
 		(instances
 			(project "pp-48"
 				(path "/cf0d5c0a-6642-53ea-ac93-0bbad631a43a/e269b960-91e5-5c21-9cb3-23d8112f0bf9"
-					(reference "R6")
+					(reference "R36")
 					(unit 1)
 				)
 			)
@@ -4772,9 +4772,9 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "ce340478-f308-5440-b866-dcd9f7fda056")
-		(property "Reference" "R7"
-			(at 183.626 102.87 0)
+		(uuid "f4a95e6a-daf6-5c09-9331-5a62d081eee1")
+		(property "Reference" "R37"
+			(at 184.126 102.87 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -4842,15 +4842,15 @@
 			)
 		)
 		(pin "1"
-			(uuid "af9890bc-8d55-5446-8196-c02e854ca234")
+			(uuid "1ad74b54-0a8a-5b0e-8ce2-5f5a7421a20c")
 		)
 		(pin "2"
-			(uuid "11f1be26-d52c-53ac-af42-f868e1a444d9")
+			(uuid "356693cc-6fcb-55a4-a424-7202a1004ac0")
 		)
 		(instances
 			(project "pp-48"
 				(path "/cf0d5c0a-6642-53ea-ac93-0bbad631a43a/e269b960-91e5-5c21-9cb3-23d8112f0bf9"
-					(reference "R7")
+					(reference "R37")
 					(unit 1)
 				)
 			)
@@ -4960,9 +4960,9 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "d29d9d22-5475-51b4-8492-5b0029f6dec7")
-		(property "Reference" "R8"
-			(at 196.326 85.09 0)
+		(uuid "352854a5-33ac-5bd5-8a18-916a8c15c8da")
+		(property "Reference" "R38"
+			(at 196.826 85.09 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -5030,15 +5030,15 @@
 			)
 		)
 		(pin "1"
-			(uuid "5e07dc25-934f-5d15-af6d-4bd105d65087")
+			(uuid "263d7c39-67d2-51cd-95ba-d16f3fdd4cda")
 		)
 		(pin "2"
-			(uuid "ec4d07b2-9d27-51d8-aa67-96141e6d159b")
+			(uuid "709eb681-e717-56ca-a144-e7424e7f0046")
 		)
 		(instances
 			(project "pp-48"
 				(path "/cf0d5c0a-6642-53ea-ac93-0bbad631a43a/e269b960-91e5-5c21-9cb3-23d8112f0bf9"
-					(reference "R8")
+					(reference "R38")
 					(unit 1)
 				)
 			)

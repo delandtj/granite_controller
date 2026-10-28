@@ -104,8 +104,8 @@ def block():
       desc="power limit ~50 W at 60 V (RPWR = 1.3e5 x (RSNS x PLIM - 1.18mV x VDS))")
     C(1, "220n", C0603, {"1": "TIMER", "2": "GND"}, (108, 68), desc="insertion 160 ms, fault timeout 10 ms")
     R(8, "10k", R0402, {"1": "+3V3", "2": "PGD"}, (126, 52), desc="PGD pull-up")
-    sym("D1", "Device:D_TVS", "SMBJ60A", "Diode_SMD:D_SMB", {"1": "GND", "2": "OUT"}, (112, 38), rot=90,
-        fields={"LCSC": "C353345"}, desc="slot output clamp: 60 V standoff = top of the bus range, breakdown >= 66.7 V; SMBJ64A would clamp at 103 V, over the 100 V FET and module")
+    sym("D1", "Device:D_Zener", "SMBJ60A", "Diode_SMD:D_SMB", {"1": "OUT", "2": "GND"}, (112, 38), rot=270,
+        fields={"LCSC": "C353345"}, desc="slot output clamp, unidirectional: cathode (pad 1) on OUT; 60 V standoff = top of the bus range, breakdown >= 66.7 V; SMBJ64A would clamp at 103 V, over the 100 V FET and module")
     C(2, "2.2u 100V", C1210, {"1": "OUT", "2": "GND"}, (122, 38), fields={"LCSC": "C338133"},
       desc="slot output, in front of the module")
 
@@ -224,7 +224,7 @@ def block():
     wire("OUT", ("Q1", "1"), ("SO1", "1"))
     wire("OUT", ("U1", "9"), ("Q1", "1"))
     wire("OUT", (102, 42), (50, 42), ("U2", "8"))                   # INA238 VBUS reads the slot output
-    for x, ref, pin in ((112, "D1", "2"), (122, "C2", "1")):
+    for x, ref, pin in ((112, "D1", "1"), (122, "C2", "1")):
         wire("OUT", (x, 32), (ref, pin))
     b.flag("OUT", P(108, 32))
     wire("NODE", ("SO4", "1"), ("J1", "2"))

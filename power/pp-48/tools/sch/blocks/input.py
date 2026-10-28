@@ -77,8 +77,8 @@ def block(N=2):
         "Connector_AMASS:AMASS_XT90PW-M_1x02_P10.90mm_Horizontal", {"1": "GND", "2": "VIN", "MP": "NC"}, (-8, 30),
         mirror="y", fields={"MPN": "Amass XT90PW-M"},
         desc="tile input, keyed (pin 1 -, pin 2 +), 30 A; LCSC code to check")
-    sym("D1", "Device:D_TVS", "SMDJ60A", "Diode_SMD:D_SMC", {"1": "GND", "2": "VIN"}, (2, 38), rot=90,
-        desc="bus TVS 3 kW: 60 V standoff, breakdown >= 66.7 V, clamp 96.8 V; LCSC code to check")
+    sym("D1", "Device:D_Zener", "SMDJ60A", "Diode_SMD:D_SMC", {"1": "VIN", "2": "GND"}, (2, 38), rot=270,
+        desc="bus TVS 3 kW, unidirectional: cathode (pad 1) on VIN; 60 V standoff, breakdown >= 66.7 V, clamp 96.8 V; LCSC code to check")
     sym("C1", "Device:C_Polarized", "47u 100V", "Capacitor_SMD:CP_Elec_10x10", {"1": "VIN", "2": "GND"}, (14, 38),
         desc="input bulk, damps cable ringing when the hot-swap opens")
     C(2, "2.2u 100V", C1210, {"1": "VIN", "2": "GND"}, (24, 38), fields={"LCSC": "C338133"}, desc="input HF")
@@ -97,14 +97,14 @@ def block(N=2):
         {"1": "TSENSE", "2": "VIN", "3": "UVLO", "4": "OVLO", "5": "GND", "6": "TIMER", "7": "PWR", "8": "TILE_PGD", "9": "VBUS", "10": "GATE"},
         (96, 56), fields={"LCSC": "C486026"},
         desc="tile hot-swap, 55 mV current limit, power limit, LATCH-OFF (-1); LCSC stock to check")
-    R(3, "143k", R0805, {"1": "VIN", "2": "UVLO"}, (68, 69), desc="UVLO: on 38.3 V, off 35.3 V (21 uA hysteresis)")
-    R(4, "10k", R0402, {"1": "UVLO", "2": "GND"}, (68, 77))
-    R(5, "124k", R0805, {"1": "VIN", "2": "OVLO"}, (76, 55), desc="OVLO: off 64.6 V, as the columns")
-    R(6, "4.99k", R0402, {"1": "OVLO", "2": "GND"}, (76, 63))
-    R(7, "10.2k", R0402, {"1": "PWR", "2": "GND"}, (116, 66),
+    R(33, "143k", R0805, {"1": "VIN", "2": "UVLO"}, (68, 69), desc="UVLO: on 38.3 V, off 35.3 V (21 uA hysteresis)")
+    R(34, "10k", R0402, {"1": "UVLO", "2": "GND"}, (68, 77))
+    R(35, "124k", R0805, {"1": "VIN", "2": "OVLO"}, (76, 55), desc="OVLO: off 64.6 V, as the columns")
+    R(36, "4.99k", R0402, {"1": "OVLO", "2": "GND"}, (76, 63))
+    R(37, "10.2k", R0402, {"1": "PWR", "2": "GND"}, (116, 66),
       desc="power limit ~75 W at 60 V (RPWR = 1.3e5 x (RSNS x PLIM - 1.18mV x VDS))")
     C(3, "220n", C0603, {"1": "TIMER", "2": "GND"}, (108, 68), desc="insertion 160 ms, fault timeout 10 ms")
-    R(8, "10k", R0402, {"1": "+3V3", "2": "TILE_PGD"}, (126, 52), desc="PGD pull-up")
+    R(38, "10k", R0402, {"1": "+3V3", "2": "TILE_PGD"}, (126, 52), desc="PGD pull-up")
     C(14, "2.2u 100V", C1210, {"1": "VBUS", "2": "GND"}, (112, 38), fields={"LCSC": "C338133"}, desc="VBUS at the FETs")
     C(15, "2.2u 100V", C1210, {"1": "VBUS", "2": "GND"}, (122, 38), fields={"LCSC": "C338133"}, desc="VBUS at the FETs")
 
@@ -124,7 +124,7 @@ def block(N=2):
     C(17, "100n", C0402, {"1": "VIN_SNS", "2": "GND"}, (28, 100), desc="ADC filter")
 
     # ========================================================== wiring
-    wire("VIN", ("J1", "2"), (2, 32), ("D1", "2"), (2, 32), (14, 32), ("C1", "1"), (14, 32), (24, 32), ("C2", "1"),
+    wire("VIN", ("J1", "2"), (2, 32), ("D1", "1"), (2, 32), (14, 32), ("C1", "1"), (14, 32), (24, 32), ("C2", "1"),
          (24, 32), (30, 32), ("R1", "1"), (30, 32), ("R2", "1"))
     wire("TSENSE", ("R1", "2"), ("Q2", "5"))
     wire("TSENSE", (40, 32), ("R2", "2"))
@@ -140,16 +140,16 @@ def block(N=2):
     tie("GATE", ("U7", "10"))                                       # gate drive to both resistors by label
     tie("GATE", ("R10", "1"))
     tie("GATE", ("R11", "2"))
-    wire("OVLO", ("U7", "4"), ("R5", "2"), ("R6", "1"))
+    wire("OVLO", ("U7", "4"), ("R35", "2"), ("R36", "1"))
     wire("UVLO", ("U7", "3"), (84, 62), ("Q4", "3"))
-    wire("UVLO", (84, 72), ("R3", "2"), ("R4", "1"))
+    wire("UVLO", (84, 72), ("R33", "2"), ("R34", "1"))
     b.name("GATE_A", at=False)                                      # short stubs, no label room
     b.name("GATE_B", at=False)
     name("OVLO", (82, 58))
     name("UVLO", (84, 70), 90)
-    wire("TILE_PGD", ("U7", "8"), ("R8", "2"))
+    wire("TILE_PGD", ("U7", "8"), ("R38", "2"))
     wire("TILE_PGD", (126, 58), (134, 58))
-    wire("PWR", ("U7", "7"), ("R7", "1"))
+    wire("PWR", ("U7", "7"), ("R37", "1"))
     wire("TIMER", ("U7", "6"), ("C3", "1"))
     wire("+3V3", (58, 56), ("C16", "1"), ("U8", "6"))
     wire("TILE_AL", ("U8", "3"), (38, 70), (30, 70), ("R12", "2"))

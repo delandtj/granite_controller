@@ -22,6 +22,14 @@ when such an inductor is found at LCSC. Also open on that sheet: C11
 have no LCSC code yet. J4 (JST PH 2, pin 1 CTRL_12V, pin 2 CTRL_GND)
 is the controller's 12 V input: match it in the controller revisit.
 
+FIXED 2026-10-29: the slot clamp D1 (SMBJ60A) and bus TVS D1 (SMDJ60A)
+were drawn with Device:D_TVS (bidirectional symbol) and pad 1 (= cathode
+on D_SMB / D_SMC) on GND: a unidirectional part would conduct forward
+across the rail. Now Device:D_Zener, pad 1 on OUT / VIN. The same bug is
+in power/pp-48-2s (slot.py D1, input.py D1): not fixed there (superseded
+project), fix before building one. Input sheet resistors renumbered
+R33-R38 (R3-R8 collided with the 3V3 buck).
+
 Input sheet DRAWN (2026-10-29, tools/sch/blocks/input.py): J1 XT90PW-M
 -> D1 SMDJ60A + C1 47u / C2 2.2u -> R1 || R2 2 x 4 mOhm 2512 -> Q2 || Q3
 BSC040N10NS5 (10 Ohm gate resistors each) -> VBUS; U7 LM5069MM-1
