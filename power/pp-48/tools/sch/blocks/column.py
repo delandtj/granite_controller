@@ -25,7 +25,9 @@ sch/blocks/slot.py) unchanged, at the same coordinates. What changed:
 - Node: 2-pole screw terminal J1 (Degson DG128) for 19 V, JST GH 4-pin J2
   for the front panel (PWR_SW, RST_SW, PLED+, PLED-; drawn as a 2x2 so the
   PP-48-2S photoMOS / opto wiring stays as it was). The slot ON and node
-  LEDs are dropped (nobody sees them in the tank).
+  LEDs are dropped (nobody sees them in the tank), and so is the cable-side
+  NODE cap (the terminal sits ~10 mm from S4, next to the module's own
+  output caps).
 
 Not drawn yet (ADR 0003 open questions): the PGOOD-loss latch with start-up
 blanking and the INA238 ALERT latch; PG and INA_AL go to the expander only.
@@ -141,12 +143,11 @@ def block():
     sym("Q5", FET, "2N7002", SOT23, {"1": "RUNOFF", "2": "GND", "3": "RUN"}, (154, 104),
         fields={"LCSC": "C8545"}, desc="module RUN: expander high -> module off (pulls the UVLO divider node low, never drives it)")
     R(23, "100k", R0402, {"1": "RUNOFF", "2": "GND"}, (146, 109), desc="Q5 gate pull-down: expander in reset = module on")
-    C(8, "2.2u 50V", C1210, {"1": "NODE", "2": "GND"}, (192, 38), desc="node output, cable side")
 
     # ========================================================== node power terminal and front panel
     sym("J1", "Connector:Screw_Terminal_01x02", "NODE 19V", "pp48:TerminalBlock_Degson_DG128-5.0-02P",
-        {"1": "NODE", "2": "GND"}, (206, 32), fields={"LCSC": "C711349", "MPN": "Degson DG128-5.0-02P-14-00A(H)"},
-        desc="node 19 V: 1 +19 V, 2 GND; 14 AWG pair to the node's DC-ATX converter (UL 15 A)")
+        {"1": "GND", "2": "NODE"}, (206, 34), mirror="x", fields={"LCSC": "C711349", "MPN": "Degson DG128-5.0-02P-14-00A(H)"},
+        desc="node 19 V: 1 GND, 2 +19 V (pin 2 sits straight under S4 VOUT); 14 AWG pair to the node's DC-ATX converter (UL 15 A)")
     sym("J2", "Connector_Generic:Conn_02x02_Odd_Even", "FRONT PANEL",
         "Connector_JST:JST_GH_SM04B-GHS-TB_1x04-1MP_P1.25mm_Horizontal",
         {"1": "PWR_SW", "2": "RST_SW", "3": "PLED_P", "4": "PLED_N"}, (226, 36),
@@ -198,8 +199,7 @@ def block():
     for x, ref, pin in ((112, "D1", "2"), (122, "C2", "1")):
         wire("OUT", (x, 32), (ref, pin))
     b.flag("OUT", P(108, 32))
-    wire("NODE", ("SO4", "1"), ("J1", "1"))
-    wire("NODE", (192, 32), ("C8", "1"))
+    wire("NODE", ("SO4", "1"), ("J1", "2"))
 
     # ========================================================== LM5069 pins
     wire("OVLO", ("U1", "4"), ("R5", "2"), ("R6", "1"))

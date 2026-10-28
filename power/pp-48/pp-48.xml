@@ -2,7 +2,7 @@
 <export version="E">
   <design>
     <source>/home/delandtj/Granite/Electronics/granite_controller/power/pp-48/pp-48.kicad_sch</source>
-    <date>2026-10-28T16:41:34</date>
+    <date>2026-10-28T17:03:04</date>
     <tool>Eeschema 10.0.7</tool>
     <sheet number="1" name="/" tstamps="/">
       <title_block>
@@ -221,33 +221,6 @@
         </unit>
       </units>
     </comp>
-    <comp ref="C108">
-      <value>2.2u 50V</value>
-      <footprint>Capacitor_SMD:C_1210_3225Metric</footprint>
-      <description>node output, cable side</description>
-      <fields>
-        <field name="LCSC"/>
-        <field name="Footprint">Capacitor_SMD:C_1210_3225Metric</field>
-        <field name="Datasheet"/>
-        <field name="Description">node output, cable side</field>
-      </fields>
-      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
-      <property name="LCSC" value=""/>
-      <property name="Sheetname" value="Column 1"/>
-      <property name="Sheetfile" value="sheets/column.kicad_sch"/>
-      <property name="ki_keywords" value="cap capacitor"/>
-      <property name="ki_fp_filters" value="C_*"/>
-      <sheetpath names="/Column 1/" tstamps="/258a722b-31da-5265-8a95-1e14c3b7b602/"/>
-      <tstamps>8d989b41-8830-505f-911b-358a18d9dd94</tstamps>
-      <units>
-        <unit name="A">
-          <pins>
-            <pin num="1"/>
-            <pin num="2"/>
-          </pins>
-        </unit>
-      </units>
-    </comp>
     <comp ref="C109">
       <value>100n</value>
       <footprint>Capacitor_SMD:C_0402_1005Metric</footprint>
@@ -359,13 +332,13 @@
     <comp ref="J101">
       <value>NODE 19V</value>
       <footprint>pp48:TerminalBlock_Degson_DG128-5.0-02P</footprint>
-      <description>node 19 V: 1 +19 V, 2 GND; 14 AWG pair to the node's DC-ATX converter (UL 15 A)</description>
+      <description>node 19 V: 1 GND, 2 +19 V (pin 2 sits straight under S4 VOUT); 14 AWG pair to the node's DC-ATX converter (UL 15 A)</description>
       <fields>
         <field name="LCSC">C711349</field>
         <field name="MPN">Degson DG128-5.0-02P-14-00A(H)</field>
         <field name="Footprint">pp48:TerminalBlock_Degson_DG128-5.0-02P</field>
         <field name="Datasheet"/>
-        <field name="Description">node 19 V: 1 +19 V, 2 GND; 14 AWG pair to the node's DC-ATX converter (UL 15 A)</field>
+        <field name="Description">node 19 V: 1 GND, 2 +19 V (pin 2 sits straight under S4 VOUT); 14 AWG pair to the node's DC-ATX converter (UL 15 A)</field>
       </fields>
       <libsource lib="Connector" part="Screw_Terminal_01x02" description="Generic screw terminal, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
       <property name="LCSC" value="C711349"/>
@@ -1781,33 +1754,6 @@
         </unit>
       </units>
     </comp>
-    <comp ref="C208">
-      <value>2.2u 50V</value>
-      <footprint>Capacitor_SMD:C_1210_3225Metric</footprint>
-      <description>node output, cable side</description>
-      <fields>
-        <field name="LCSC"/>
-        <field name="Footprint">Capacitor_SMD:C_1210_3225Metric</field>
-        <field name="Datasheet"/>
-        <field name="Description">node output, cable side</field>
-      </fields>
-      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
-      <property name="LCSC" value=""/>
-      <property name="Sheetname" value="Column 2"/>
-      <property name="Sheetfile" value="sheets/column.kicad_sch"/>
-      <property name="ki_keywords" value="cap capacitor"/>
-      <property name="ki_fp_filters" value="C_*"/>
-      <sheetpath names="/Column 2/" tstamps="/6d3349c6-092c-5413-9346-cbe5d1c18e07/"/>
-      <tstamps>8d989b41-8830-505f-911b-358a18d9dd94</tstamps>
-      <units>
-        <unit name="A">
-          <pins>
-            <pin num="1"/>
-            <pin num="2"/>
-          </pins>
-        </unit>
-      </units>
-    </comp>
     <comp ref="C209">
       <value>100n</value>
       <footprint>Capacitor_SMD:C_0402_1005Metric</footprint>
@@ -1919,13 +1865,13 @@
     <comp ref="J201">
       <value>NODE 19V</value>
       <footprint>pp48:TerminalBlock_Degson_DG128-5.0-02P</footprint>
-      <description>node 19 V: 1 +19 V, 2 GND; 14 AWG pair to the node's DC-ATX converter (UL 15 A)</description>
+      <description>node 19 V: 1 GND, 2 +19 V (pin 2 sits straight under S4 VOUT); 14 AWG pair to the node's DC-ATX converter (UL 15 A)</description>
       <fields>
         <field name="LCSC">C711349</field>
         <field name="MPN">Degson DG128-5.0-02P-14-00A(H)</field>
         <field name="Footprint">pp48:TerminalBlock_Degson_DG128-5.0-02P</field>
         <field name="Datasheet"/>
-        <field name="Description">node 19 V: 1 +19 V, 2 GND; 14 AWG pair to the node's DC-ATX converter (UL 15 A)</field>
+        <field name="Description">node 19 V: 1 GND, 2 +19 V (pin 2 sits straight under S4 VOUT); 14 AWG pair to the node's DC-ATX converter (UL 15 A)</field>
       </fields>
       <libsource lib="Connector" part="Screw_Terminal_01x02" description="Generic screw terminal, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
       <property name="LCSC" value="C711349"/>
@@ -3669,8 +3615,7 @@
       <node ref="U105" pin="15" pinfunction="P12_15" pintype="bidirectional"/>
     </net>
     <net code="14" name="/Column 1/NODE" class="Default">
-      <node ref="C108" pin="1" pintype="passive"/>
-      <node ref="J101" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
+      <node ref="J101" pin="2" pinfunction="Pin_2_2" pintype="passive"/>
       <node ref="SO104" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
     </net>
     <net code="15" name="/Column 1/OFF" class="Default">
@@ -3818,8 +3763,7 @@
       <node ref="U205" pin="15" pinfunction="P12_15" pintype="bidirectional"/>
     </net>
     <net code="44" name="/Column 2/NODE" class="Default">
-      <node ref="C208" pin="1" pintype="passive"/>
-      <node ref="J201" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
+      <node ref="J201" pin="2" pinfunction="Pin_2_2" pintype="passive"/>
       <node ref="SO204" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
     </net>
     <net code="45" name="/Column 2/OFF" class="Default">
@@ -3932,7 +3876,6 @@
       <node ref="C104" pin="2" pintype="passive"/>
       <node ref="C105" pin="2" pintype="passive"/>
       <node ref="C106" pin="2" pintype="passive"/>
-      <node ref="C108" pin="2" pintype="passive"/>
       <node ref="C109" pin="2" pintype="passive"/>
       <node ref="C110" pin="2" pintype="passive"/>
       <node ref="C111" pin="2" pintype="passive"/>
@@ -3942,16 +3885,15 @@
       <node ref="C204" pin="2" pintype="passive"/>
       <node ref="C205" pin="2" pintype="passive"/>
       <node ref="C206" pin="2" pintype="passive"/>
-      <node ref="C208" pin="2" pintype="passive"/>
       <node ref="C209" pin="2" pintype="passive"/>
       <node ref="C210" pin="2" pintype="passive"/>
       <node ref="C211" pin="2" pintype="passive"/>
       <node ref="D101" pin="1" pinfunction="A1_1" pintype="passive"/>
       <node ref="D201" pin="1" pinfunction="A1_1" pintype="passive"/>
-      <node ref="J101" pin="2" pinfunction="Pin_2_2" pintype="passive"/>
+      <node ref="J101" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
       <node ref="J103" pin="5" pinfunction="Pin_5_5" pintype="passive"/>
       <node ref="J103" pin="6" pinfunction="Pin_6_6" pintype="passive"/>
-      <node ref="J201" pin="2" pinfunction="Pin_2_2" pintype="passive"/>
+      <node ref="J201" pin="1" pinfunction="Pin_1_1" pintype="passive"/>
       <node ref="J203" pin="5" pinfunction="Pin_5_5" pintype="passive"/>
       <node ref="J203" pin="6" pinfunction="Pin_6_6" pintype="passive"/>
       <node ref="Q102" pin="2" pinfunction="S_2" pintype="passive"/>

@@ -31,8 +31,15 @@ DG128 terminal J1, GH J2. Slot ON / node LEDs dropped (tank). Not drawn:
 PGOOD-loss latch with blanking, INA238 ALERT latch (both only to the
 expander). ERC: 4 dangling COLn_SDA/SCL labels (core not drawn) + DG128
 footprint missing from pp48.pretty (pmmount.py now also writes the host
-mount footprints there). Next: user review of the column sheet, DG128
-footprint, then core sheet (mux, MCU, link, bucks, tile hot-swap).
+mount footprints there). Cable-side NODE cap dropped (user). J1 pins: 1 GND, 2 +19 V (pin 2 under
+S4). PCB DRAFT for review: pp-48.kicad_pcb, 2 columns (50 x 72 mm), placed
+by tools/place.py (one column table, copied +100 refs / +25 mm), unrouted,
+no core. pcbkit.toml (4L jlc04161h-7628, no corner holes); flow: gensch ->
+netlist -> mkboard -> outline -> setrules -> place.py. DG128 footprint
+hand-written in pp48.pretty from the Degson spec numbers (verify on a
+sample). Next: user review of the placement, then route one column
+(critical: VBUS vias -> shunts -> FET -> S1, NODE S4 -> J1.2, the In2
+channel), then core sheet.
 
 ## Start here (2026-10-27, evening): L1/L2 APS1510, bench carrier rev 0.2
 

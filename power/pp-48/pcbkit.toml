@@ -1,0 +1,32 @@
+# pcbkit settings for the PP-48 plane (docs/adr/0004-plane-column-layout.md).
+# 4L JLC 1.6 mm: F parts and pours, In1 GND, In2 VBUS + the SDA/SCL channel, B parts and pours.
+#
+# DRAFT (2026-10-28): two columns only (50 x 72 mm), placement for review; the
+# core block, the end strip / end cap and all routing come later.
+# Board flow: gensch.py N -> netlist -> mkboard -> outline -> setrules -> tools/place.py
+
+[project]
+name = "pp-48"
+libs = { pp48 = "pp48.pretty" }
+
+[mkboard]
+copper_layers = 4
+stage_x = -120.0
+sheet_pitch = 90.0
+cell = 14.0
+per_row = 6
+
+[outline]
+length = 50.0
+height = 72.0
+origin = [100.0, 100.0]
+hole_refs = []   # holes go in the core block and the end strip (ADR 0004 decision 8), not in the columns
+
+[rules]
+stackup = "jlc04161h-7628"
+layers = { "In1.Cu" = ["power", "GND"], "In2.Cu" = ["mixed", "VBUS"] }
+
+[rules.netclasses]
+# name = [track, clearance, via_dia, via_drill]
+Default = [0.2, 0.15, 0.5, 0.2]
+GND     = [0.4, 0.2, 0.6, 0.3]
