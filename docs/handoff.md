@@ -11,6 +11,22 @@ the controller is also built for a 19 V input: adapt it to the plane's
 isolated 12 V aux (ADR 0003 decision 14, kept). Revisit what the
 controller keeps (ESP32, Ethernet, probes, link master to the planes).
 
+Core sheets STARTED (2026-10-28): power/pp-48/tools/sch/blocks mcu.py
+(PP-48-2S MCU cut down: I2C1 slave link, I2C2 master to mux + front end,
+TILE_OFF / TILE_PGD / TILE_AL / MUX_RST, TILE2_* for the end cap at
+N = 6/8, VIN_SNS), mux.py (TCA9548A 0x70, channel k = column k+1, reset
+FET), link.py (PP-48-2S as is), supplies.py (LM5164 3V3 from VIN, ahead
+of the tile hot-swap). ERC: only VIN_SNS / TILE_* open (input sheet not
+drawn). Board not regenerated yet (no core parts on it). Decided (user):
+input connector Amass XT90; isolated 12 V aux = own converter (~5 W;
+controller measured 0.037 A at 19 V without I2C / extensions). Open,
+LCSC stock not verifiable from here: LM5069MM-1 C486026 (maybe 0 stock;
+LM5069MM-2 C111822 in the columns too), XT90PW-M (no code found; XT90
+(2+2) C3040692 seen), BSC040N10NS5 C534334, shunt 3 mOhm 2512 C349183,
+TVS SMDJ58A C782875, LM5161 C468246 (Fly-Buck, 100 V), coupled inductor
+with >= 1.5 kV isolation (Wurth 750342178 / 750315039, Coilcraft
+ZA9672-BED: no LCSC code found), TCA9548APWR C130026 (unverified).
+
 User: plane gets a full overhaul, modules vertical, N = 2/4/6/8, height
 as low as possible, every column copy-paste identical. Written down in
 docs/adr/0004-plane-column-layout.md (replaces ADR 0003 decisions 1-4;
