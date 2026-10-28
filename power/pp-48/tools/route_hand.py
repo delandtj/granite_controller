@@ -21,7 +21,8 @@ x = X0 + 25 (c - 1)), only the net names change per column:
   rows whose column does not exist on this plane are not drawn.
 - +3V3 trunk on In2 at v = 64.95 (0.4 mm) across the column, tapped by a via
   to R26 / R27 pin 1.
-The planes (In1 GND, In2 VBUS) come from krt-route's plane pass. Rule areas
+- GND pours on F, In1 and B over the whole board (priority 0).
+The In2 VBUS plane comes from krt-route's plane pass. Rule areas
 "column-edge n" (F / B, no tracks or vias, 0.4 mm wide) on every inner column
 edge keep the router inside each column, so tools/copycol.py can copy column 1.
 """
@@ -150,6 +151,25 @@ def fences(board, n):
         board.Add(z)
 
 
+def gnd_pours(board, group, n):
+    """GND on F, In1 and B over the whole board, priority 0 (the power pours win).
+    In the kept group, so krt-route treats GND as a plane net: pads land in the
+    pours (thermal spokes; the standoffs and J1 are solid, tools/place.py), no
+    GND tracks between pads."""
+    ni = board.FindNet('GND')
+    for lay in (pcbnew.F_Cu, pcbnew.In1_Cu, pcbnew.B_Cu):
+        z = pcbnew.ZONE(board)
+        z.SetLayer(lay); z.SetNet(ni); z.SetAssignedPriority(0)
+        z.SetPadConnection(pcbnew.ZONE_CONNECTION_THERMAL)
+        z.SetThermalReliefGap(mm(0.25)); z.SetThermalReliefSpokeWidth(mm(0.4))
+        z.SetMinThickness(mm(0.25)); z.SetLocalClearance(mm(0.2))
+        ol = z.Outline(); ol.NewOutline()
+        for px, py in ((X0 + 0.3, Y0 + 0.3), (X0 + PITCH * n - 0.3, Y0 + 0.3),
+                       (X0 + PITCH * n - 0.3, Y0 + 71.7), (X0 + 0.3, Y0 + 71.7)):
+            ol.Append(mm(px), mm(py))
+        board.Add(z); group.AddItem(z)
+
+
 def main(src, dst, n):
     board = pcbnew.LoadBoard(src)
     fences(board, n)
@@ -163,6 +183,7 @@ def main(src, dst, n):
     board.Add(g)
     for c in range(1, n + 1):
         column(Col(board, g, c, n))
+    gnd_pours(board, g, n)
     board.Save(dst)
     print('hand copper:', len(list(g.GetItems())), 'items in', n, 'columns')
 

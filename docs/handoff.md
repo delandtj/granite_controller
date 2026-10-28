@@ -42,9 +42,12 @@ place.py -> tools/route_hand.py (group "hand": VBUS / SENSE / OUT / NODE
 pours, shunt vias, gate, INA238 Kelvin, In2 channel + taps, +3V3 trunk,
 "column-edge" rule areas on F/B) -> pcbkit krt-route (all columns, planes
 In1 GND / In2 VBUS) -> krt-reroute as needed -> tools/copycol.py (column 1
-copper -> columns 2..N, nets renamed). DRC on the copied board: no
-clearance / short / edge errors; 2 opens per column: /Column n/OVK (U103
-pin 7, the latch /PRE, boxed in) and one +3V3 island. The autorouted
+copper -> columns 2..N, nets renamed). GND is F / In1 / B pours in
+the hand group (user: "make a zone of that"), so KRT taps pads instead of
+routing GND; route_hand.py must run again after KRT (it moved the In2
++3V3 trunk to B.Cu). DRC on the copied board: no clearance / short / edge
+errors; open: /Column n/OVK (U103 pin 7, the latch /PRE, boxed in), F GND
+islands (stitching to do), 4 starved thermals, 0.1 mm KRT stubs (prune). The autorouted
 signal copper is dense spaghetti (expander lines crossing the column,
 front-panel lines from the B photoMOS down to J2): placement rework by
 signal flow is the next step, not more router passes.

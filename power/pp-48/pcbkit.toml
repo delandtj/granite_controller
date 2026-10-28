@@ -3,7 +3,10 @@
 #
 # DRAFT (2026-10-28): two columns only (50 x 72 mm), placement for review; the
 # core block, the end strip / end cap and all routing come later.
-# Board flow: gensch.py N -> netlist -> mkboard -> outline -> setrules -> tools/place.py
+# Board flow: gensch.py N -> netlist -> mkboard -> outline -> setrules -> tools/place.py ->
+# tools/route_hand.py -> pcbkit krt-route (krt-reroute as needed) -> tools/route_hand.py again
+# (KRT moves kept copper: it put the In2 +3V3 trunk on B.Cu) -> tools/copycol.py ->
+# kicad-cli pcb drc --refill-zones --save-board
 
 [project]
 name = "pp-48"
@@ -44,5 +47,6 @@ keep_groups = ["hand"]
 # OUT's 7 A path is the hand pours; the router only adds the sense taps (U1 OUT, INA238 VBUS)
 power_nets = ["+3V3"]
 power_widths = [0.3]
-planes = { nets = ["GND", "VBUS"], layers = ["In1.Cu", "In2.Cu"], via = [0.6, 0.3] }
+# GND: F / In1 / B pours drawn by tools/route_hand.py (kept group), so KRT taps pads instead of routing GND
+planes = { nets = ["VBUS"], layers = ["In2.Cu"], via = [0.6, 0.3] }
 ground = { net = "GND", width = 0.4 }
