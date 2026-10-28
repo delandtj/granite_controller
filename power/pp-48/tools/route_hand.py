@@ -125,7 +125,7 @@ def column(k):
         u0 = JOG_R - (13 - s) * JOG_STEP
         k.track(net, [(right, row(s)), (u0, row(s)), (u0 - 2 * ROW, row(s + 2)), (left, row(s + 2))], 0.15, IN2)
     # ---- +3V3 trunk and tap
-    k.track('+3V3', [(left, V3_V), (right if c < k.n else 24.5, V3_V)], 0.4, IN2)
+    k.track('+3V3', [(left, V3_V), (right if c < k.n else V3_TAP, V3_V)], 0.4, IN2)   # last column: ends at its tap
     k.via('+3V3', (V3_TAP, V3_V))
     k.track('+3V3', [(V3_TAP, V3_V), (13.9, 64.05), (13.9, 56.49), (12.6, 56.49), (11.0, 56.49)], 0.3, F)
 

@@ -50,11 +50,17 @@ krt-route (plane pass In2 VBUS only) -> route_hand.py again (KRT moves
 kept copper) -> copycol.py -> gndstitch.py (one via per floating F / B
 GND island). GND as pours before routing: KRT skips zone-owning nets, so
 no GND tracks (a plane-tapped GND took 640 stubs and broke signal
-routes; pcbkit gndpour finds no stitch room under the module). DRC on
-the copied board: 0 unconnected, no clearance / short / edge errors;
-6 starved thermals (U103 pin 1, C104, C110 GND per column), dangling
-channel / trunk ends (core not drawn), one 0.6 mm +3V3 stub at U103
-per column. Router copy is column 1 only: 565 items.
+routes; pcbkit gndpour finds no stitch room under the module). DRC (kicad-cli in
+the project dir, --schematic-parity --refill-zones): 0 unconnected, 0
+parity, 0 errors / warnings except the 5 core-side channel / +3V3 trunk
+ends at column 1's left edge, stored as DRC exclusions in pp-48.kicad_pro
+(keyed to track UUIDs: route_hand.py redraws them with new UUIDs, so the
+exclusions must be redone after a regenerate, or go away once the core is
+drawn). Fixed on the way: starved thermals (U3 pin 1, C4, C10 GND solid,
+place.py SOLID), the U3 +3V3 router stub (deleted), last column's trunk
+now ends at its tap, module outline is Fab only on pp48 (pmmount
+host_outline(silk=False); its silk crossed R8 / R13 / R14 and Q1's gate),
+pcbkit silk run. Router copy is column 1 only: 566 items.
 
 ## Start here (2026-10-27, evening): L1/L2 APS1510, bench carrier rev 0.2
 

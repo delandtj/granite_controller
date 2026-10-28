@@ -76,7 +76,9 @@ COL.update({'SO%s' % n: (*mount['S' + n], 0, F) for n in '1234'})
 COL['J3'] = (*mount['AUX'], 270, F)
 
 # high-current pads join their pours solidly (no thermal spokes)
-SOLID = [('SO1', '1'), ('SO2', '1'), ('SO3', '1'), ('SO4', '1'), ('J1', '1'), ('J1', '2')]
+SOLID = [('SO1', '1'), ('SO2', '1'), ('SO3', '1'), ('SO4', '1'), ('J1', '1'), ('J1', '2'),
+         # small GND pads whose thermal spokes are blocked by their neighbours (starved_thermal)
+         ('U3', '1'), ('C4', '2'), ('C10', '2')]
 
 
 def mm(v):
@@ -116,7 +118,7 @@ def main(src, dst, n):
         o.SetReference(mref)
         board.Add(o)
         o.SetPosition(pcbnew.VECTOR2I(mm(x0 + MOD[0]), mm(Y0 + MOD[1])))
-        o.SetOrientationDegrees(270)
+        o.SetOrientationDegrees(270)       # pp48's outline is Fab only (pmmount host_outline(silk=False))
     left = [fp.GetReference() for fp in board.GetFootprints()
             if pcbnew.ToMM(fp.GetPosition().x) < X0 and not fp.GetReference().startswith('MOD')]
     board.Save(dst)

@@ -190,7 +190,7 @@ def outline(fp, silk):
     rect(fp, ax - bx, ay - by, ax + bx, ay + by, pcbnew.F_Fab, 0.1, dash=True)
     text(fp, 'AUX', ax, ay + by + 0.8, pcbnew.F_Fab, 0.6)
     fp.Reference().SetPosition(V(0, -BODY_H / 2 - 1.75))
-    fp.Reference().SetLayer(pcbnew.F_SilkS)
+    fp.Reference().SetLayer(pcbnew.F_SilkS if silk else pcbnew.F_Fab)
     fp.Value().SetPosition(V(0, BODY_H / 2 + 1.75))
     fp.Value().SetLayer(pcbnew.F_Fab)
     for n, (x, y) in SCREWS.items():
@@ -220,13 +220,14 @@ def module_mount():
     return fp
 
 
-def host_outline():
+def host_outline(silk=True):
     fp = new_fp('PM_Module_Outline',
                 'PM module outline on the host (board-only, no pads): body, screw numbers, aux block; '
-                'place at the module centre, rotated with the standoffs and the aux socket (pmmount.host_parts)',
+                'place at the module centre, rotated with the standoffs and the aux socket (pmmount.host_parts)'
+                + ('' if silk else '; Fab only (on the plane the silk would cross pads beside the module)'),
                 'PM module outline')
     fp.SetAttributes(pcbnew.FP_BOARD_ONLY | pcbnew.FP_EXCLUDE_FROM_BOM | pcbnew.FP_EXCLUDE_FROM_POS_FILES)
-    outline(fp, silk=True)
+    outline(fp, silk=silk)
     return fp
 
 
@@ -346,7 +347,7 @@ def main():
     io = pcbnew.PCB_IO_KICAD_SEXPR()
     for lib, fps in (('pm', [module_mount(), module_aux()]),
                      ('carrier', [host_outline(), host_standoff(), host_socket()]),
-                     ('pp48', [host_outline(), host_standoff(), host_socket()])):
+                     ('pp48', [host_outline(silk=False), host_standoff(), host_socket()])):
         for fp in fps:
             io.FootprintSave(LIBS[lib], fp)
             path = os.path.join(LIBS[lib], fp.GetFPID().GetLibItemName().wx_str() + '.kicad_mod')
