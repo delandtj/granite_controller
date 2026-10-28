@@ -63,7 +63,7 @@ COL = {
     'R26': (11.0, 57.0, 270, F), 'R27': (12.6, 57.0, 270, F),     # segment pull-ups at the In2 channel tap
     # B side under the module: clamp and cap by S1; photoMOS and opto in the lower left, next to
     # the expander's PWRD / RSTD / LED pins and above the GH connector
-    'D1': (13.0, 5.0, 0, B), 'C2': (13.0, 9.0, 180, B),         # clamp and cap between S2 (GND) and S1 (VIN)
+    'D1': (13.0, 5.0, 180, B), 'C2': (13.0, 9.0, 180, B),       # clamp (cathode pad 1 to the OUT side) and cap between S2 (GND) and S1 (VIN)
     # PGOOD-loss trip: arm FF U10 with its set stack Q8 / Q9 and DISARM FET Q7 on F at the left edge
     # (free on both sides; B behind U3 and the socket stays free for their escape vias); trip FET Q6
     # on B behind the socket's PG / OVK

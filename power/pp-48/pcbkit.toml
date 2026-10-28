@@ -20,10 +20,12 @@ cell = 14.0
 per_row = 6
 
 [outline]
-length = 50.0
+# core (48 mm, tools/core.py) + N x 25 mm columns + 8 mm end strip (N = 2/4; ADR 0004 decision 8):
+# corner holes at the ends only, 4 mm inset
+length = 106.0
 height = 72.0
-origin = [100.0, 100.0]
-hole_refs = []   # holes go in the core block and the end strip (ADR 0004 decision 8), not in the columns
+origin = [52.0, 100.0]
+hole_refs = ["H1", "H2", "H3", "H4"]
 
 [rules]
 stackup = "jlc04161h-7628"

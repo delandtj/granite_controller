@@ -22,6 +22,20 @@ when such an inductor is found at LCSC. Also open on that sheet: C11
 have no LCSC code yet. J4 (JST PH 2, pin 1 CTRL_12V, pin 2 CTRL_GND)
 is the controller's 12 V input: match it in the controller revisit.
 
+Core PLACEMENT DRAFT for review (2026-10-29, tools/core.py, not yet in
+pp-48.kicad_pcb, which is still the routed 2-column board): core 48 mm at
+the left (x 52-100), 8 mm end strip, outline 106 x 72 mm for N = 2 with
+4 corner M3 holes (pcbkit.toml [outline]). Flow: mkboard -> outline ->
+place.py -> core.py. Controller world top left (J2 / J3 / J4, isolators
+U4 / U5 across v = 22, 12 V module U2 top right with its outputs at the
+top edge); MCU left middle; 3V3 buck L1 + C11 on F between U2 and the
+XT90, U1 and parts on B; XT90 J1 bottom right, the tile hot-swap on B
+under its body (VIN pad -> shunts -> FETs -> VBUS via field); C1 and the
+mux U6 bottom left on F by the In2 channel. Column D1 now rot 180 on B
+(cathode pad 1 toward the OUT pour). Not done: core copper (pours, In2
+row extensions to the mux, +3V3 trunk end, CTRL_GND domain and the
+isolation gap), routing.
+
 FIXED 2026-10-29: the slot clamp D1 (SMBJ60A) and bus TVS D1 (SMDJ60A)
 were drawn with Device:D_TVS (bidirectional symbol) and pad 1 (= cathode
 on D_SMB / D_SMC) on GND: a unidirectional part would conduct forward
