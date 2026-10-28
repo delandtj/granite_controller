@@ -328,8 +328,11 @@ for a short in the fluid.
 or on a load step?**
 A: Start-up blanking (the latch input is gated until PGOOD has been
 high once, or for a fixed time after enable). A load step that drops
-VOUT below 17.3 V is a real fault at 19 V. The blanking circuit is not
-designed yet.
+VOUT below 17.3 V is a real fault at 19 V. Circuit (2026-10-28, pp-48
+column): an arm flip-flop is set while PGOOD and the LM5069 PGD are
+both high (level, so either may rise first) and cleared while PGD is low
+(any slot-off); armed, PGOOD low sets the slot latch. An expander pin
+(DISARM) holds it disarmed around a RUN-off of the module.
 
 **Q: Why not put the protection on the module output with an eFuse,
 for an exact per-node limit?**
@@ -415,9 +418,11 @@ Review asks (answered 2026-10-26):
   on the G070 with 4 columns).
 
 **Behavior definers**
-- [ ] PGOOD-loss latch start-up blanking: circuit and time.
-- [ ] INA238 ALERT threshold (210-220 W input) and whether it latches
-  or only reports.
+- [x] PGOOD-loss latch start-up blanking: arm on first PGOOD, no timer
+  (2026-10-28, user), DISARM pin for RUN-off.
+- [x] INA238 ALERT latches: open drain straight onto the OV_KILL line,
+  so it sets the slot latch. Threshold (210-220 W input) is firmware
+  (power limit register, ALATCH), set at boot.
 - [ ] Tile hot-swap reset path (LM5069-1 latch-off, decided).
 - [x] D1 SMBJ60A at 60 V standoff vs the new range: kept (2026-10-28).
   Breakdown >= 66.7 V, so no conduction at 60 V; SMBJ64A clamps at

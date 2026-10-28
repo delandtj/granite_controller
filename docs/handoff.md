@@ -24,12 +24,20 @@ pp-48-2s/tools/sch plus Block.tie for local-label ties), `tools/gensch.py N`
 (N = 2/4/6/8) writes pp-48.kicad_sch + sheets/column.kicad_sch (one file,
 N instances, refs +100 per column). Column = PP-48-2S slot front end /
 INA238 / enable chain / OV latch unchanged, plus SO1-SO4 + J3 aux socket,
-TCA9535 (C130204, 0x20; P0 out OFF LCLR RUNOFF PWRD RSTD, P1 in PGD PG LQ
-LED OVK INA_AL, INT unused), ADC121C027 (0x51, ADR0 GND; KiCad symbol
+TCA9535 (C130204, 0x20; P0 out OFF LCLR RUNOFF PWRD RSTD DISARM, P1 in PGD PG LQ
+LED OVK, INT unused), ADC121C027 (0x51, ADR0 GND; KiCad symbol
 ADC101C021CIMK is pin-equal), Q5 on the module RUN pin, segment pull-ups,
-DG128 terminal J1, GH J2. Slot ON / node LEDs dropped (tank). Not drawn:
-PGOOD-loss latch with blanking, INA238 ALERT latch (both only to the
-expander). 2026-10-28: slot OVLO R5 / R6 124k / 4.99k (64.6 V,
+DG128 terminal J1, GH J2. Slot ON / node LEDs dropped (tank). Slot latch U3
+set by OV_KILL, INA238 ALERT (straight onto OVK, R25 gone) and the
+PGOOD-loss trip Q6; blanking = arm FF U10 (set while PG and PGD high via
+Q8 / Q9, cleared while PGD low), DISARM (P10, Q7 pulls PGD low) around
+RUNOFF (user 2026-10-28: arm-on-first-PGOOD, DISARM pin). Arm cluster on F
+at the left edge (B behind U3 / socket kept free for their escape vias);
+U3 OVK / CLRN escape to vias under its body in route_hand.py (KRT could
+not get out between the +3V3 and LQ pins). Firmware: set the INA238
+power limit and ALATCH at boot (reset value never trips); set DISARM
+before RUNOFF; cause = INA238 DIAG_ALRT POL, else OV_KILL or PGOOD loss
+(not told apart). Expander map now P10 DISARM out, P00 free. 2026-10-28: slot OVLO R5 / R6 124k / 4.99k (64.6 V,
 60.9-68.5 V worst case, module 67.5 V), D1 SMBJ60A kept (SMBJ64A
 clamps at 103 V); values only, board synced, DRC unchanged. ERC: 4 dangling COLn_SDA/SCL labels (core not drawn) + DG128
 footprint missing from pp48.pretty (pmmount.py now also writes the host
@@ -42,7 +50,7 @@ hand-written in pp48.pretty from the Degson spec numbers (verify on a
 sample). Column 1 ROUTED (2026-10-28, after the placement rework by signal flow)
 and copied: expander U5 in the middle with its pins reassigned by board
 side (schematic U5 description has the map: P17 OFF, P16 PGD, P15 LQ,
-P14 LCLR, P13 OVK, P12 PG, P11 RUNOFF, P00 INA_AL, P05 PWRD, P06 RSTD,
+P14 LCLR, P13 OVK, P12 PG, P11 RUNOFF, P10 DISARM, P05 PWRD, P06 RSTD,
 P07 LED), enable chain + latch right of it under the LM5069, ID ADC /
 RUN FET / pull-ups around the socket, photoMOS + opto back on B lower
 left. Flow (pcbkit.toml header): place.py -> route_hand.py (group "hand":

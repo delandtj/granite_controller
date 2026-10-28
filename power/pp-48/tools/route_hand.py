@@ -12,6 +12,8 @@ x = X0 + 25 (c - 1)), only the net names change per column:
   clamp D1 and cap C2 to S1; gate: Q1 pin 4 -> via -> B -> via -> U1 GATE.
 - INA238 Kelvin: IN+ (pin 10) and IN- (pin 9) to the bottom ends of R2's
   pads, 0.2 mm, under the shunts.
+- OV latch U3: OVK (pin 7) and CLRN (pin 6) escape inward to vias under its
+  body (KRT finds no way out between the +3V3 and LQ pins).
 - Node: F and B NODE pours from S4 (VOUT) to J1 pin 2.
 - In2 channel (ADR 0004 decision 5), rows v = 59.85 + 0.3 k, 0.15 mm:
   the column's own SDA / SCL on rows 0 / 1 from the core-side edge to the
@@ -105,6 +107,12 @@ def column(k):
     # ---- INA238 Kelvin to R2's pad ends
     k.track('VBUS', [(5.5, 15.15), (5.5, 17.6), (9.54, 17.6), (9.54, 16.9)], 0.2, F)
     k.track('SENSE', [(5.0, 15.15), (5.0, 18.1), (15.46, 18.1), (15.46, 16.9)], 0.2, F)
+    # ---- OV latch U3: OVK (pin 7) and CLRN (pin 6) sit between the +3V3 and LQ pins; escape
+    # inward under the body to vias (B behind U3 is kept free), the router takes them from there
+    k.track('OVK', [(19.4, 33.25), (18.4, 33.25), (18.1, 32.95)], 0.2, F)
+    k.via('OVK', (18.1, 32.95))
+    k.track('CLRN', [(19.4, 33.75), (18.4, 33.75), (18.1, 34.05)], 0.2, F)
+    k.via('CLRN', (18.1, 34.05))
     # ---- node
     for lay in (F, B):
         k.zone('NODE', lay, [(16.3, 52.6), (24.6, 52.6), (24.6, 69.2), (16.3, 69.2)])

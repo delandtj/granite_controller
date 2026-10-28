@@ -72,23 +72,23 @@
       "diff_pair_dimensions": [],
       "drc_exclusions": [
         [
-          "track_dangling|100500000|160750000|7bc42d70-0946-46a6-9769-5572dfca812f|00000000-0000-0000-0000-000000000000",
+          "track_dangling|100500000|160450000|760472a0-528a-4144-97a1-73b71bc72c6b|00000000-0000-0000-0000-000000000000",
           "core-side end of the In2 SDA/SCL channel / +3V3 trunk: the core block connects here, not drawn yet (ADR 0004)"
         ],
         [
-          "track_dangling|100500000|160450000|b03a6f6c-096e-4e1e-8725-b3bf0b43168c|00000000-0000-0000-0000-000000000000",
+          "track_dangling|100500000|160750000|7429c1df-74ab-4179-89dc-c55f176608f9|00000000-0000-0000-0000-000000000000",
           "core-side end of the In2 SDA/SCL channel / +3V3 trunk: the core block connects here, not drawn yet (ADR 0004)"
         ],
         [
-          "track_dangling|100500000|164950000|94bbb054-66a1-4c18-af0f-ec3ded44eb3f|00000000-0000-0000-0000-000000000000",
+          "track_dangling|100500000|164950000|b0cd581d-51ea-4013-9643-228877d104af|00000000-0000-0000-0000-000000000000",
           "core-side end of the In2 SDA/SCL channel / +3V3 trunk: the core block connects here, not drawn yet (ADR 0004)"
         ],
         [
-          "track_dangling|100500000|159850000|8615f236-3226-4a06-b5ad-a07fd4f79b95|00000000-0000-0000-0000-000000000000",
+          "track_dangling|100500000|160150000|c593c03d-149f-48e6-8342-3e6df3f3eaad|00000000-0000-0000-0000-000000000000",
           "core-side end of the In2 SDA/SCL channel / +3V3 trunk: the core block connects here, not drawn yet (ADR 0004)"
         ],
         [
-          "track_dangling|100500000|160150000|93a351d4-592e-489a-acdc-28e6cb8d809f|00000000-0000-0000-0000-000000000000",
+          "track_dangling|100500000|159850000|738d8e11-3b25-496a-b5e0-106bd220019e|00000000-0000-0000-0000-000000000000",
           "core-side end of the In2 SDA/SCL channel / +3V3 trunk: the core block connects here, not drawn yet (ADR 0004)"
         ]
       ],

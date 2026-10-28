@@ -14,7 +14,7 @@ sch/blocks/slot.py) unchanged, at the same coordinates. What changed:
   0x20 (A0-A2 GND), ADC121C027 0x51 (ADR0 GND). SDA and SCL are the only
   ports; the segment pull-ups are in the column.
 - The TCA9535 carries the slot's control and status lines (port 0 out:
-  OFF LCLR RUNOFF PWRD RSTD, inputs PGD PG LQ LED OVK INA_AL; pins chosen by
+  OFF LCLR RUNOFF PWRD RSTD DISARM, inputs PGD PG LQ LED OVK; pins chosen by
   the side of the board each signal goes to, see U5's description). They are
   tied to the front end by local labels, not wires. INT is not used (the MCU
   polls). At reset the expander pins are inputs: OFF, LCLR and RUNOFF fall
@@ -30,8 +30,18 @@ sch/blocks/slot.py) unchanged, at the same coordinates. What changed:
   NODE cap (the terminal sits ~10 mm from S4, next to the module's own
   output caps).
 
-Not drawn yet (ADR 0003 open questions): the PGOOD-loss latch with start-up
-blanking and the INA238 ALERT latch; PG and INA_AL go to the expander only.
+- Slot latch U3 is set (/PRE = OVK, low) by three open-drain sources: the
+  module's OV_KILL, the INA238 ALERT (power limit, ALATCH; firmware sets
+  the limit at boot, the reset value never trips) and the PGOOD-loss trip
+  Q6. The INA238 DIAG_ALRT register tells a power trip from the other two.
+- PGOOD-loss blanking (ADR 0003): U10 holds ARM. It is set while the
+  module's PGOOD and the LM5069 PGD are both high (Q8 / Q9 in series on
+  /PRE, level, so either may rise first) and cleared while PGD is low (any
+  slot-off: OFF, latch, UVLO / OVLO, LM5069 fault). Armed, PGOOD going low
+  turns Q6 on (gate ARM, source PG), which pulls OVK low and sets U3; the
+  slot cut then drops PGD and disarms U10. DISARM (expander P10, Q7 pulls
+  PGD low) keeps it disarmed around RUNOFF: set DISARM before RUNOFF,
+  release it whenever (it re-arms once PGOOD is back).
 
 Coordinates are in grid units of 1.27 mm (P(x, y)).
 """
@@ -101,11 +111,10 @@ def block():
 
     # ========================================================== INA238 under the shunt
     sym("U2", "Sensor_Energy:INA238", "INA238AIDGSR", "Package_SO:TSSOP-10_3x3mm_P0.5mm",
-        {"1": "GND", "2": "GND", "3": "INA_AL", "4": "SDA", "5": "SCL", "6": "+3V3", "7": "GND", "8": "OUT", "9": "SENSE", "10": "VBUS"},
+        {"1": "GND", "2": "GND", "3": "OVK", "4": "SDA", "5": "SCL", "6": "+3V3", "7": "GND", "8": "OUT", "9": "SENSE", "10": "VBUS"},
         (44, 60), rot=270,
         desc="16-bit monitor on the shunt, address 0x40 (A0 A1 GND, same in every column); VBUS pin reads the slot output")
     C(3, "100n", C0402, {"1": "+3V3", "2": "GND"}, (58, 63), desc="INA238 VS")
-    R(25, "10k", R0402, {"1": "+3V3", "2": "INA_AL"}, (24, 49), desc="INA238 ALERT pull-up (open drain)")
 
     # ========================================================== enable chain and OV latch, as PP-48-2S
     sym("Q2", FET, "2N7002", SOT23, {"1": "OFF", "2": "GND", "3": "UVLO"}, (82, 90),
@@ -124,6 +133,23 @@ def block():
     sym("Q4", FET, "2N7002", SOT23, {"1": "LCLR", "2": "GND", "3": "CLRN"}, (132, 127),
         fields={"LCSC": "C8545"}, desc="expander clears the latch: drive high -> Q4 pulls /CLR low")
     R(12, "100k", R0402, {"1": "LCLR", "2": "GND"}, (118, 131), desc="Q4 gate pull-down: expander in reset = latch not cleared")
+
+    # ========================================================== PGOOD-loss trip with blanking
+    sym("U10", "74xGxx:74AUC1G74", "74LVC1G74", "Package_SO:VSSOP-8_2.3x2mm_P0.5mm",
+        {"1": "GND", "2": "GND", "3": "NC", "4": "GND", "5": "ARM", "6": "PGD", "7": "ARMS_N", "8": "+3V3"},
+        (130, 170), fields={"LCSC": "C70285"},
+        desc="PGOOD-loss arm: set while PG and PGD are high, cleared while PGD is low")
+    C(12, "100n", C0402, {"1": "+3V3", "2": "GND"}, (148, 160), desc="arm FF VCC")
+    R(28, "100k", R0402, {"1": "+3V3", "2": "ARMS_N"}, (112, 156), desc="arm set pull-up")
+    sym("Q8", FET, "2N7002", SOT23, {"1": "PG", "2": "ARMS_M", "3": "ARMS_N"}, (112, 170),
+        fields={"LCSC": "C8545"}, desc="arm set, upper: module PGOOD high")
+    sym("Q9", FET, "2N7002", SOT23, {"1": "PGD", "2": "GND", "3": "ARMS_M"}, (112, 190),
+        fields={"LCSC": "C8545"}, desc="arm set, lower: LM5069 PGD high")
+    sym("Q6", FET, "2N7002", SOT23, {"1": "ARM", "2": "PG", "3": "OVK"}, (160, 176),
+        fields={"LCSC": "C8545"}, desc="PGOOD-loss trip: armed and PG low -> OVK low -> slot latch set")
+    sym("Q7", FET, "2N7002", SOT23, {"1": "DISARM", "2": "GND", "3": "PGD"}, (176, 160),
+        fields={"LCSC": "C8545"}, desc="expander DISARM high -> PGD low -> arm cleared (around RUNOFF)")
+    R(29, "100k", R0402, {"1": "DISARM", "2": "GND"}, (170, 172), desc="Q7 gate pull-down: expander in reset = armed path live")
 
     # ========================================================== module mount: standoffs and aux socket
     sym("SO1", "Connector_Generic:Conn_01x01", "S1 VIN", STANDOFF, {"1": "OUT"}, (150, 32),
@@ -174,10 +200,10 @@ def block():
     R(27, "4.7k", R0402, {"1": "+3V3", "2": "SCL"}, (26, 132), desc="segment SCL pull-up")
     sym("U5", "Interface_Expansion:TCA9535PWR", "TCA9535PWR", "Package_SO:TSSOP-24_4.4x7.8mm_P0.65mm",
         {"1": "NC", "2": "GND", "3": "GND", "21": "GND", "22": "SCL", "23": "SDA", "24": "+3V3", "12": "GND",
-         "4": "INA_AL", "5": "NC", "6": "NC", "7": "NC", "8": "NC", "9": "PWRD", "10": "RSTD", "11": "LED",
-         "13": "NC", "14": "RUNOFF", "15": "PG", "16": "OVK", "17": "LCLR", "18": "LQ", "19": "PGD", "20": "OFF"},
+         "4": "NC", "5": "NC", "6": "NC", "7": "NC", "8": "NC", "9": "PWRD", "10": "RSTD", "11": "LED",
+         "13": "DISARM", "14": "RUNOFF", "15": "PG", "16": "OVK", "17": "LCLR", "18": "LQ", "19": "PGD", "20": "OFF"},
         (80, 180), fields={"LCSC": "C130204"},
-        desc="slot GPIO, address 0x20 (A0-A2 GND); pins by board side: P00 INA_AL in, P05 PWRD out, P06 RSTD out, P07 LED in; P17 OFF out, P16 PGD in, P15 LQ in, P14 LCLR out, P13 OVK in, P12 PG in, P11 RUNOFF out; INT unused (polled)")
+        desc="slot GPIO, address 0x20 (A0-A2 GND); pins by board side: P10 DISARM out, P05 PWRD out, P06 RSTD out, P07 LED in; P17 OFF out, P16 PGD in, P15 LQ in, P14 LCLR out, P13 OVK in, P12 PG in, P11 RUNOFF out; INT unused (polled)")
     C(9, "100n", C0402, {"1": "+3V3", "2": "GND"}, (92, 152), desc="TCA9535 VCC")
     sym("U4", "Analog_ADC:ADC101C021CIMK", "ADC121C027CIMK", "Package_TO_SOT_SMD:TSOT-23-6",
         {"1": "+3V3", "2": "GND", "3": "ID_F", "4": "GND", "5": "SCL", "6": "SDA"}, (40, 175),
@@ -218,8 +244,7 @@ def block():
     # ========================================================== INA238 supply, alert, I2C segment
     wire("+3V3", (58, 56), ("C3", "1"), ("U2", "6"))
     wire("GND", (32, 64), ("U2", "7"))
-    tie("INA_AL", ("R25", "2"))
-    wire("INA_AL", ("U2", "3"), ("R25", "2"))
+    tie("OVK", ("U2", "3"))                                         # ALERT (open drain) sets the slot latch
     wire("SDA", ("U2", "4"), (44, 138), (12, 138))                  # segment along the bottom
     wire("SCL", ("U2", "5"), (42, 140), (12, 140))
     wire("SDA", ("R26", "2"), (20, 138))
@@ -276,10 +301,14 @@ def block():
     tie("LED", (208, 72), 180)
 
     # ========================================================== expander and ADC ends of the ties
-    for pin in ("4", "9", "10", "11", "14", "15", "16", "17", "18", "19", "20"):
+    for pin in ("13", "9", "10", "11", "14", "15", "16", "17", "18", "19", "20"):
         b.tie(b.syms["U5"].nets[pin], ("U5", pin))
     wire("ID_F", ("U4", "3"), (26, 175), ("C6", "1"))
     tie("ID_F", (22, 175), 180)
+
+    for ref, pins in (("U10", "567"), ("R28", "2"), ("Q8", "123"), ("Q9", "13"), ("Q6", "123"), ("Q7", "13"), ("R29", "1")):
+        for pin in pins:
+            b.tie(b.syms[ref].nets[pin], (ref, pin))
 
     b.text("COLUMN: 48 V HOT-SWAP, INA238, OV LATCH, MODULE MOUNT, TCA9535, ID ADC, NODE TERMINAL", P(12, 20))
     b.text("I2C SEGMENT: INA238 0x40, TCA9535 0x20, ADC121C027 0x51", P(12, 150), size=1.5)

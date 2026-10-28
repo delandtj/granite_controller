@@ -42,7 +42,7 @@ COL = {
     'R5': (11.5, 20.5, 90, F), 'R6': (11.5, 23.5, 90, F),
     'R7': (21.5, 23.0, 0, F), 'C1': (18.5, 23.0, 0, F), 'R8': (23.8, 25.2, 90, F),
     # INA238, top left
-    'U2': (4.5, 13.0, 270, F), 'C3': (1.6, 13.0, 90, F), 'R25': (7.5, 12.0, 90, F),   # IN+ / IN- pins face the shunts' bottom ends
+    'U2': (4.5, 13.0, 270, F), 'C3': (1.6, 13.0, 90, F),   # IN+ / IN- pins face the shunts' bottom ends
     # enable chain and OV latch: right of the expander, under the LM5069 (UVLO spine) and above
     # the socket (OV_KILL comes up from its top row)
     'Q2': (15.5, 27.0, 0, F), 'R9': (15.5, 29.8, 0, F),
@@ -64,6 +64,13 @@ COL = {
     # B side under the module: clamp and cap by S1; photoMOS and opto in the lower left, next to
     # the expander's PWRD / RSTD / LED pins and above the GH connector
     'D1': (13.0, 5.0, 0, B), 'C2': (13.0, 9.0, 180, B),         # clamp and cap between S2 (GND) and S1 (VIN)
+    # PGOOD-loss trip: arm FF U10 with its set stack Q8 / Q9 and DISARM FET Q7 on F at the left edge
+    # (free on both sides; B behind U3 and the socket stays free for their escape vias); trip FET Q6
+    # on B behind the socket's PG / OVK
+    'Q7': (2.6, 21.8, 0, F), 'R29': (5.6, 21.8, 90, F),
+    'U10': (2.8, 25.6, 0, F), 'C12': (5.6, 25.6, 90, F), 'R28': (7.6, 25.6, 90, F),
+    'Q8': (2.4, 29.8, 0, F), 'Q9': (6.6, 29.8, 0, F),
+    'Q6': (17.0, 40.5, 0, B),
     'U8': (6.0, 41.0, 0, B), 'R21': (11.4, 41.0, 90, B), 'R22': (12.8, 41.0, 90, B),
     'U6': (6.0, 45.6, 0, B), 'R19': (11.4, 45.6, 90, B),
     'U7': (6.0, 50.2, 0, B), 'R20': (11.4, 50.2, 90, B),
@@ -78,7 +85,8 @@ COL['J3'] = (*mount['AUX'], 270, F)
 # high-current pads join their pours solidly (no thermal spokes)
 SOLID = [('SO1', '1'), ('SO2', '1'), ('SO3', '1'), ('SO4', '1'), ('J1', '1'), ('J1', '2'),
          # small GND pads whose thermal spokes are blocked by their neighbours (starved_thermal)
-         ('U3', '1'), ('C4', '2'), ('C10', '2')]
+         ('U3', '1'), ('U3', '4'), ('C4', '2'), ('C10', '2'),
+         ('U2', '2'), ('U10', '1'), ('U10', '2'), ('U10', '4')]
 
 
 def mm(v):
