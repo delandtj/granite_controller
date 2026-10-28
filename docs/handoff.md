@@ -22,6 +22,21 @@ when such an inductor is found at LCSC. Also open on that sheet: C11
 have no LCSC code yet. J4 (JST PH 2, pin 1 CTRL_12V, pin 2 CTRL_GND)
 is the controller's 12 V input: match it in the controller revisit.
 
+Input sheet DRAWN (2026-10-29, tools/sch/blocks/input.py): J1 XT90PW-M
+-> D1 SMDJ60A + C1 47u / C2 2.2u -> R1 || R2 2 x 4 mOhm 2512 -> Q2 || Q3
+BSC040N10NS5 (10 Ohm gate resistors each) -> VBUS; U7 LM5069MM-1
+(latch-off; UVLO 143k / 10k, OVLO 124k / 4.99k, PWR 10.2k ~75 W,
+TIMER 220n), Q4 TILE_OFF on UVLO (R14 pull-down = tile on), PGD pull-up
+-> TILE_PGD; U8 INA238 0x40 on I2C2 (IN+ VIN, IN- TSENSE, VBUS pin = tile
+out, ALERT -> TILE_AL with pull-up); VIN_SNS 220k / 10k + 100n. ERC 0.
+Sheet order now Input, Supplies, MCU, Mux, Link. LCSC still to check
+for this sheet: XT90PW-M (no code), SMDJ60A (no code), 4 mOhm 2W 2512
+(no code; fallback 4 x 7 mOhm C2904232 = 1.75 mOhm, limit 27.7-35.1 A),
+LM5069MM-1 C486026 (stock), BSC040N10NS5 C534334, C1 47u 100V
+electrolytic (no code). Open question: aluminium electrolytics (C1 here,
+C11 on Supplies) in the immersion fluid; swap to ceramics if the fluid
+attacks the seals. Board not regenerated with the core yet.
+
 Core sheets STARTED (2026-10-28): power/pp-48/tools/sch/blocks mcu.py
 (PP-48-2S MCU cut down: I2C1 slave link, I2C2 master to mux + front end,
 TILE_OFF / TILE_PGD / TILE_AL / MUX_RST, TILE2_* for the end cap at

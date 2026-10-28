@@ -109,6 +109,13 @@ rest of the plane rested on assumptions that no longer hold:
      fuse) is dropped; the isolated aux supply limits on its own,
      AUX_SNS shows a short.
    - Reverse polarity: keyed tile input connector only.
+   - Tile values (pp-48 Input sheet, 2026-10-29): shunt 2 mOhm (2 x
+     4 mOhm 2512), not 1.5 mOhm: current limit 27.5 A (24.3-30.8 A
+     over the 48.5-61.5 mV threshold) keeps a sustained overload under
+     the XT90's 30 A; load at N = 4 is ~22 A at 48 V; breaker 52.5 A.
+     Power limit ~75 W (one FET carries the start-up SOA), UVLO / OVLO
+     / timer as the columns. Bus TVS SMDJ60A (60 V standoff, the top of
+     the window; SMDJ58A would conduct at 60 V).
 9. **Input window 48-60 V**: OVLO ~66-68 V on the module (R3-R5
    divider) and on the plane (LM5069 dividers), the plane tripping
    first. 100 V parts stay; the bus TVS keeps surges under 100 V.
