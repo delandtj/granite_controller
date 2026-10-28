@@ -15,7 +15,7 @@ left, socket right of centre in the lower half). Under the module on F
 INA238 top left, the enable chain and OV latch in the middle, expander, ID
 ADC and the module-signal pull-ups in the lower half. On B under the module:
 the parts over 2.0 mm (SMB clamp, 1210 cap, photoMOS, opto) and their
-resistors. Bottom edge: GH front panel left, DG128 node terminal right with
+resistors, in the upper half (the lower half stays free for vias). Bottom edge: GH front panel left, DG128 node terminal right with
 +19 V (pin 2) straight under S4.
 """
 import os
@@ -36,13 +36,13 @@ F, B = 'F', 'B'
 COL = {
     # front end, top right: VBUS (In2) -> shunts -> FET -> S1
     'R1': (12.5, 11.5, 0, F), 'R2': (12.5, 15.5, 0, F),
-    'Q1': (20.5, 12.5, 0, F),
+    'Q1': (20.5, 13.0, 270, F),         # source pins up (to S1), drain tab down (SENSE), gate top left
     'U1': (19.5, 19.5, 0, F),
-    'R3': (14.0, 20.0, 90, F), 'R4': (14.0, 23.0, 90, F),
-    'R5': (11.5, 20.0, 90, F), 'R6': (11.5, 23.0, 90, F),
+    'R3': (14.0, 20.5, 90, F), 'R4': (14.0, 23.5, 90, F),
+    'R5': (11.5, 20.5, 90, F), 'R6': (11.5, 23.5, 90, F),
     'R7': (21.5, 23.0, 0, F), 'C1': (18.5, 23.0, 0, F), 'R8': (16.5, 24.5, 90, F),
     # INA238, top left
-    'U2': (4.5, 13.0, 90, F), 'C3': (4.5, 17.5, 0, F), 'R25': (7.5, 12.0, 90, F),
+    'U2': (4.5, 13.0, 270, F), 'C3': (1.6, 13.0, 90, F), 'R25': (7.5, 12.0, 90, F),   # IN+ / IN- pins face the shunts' bottom ends
     # enable chain and OV latch, middle
     'Q2': (4.0, 27.0, 0, F), 'R9': (4.0, 30.5, 0, F),
     'Q3': (8.5, 27.0, 0, F), 'R10': (8.5, 30.5, 0, F),
@@ -55,12 +55,12 @@ COL = {
     'C6': (15.0, 40.0, 90, F), 'R24': (15.0, 43.0, 90, F),
     'R15': (17.5, 35.5, 90, F), 'R13': (19.5, 35.5, 90, F), 'R14': (21.5, 35.5, 90, F),
     'Q5': (13.5, 46.5, 0, F), 'R23': (13.5, 50.0, 0, F),
-    'R26': (3.0, 46.5, 90, F), 'R27': (4.5, 46.5, 90, F),
+    'R26': (11.0, 57.0, 270, F), 'R27': (12.6, 57.0, 270, F),    # segment pull-ups at the In2 channel tap
     # B side under the module: tall parts
-    'D1': (13.0, 12.0, 0, B), 'C2': (20.5, 19.5, 0, B),
-    'U6': (6.0, 46.5, 0, B), 'R19': (6.0, 43.0, 0, B),
-    'U7': (16.0, 46.5, 0, B), 'R20': (16.0, 43.0, 0, B),
-    'U8': (6.0, 51.0, 0, B), 'R21': (11.0, 51.0, 90, B), 'R22': (12.5, 51.0, 90, B),
+    'D1': (13.0, 5.0, 0, B), 'C2': (13.0, 9.0, 180, B),         # clamp and cap between S2 (GND) and S1 (VIN)
+    'U6': (6.0, 24.0, 0, B), 'R19': (6.0, 20.5, 0, B),
+    'U7': (16.0, 24.0, 0, B), 'R20': (16.0, 27.8, 0, B),
+    'U8': (6.0, 29.5, 0, B), 'R21': (11.0, 29.5, 90, B), 'R22': (12.5, 29.5, 90, B),
     # bottom edge, entry faces down
     'J2': (6.0, 68.5, 0, F),
     'J1': (15.5, 66.8, 0, F),

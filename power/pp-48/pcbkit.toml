@@ -30,3 +30,19 @@ layers = { "In1.Cu" = ["power", "GND"], "In2.Cu" = ["mixed", "VBUS"] }
 # name = [track, clearance, via_dia, via_drill]
 Default = [0.2, 0.15, 0.5, 0.2]
 GND     = [0.4, 0.2, 0.6, 0.3]
+
+[krt]
+work = "~/.cache/pcbkit/pp-48/route"
+rework = "~/.cache/pcbkit/pp-48/reroute"
+clearance = 0.15
+via = [0.5, 0.2]
+track_width = 0.2
+same_net_pad_clearance = 0.15
+signal_layers = ["F.Cu", "B.Cu"]
+# tools/route_hand.py copper (power pours, shunt vias, Kelvin, In2 channel, taps)
+keep_groups = ["hand"]
+# OUT's 7 A path is the hand pours; the router only adds the sense taps (U1 OUT, INA238 VBUS)
+power_nets = ["+3V3"]
+power_widths = [0.3]
+planes = { nets = ["GND", "VBUS"], layers = ["In1.Cu", "In2.Cu"], via = [0.6, 0.3] }
+ground = { net = "GND", width = 0.4 }

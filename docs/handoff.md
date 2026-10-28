@@ -37,9 +37,17 @@ by tools/place.py (one column table, copied +100 refs / +25 mm), unrouted,
 no core. pcbkit.toml (4L jlc04161h-7628, no corner holes); flow: gensch ->
 netlist -> mkboard -> outline -> setrules -> place.py. DG128 footprint
 hand-written in pp48.pretty from the Degson spec numbers (verify on a
-sample). Next: user review of the placement, then route one column
-(critical: VBUS vias -> shunts -> FET -> S1, NODE S4 -> J1.2, the In2
-channel), then core sheet.
+sample). Column 1 ROUTED (first pass, 2026-10-28) and copied: flow is
+place.py -> tools/route_hand.py (group "hand": VBUS / SENSE / OUT / NODE
+pours, shunt vias, gate, INA238 Kelvin, In2 channel + taps, +3V3 trunk,
+"column-edge" rule areas on F/B) -> pcbkit krt-route (all columns, planes
+In1 GND / In2 VBUS) -> krt-reroute as needed -> tools/copycol.py (column 1
+copper -> columns 2..N, nets renamed). DRC on the copied board: no
+clearance / short / edge errors; 2 opens per column: /Column n/OVK (U103
+pin 7, the latch /PRE, boxed in) and one +3V3 island. The autorouted
+signal copper is dense spaghetti (expander lines crossing the column,
+front-panel lines from the B photoMOS down to J2): placement rework by
+signal flow is the next step, not more router passes.
 
 ## Start here (2026-10-27, evening): L1/L2 APS1510, bench carrier rev 0.2
 
