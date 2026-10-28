@@ -4,6 +4,15 @@ Read this first, then docs/controller.md and docs/power-board.md.
 
 ## 2026-10-28: plane redesign direction (ADR 0004, Proposed)
 
+Open, controller revisit (user 2026-10-28, not started): the plane now
+does per-node power, PWR_SW / RST_SW (photoMOS) and power-LED sense, so
+the controller's relay / front-panel section for 8 nodes duplicates it;
+the controller is also built for a 19 V input. Revisit what the
+controller keeps (ESP32, Ethernet, probes, link master to the planes)
+and how it is powered. The plane's 12 V aux is dropped (ADR 0003
+decision 14 amended); the plane core keeps the isolated link (I2C +
+INT), controller side powered from the controller.
+
 User: plane gets a full overhaul, modules vertical, N = 2/4/6/8, height
 as low as possible, every column copy-paste identical. Written down in
 docs/adr/0004-plane-column-layout.md (replaces ADR 0003 decisions 1-4;

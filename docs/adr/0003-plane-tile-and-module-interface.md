@@ -154,6 +154,12 @@ rest of the plane rested on assumptions that no longer hold:
     opto). This is functional isolation, not a safety barrier: the
     bus is SELV/ES1 at or below 60 V DC. The bus is earthed at one
     point, at the supply.
+    Amended 2026-10-28 (user): the 12 V aux is dropped. The plane does
+    not power the controller; the link isolator's controller side runs
+    from the controller's 3V3 over the link cable. How the controller
+    is powered moves to the controller revisit (docs/handoff.md); fed
+    from a node's 19 V it would sit on the bus ground again and the
+    isolator would be redundant, not harmful.
 
 ---
 
