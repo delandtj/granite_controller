@@ -49,6 +49,16 @@ one, NOT pushed; push only when the user asks):
   make room. tools/route_drive.py and route_input.py match the board.
   DRC unchanged (the 17 starved thermals as before), 0 unconnected,
   parity clean. fab/ is stale: rerun jlcfab.
+- PM-19V-250W silk (2026-10-28): the "Silk repairs" commit (ecc17fb)
+  carried only .kicad_pro changes, no board edits; silk redone here by
+  tools/silk_labels.py, which now also places references pcbkit silk
+  hid (parts over 5 mm^2, next to their own courtyard, nearer it than
+  any other part, 0.6 mm between labels, off part bodies) and keeps the
+  screw labels out of the gap between a column's two screws. New: B
+  VOUT, C25, C5, C6, C8, D1, R3, C20, C22; C24's moved off C5. Still
+  unlabelled (no room): Q1, U2, U3, C1, C2, C7, C21, C23, C9, C11, R11,
+  D2, D3 (Fab has them). D1's own outline still clips the bottom edge
+  (warning, JLC trims it).
 - PM-19V-250W: L1/L2 are now COILANK APS1510M220F (C49261404, JLC
   stock) on the unchanged XAL1510 footprint (fit check below). Silk
   done (tools/silk_labels.py). Controller stays LTC7810 (below).
