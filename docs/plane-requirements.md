@@ -33,11 +33,15 @@ middle of drawing.
 
 ## Scale
 
-- R7. 4 slots per tile, one MCU per tile. 8 slots = two tiles.
-- R8. A box holds 6x8 or 8x8 slots: 12-16 tiles, 13-16 kW. Tile
-  input ~22 A at 48 V, ~28 A at 38 V: 30 A class.
-- R9. All slot columns on a tile are identical copies (one column
-  routed, then repeated).
+- R7. One plane design in 2, 4, 6 and 8 slots, one MCU per plane
+  (amended 2026-10-28, ADR 0004; was: 4-slot tile, 8 = two tiles).
+- R8. A box holds 6x8 or 8x8 slots, 13-16 kW. Input ~5.5 A per slot at
+  48 V, ~7 A at 38 V: 30 A class per 4 slots.
+- R9. All slot columns are identical copies (one column routed, then
+  repeated by translation), in every position and every plane size,
+  including the wiring to the core (ADR 0004 rotating channel).
+- R9a. Plane height (along the module) as low as possible (added
+  2026-10-28; ADR 0004 reaches ~75 mm).
 
 ## Immersion
 
