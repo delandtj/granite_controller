@@ -96,8 +96,8 @@ connector edge).
    4 slots; the MCU (one per plane) controls both groups through its
    second I2C port.
 8. **Plane mounting**: holes at the ends only (core block and, for
-   N = 6/8, the end cap; for N = 2/4 a hole pair at the right edge of
-   the last column's margin or a narrow end strip). No hole strip
+   N = 6/8, the end cap; for N = 2/4 a narrow end strip, ~8 mm, with a
+   hole pair). No hole strip
    along the top: height stays ~75 mm.
 
 ---
@@ -192,8 +192,7 @@ Approximate sizes: N=2 ~90 x 75, N=4 ~140 x 75, N=6 ~215 x 75, N=8
 
 - [x] Input per 4 columns with an end cap for N = 6/8 (decision 7).
 - [x] Plane mounting: holes at the ends only (decision 8).
-- [ ] N = 2/4 right-hand end: hole pair in a narrow end strip (~8 mm)
-      or in the last column's margin.
+- [x] N = 2/4 right-hand end: hole pair in a narrow end strip (~8 mm).
 - [ ] Front-panel connector part (latching, fluid compatible, fits in
       ~8 mm of pitch).
 - [ ] ID ADC part (LCSC stock).

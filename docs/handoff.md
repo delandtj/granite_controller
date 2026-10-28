@@ -13,7 +13,8 @@ plane B side), VBUS on In2, core at the left end, rotating SDA/SCL
 channel so columns are identical, INT polled, ID through a per-column
 I2C ADC. Decided (user): end cap with a second 30 A hot-swap for N = 6/8
 (8 slots draw ~56 A at 38 V), plane mounting holes at the ends only.
-Still open: front-panel connector part, ID ADC part, N = 2/4 right end. Next: confirm
+Still open: front-panel connector part, ID ADC part. N = 2/4: narrow end strip
+(~8 mm) with the right-hand holes (user). Next: confirm
 the Mini-Fit Jr 2x3 RA depth and front-panel connector width (they set
 height and pitch), then gensch column block.
 
