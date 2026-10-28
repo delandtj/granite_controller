@@ -87,14 +87,15 @@ def block():
         (96, 56), fields={"LCSC": "C111822"}, desc="hot-swap, 55 mV current limit, power limit, auto-retry 0.5 %")
     R(3, "143k", R0805, {"1": "VBUS", "2": "UVLO"}, (68, 69), desc="UVLO: on 38.3 V, off 35.3 V (21 uA hysteresis)")
     R(4, "10k", R0402, {"1": "UVLO", "2": "GND"}, (68, 77))
-    R(5, "240k", R0805, {"1": "VBUS", "2": "OVLO"}, (76, 55), desc="OVLO: off 62.5 V, back at 57.5 V (to raise to ~66-68 V, ADR 0003)")
-    R(6, "10k", R0402, {"1": "OVLO", "2": "GND"}, (76, 63))
+    R(5, "124k", R0805, {"1": "VBUS", "2": "OVLO"}, (76, 55),
+      desc="OVLO: off 64.6 V (60.9-68.5 V over 2.4-2.6 V and 1 %), back on ~2.6 V lower (12-30 uA x 124k); module trips at 67.5 V")
+    R(6, "4.99k", R0402, {"1": "OVLO", "2": "GND"}, (76, 63))
     R(7, "13.7k", R0402, {"1": "PWR", "2": "GND"}, (116, 66),
       desc="power limit ~50 W at 60 V (RPWR = 1.3e5 x (RSNS x PLIM - 1.18mV x VDS))")
     C(1, "220n", C0603, {"1": "TIMER", "2": "GND"}, (108, 68), desc="insertion 160 ms, fault timeout 10 ms")
     R(8, "10k", R0402, {"1": "+3V3", "2": "PGD"}, (126, 52), desc="PGD pull-up")
     sym("D1", "Device:D_TVS", "SMBJ60A", "Diode_SMD:D_SMB", {"1": "GND", "2": "OUT"}, (112, 38), rot=90,
-        fields={"LCSC": "C353345"}, desc="slot output clamp (cable inductance on a cut); 60 V standoff vs the 60 V top of range: open")
+        fields={"LCSC": "C353345"}, desc="slot output clamp: 60 V standoff = top of the bus range, breakdown >= 66.7 V; SMBJ64A would clamp at 103 V, over the 100 V FET and module")
     C(2, "2.2u 100V", C1210, {"1": "OUT", "2": "GND"}, (122, 38), fields={"LCSC": "C338133"},
       desc="slot output, in front of the module")
 

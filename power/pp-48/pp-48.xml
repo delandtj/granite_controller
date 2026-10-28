@@ -2,7 +2,7 @@
 <export version="E">
   <design>
     <source>/home/delandtj/Granite/Electronics/granite_controller/power/pp-48/pp-48.kicad_sch</source>
-    <date>2026-10-28T18:32:12</date>
+    <date>2026-10-28T20:27:18</date>
     <tool>Eeschema 10.0.7</tool>
     <sheet number="1" name="/" tstamps="/">
       <title_block>
@@ -305,12 +305,12 @@
     <comp ref="D101">
       <value>SMBJ60A</value>
       <footprint>Diode_SMD:D_SMB</footprint>
-      <description>slot output clamp (cable inductance on a cut); 60 V standoff vs the 60 V top of range: open</description>
+      <description>slot output clamp: 60 V standoff = top of the bus range, breakdown &gt;= 66.7 V; SMBJ64A would clamp at 103 V, over the 100 V FET and module</description>
       <fields>
         <field name="LCSC">C353345</field>
         <field name="Footprint">Diode_SMD:D_SMB</field>
         <field name="Datasheet"/>
-        <field name="Description">slot output clamp (cable inductance on a cut); 60 V standoff vs the 60 V top of range: open</field>
+        <field name="Description">slot output clamp: 60 V standoff = top of the bus range, breakdown &gt;= 66.7 V; SMBJ64A would clamp at 103 V, over the 100 V FET and module</field>
       </fields>
       <libsource lib="Device" part="D_TVS" description="Bidirectional transient-voltage-suppression diode"/>
       <property name="LCSC" value="C353345"/>
@@ -672,14 +672,14 @@
       </units>
     </comp>
     <comp ref="R105">
-      <value>240k</value>
+      <value>124k</value>
       <footprint>Resistor_SMD:R_0805_2012Metric</footprint>
-      <description>OVLO: off 62.5 V, back at 57.5 V (to raise to ~66-68 V, ADR 0003)</description>
+      <description>OVLO: off 64.6 V (60.9-68.5 V over 2.4-2.6 V and 1 %), back on ~2.6 V lower (12-30 uA x 124k); module trips at 67.5 V</description>
       <fields>
         <field name="LCSC"/>
         <field name="Footprint">Resistor_SMD:R_0805_2012Metric</field>
         <field name="Datasheet"/>
-        <field name="Description">OVLO: off 62.5 V, back at 57.5 V (to raise to ~66-68 V, ADR 0003)</field>
+        <field name="Description">OVLO: off 64.6 V (60.9-68.5 V over 2.4-2.6 V and 1 %), back on ~2.6 V lower (12-30 uA x 124k); module trips at 67.5 V</field>
       </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
       <property name="LCSC" value=""/>
@@ -699,16 +699,16 @@
       </units>
     </comp>
     <comp ref="R106">
-      <value>10k</value>
+      <value>4.99k</value>
       <footprint>Resistor_SMD:R_0402_1005Metric</footprint>
       <fields>
-        <field name="LCSC">C25744</field>
+        <field name="LCSC"/>
         <field name="Footprint">Resistor_SMD:R_0402_1005Metric</field>
         <field name="Datasheet"/>
         <field name="Description"/>
       </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
-      <property name="LCSC" value="C25744"/>
+      <property name="LCSC" value=""/>
       <property name="Sheetname" value="Column 1"/>
       <property name="Sheetfile" value="sheets/column.kicad_sch"/>
       <property name="ki_keywords" value="R res resistor"/>
@@ -1838,12 +1838,12 @@
     <comp ref="D201">
       <value>SMBJ60A</value>
       <footprint>Diode_SMD:D_SMB</footprint>
-      <description>slot output clamp (cable inductance on a cut); 60 V standoff vs the 60 V top of range: open</description>
+      <description>slot output clamp: 60 V standoff = top of the bus range, breakdown &gt;= 66.7 V; SMBJ64A would clamp at 103 V, over the 100 V FET and module</description>
       <fields>
         <field name="LCSC">C353345</field>
         <field name="Footprint">Diode_SMD:D_SMB</field>
         <field name="Datasheet"/>
-        <field name="Description">slot output clamp (cable inductance on a cut); 60 V standoff vs the 60 V top of range: open</field>
+        <field name="Description">slot output clamp: 60 V standoff = top of the bus range, breakdown &gt;= 66.7 V; SMBJ64A would clamp at 103 V, over the 100 V FET and module</field>
       </fields>
       <libsource lib="Device" part="D_TVS" description="Bidirectional transient-voltage-suppression diode"/>
       <property name="LCSC" value="C353345"/>
@@ -2205,14 +2205,14 @@
       </units>
     </comp>
     <comp ref="R205">
-      <value>240k</value>
+      <value>124k</value>
       <footprint>Resistor_SMD:R_0805_2012Metric</footprint>
-      <description>OVLO: off 62.5 V, back at 57.5 V (to raise to ~66-68 V, ADR 0003)</description>
+      <description>OVLO: off 64.6 V (60.9-68.5 V over 2.4-2.6 V and 1 %), back on ~2.6 V lower (12-30 uA x 124k); module trips at 67.5 V</description>
       <fields>
         <field name="LCSC"/>
         <field name="Footprint">Resistor_SMD:R_0805_2012Metric</field>
         <field name="Datasheet"/>
-        <field name="Description">OVLO: off 62.5 V, back at 57.5 V (to raise to ~66-68 V, ADR 0003)</field>
+        <field name="Description">OVLO: off 64.6 V (60.9-68.5 V over 2.4-2.6 V and 1 %), back on ~2.6 V lower (12-30 uA x 124k); module trips at 67.5 V</field>
       </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
       <property name="LCSC" value=""/>
@@ -2232,16 +2232,16 @@
       </units>
     </comp>
     <comp ref="R206">
-      <value>10k</value>
+      <value>4.99k</value>
       <footprint>Resistor_SMD:R_0402_1005Metric</footprint>
       <fields>
-        <field name="LCSC">C25744</field>
+        <field name="LCSC"/>
         <field name="Footprint">Resistor_SMD:R_0402_1005Metric</field>
         <field name="Datasheet"/>
         <field name="Description"/>
       </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
-      <property name="LCSC" value="C25744"/>
+      <property name="LCSC" value=""/>
       <property name="Sheetname" value="Column 2"/>
       <property name="Sheetfile" value="sheets/column.kicad_sch"/>
       <property name="ki_keywords" value="R res resistor"/>

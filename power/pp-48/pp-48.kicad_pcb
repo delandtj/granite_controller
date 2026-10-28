@@ -6512,7 +6512,7 @@
 				)
 			)
 		)
-		(property "Value" "240k"
+		(property "Value" "124k"
 			(at 0 1.65 90)
 			(layer "F.Fab")
 			(uuid "cffaec52-2945-43d4-b0a5-7fc647c4eba0")
@@ -6534,7 +6534,7 @@
 				)
 			)
 		)
-		(property "Description" "OVLO: off 62.5 V, back at 57.5 V (to raise to ~66-68 V, ADR 0003)"
+		(property "Description" "OVLO: off 64.6 V (60.9-68.5 V over 2.4-2.6 V and 1 %), back on ~2.6 V lower (12-30 uA x 124k); module trips at 67.5 V"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -8451,7 +8451,7 @@
 				)
 			)
 		)
-		(property "Value" "10k"
+		(property "Value" "4.99k"
 			(at 0 1.17 90)
 			(layer "F.Fab")
 			(uuid "6b70cdb8-894c-4876-85e3-3a614c1f1ea8")
@@ -8496,7 +8496,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25744"
+		(property "LCSC" ""
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -10333,7 +10333,7 @@
 				)
 			)
 		)
-		(property "Value" "240k"
+		(property "Value" "124k"
 			(at 0 1.65 90)
 			(layer "F.Fab")
 			(uuid "be6fccaf-47f7-4605-98f7-ab70ba44feb3")
@@ -10355,7 +10355,7 @@
 				)
 			)
 		)
-		(property "Description" "OVLO: off 62.5 V, back at 57.5 V (to raise to ~66-68 V, ADR 0003)"
+		(property "Description" "OVLO: off 64.6 V (60.9-68.5 V over 2.4-2.6 V and 1 %), back on ~2.6 V lower (12-30 uA x 124k); module trips at 67.5 V"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -13535,7 +13535,7 @@
 				)
 			)
 		)
-		(property "Value" "10k"
+		(property "Value" "4.99k"
 			(at 0 1.17 90)
 			(layer "F.Fab")
 			(uuid "94cde130-688e-4ad5-92d0-e5e41ee5913c")
@@ -13580,7 +13580,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25744"
+		(property "LCSC" ""
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -21060,7 +21060,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Description" "slot output clamp (cable inductance on a cut); 60 V standoff vs the 60 V top of range: open"
+		(property "Description" "slot output clamp: 60 V standoff = top of the bus range, breakdown >= 66.7 V; SMBJ64A would clamp at 103 V, over the 100 V FET and module"
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -22469,7 +22469,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Description" "slot output clamp (cable inductance on a cut); 60 V standoff vs the 60 V top of range: open"
+		(property "Description" "slot output clamp: 60 V standoff = top of the bus range, breakdown >= 66.7 V; SMBJ64A would clamp at 103 V, over the 100 V FET and module"
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "B.Fab")

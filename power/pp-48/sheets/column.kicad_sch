@@ -7577,7 +7577,7 @@
 				)
 			)
 		)
-		(property "Value" "240k"
+		(property "Value" "124k"
 			(at 100.806 71.12 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -7611,7 +7611,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "OVLO: off 62.5 V, back at 57.5 V (to raise to ~66-68 V, ADR 0003)"
+		(property "Description" "OVLO: off 64.6 V (60.9-68.5 V over 2.4-2.6 V and 1 %), back on ~2.6 V lower (12-30 uA x 124k); module trips at 67.5 V"
 			(at 96.52 69.85 0)
 			(hide yes)
 			(show_name no)
@@ -7675,8 +7675,8 @@
 				)
 			)
 		)
-		(property "Value" "10k"
-			(at 100.306 81.28 0)
+		(property "Value" "4.99k"
+			(at 101.306 81.28 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -7721,7 +7721,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" "C25744"
+		(property "LCSC" ""
 			(at 96.52 80.01 0)
 			(hide yes)
 			(show_name no)
@@ -8101,7 +8101,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "slot output clamp (cable inductance on a cut); 60 V standoff vs the 60 V top of range: open"
+		(property "Description" "slot output clamp: 60 V standoff = top of the bus range, breakdown >= 66.7 V; SMBJ64A would clamp at 103 V, over the 100 V FET and module"
 			(at 142.24 48.26 0)
 			(hide yes)
 			(show_name no)

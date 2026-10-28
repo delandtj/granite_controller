@@ -419,7 +419,15 @@ Review asks (answered 2026-10-26):
 - [ ] INA238 ALERT threshold (210-220 W input) and whether it latches
   or only reports.
 - [ ] Tile hot-swap reset path (LM5069-1 latch-off, decided).
-- [ ] D1 SMBJ60A at 60 V standoff vs the new range (SMBJ64A?).
+- [x] D1 SMBJ60A at 60 V standoff vs the new range: kept (2026-10-28).
+  Breakdown >= 66.7 V, so no conduction at 60 V; SMBJ64A clamps at
+  103 V, over the 100 V FET and module parts; no SMBJ62A at LCSC.
+- [x] Slot OVLO (2026-10-28, pp-48 column R5 / R6 124k / 4.99k): off at
+  64.6 V nominal, 60.9-68.5 V over the LM5069 2.4-2.6 V threshold and
+  1 % parts, back on ~2.6 V lower (12-30 uA hysteresis). The module
+  trips at 67.5 V, so "plane first" holds nominally, not worst case;
+  the +/-4 % threshold leaves no setting that clears both 60 V and
+  66.7 V (D1 breakdown) worst case. Both trips are safe.
 - [ ] OV_KILL at 22.7 V against the node's input rating.
 - [ ] Spare aux contact: second GND or something useful.
 - [ ] Node connector fluid compatibility (soak test).

@@ -29,7 +29,9 @@ LED OVK INA_AL, INT unused), ADC121C027 (0x51, ADR0 GND; KiCad symbol
 ADC101C021CIMK is pin-equal), Q5 on the module RUN pin, segment pull-ups,
 DG128 terminal J1, GH J2. Slot ON / node LEDs dropped (tank). Not drawn:
 PGOOD-loss latch with blanking, INA238 ALERT latch (both only to the
-expander). ERC: 4 dangling COLn_SDA/SCL labels (core not drawn) + DG128
+expander). 2026-10-28: slot OVLO R5 / R6 124k / 4.99k (64.6 V,
+60.9-68.5 V worst case, module 67.5 V), D1 SMBJ60A kept (SMBJ64A
+clamps at 103 V); values only, board synced, DRC unchanged. ERC: 4 dangling COLn_SDA/SCL labels (core not drawn) + DG128
 footprint missing from pp48.pretty (pmmount.py now also writes the host
 mount footprints there). Cable-side NODE cap dropped (user). J1 pins: 1 GND, 2 +19 V (pin 2 under
 S4). PCB DRAFT for review: pp-48.kicad_pcb, 2 columns (50 x 72 mm), placed
