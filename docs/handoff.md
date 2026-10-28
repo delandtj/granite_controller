@@ -11,9 +11,9 @@ plane-requirements R7-R9a amended): 25 mm column pitch, ~75 mm tall,
 slot front end under its own module (F <= 2.0 mm, taller parts on the
 plane B side), VBUS on In2, core at the left end, rotating SDA/SCL
 channel so columns are identical, INT polled, ID through a per-column
-I2C ADC. Open for the user before schematic work: input per 4 columns
-with an end cap for N = 6/8 (8 slots draw ~56 A at 38 V), plane
-mounting holes, front-panel connector part, ID ADC part. Next: confirm
+I2C ADC. Decided (user): end cap with a second 30 A hot-swap for N = 6/8
+(8 slots draw ~56 A at 38 V), plane mounting holes at the ends only.
+Still open: front-panel connector part, ID ADC part, N = 2/4 right end. Next: confirm
 the Mini-Fit Jr 2x3 RA depth and front-panel connector width (they set
 height and pitch), then gensch column block.
 

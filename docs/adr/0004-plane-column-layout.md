@@ -2,6 +2,8 @@
 
 **Status**: Proposed
 **Date**: 2026-10-28
+**Updated**: 2026-10-28 (user: end cap for N = 6/8, mounting holes at
+the ends only)
 
 Related: docs/adr/0003-plane-tile-and-module-interface.md (decisions
 1-4 are replaced here, 5-14 stand), docs/plane-requirements.md (R7-R9
@@ -84,16 +86,19 @@ connector edge).
    - Mux: TCA9548A, channel k = column k+1 (all 8 used at N = 8). The
      plane front end (INA238, expander) moves to the G070's second I2C
      port.
-7. **Input current scales with N** (open, recommendation below): N x
+7. **Input current scales with N** (decided 2026-10-28): N x
    ~265 W input is ~44 A at 48 V and ~56 A at 38 V for N = 8, twice the
-   30 A class of ADR 0003. Recommended: one 30 A hot-swap group per 4
-   columns. N <= 4: one group in the core (ADR 0003 decision 8 as is).
+   30 A class of ADR 0003. One 30 A hot-swap group per 4 columns. N <= 4: one group in the core (ADR 0003 decision 8 as is).
    N = 6/8: a second group in an end-cap block at the right end with
    its own keyed input connector; the In2 VBUS plane splits at the
    column 4/5 boundary. Column copper does not change; only the pour
    split and the end cap are added. Fault unit on the bus side stays
    4 slots; the MCU (one per plane) controls both groups through its
    second I2C port.
+8. **Plane mounting**: holes at the ends only (core block and, for
+   N = 6/8, the end cap; for N = 2/4 a hole pair at the right edge of
+   the last column's margin or a narrow end strip). No hole strip
+   along the top: height stays ~75 mm.
 
 ---
 
@@ -174,8 +179,9 @@ Approximate sizes: N=2 ~90 x 75, N=4 ~140 x 75, N=6 ~215 x 75, N=8
   the 7 mm gap with little fluid flow. Mitigation: FET drain pad into
   the In2/B copper; check the INA238 die temperature on the bench.
 - **Board flex at 265 mm**: Mini-Fit mating force on a long board held
-  at the ends. Mitigation: holes in core and end cap; if that flexes,
-  a 4 mm hole strip on top (height -> ~80 mm) or a stiffener.
+  at the ends only (decision 8). Mitigation: support the connector
+  edge while mating; if it still flexes, a stiffener bar on the B side
+  (no height change) before a top hole strip (height -> ~80 mm).
 - **Mini-Fit RA depth and front-panel connector width** set the pitch
   and the height; confirm both on the drawings before the column is
   drawn.
@@ -184,9 +190,10 @@ Approximate sizes: N=2 ~90 x 75, N=4 ~140 x 75, N=6 ~215 x 75, N=8
 
 ## Open Questions
 
-- [ ] Input per 4 columns with an end cap (decision 7), or another
-      split.
-- [ ] Plane mounting: holes at the ends only, or a top hole strip.
+- [x] Input per 4 columns with an end cap for N = 6/8 (decision 7).
+- [x] Plane mounting: holes at the ends only (decision 8).
+- [ ] N = 2/4 right-hand end: hole pair in a narrow end strip (~8 mm)
+      or in the last column's margin.
 - [ ] Front-panel connector part (latching, fluid compatible, fits in
       ~8 mm of pitch).
 - [ ] ID ADC part (LCSC stock).
