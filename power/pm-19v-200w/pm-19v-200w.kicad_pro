@@ -530,7 +530,7 @@
       "netlist": "",
       "plot": "",
       "specctra_dsn": "",
-      "step": "",
+      "step": "pm-19v-200w.step",
       "vrml": ""
     },
     "page_layout_descr_file": ""

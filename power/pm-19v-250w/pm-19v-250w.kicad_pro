@@ -243,7 +243,7 @@
       "internal_id": "",
       "mfg": "",
       "mpn": "",
-      "sch_revision": ""
+      "sch_revision": "0.1"
     },
     "layer_pairs": [],
     "layer_presets": [],
@@ -530,7 +530,7 @@
       "netlist": "",
       "plot": "",
       "specctra_dsn": "",
-      "step": "",
+      "step": "pm-19v-250w.step",
       "vrml": ""
     },
     "page_layout_descr_file": ""
@@ -662,13 +662,18 @@
       {
         "filename": "pm-19v-250w.kicad_sch",
         "name": "pm-19v-250w",
-        "uuid": "00000000-0000-0000-0000-000000000000"
+        "uuid": "89669c12-5e74-4100-98d5-4c6ec3ae2f8e"
       }
     ],
     "used_designators": "",
     "variants": []
   },
-  "sheets": [],
+  "sheets": [
+    [
+      "89669c12-5e74-4100-98d5-4c6ec3ae2f8e",
+      "pm-19v-250w"
+    ]
+  ],
   "text_variables": {},
   "tuning_profiles": {
     "meta": {
