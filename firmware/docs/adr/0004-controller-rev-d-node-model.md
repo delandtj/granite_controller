@@ -261,9 +261,11 @@ boot (boot count changed), never on its own boot.
 then?**
 A: Its boot count changes; the controller re-reads INFO, re-pushes
 config if the hash differs, raises an event, and shows the nodes the
-plane reports (a watchdog reset puts every slot ON, ADR 0002 decision
-3). It does not re-apply OFF on its own; a rule or the operator does.
-Open question below.
+plane reports. A watchdog reset changes nothing: the plane restores
+OFF slots from its backup registers (ADR 0002 decision 3). After a
+plane power loss the plane flags "intended state lost"; the controller
+then re-applies OFF to every node it last commanded OFF (kept in NVS,
+so this also works after both rebooted).
 
 **Q: Two planes in one frame, and the frame numbers its nodes 1-16
 left to right. Plane 0 is the right-hand one.**
@@ -307,27 +309,26 @@ with the reason. `on` does not reset a unit latch; that is
   software I2C) as a stopgap.
 - web UI and docs (home-assistant.md, modbus_map.md) to the new model.
 
-Review asks:
+Review asks (answered 2026-10-29 except 2):
 1. Node id derived from plane straps and slot (1-64), names in config:
-   yes / no?
-2. `force_off` becomes a rail cut (and `off` escalates to it): yes /
-   no?
-3. Plane firmware updates manual by default, auto as an option: yes /
-   no?
-4. Rev D hardware: plane link moves to the HP I2C, dry inputs to
-   GPIOs, two 12 V inputs OR-ed: OK to put in the rev D hardware spec?
+   yes.
+2. `force_off` becomes a rail cut (and `off` escalates to it): open.
+3. Plane firmware updates manual by default, auto as an option: yes.
+4. Rev D hardware: plane link on the HP I2C, dry inputs on GPIOs, two
+   12 V inputs OR-ed: yes, into the rev D hardware spec.
 
 ---
 
 ## Open Questions
 
 **Architecture-changers**
-- [ ] Review asks 1, 2 and 4.
+- [x] Review asks 1 and 4 (user 2026-10-29).
+- [ ] Review ask 2: meaning of force_off and the escalation of off.
 
 **Behavior definers**
-- [ ] After a plane watchdog reset (every slot ON), should the
-  controller re-apply the OFF it last commanded? Ties to ADR 0002's
-  open "state after a unit glitch". Default: no, event only.
-- [ ] Review ask 3.
+- [x] OFF slots go back OFF after any reset or glitch (user
+  2026-10-29): the plane from its backup registers / RAM, the
+  controller after a plane power loss ("intended state lost").
+- [x] Review ask 3 (user 2026-10-29).
 - [ ] HA: MQTT discovery now that the node set is dynamic, or
   templates as today.

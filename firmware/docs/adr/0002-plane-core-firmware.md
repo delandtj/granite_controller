@@ -96,16 +96,21 @@ Two things in the hardware shape the firmware more than the ADRs say:
    1. starts the IWDG (~500 ms) and reads the reset cause;
    2. on every channel that has a unit, writes the expander's photoMOS
       outputs (PWRD, RSTD) released, before any read;
-   3. then sets the rest of the expander state by reset cause:
-      - **commanded reset** (update, CTRL reboot): adopt. The app
-        wrote the intended per-slot OFF / RUNOFF / DISARM / U_OFF state
-        into the TAMP backup registers (with a magic and CRC) before
-        resetting; it checks those against the expander's output
-        registers and keeps them. Nothing switches.
-      - **watchdog, brown-out, power-on, unknown**: hardware defaults.
-        All expander lines back to inputs (every slot and unit ON),
-        as ADR 0001 rule 2 says ("a watchdog reset returns the slot to
-        ON").
+   3. then restores the intended state. A slot that was OFF goes
+      back OFF (user 2026-10-29: "back off when off was set"):
+      - The app keeps the intended per-slot OFF / RUNOFF / DISARM and
+        U_OFF state in the TAMP backup registers (magic + CRC),
+        rewritten on every change, not only before a commanded reset.
+      - **Backup registers valid** (commanded reset, watchdog, any
+        reset with VDD kept): adopt. The expanders held their outputs
+        through the reset, so an OFF slot never came on; the app
+        checks them against the backup registers and keeps them.
+        Nothing switches. This replaces ADR 0001 rule 2 ("a watchdog
+        reset returns the slot to ON") for slots that were OFF.
+      - **Backup registers invalid** (core power loss): hardware
+        defaults, every slot ON, and the flag "intended state lost"
+        in STATUS. The controller then re-applies the OFF it last
+        commanded (controller ADR 0004).
 
    A crash in a press therefore holds the button for at most the IWDG
    period plus the boot time to step 2, ~0.6 s, under the ~4 s a
@@ -118,12 +123,10 @@ Two things in the hardware shape the firmware more than the ADRs say:
    present unit that NAKs twice in a row is marked lost (event), its
    channel goes back on the 2 s re-scan. A unit that appears or comes
    back is configured from scratch (expander direction, INA238
-   configuration and power limits) and then put in the state it
-   should be in. What that state is after a glitch is open (user
-   2026-10-29: leaning to ON, i.e. leave the hardware defaults, or the
-   state the slot should have; to work out). Until then: re-apply the
-   OFF of a slot the controller turned OFF, and an event "unit reset"
-   either way. A bus that stays
+   configuration and power limits) and then put back in its intended
+   state: a slot that was OFF goes back OFF (user 2026-10-29), and an
+   event "unit reset seen" is raised. While the unit had no 3V3 its
+   slots were ON (hardware default); that cannot be avoided. A bus that stays
    stuck (SDA low) gets nine SCL clocks, then a MUX_RST pulse, then
    the channel is skipped until the next re-scan.
 
@@ -340,11 +343,9 @@ slot 3 OFF. Does slot 3 come on?**
 A: No. The update path is a commanded reset: the app writes the
 intended state to the backup registers, the expanders hold their
 outputs through the swap, and the new image adopts both after checking
-them. Only a watchdog, brown-out or power-on reset returns slots to ON,
-as ADR 0001 rule 2 accepts. The open edge: the new image fails
-probation and the bootloader swaps back, the old image then boots
-after a watchdog reset and turns OFF slots ON. To fix if it matters:
-the old image could also adopt when the swap state says "reverted".
+them. The same holds for a watchdog reset and for a rollback (the
+old image adopts from the backup registers like the new one). Only a
+core power loss puts slots ON, and then the controller re-applies OFF.
 
 **Q: What holds a PWR press if the firmware hangs with the IWDG still
 fed (a stuck task, the watchdog fed from another)?**
@@ -359,8 +360,8 @@ until it exists this is the only bound.
 on units 2-4 see?**
 A: Units 2-4 lose 3V3: their expanders reset to inputs, so every slot
 there goes ON (and a slot that was OFF powers up its node) for as long
-as the cable is out. When the units come back the firmware sets the
-state they should have (decision 4, open). The plane cannot prevent the ON while the cable is out; that is
+as the cable is out. When the units come back the firmware turns the
+OFF slots back OFF (decision 4). The plane cannot prevent the ON while the cable is out; that is
 the hardware default by design. Events record it.
 
 **Q: How long does it take to see a node's LED blink pattern, and can
@@ -381,10 +382,11 @@ link load and to keep one failure at a time.
 ## Implementation Plan
 
 ### Decisions you will probably want to tweak
-- **State after a unit glitch.** Open (user leans to ON / the state
-  the slot should have). Interim: re-apply OFF. Alternative: leave the
-  hardware defaults and report. Cost to change: one branch in
-  discovery.
+- **State after a reset or a unit glitch.** Decided (user
+  2026-10-29): a slot that was OFF goes back OFF; the plane restores
+  it from the backup registers or its RAM, the controller after a
+  core power loss. Alternative: leave the hardware defaults and
+  report. Cost to change: one branch in start-up and discovery.
 - **Image integrity.** Decided (user 2026-10-29): controller verifies
   the signature, plane checks CRC-32. Alternative: Ed25519 in
   plane-boot. Cost to change later: high, plane-boot is SWD-only.
@@ -438,9 +440,9 @@ proposed); the state after a unit glitch stays open.
   Core pins to take from mcu.py when it lands.
 
 **Behavior definers**
-- [ ] State of a unit's slots after it comes back from a glitch
-  (leaning ON / the state it should be; to work out).
+- [x] State after a reset or a unit glitch: OFF slots go back OFF
+  (user 2026-10-29).
 - [x] Unit hot-swap and OV latches: controller command only.
 - [x] Power-up stagger: dropped, command only.
-- [ ] After a rollback, adopt the intended state too (see the first
-  expert question). Default: no in the first release.
+- [x] After a rollback: adopt from the backup registers like any
+  reset.

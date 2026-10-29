@@ -115,7 +115,8 @@ Value types in brackets. Units: V in 10 mV, I in mA, P in 0.1 W, T in
 - 0x12 uptime [u32 s]
 - 0x13 flags [u16: any slot fault, any unit fault, events pending,
   sequence running, config dirty, update in progress, unconfirmed
-  image]
+  image, intended state lost (core power loss: OFF slots came back
+  ON, the controller re-applies)]
 - 0x14, 0x15 reserved (were the aux 12 V monitor; no such sensor)
 - 0x16 command result [u8 seq, u8 code], one per finished or
   refused command still held (the last 8)
