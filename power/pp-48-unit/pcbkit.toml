@@ -1,8 +1,8 @@
 # pcbkit settings for the PP-48 UNIT board (docs/adr/0005-chained-plane-boards.md).
 # 4L JLC 1.6 mm: F parts and pours, In1 GND, In2 VBUS + the SDA/SCL channel, B parts and pours.
 #
-# 76 x 72 mm: 9 mm left margin (chain IN header J301 on B, two M3 holes), slot A (x 100-125), slot B
-# (125-150), 17 mm input strip (150-167: XT60, unit hot-swap, chain OUT header J302 on B, two M3 holes).
+# 78.5 x 72 mm: 9 mm left margin (chain IN header J301 on B, two M3 holes), slot A (x 100-125), slot B
+# (125-150), 19.5 mm input strip (150-169.5: XT60, unit hot-swap, chain OUT header J302 on B, two M3 holes).
 # Board flow (tools in ../pp-48/tools): gensch.py unit -> netlist -> mkboard -> outline -> setrules ->
 # place_unit.py; routing to follow (rev1 flow: route_hand.py, netsplit.py, krt-route, gndstitch.py).
 
@@ -18,7 +18,7 @@ cell = 14.0
 per_row = 6
 
 [outline]
-length = 76.0
+length = 78.5
 height = 72.0
 origin = [91.0, 100.0]
 hole_refs = ["H1", "H2", "H3", "H4"]

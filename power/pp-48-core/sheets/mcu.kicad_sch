@@ -3487,14 +3487,6 @@
 		(uuid "8ec18194-565d-5d7e-9d5c-04c9d6f21399")
 	)
 	(no_connect
-		(at 185.42 157.48)
-		(uuid "2809e511-7e2f-5789-80c5-28e125b070d8")
-	)
-	(no_connect
-		(at 185.42 160.02)
-		(uuid "1d73dc88-86cc-52f9-9e27-fb418bf77eca")
-	)
-	(no_connect
 		(at 185.42 144.78)
 		(uuid "b13cd0c1-19a3-5a1d-bfd1-dc4040b9c70c")
 	)
@@ -3555,6 +3547,28 @@
 			(justify right)
 		)
 		(uuid "283a880b-6648-50c6-a5eb-68d44152d02d")
+	)
+	(hierarchical_label "PRESS_TRIG"
+		(shape output)
+		(at 185.42 157.48 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "8c5abf39-360c-54c9-980d-668b01e5982d")
+	)
+	(hierarchical_label "EXP_RSTN"
+		(shape output)
+		(at 185.42 160.02 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "01ce7f0a-b045-5a63-a1b7-8f5362231607")
 	)
 	(hierarchical_label "INT_OUT"
 		(shape output)

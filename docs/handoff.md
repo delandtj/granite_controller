@@ -2,6 +2,40 @@
 
 Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
 
+## 2026-10-29 (late): plane boards - press deadline drawn, unit routing in progress
+
+Schematics (ERC 0 both): chain now JST PH 14 (S14B-PH-K-S C157938, 381 in
+stock), IN 1 3V3 ... 12 P3_SCL, 13 PRESS_EN, 14 EXP_RSTN, OUT = IN read
+backwards (cable pin n -> 15 - n), pins v 35..61 on every board (ADR 0005
+decision 4). Press deadline (docs/press-deadline-line.md, decided): unit
+Q10 2N7002 + R31 on the photoMOS LED returns (PRESS_RTN), core U301
+74LVC1G123 (pp:74LVC1G123, a single-unit copy: tools/sch places unit 1
+only) + R301 / C301 ~1 s, R302 / R303, MCU PC6 PRESS_TRIG, PC7 EXP_RSTN.
+LCSC codes rechecked on JLCPCB's own API (see the next section's note):
+only LM5069MM-1 (1 in stock) is open.
+
+Boards rebuilt from the netlists (mkboard -> outline -> place_*.py ->
+setrules). Unit now 78.5 x 72 (strip 19.5 mm: two FETs side by side
+under J302 plus hole H4). Strip power path re-placed top-down (XT60 ->
+C201 -> D201 -> shunts R201 / R202 stacked -> USENSE column -> Q202 / Q203
+tabs up -> VBUS along the bottom and up the column right of J302, via
+field). Core: placed, DRC clean except unconnected, NOT routed yet.
+
+Unit routing (tools/route_unit.sh <placed board>, in power/pp-48-unit):
+route_unit.py hand copper (rev1 slot copper via route_hand.column, In2
+band of 10 rows: EXP_RSTN / PRESS_EN / CH3..CH1 to a ladder in the strip,
+SEG_SCL / SDA to taps in slot A; EXP_RSTN row to a tap by U5; +3V3 trunk
+J301.1 -> J302.14 with slot taps; strip pours, Kelvin, gate escapes; GND
+pours) -> unitsplit.py (band nets cut by region for KRT) -> krt-route ->
+join -> redraw -> up to 3 krt-reroute --keep passes. State: DRC 0 errors,
+~10 unconnected, all at expander U5 (pins 28 EXP_RSTN, 29 SEG_SCL, 12
+U_OFF, 24 U_PGD) and +3V3 across the slot B / strip edge: U5's top pins
+are boxed in by its supply escapes. NEXT: escape U5's top / right pins by
+script (like its supply pins) or move U5 / its caps toward the strip, then
+re-run; then the core (route_hand.py core() minus the tile, band rows to
+J301), gndstitch, silk, jlcfab. tools/pmmount.py was missing from the
+split: copied to power/tools/.
+
 ## 2026-10-29: repo split from granite_controller
 
 This repo was split out of granite_controller (filter-repo, history

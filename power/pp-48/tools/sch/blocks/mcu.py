@@ -35,12 +35,15 @@ def mcu_nets(N, tile=True):
     if N <= 4 or not tile:           # one hot-swap group, in the core
         nets["38"] = nets["39"] = "NC"
     if not tile:                     # chained plane (ADR 0005): the hot-swaps are in the units, on their expanders
-        nets["25"] = nets["30"] = nets["31"] = "NC"
+        nets["25"] = "NC"
+        nets["30"] = "PRESS_TRIG"    # PC6 TIM3_CH1: edges retrigger the press deadline (docs/press-deadline-line.md)
+        nets["31"] = "EXP_RSTN"      # PC7 open drain: the units' TCA6424A /RESET (R30 pull-ups on the units)
     return nets
 
 
 SHAPES = {"VIN_SNS": "input", "TILE_PGD": "input", "TILE2_PGD": "input", "TILE_AL": "input",
-          "TILE_OFF": "output", "TILE2_OFF": "output", "MUX_RST": "output"}
+          "TILE_OFF": "output", "TILE2_OFF": "output", "MUX_RST": "output",
+          "PRESS_TRIG": "output", "EXP_RSTN": "output"}
 
 
 def shape(net):

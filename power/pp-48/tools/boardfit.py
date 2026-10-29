@@ -55,12 +55,13 @@ def pad_xy(fp, num):
 
 
 def chain(board, ref, edge_x, face, pin1_y, pin1_top):
-    """PH 12 side-entry header on B: pin row vertical, pin 1 at pin1_y (top end if pin1_top), the
+    """PH side-entry header on B: pin row vertical, pin 1 at pin1_y (top end if pin1_top), the
     mating face (courtyard edge) at edge_x, facing 'left' or 'right'"""
+    last = str(max(int(p.GetNumber()) for p in get(board, ref).Pads() if p.GetNumber().isdigit()))
     for rot in (0, 90, 180, 270):
         fp = put(board, ref, 0.0, 0.0, rot, B)
         fp.BuildCourtyardCaches()
-        (ax, ay), (bx, by) = pad_xy(fp, '1'), pad_xy(fp, '12')
+        (ax, ay), (bx, by) = pad_xy(fp, '1'), pad_xy(fp, last)
         x0, y0, x1, y1 = courtyard(fp)
         body_left = (x0 + x1) / 2 < ax
         if abs(ax - bx) < 1e-3 and (ay < by) == pin1_top and body_left == (face == 'left'):

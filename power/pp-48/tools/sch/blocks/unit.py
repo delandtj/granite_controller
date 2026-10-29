@@ -64,7 +64,7 @@ FET = "Transistor_FET:2N7002"
 SOT23 = "Package_TO_SOT_SMD:SOT-23"
 TLP176 = ("pp:TLP176AM", "TLP176AM", "Package_SO:SOIC-4_4.55x3.7mm_P2.54mm")
 STANDOFF = "pp48:PM_Standoff_M2x7_SMTSO"
-SHARED = ("GND", "+3V3", "VBUS", "SDA", "SCL", "NC")
+SHARED = ("GND", "+3V3", "VBUS", "SDA", "SCL", "NC", "PRESS_RTN")
 SLOT_DX, SLOT_REF = 300, 50           # slot B: drawn 300 grid units right, references + 50
 # expander ports (TCA6424A pin: slot net). U5 sits in slot B at rot 0: slot B's lines on the
 # bottom right and right side toward their parts; slot A's lines on the left side and bottom left,
@@ -76,6 +76,7 @@ EXP_IO = {"1": "A_DISARM", "2": "A_OFF", "3": "A_PGD", "4": "A_LQ", "5": "A_LCLR
           "24": "U_PGD"}
 
 UNIT_IO = {"U_OFF": "output", "U_PGD": "input"}   # unit hot-swap on the Input sheet (docs/adr/0005 decision 3)
+PRESS_FET = "Q10"                                  # photoMOS LED return switch (docs/press-deadline-line.md)
 
 
 def P(x, y):
@@ -106,7 +107,17 @@ def expander(b):
     b.sym("C13", "Device:C", "100n", C0402, {"1": "+3V3", "2": "GND"}, at=P(96, 154), desc="TCA6424A VCCP")
     b.sym("R30", "Device:R", "10k", R0402, {"1": "EXP_RSTN", "2": "+3V3"}, at=P(66, 182), desc="TCA6424A /RESET pull-up")
     b.wire("EXP_RSTN", [("R30", "1"), (66 * G, 173 * G), ("U5", "28")])
-    b.name("EXP_RSTN", P(66, 177), 90)
+    b.port("EXP_RSTN", "input", side="left", pos=P(66, 177))
+    # press deadline (docs/press-deadline-line.md): the four photoMOS LED cathodes return through Q10, gate =
+    # PRESS_EN from the core's deadline monostable over the chain; low or open (R31) = no LED current, no press
+    b.sym(PRESS_FET, "Transistor_FET:2N7002", "2N7002", "Package_TO_SOT_SMD:SOT-23", {"1": "PRESS_EN", "2": "GND", "3": "PRESS_RTN"},
+          at=P(40, 200), fields={"LCSC": "C8545"}, desc="photoMOS LED return: on only while PRESS_EN is high (<= 4 x 7 mA)")
+    b.sym("R31", "Device:R", "100k", R0402, {"1": "PRESS_EN", "2": "GND"}, at=P(26, 206), rot=0,
+          desc="PRESS_EN pull-down: no core, cable pulled -> no press")
+    b.wire("PRESS_EN", [(PRESS_FET, "1"), (26 * G, 200 * G), ("R31", "1")])
+    b.port("PRESS_EN", "input", side="left", pos=P(20, 200))
+    b.wire("PRESS_EN", [(20 * G, 200 * G), (26 * G, 200 * G)])
+    b.tie("PRESS_RTN", (PRESS_FET, "3"))
     for pin, net in EXP_IO.items():
         if net in UNIT_IO:
             b.port(net, UNIT_IO[net], side="right", pos=("U5", pin))
@@ -246,11 +257,11 @@ def slot(b, s):
         {"1": "PWR_SW", "2": "RST_SW", "3": "PLED_P", "4": "PLED_N"}, (226, 36),
         fields={"LCSC": "C189895", "MPN": "JST SM04B-GHS-TB"},
         desc="JST GH 1x4, latching: 1 PWR_SW, 2 RST_SW, 3 PLED+, 4 PLED- (drawn 2x2, pads 1-4)")
-    sym("U6", *TLP176, {"1": "PWRD_A", "3": "GND", "4": "GND", "6": "PWR_SW"}, (208, 58),
+    sym("U6", *TLP176, {"1": "PWRD_A", "3": "PRESS_RTN", "4": "GND", "6": "PWR_SW"}, (208, 58),
         fields={"LCSC": "C5370540"}, desc="photoMOS front-panel PWR_SW contact")
     R(19, "270", R0402, {"1": "PWRD", "2": "PWRD_A"}, (186, 56), rot=90, fields={"LCSC": "C22775"},
       desc="photoMOS LED, ~6.5 mA from the expander")
-    sym("U7", *TLP176, {"1": "RSTD_A", "3": "GND", "4": "GND", "6": "RST_SW"}, (246, 46), mirror="y",
+    sym("U7", *TLP176, {"1": "RSTD_A", "3": "PRESS_RTN", "4": "GND", "6": "RST_SW"}, (246, 46), mirror="y",
         fields={"LCSC": "C5370540"}, desc="photoMOS front-panel RST_SW contact")
     R(20, "270", R0402, {"1": "RSTD", "2": "RSTD_A"}, (268, 44), rot=270, fields={"LCSC": "C22775"},
       desc="photoMOS LED, ~6.5 mA from the expander")
@@ -356,6 +367,8 @@ def slot(b, s):
     wire("RST_SW", ("J2", "2"), (237, 44), ("U7", "6"))
     name("RST_SW", (237, 43), 90)
     wire("RSTD_A", ("R20", "2"), ("U7", "1"))
+    tie("PRESS_RTN", ("U6", "3"))
+    tie("PRESS_RTN", ("U7", "3"))
     tie("RSTD", (276, 44))
     wire("LED", ("U8", "4"), (224, 72), ("R22", "2"))
     tie("LED", (208, 72), 180)

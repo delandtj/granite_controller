@@ -6,8 +6,8 @@ DRAFT for review (2026-10-29). 56 x 72 mm, board x 52-108, y 100-172:
 the rev1 core block (tools/core.py, x 52-100) without the tile input
 (XT90, hot-swap, shunts, FETs, INA238 U8), plus an 8 mm right margin:
 
-- Chain OUT header J301 on B at the right edge, pins at v 39..61 like the
-  units' headers (pin 12 = 3V3 at the bottom), holes H3 / H4 in the margin
+- Chain OUT header J301 on B at the right edge, pins at v 35..61 like the
+  units' headers (pin 14 = 3V3 at the bottom), holes H3 / H4 in the margin
   corners above and below it.
 - Mux U6 moved from the bottom left into the freed tile area, rot 180 so
   channels 0-3 (pins 4-11) face the header, channel 0 lowest (as P0 on
@@ -27,7 +27,7 @@ from boardfit import F, B, put, fit, chain, solid   # noqa: E402
 
 CX, Y0 = rev1.CX, rev1.Y0                 # core origin (52, 100)
 RIGHT = CX + 56.0
-PIN_TOP = Y0 + 39.0
+PIN_TOP = Y0 + 35.0                       # chain pins v 35..61 (14 pins)
 
 TILE = ('R1', 'R2', 'Q2', 'Q3', 'R10', 'R11', 'C14', 'C15', 'U8', 'C16', 'U7', 'C3', 'R37',
         'R33', 'R34', 'R35', 'R36', 'Q4', 'R14', 'R12', 'R38', 'J1')
@@ -35,6 +35,9 @@ MOVED = {
     # mux by the header: rot 180 puts pins 1-12 (channels 0-3) on the right, pin 1 lowest
     'U6': (42.0, 51.0, 180, F), 'C28': (42.0, 45.6, 0, F),
     'Q6': (34.6, 51.6, 0, F), 'R31': (36.4, 47.4, 90, F), 'R32': (34.6, 55.0, 0, F),
+    # press deadline (docs/press-deadline-line.md): monostable U301 and its RC, bottom right by J301's PRESS_EN pin
+    'U301': (43.0, 60.0, 0, F), 'C302': (43.0, 57.2, 0, F), 'R301': (46.6, 60.0, 90, F), 'C301': (43.0, 63.6, 0, F),
+    'R302': (39.6, 59.4, 90, F), 'R303': (39.6, 62.6, 90, F),
     'H1': (4.0, 4.0, 0, F), 'H2': (4.0, 68.0, 0, F), 'H3': (52.0, 4.0, 0, F), 'H4': (52.0, 68.0, 0, F),
 }
 SOLID = [('J1', '1'), ('J1', '2'), ('R4', '2'), ('U6', '21')]

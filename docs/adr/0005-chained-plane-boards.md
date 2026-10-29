@@ -77,23 +77,35 @@ a column edge.
 
 4. **Chain link**: a short cable between neighbouring boards, the same
    latching header at both edges of a unit and at the core's right
-   edge. 12 pins: P0..P3 SDA/SCL (8), 3V3, GND x 3. JST PH 2.0 mm
+   edge. 14 pins (user 2026-10-29, docs/press-deadline-line.md; was 12):
+   P0..P3 SDA/SCL (8), 3V3, GND x 3, PRESS_EN, EXP_RSTN. JST PH 2.0 mm
    (user 2026-10-29: sturdier than GH in the fluid), side entry
-   S12B-PH-K-S class, ~26 mm along the edge; LCSC stock and clone to
-   check. The rotating channel goes through the board unchanged: the
-   left connector's P0 is this unit's segment, its P1..P3 are wired to
-   the right connector's P0..P2, the right connector's P3 is not
-   connected. At the core connector Pk = mux channel k (4 used, as
-   rev1). Cable: flat and straight, ~50-100 mm, made by the user
-   (PHR-12 housing + SPH-002T-P0.5 crimps). No VBUS in the chain.
-   Pinout (2026-10-29, power/pp-48/tools/sch/blocks/chain.py): the
-   facing headers are turned 180 deg to each other, so a flat cable
-   joins pin n to pin 13 - n. IN headers (unit left edge):
-   1 3V3, 2 / 3 P0 SDA / SCL, 4 GND, 5 / 6 P1, 7 GND, 8 / 9 P2,
-   10 GND, 11 / 12 P3. OUT headers (core, unit right edge) are the
-   same read backwards (pin n = IN pin 13 - n); on B the IN pin 1 and
-   the OUT pin 12 are at the bottom, by the In2 channel. LCSC: S12B-PH-K-S C157943 (THT,
-   40 in stock 2026-10-29); the SMD S12B-PH-SM4-TB C378994 had 7.
+   S14B-PH-K-S, ~30 mm along the edge. The rotating channel goes
+   through the board unchanged: the left connector's P0 is this unit's
+   segment, its P1..P3 are wired to the right connector's P0..P2, the
+   right connector's P3 is not connected. At the core connector Pk =
+   mux channel k (4 used, as rev1). PRESS_EN and EXP_RSTN are bused
+   (straight through every unit). Cable: flat and straight, ~50-100 mm,
+   made by the user (PHR-14 housing + SPH-002T-P0.5 crimps). No VBUS in
+   the chain.
+   Pinout (power/pp-48/tools/sch/blocks/chain.py): the facing headers
+   are turned 180 deg to each other, so a flat cable joins pin n to pin
+   15 - n. IN headers (unit left edge): 1 3V3, 2 / 3 P0 SDA / SCL, 4
+   GND, 5 / 6 P1, 7 GND, 8 / 9 P2, 10 GND, 11 / 12 P3, 13 PRESS_EN, 14
+   EXP_RSTN. OUT headers (core, unit right edge) are the same read
+   backwards (pin n = IN pin 15 - n); on B the IN pin 1 and the OUT pin
+   14 are at the bottom, by the In2 channel; pins at v 35..61 on every
+   board. LCSC: S14B-PH-K-S C157938 (THT, 381 in stock 2026-10-29; the
+   SMD S14B-PH-SM4-TB C5305708 had 2944).
+   Press deadline (docs/press-deadline-line.md, option B, user
+   2026-10-29): every unit's four photoMOS LED cathodes return through
+   one 2N7002 (Q10) whose gate is PRESS_EN (100k pull-down R31): no
+   PRESS_EN, no press, whatever the expander drives. The core drives
+   PRESS_EN from a 74LVC1G123 retriggerable monostable (U301, R301 100k
+   x C301 10u ~1 s) clocked by PC6 (PRESS_TRIG, TIM3_CH1, 100k
+   pull-down): a hung, stuck or reset MCU ends every press within ~1 s.
+   EXP_RSTN (option A, recovery): PC7 open drain to every unit's
+   TCA6424A /RESET (R30 pull-ups).
 
 5. **3V3 for the units' logic comes from the core** (user 2026-10-29) through the chain
    (expanders, INA238s, ID ADCs, latches, photoMOS LEDs: < 50 mA per
@@ -266,8 +278,8 @@ to size with the SOA check of decision 3.
 ## Implementation Plan
 
 ### Decisions you will probably want to tweak
-- **Chain connector**: JST PH 2.0 12-pin (decided). Alternative: JST GH
-  12-pin (latching, smaller). Cost to change later: one footprint per
+- **Chain connector**: JST PH 2.0 14-pin (decided). Alternative: JST GH
+  14-pin (latching, smaller). Cost to change later: one footprint per
   board edge and the cables; pinout stays.
 - **Unit shunt / limit**: ~3 mOhm, ~18 A. Alternative: 2.5 mOhm, 22 A.
   Cost to change: a resistor value, if the footprint is 2512.
@@ -277,7 +289,7 @@ to size with the SOA check of decision 3.
 - **Core input**: XT30PW. Alternative: a 2-pole screw terminal. Cheap.
 
 ### Known unknowns and how the plan absorbs them
-- LCSC stock of the PH 12-pin side-entry header, XT60PW-M, XT30PW-M,
+- LCSC stock of the PH 14-pin side-entry header, XT60PW-M, XT30PW-M,
   the 6 mOhm 2512: checked before the schematic; pivot to a clone /
   screw terminals if missing.
 - Unit hot-swap SOA with one FET at the 530 W level: default two FETs
