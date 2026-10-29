@@ -1,0 +1,15 @@
+[package]
+name = "plane-logic"
+description = "Hardware-free core of the Granite plane firmware: plane model, sequencer, segment-bus drivers and link handler behind small device traits"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+granite-proto = { version = "0.1.0", path = "../granite-proto" }
+heapless = { version = "0.9.3", default-features = false }
+
+[features]
+# Simulated devices for host tests and for granite-sim's fake plane. The
+# only thing that may use std, and never on the thumbv6m build.
+sim = []
