@@ -52,6 +52,9 @@ pub struct FakePlane {
     pub dropped: u64,
     /// Answers sent back corrupted.
     pub corrupted: u64,
+    /// Resets the plane performed on itself (a commanded reboot, or a
+    /// probation that ran out).
+    pub resets: u32,
     /// The scenario's faults, soonest first.
     faults: Vec<PlaneFault>,
     /// How many of them have fired.
@@ -88,6 +91,7 @@ impl FakePlane {
             transactions: 0,
             dropped: 0,
             corrupted: 0,
+            resets: 0,
             faults: scenario.faults.clone(),
             fired: 0,
         };
@@ -119,6 +123,11 @@ impl FakePlane {
     /// The slot loads are re-applied first: [`FakeUnit::advance`] zeroes
     /// a slot's current while its rail is down, so a load is a property
     /// to restate every step rather than a value to set once.
+    ///
+    /// A plane that asked for a reset gets one, because a plane is its
+    /// own MCU: nothing on the controller's side performs it, and a
+    /// commanded reboot or a probation that ran out has to really
+    /// restart the thing.
     pub fn step(&mut self) {
         for index in 0..SLOT_COUNT {
             let load = self.load_ma[index];
@@ -129,6 +138,35 @@ impl FakePlane {
             }
         }
         self.sim.step(PLANE_TICK_MS);
+        if self.sim.plane.reset_requested() {
+            self.self_reset();
+        }
+    }
+
+    /// The reset the plane asked for, with the bootloader's part of
+    /// ADR 0002 decision 9.
+    ///
+    /// A marked swap runs the new image on probation; a probation that
+    /// ran out (the plane asks for a reset and nothing confirmed the
+    /// image) swaps back and the plane comes up saying it rolled back.
+    /// The DFU slot's bytes are not executed by anything here, so the
+    /// version the plane reports does not change: the controller
+    /// confirms on the units it sees, not on the version (controller
+    /// ADR 0004 decision 8).
+    fn self_reset(&mut self) {
+        let store = &mut self.sim.dev.update;
+        if store.swap_marked {
+            store.swap_marked = false;
+            store.booted = false;
+            store.unconfirmed = true;
+            store.rolled_back = false;
+        } else if store.unconfirmed && !store.booted {
+            store.unconfirmed = false;
+            store.booted = true;
+            store.rolled_back = true;
+        }
+        self.sim.core_reset(reset_cause::SOFTWARE);
+        self.resets += 1;
     }
 
     /// Advance to `now_ms` in whole cycles, firing the faults due on the
