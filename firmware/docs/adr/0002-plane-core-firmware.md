@@ -25,7 +25,7 @@ firmware exists for it yet. Everything it touches:
 | PB6 / PB7 | SCL1 / SDA1 | I2C slave to the controller, through the ISO1640 |
 | PA8 | INT_OUT | high = assert EXP_INT (ISO7721, open drain on the controller side) |
 | PB10 / PB11 | SCL2 / SDA2 | I2C master: TCA9548A 0x70, then one unit segment per channel |
-| PB12 | MUX_RST | low = mux reset, all channels off |
+| PB12 | MUX_RST | high = mux reset, all channels off (Q6 inverts; 100k pull-down: MCU in reset = mux running) |
 | PC13-PC15 | ADR0-2 | straps, pulled up, closed = 0; slave address 0x30 + ADR[2:0] |
 | PB0 | VIN_SNS | core 48 V input, 220k / 10k divider |
 | PB8 | LED_RUN | heartbeat LED |

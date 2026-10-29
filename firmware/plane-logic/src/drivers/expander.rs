@@ -205,6 +205,30 @@ const fn output_mask() -> [u8; 3] {
 /// Configuration registers for [`OUTPUT_MASK`]: a 1 bit is an input.
 pub const CONFIG_BYTES: [u8; 3] = [!OUTPUT_MASK[0], !OUTPUT_MASK[1], !OUTPUT_MASK[2]];
 
+/// The four photoMOS lines: both slots' PWRD and RSTD.
+///
+/// These are the ones [`Expander::configure`] clears before anything
+/// else, because they are the ones a core that crashed mid-press may
+/// have left asserted (ADR 0002 decision 3 step 2).
+pub const PRESS_MASK: [u8; 3] = press_mask();
+
+/// Build [`PRESS_MASK`] from the line map.
+const fn press_mask() -> [u8; 3] {
+    let mut mask = [0u8; 3];
+    let mut half = 0;
+    while half < 2 {
+        let b = half == 1;
+        let lines = [out_line(b, Out::Pwrd), out_line(b, Out::Rstd)];
+        let mut i = 0;
+        while i < lines.len() {
+            mask[(lines[i] >> 3) as usize] |= 1 << (lines[i] & 7);
+            i += 1;
+        }
+        half += 1;
+    }
+    mask
+}
+
 /// One unit's TCA6424A, with the output latch it believes it holds.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Expander {
@@ -268,13 +292,42 @@ impl Expander {
         Ok(())
     }
 
-    /// Configure a unit that just appeared, outputs before direction.
+    /// Configure a unit, outputs before direction. Returns true when the
+    /// part was found at its hardware defaults.
     ///
     /// `intended` is the latch the slots' intended state asks for. The
-    /// released latch goes out first even when `intended` differs, so a
-    /// press can never be held by a stale latch (ADR 0002 decision 3).
-    pub fn configure<B: SegmentBus>(&mut self, bus: &mut B, intended: [u8; 3]) -> DevResult<()> {
-        self.latch = [0; 3];
+    /// three latch writes are the whole of ADR 0002 decision 3 steps 2
+    /// and 3, and which one is safe depends on what the part was doing:
+    ///
+    /// - **Still configured** (a core reset that kept the unit's 3V3):
+    ///   the part held its outputs, so the safe latch is the one it
+    ///   already holds with the four photoMOS lines cleared. A press
+    ///   that a crash left asserted goes out here, before any read, and
+    ///   nothing else switches: an OFF slot stays off through the whole
+    ///   sequence.
+    /// - **At its defaults** (the unit lost its 3V3): every pin is an
+    ///   input and the output latch reads 0xFF, which drives nothing.
+    ///   The safe latch is then the intended one, written while the pins
+    ///   are still inputs, so the direction register's own write is what
+    ///   puts the slot where it belongs without a glitch through 0xFF.
+    pub fn configure<B: SegmentBus>(&mut self, bus: &mut B, intended: [u8; 3]) -> DevResult<bool> {
+        let intended = [
+            intended[0] & OUTPUT_MASK[0],
+            intended[1] & OUTPUT_MASK[1],
+            intended[2] & OUTPUT_MASK[2],
+        ];
+        let config = self.read_config(bus)?;
+        let at_defaults = config == [0xFF; 3];
+        self.latch = if at_defaults {
+            intended
+        } else {
+            let held = self.read_output(bus)?;
+            [
+                held[0] & !PRESS_MASK[0],
+                held[1] & !PRESS_MASK[1],
+                held[2] & !PRESS_MASK[2],
+            ]
+        };
         self.write_latch(bus)?;
         bus.write(
             EXP_ADDR,
@@ -291,12 +344,9 @@ impl Expander {
             EXP_ADDR,
             &[CMD_AUTO_INCREMENT | REG_POLARITY0, 0x00, 0x00, 0x00],
         )?;
-        self.latch = [
-            intended[0] & OUTPUT_MASK[0],
-            intended[1] & OUTPUT_MASK[1],
-            intended[2] & OUTPUT_MASK[2],
-        ];
-        self.write_latch(bus)
+        self.latch = intended;
+        self.write_latch(bus)?;
+        Ok(at_defaults)
     }
 
     /// Write Output Port 0-2 in one transaction.
@@ -317,6 +367,14 @@ impl Expander {
     pub fn read_config<B: SegmentBus>(&mut self, bus: &mut B) -> DevResult<[u8; 3]> {
         let mut v = [0u8; 3];
         bus.read(EXP_ADDR, &[CMD_AUTO_INCREMENT | REG_CONFIG0], &mut v)?;
+        Ok(v)
+    }
+
+    /// Read Output Port 0-2 back: what the part is driving, which after
+    /// a core reset is the only record of what the plane wanted.
+    pub fn read_output<B: SegmentBus>(&mut self, bus: &mut B) -> DevResult<[u8; 3]> {
+        let mut v = [0u8; 3];
+        bus.read(EXP_ADDR, &[CMD_AUTO_INCREMENT | REG_OUTPUT0], &mut v)?;
         Ok(v)
     }
 

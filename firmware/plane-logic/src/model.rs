@@ -11,7 +11,7 @@
 
 use granite_proto::{CrossCheck, LedMode, SequenceState, SlotStatus, UnitStatus};
 
-use crate::config::{PlaneConfig, Retry};
+use crate::config::Retry;
 use crate::drivers::Sample;
 
 /// How often the 20 Hz cycle samples a slot \[ms\] (ADR 0002 decision
@@ -321,11 +321,6 @@ impl SlotModel {
             RetryOutcome::Counted
         }
     }
-}
-
-/// The LED thresholds a slot's LED tracking uses.
-pub fn blink_config(cfg: &PlaneConfig) -> granite_proto::BlinkDetection {
-    cfg.blink
 }
 
 #[cfg(test)]
