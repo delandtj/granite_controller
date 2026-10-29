@@ -1414,6 +1414,14 @@
 		(uuid "81d213de-f354-54bd-888f-fca7f18d9ae2")
 	)
 	(no_connect
+		(at 111.76 78.74)
+		(uuid "fe228b54-7723-5451-8881-1d4fb95a0d97")
+	)
+	(no_connect
+		(at 111.76 76.2)
+		(uuid "760f78bc-9fde-5fe3-8853-7755922fb118")
+	)
+	(no_connect
 		(at 111.76 83.82)
 		(uuid "4d283388-e17d-5cc0-a294-d82b9eccb80c")
 	)
@@ -1494,7 +1502,7 @@
 		)
 		(uuid "3d2e4dcc-6b0f-50b1-8a10-edd0ae786809")
 	)
-	(hierarchical_label "COL1_SDA"
+	(hierarchical_label "UNIT1_SDA"
 		(shape bidirectional)
 		(at 111.76 73.66 0)
 		(effects
@@ -1503,9 +1511,9 @@
 			)
 			(justify left)
 		)
-		(uuid "2abb3be0-7b1c-560d-9131-7a6776cb9574")
+		(uuid "b093c181-324c-5c2b-9be8-f4df4666ee65")
 	)
-	(hierarchical_label "COL1_SCL"
+	(hierarchical_label "UNIT1_SCL"
 		(shape bidirectional)
 		(at 111.76 71.12 0)
 		(effects
@@ -1514,29 +1522,7 @@
 			)
 			(justify left)
 		)
-		(uuid "6b062692-e9aa-530b-b9b0-8987defa7131")
-	)
-	(hierarchical_label "COL2_SDA"
-		(shape bidirectional)
-		(at 111.76 78.74 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "3376a049-1427-5a8c-a987-043cfad821b0")
-	)
-	(hierarchical_label "COL2_SCL"
-		(shape bidirectional)
-		(at 111.76 76.2 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "4e15d020-25d3-538a-b323-77d4ef1770c0")
+		(uuid "fadd5aa5-ec12-50e7-b4f0-a376d50c0827")
 	)
 	(label "MUX_RSTN"
 		(at 91.44 83.82 180)
@@ -1568,7 +1554,7 @@
 		)
 		(uuid "ab714bb7-1382-5ce0-bc0d-09ad538dcd6d")
 	)
-	(text "I2C SWITCH  U6 TCA9548A 0x70, channel k = column k + 1"
+	(text "I2C SWITCH  U6 TCA9548A 0x70, channel k = unit k + 1"
 		(exclude_from_sim no)
 		(at 38.1 50.8 0)
 		(effects
@@ -1578,7 +1564,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "7145704d-29ba-54cc-996e-5328b2dd5da0")
+		(uuid "e3679450-546c-56f3-bba6-66059b3d8c67")
 	)
 	(symbol
 		(lib_id "Interface_Expansion:TCA9548APWR")
@@ -1635,7 +1621,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "I2C switch, 0x70; channel k = column k + 1"
+		(property "Description" "I2C switch, 0x70; channel k = unit k + 1"
 			(at 101.6 88.9 0)
 			(hide yes)
 			(show_name no)

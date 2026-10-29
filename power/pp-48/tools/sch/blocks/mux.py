@@ -1,8 +1,8 @@
-"""Mux sheet: TCA9548A, one channel per column (docs/adr/0004 decision 6).
+"""Mux sheet: TCA9548A, one channel per 2-slot unit (docs/adr/0004 decisions 6, 9).
 
-Channel k = column k + 1 (COLk+1_SDA / COLk+1_SCL, the In2 channel to the
-columns; the column has its own segment pull-ups). Channels with no column
-on this plane size are left open. Upstream on the MCU's I2C2 (SDA2 / SCL2,
+Channel k = unit k + 1 (UNITk+1_SDA / UNITk+1_SCL, the In2 channel to the
+units; the unit has its own segment pull-ups). Channels with no unit on
+this plane size (always 4-7) are left open. Upstream on the MCU's I2C2 (SDA2 / SCL2,
 pull-ups on the MCU sheet). Address 0x70 (A0-A2 GND). /RESET: 10k pull-up,
 MUX_RST from the MCU pulls it low (all channels off); an MCU in reset leaves
 the mux running.
@@ -22,12 +22,12 @@ def block(N=2):
             "22": "SCL2", "23": "SDA2"}
     chans = [("4", "5"), ("6", "7"), ("8", "9"), ("10", "11"), ("13", "14"), ("15", "16"), ("17", "18"), ("19", "20")]
     for k, (pd, pc) in enumerate(chans):
-        c = k + 1
-        nets[pd] = "COL%d_SDA" % c if c <= N else "NC"
-        nets[pc] = "COL%d_SCL" % c if c <= N else "NC"
+        u = k + 1
+        nets[pd] = "UNIT%d_SDA" % u if u <= N // 2 else "NC"
+        nets[pc] = "UNIT%d_SCL" % u if u <= N // 2 else "NC"
     b.sym("U6", "Interface_Expansion:TCA9548APWR", "TCA9548APWR", "Package_SO:TSSOP-24_4.4x7.8mm_P0.65mm", nets,
           at=P(80, 70), fields={"LCSC": "C130026"},
-          desc="I2C switch, 0x70; channel k = column k + 1")
+          desc="I2C switch, 0x70; channel k = unit k + 1")
     b.sym("C28", "Device:C", "100n", C0402, {"1": "+3V3", "2": "GND"}, at=P(120, 50), desc="TCA9548A VCC")
     b.sym("R31", "Device:R", "10k", R0402, {"1": "+3V3", "2": "MUX_RSTN"}, at=P(52, 60), desc="/RESET pull-up")
     b.sym("Q6", "Transistor_FET:2N7002", "2N7002", "Package_TO_SOT_SMD:SOT-23", {"1": "MUX_RST", "2": "GND", "3": "MUX_RSTN"},
@@ -42,7 +42,7 @@ def block(N=2):
     b.tie("MUX_RSTN", ("Q6", "3"))
     b.wire("MUX_RST", [("Q6", "1"), ("R32", "1")])
     for pin, net in sorted(nets.items(), key=lambda kv: int(kv[0])):
-        if net.startswith("COL"):
+        if net.startswith("UNIT"):
             b.port(net, "bidirectional", side="right", pos=("U6", pin))
-    b.text("I2C SWITCH  U6 TCA9548A 0x70, channel k = column k + 1", P(30, 40))
+    b.text("I2C SWITCH  U6 TCA9548A 0x70, channel k = unit k + 1", P(30, 40))
     return b.finish()

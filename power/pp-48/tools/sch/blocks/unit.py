@@ -1,6 +1,16 @@
-"""Column sheet: one slot column of the PP-48 plane, drawn once, instantiated N times.
+"""Unit sheet: two slot columns of the PP-48 plane on one I2C segment, drawn
+once, instantiated N / 2 times (docs/adr/0004-plane-column-layout.md
+decisions 4 and 9).
 
-docs/adr/0004-plane-column-layout.md. The front end (shunts, LM5069-2,
+Slot A (core side, references as drawn, nets A_*) and slot B (far side,
+references + 50, nets B_*, drawn to the right) are the same slot drawing;
+GND, +3V3, VBUS, SDA and SCL are shared. The only differences: slot B's
+address straps (INA238 A0 and ADC ADR0 on +3V3: 0x41 / 0x52 against slot
+A's 0x40 / 0x51), and the unit parts drawn once with slot A: the segment
+pull-ups R26 / R27 and the expander U5 (TCA6424A, 0x22, 11 lines per slot,
+reset = all inputs) with its caps C9 / C13 and /RESET pull-up R30.
+
+The slot: the front end (shunts, LM5069-2,
 pass FET, UVLO / OVLO, timer, PGD, output clamp), the INA238, the enable
 chain and the OV latch are the PP-48-2S slot block (power/pp-48-2s/tools/
 sch/blocks/slot.py) unchanged, at the same coordinates. What changed:
@@ -9,13 +19,12 @@ sch/blocks/slot.py) unchanged, at the same coordinates. What changed:
   (S1 VIN = OUT, S2 / S3 GND, S4 VOUT = NODE) and the 2x3 1.27 mm aux socket
   J3 (1 OV_KILL, 2 PGOOD, 3 ID, 4 RUN, 5 / 6 GND) replace the DOSA brick
   and its 7-pin row. TEMP, SDA / SCL to the module are gone.
-- The column has its own I2C segment (one TCA9548A channel in the core), so
-  every column carries the same addresses: INA238 0x40 (A0 A1 GND), TCA9535
-  0x20 (A0-A2 GND), ADC121C027 0x51 (ADR0 GND). SDA and SCL are the only
-  ports; the segment pull-ups are in the column.
-- The TCA9535 carries the slot's control and status lines (port 0 out:
-  OFF LCLR RUNOFF PWRD RSTD DISARM, inputs PGD PG LQ LED OVK; pins chosen by
-  the side of the board each signal goes to, see U5's description). They are
+- The unit has its own I2C segment (one TCA9548A channel in the core), so
+  every unit carries the same addresses. SDA and SCL are the only ports;
+  the segment pull-ups are in the unit.
+- The expander carries the slot's control and status lines (out: OFF LCLR
+  RUNOFF PWRD RSTD DISARM, in: PGD PG LQ LED OVK; see U5's description for
+  the ports). They are
   tied to the front end by local labels, not wires. INT is not used (the MCU
   polls). At reset the expander pins are inputs: OFF, LCLR and RUNOFF fall
   to their 100k pull-downs (slot ON, latch kept, module running) and the
@@ -45,7 +54,7 @@ sch/blocks/slot.py) unchanged, at the same coordinates. What changed:
 
 Coordinates are in grid units of 1.27 mm (P(x, y)).
 """
-from sch.draw import Block, R0402, R0805, R2512, C0402, C0603, C1210
+from sch.draw import Block, R0402, R0805, R2512, C0402, C0603, C1210, renumber
 from sch.kicad import by_name
 
 G = 1.27
@@ -53,6 +62,15 @@ FET = "Transistor_FET:2N7002"
 SOT23 = "Package_TO_SOT_SMD:SOT-23"
 TLP176 = ("pp:TLP176AM", "TLP176AM", "Package_SO:SOIC-4_4.55x3.7mm_P2.54mm")
 STANDOFF = "pp48:PM_Standoff_M2x7_SMTSO"
+SHARED = ("GND", "+3V3", "VBUS", "SDA", "SCL", "NC")
+SLOT_DX, SLOT_REF = 300, 50           # slot B: drawn 300 grid units right, references + 50
+# expander ports (TCA6424A pin: slot net); rot 0 on the board: P0 left, P1 bottom, P2 right side,
+# slot B (the far column) on P2 and the right half of P1
+EXP_IO = {"1": "A_DISARM", "2": "A_OFF", "3": "A_PGD", "4": "A_LQ", "5": "A_PWRD", "6": "A_RSTD", "7": "A_LED",
+          "8": "NC", "9": "A_LCLR", "10": "A_OVK", "11": "A_PG", "12": "A_RUNOFF",
+          "13": "B_PWRD", "14": "B_RSTD", "15": "B_LED", "16": "B_DISARM",
+          "17": "B_RUNOFF", "18": "B_PG", "19": "B_OVK", "20": "B_LCLR", "21": "B_LQ", "22": "B_PGD", "23": "B_OFF",
+          "24": "NC"}
 
 
 def P(x, y):
@@ -60,29 +78,69 @@ def P(x, y):
 
 
 def block():
-    b = Block("Column", date="2026-10-28")
+    b = Block("Unit", date="2026-10-29")
     b.power("VBUS", "power:VBUS")
+    for s in "AB":
+        slot(b, s)
+    expander(b)
+    b.text("UNIT: TWO SLOTS ON ONE I2C SEGMENT. SLOT A (LEFT, NETS A_*) AND SLOT B (RIGHT, REFS + 50, NETS B_*)", P(12, 12))
+    b.text("I2C SEGMENT: INA238 0x40 / 0x41, ADC121C027 0x51 / 0x52 (slot A / B), TCA6424A 0x22", P(12, 150), size=1.5)
+    return b.finish()
+
+
+def expander(b):
+    """unit parts drawn with slot A: TCA6424A, its caps and /RESET pull-up"""
+    nets = dict(EXP_IO)
+    nets.update({"25": "GND", "33": "GND", "26": "GND", "27": "+3V3", "31": "+3V3", "28": "EXP_RSTN",
+                 "29": "SCL", "30": "SDA", "32": "NC"})
+    b.sym("U5", "pp:TCA6424ARGJR", "TCA6424ARGJR", "Package_DFN_QFN:VQFN-32-1EP_5x5mm_P0.5mm_EP3.15x3.15mm", nets,
+          at=P(80, 190), fields={"LCSC": "C80692"},
+          desc="unit GPIO, address 0x22 (ADDR GND); 11 lines per slot: slot A P00-P07 / P10-P12, slot B P13-P17 / P20-P26 "
+               "(P0 left, P1 bottom, P2 right side of the package at rot 0); INT unused (polled); all inputs after reset")
+    b.sym("C9", "Device:C", "100n", C0402, {"1": "+3V3", "2": "GND"}, at=P(66, 154), desc="TCA6424A VCCI")
+    b.sym("C13", "Device:C", "100n", C0402, {"1": "+3V3", "2": "GND"}, at=P(96, 154), desc="TCA6424A VCCP")
+    b.sym("R30", "Device:R", "10k", R0402, {"1": "EXP_RSTN", "2": "+3V3"}, at=P(66, 182), desc="TCA6424A /RESET pull-up")
+    b.wire("EXP_RSTN", [("R30", "1"), (66 * G, 173 * G), ("U5", "28")])
+    b.name("EXP_RSTN", P(66, 177), 90)
+    for pin, net in EXP_IO.items():
+        if net != "NC":
+            b.tie(net, ("U5", pin))
+
+
+def slot(b, s):
+    dx = 0 if s == "A" else SLOT_DX
+    roff = 0 if s == "A" else SLOT_REF
+    strap = "GND" if s == "A" else "+3V3"       # INA238 A0 and ADC ADR0: slot B is the next address
+
+    def n(net):
+        return net if net in SHARED else "%s_%s" % (s, net)
+
+    def pt(p):
+        return (renumber(p[0], roff), p[1]) if isinstance(p[0], str) else P(p[0] + dx, p[1])
 
     def sym(ref, lib, val, fp, nets, at, rot=0, mirror=None, **kw):
-        b.sym(ref, lib, val, fp, nets, at=P(*at), rot=rot, mirror=mirror, **kw)
+        b.sym(renumber(ref, roff), lib, val, fp, {k: n(v) for k, v in nets.items()}, at=pt(at), rot=rot, mirror=mirror, **kw)
 
-    def R(n, val, fp, nets, at, rot=0, **kw):
-        sym("R%d" % n, "Device:R", val, fp, nets, at, rot, **kw)
+    def R(num, val, fp, nets, at, rot=0, **kw):
+        sym("R%d" % num, "Device:R", val, fp, nets, at, rot, **kw)
 
-    def C(n, val, fp, nets, at, rot=0, **kw):
-        sym("C%d" % n, "Device:C", val, fp, nets, at, rot, **kw)
+    def C(num, val, fp, nets, at, rot=0, **kw):
+        sym("C%d" % num, "Device:C", val, fp, nets, at, rot, **kw)
 
     def wire(net, *pts):
-        b.wire(net, [p if isinstance(p[0], str) else P(*p) for p in pts])
+        b.wire(n(net), [pt(p) for p in pts])
 
     def name(net, at, ang=0):
-        b.name(net, at=P(*at), ang=ang)
+        b.name(n(net), at=pt(at), ang=ang)
 
     def tie(net, at, ang=0):
-        b.tie(net, at if isinstance(at[0], str) else P(*at), ang)
+        b.tie(n(net), pt(at), ang)
 
     def port(net, shape, side, at):
-        b.port(net, shape, side=side, pos=P(*at))
+        if s == "A":
+            b.port(net, shape, side=side, pos=pt(at))
+        else:
+            b.tie(net, pt(at), 180)
 
     # ========================================================== hot-swap front end (top rail y = 32), as PP-48-2S
     R(1, "7m 2W", R2512, {"1": "VBUS", "2": "SENSE"}, (35, 32), rot=90, fields={"LCSC": "C2904232"},
@@ -111,9 +169,9 @@ def block():
 
     # ========================================================== INA238 under the shunt
     sym("U2", "Sensor_Energy:INA238", "INA238AIDGSR", "Package_SO:TSSOP-10_3x3mm_P0.5mm",
-        {"1": "GND", "2": "GND", "3": "OVK", "4": "SDA", "5": "SCL", "6": "+3V3", "7": "GND", "8": "OUT", "9": "SENSE", "10": "VBUS"},
+        {"1": "GND", "2": strap, "3": "OVK", "4": "SDA", "5": "SCL", "6": "+3V3", "7": "GND", "8": "OUT", "9": "SENSE", "10": "VBUS"},
         (44, 60), rot=270,
-        desc="16-bit monitor on the shunt, address 0x40 (A0 A1 GND, same in every column); VBUS pin reads the slot output")
+        desc="16-bit monitor on the shunt, address 0x40 slot A / 0x41 slot B (A1 GND, A0 = strap); VBUS pin reads the slot output")
     C(3, "100n", C0402, {"1": "+3V3", "2": "GND"}, (58, 63), desc="INA238 VS")
 
     # ========================================================== enable chain and OV latch, as PP-48-2S
@@ -183,11 +241,11 @@ def block():
         desc="JST GH 1x4, latching: 1 PWR_SW, 2 RST_SW, 3 PLED+, 4 PLED- (drawn 2x2, pads 1-4)")
     sym("U6", *TLP176, {"1": "PWRD_A", "3": "GND", "4": "GND", "6": "PWR_SW"}, (208, 58),
         fields={"LCSC": "C5370540"}, desc="photoMOS front-panel PWR_SW contact")
-    R(19, "270", R0402, {"1": "PWRD", "2": "PWRD_A"}, (192, 56), rot=90, fields={"LCSC": "C22775"},
+    R(19, "270", R0402, {"1": "PWRD", "2": "PWRD_A"}, (186, 56), rot=90, fields={"LCSC": "C22775"},
       desc="photoMOS LED, ~6.5 mA from the expander")
     sym("U7", *TLP176, {"1": "RSTD_A", "3": "GND", "4": "GND", "6": "RST_SW"}, (246, 46), mirror="y",
         fields={"LCSC": "C5370540"}, desc="photoMOS front-panel RST_SW contact")
-    R(20, "270", R0402, {"1": "RSTD", "2": "RSTD_A"}, (262, 44), rot=270, fields={"LCSC": "C22775"},
+    R(20, "270", R0402, {"1": "RSTD", "2": "RSTD_A"}, (268, 44), rot=270, fields={"LCSC": "C22775"},
       desc="photoMOS LED, ~6.5 mA from the expander")
     sym("U8", "Isolator:TLP291", "TLP291", "Package_SO:SOIC-4_4.55x2.6mm_P1.27mm",
         {"1": "PLED_A", "2": "PLED_N", "3": "GND", "4": "LED"}, (226, 62), rot=270, mirror="y",
@@ -196,19 +254,13 @@ def block():
     R(22, "47k", R0402, {"1": "+3V3", "2": "LED"}, (216, 69), desc="opto collector pull-up")
 
     # ========================================================== I2C segment: pull-ups, expander, ID ADC
-    R(26, "4.7k", R0402, {"1": "+3V3", "2": "SDA"}, (20, 132), desc="segment SDA pull-up (one per mux channel)")
-    R(27, "4.7k", R0402, {"1": "+3V3", "2": "SCL"}, (26, 132), desc="segment SCL pull-up")
-    sym("U5", "Interface_Expansion:TCA9535PWR", "TCA9535PWR", "Package_SO:TSSOP-24_4.4x7.8mm_P0.65mm",
-        {"1": "NC", "2": "GND", "3": "GND", "21": "GND", "22": "SCL", "23": "SDA", "24": "+3V3", "12": "GND",
-         "4": "NC", "5": "NC", "6": "NC", "7": "NC", "8": "NC", "9": "PWRD", "10": "RSTD", "11": "LED",
-         "13": "DISARM", "14": "RUNOFF", "15": "PG", "16": "OVK", "17": "LCLR", "18": "LQ", "19": "PGD", "20": "OFF"},
-        (80, 180), fields={"LCSC": "C130204"},
-        desc="slot GPIO, address 0x20 (A0-A2 GND); pins by board side: P10 DISARM out, P05 PWRD out, P06 RSTD out, P07 LED in; P17 OFF out, P16 PGD in, P15 LQ in, P14 LCLR out, P13 OVK in, P12 PG in, P11 RUNOFF out; INT unused (polled)")
-    C(9, "100n", C0402, {"1": "+3V3", "2": "GND"}, (92, 152), desc="TCA9535 VCC")
+    if s == "A":                                # unit parts: one pull-up pair per segment
+        R(26, "4.7k", R0402, {"1": "+3V3", "2": "SDA"}, (20, 132), desc="segment SDA pull-up (one per mux channel)")
+        R(27, "4.7k", R0402, {"1": "+3V3", "2": "SCL"}, (26, 132), desc="segment SCL pull-up")
     sym("U4", "Analog_ADC:ADC101C021CIMK", "ADC121C027CIMK", "Package_TO_SOT_SMD:TSOT-23-6",
-        {"1": "+3V3", "2": "GND", "3": "ID_F", "4": "GND", "5": "SCL", "6": "SDA"}, (40, 175),
+        {"1": "+3V3", "2": "GND", "3": "ID_F", "4": strap, "5": "SCL", "6": "SDA"}, (40, 175),
         fields={"LCSC": "C2670157", "MPN": "TI ADC121C027CIMKX/NOPB"},
-        desc="ID ADC, 12 bit, VA = reference (reads ID / 3V3), address 0x51 (ADR0 GND); symbol of the pin-equal ADC101C021CIMK, pin 4 = ADR0")
+        desc="ID ADC, 12 bit, VA = reference (reads ID / 3V3), address 0x51 slot A (ADR0 GND) / 0x52 slot B (ADR0 VA); symbol of the pin-equal ADC101C021CIMK, pin 4 = ADR0")
     C(6, "100n", C0402, {"1": "ID_F", "2": "GND"}, (26, 179), desc="ID filter at the ADC input")
     C(10, "100n", C0402, {"1": "+3V3", "2": "GND"}, (12, 164), desc="ADC VA (its reference)")
     C(11, "1u", C0402, {"1": "+3V3", "2": "GND"}, (22, 164), fields={"LCSC": "C52923"}, desc="ADC VA bulk")
@@ -226,7 +278,7 @@ def block():
     wire("OUT", (102, 42), (50, 42), ("U2", "8"))                   # INA238 VBUS reads the slot output
     for x, ref, pin in ((112, "D1", "1"), (122, "C2", "1")):
         wire("OUT", (x, 32), (ref, pin))
-    b.flag("OUT", P(108, 32))
+    b.flag(n("OUT"), pt((108, 32)))
     wire("NODE", ("SO4", "1"), ("J1", "2"))
 
     # ========================================================== LM5069 pins
@@ -234,7 +286,7 @@ def block():
     wire("UVLO", ("U1", "3"), (84, 62), ("Q2", "3"))                # UVLO spine down to the enable chain
     wire("UVLO", (84, 72), ("R3", "2"), ("R4", "1"))
     wire("UVLO", (84, 80), ("Q3", "3"))
-    name("OVLO", (82, 58))
+    name("OVLO", (77, 58))
     name("UVLO", (84, 70), 90)
     wire("PGD", ("U1", "8"), ("R8", "2"))
     tie("PGD", (128, 58))
@@ -247,14 +299,15 @@ def block():
     tie("OVK", ("U2", "3"))                                         # ALERT (open drain) sets the slot latch
     wire("SDA", ("U2", "4"), (44, 138), (12, 138))                  # segment along the bottom
     wire("SCL", ("U2", "5"), (42, 140), (12, 140))
-    wire("SDA", ("R26", "2"), (20, 138))
-    wire("SCL", ("R27", "2"), (26, 140))
+    if s == "A":
+        wire("SDA", ("R26", "2"), (20, 138))
+        wire("SCL", ("R27", "2"), (26, 140))
     port("SDA", "bidirectional", "left", (12, 138))
     port("SCL", "bidirectional", "left", (12, 140))
-    wire("SDA", (44, 138), (62, 138), (62, 164), ("U5", "23"))
-    wire("SCL", (42, 140), (60, 140), (60, 166), ("U5", "22"))
-    wire("SDA", ("U4", "6"), (62, 173), (62, 164))
-    wire("SCL", ("U4", "5"), (60, 175), (60, 166))
+    wire("SDA", (44, 138), (62, 138), (62, 165), *([("U5", "30")] if s == "A" else []))   # expander: unit part
+    wire("SCL", (42, 140), (60, 140), (60, 167), *([("U5", "29")] if s == "A" else []))
+    wire("SDA", ("U4", "6"), (62, 173), (62, 165))
+    wire("SCL", ("U4", "5"), (60, 175), (60, 167))
 
     # ========================================================== enable chain, latch
     wire("OFF", ("Q2", "1"), (76, 90), ("R9", "1"))
@@ -288,7 +341,7 @@ def block():
     wire("PWR_SW", ("J2", "1"), (217, 56), ("U6", "6"))
     name("PWR_SW", (217, 54), 90)
     wire("PWRD_A", ("R19", "2"), ("U6", "1"))
-    tie("PWRD", (182, 56), 180)
+    tie("PWRD", (176, 56), 180)
     wire("PLED_P", ("J2", "3"), ("R21", "1"))
     name("PLED_P", (220, 44), 90)
     wire("PLED_A", ("R21", "2"), ("U8", "1"))
@@ -296,20 +349,18 @@ def block():
     wire("RST_SW", ("J2", "2"), (237, 44), ("U7", "6"))
     name("RST_SW", (237, 43), 90)
     wire("RSTD_A", ("R20", "2"), ("U7", "1"))
-    tie("RSTD", (270, 44))
+    tie("RSTD", (276, 44))
     wire("LED", ("U8", "4"), (224, 72), ("R22", "2"))
     tie("LED", (208, 72), 180)
 
-    # ========================================================== expander and ADC ends of the ties
-    for pin in ("13", "9", "10", "11", "14", "15", "16", "17", "18", "19", "20"):
-        b.tie(b.syms["U5"].nets[pin], ("U5", pin))
+    # ========================================================== ADC end of the ID tie
     wire("ID_F", ("U4", "3"), (26, 175), ("C6", "1"))
     tie("ID_F", (22, 175), 180)
 
-    for ref, pins in (("U10", "567"), ("R28", "2"), ("Q8", "123"), ("Q9", "13"), ("Q6", "123"), ("Q7", "13"), ("R29", "1")):
+    wire("ARMS_M", ("Q8", "2"), ("Q9", "3"))                       # arm set stack (labels would collide)
+    for ref, pins in (("U10", "567"), ("R28", "2"), ("Q8", "13"), ("Q9", "1"), ("Q6", "123"), ("Q7", "13"), ("R29", "1")):
         for pin in pins:
-            b.tie(b.syms[ref].nets[pin], (ref, pin))
+            r = renumber(ref, roff)
+            b.tie(b.syms[r].nets[pin], (r, pin))
 
-    b.text("COLUMN: 48 V HOT-SWAP, INA238, OV LATCH, MODULE MOUNT, TCA9535, ID ADC, NODE TERMINAL", P(12, 20))
-    b.text("I2C SEGMENT: INA238 0x40, TCA9535 0x20, ADC121C027 0x51", P(12, 150), size=1.5)
-    return b.finish()
+    b.text("SLOT %s: 48 V HOT-SWAP, INA238, OV LATCH, MODULE MOUNT, ID ADC, NODE TERMINAL" % s, pt((12, 20)))
