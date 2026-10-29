@@ -38,9 +38,9 @@ def block():
         {"1": "GND", "2": "VIN"}, (-8, 30), mirror="y", fields={"LCSC": "C431092", "MPN": "Amass XT30PW-M"},
         desc="core input, keyed (pin 1 -, pin 2 +), 15 A rated")
     sym("D1", "Device:D_Zener", "SMDJ60A", "Diode_SMD:D_SMC", {"1": "VIN", "2": "GND"}, (2, 38), rot=270,
-        desc="bus TVS 3 kW, unidirectional: cathode (pad 1) on VIN; 60 V standoff, breakdown >= 66.7 V, clamp 96.8 V; LCSC code to check")
+        fields={"LCSC": "C2990209"}, desc="bus TVS 3 kW, unidirectional: cathode (pad 1) on VIN; 60 V standoff, breakdown >= 66.7 V, clamp 96.8 V")
     sym("C1", "Device:C_Polarized", "47u 100V", "Capacitor_SMD:CP_Elec_10x10", {"1": "VIN", "2": "GND"}, (14, 38),
-        desc="input bulk, damps the ringing of a live plug-in; LCSC code to check")
+        fields={"LCSC": "C87862", "MPN": "Lelon RVT2A470M1010"}, desc="input bulk, damps the ringing of a live plug-in")
     sym("C2", "Device:C", "2.2u 100V", C1210, {"1": "VIN", "2": "GND"}, (24, 38), fields={"LCSC": "C338133"}, desc="input HF")
     sym("R15", "Device:R", "220k", R0805, {"1": "VIN", "2": "VIN_SNS"}, (20, 90), desc="VIN sense: 3.3 V at 75.9 V")
     sym("R16", "Device:R", "10k", R0402, {"1": "VIN_SNS", "2": "GND"}, (20, 100))

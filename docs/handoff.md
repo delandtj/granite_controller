@@ -37,15 +37,24 @@ J301 IN / J302 OUT; core keeps rev1 refs, chain J301.
   place_core.py -> copy the .kicad_pcb in -> setrules on the project.
   Placement DRC: 0 errors besides unconnected (unit 371, core 170),
   parity clean. NOT ROUTED, not reviewed by the user.
-- LCSC (2026-10-29 snapshot): XT60PW-M C98732 ok, XT30PW-M C431092 ok,
-  LM5069MM-1 C486026 5 in stock (need 1 per unit), TCA9548APWR C130026 0,
-  BSC040N10NS5 C534334 0, HoJLR 7 mOhm C2904232 0 (slot shunts!), no LCSC
-  code found for SMDJ60A, 6 mOhm 2512, the 47 uF / 100 V electrolytic.
-NEXT: user review of both placements; then routing per board (unit: reuse
+- LCSC, checked on JLCPCB's own parts API 2026-10-29 (jlcsearch's mirror
+  is stale and misses many parts; query
+  jlcpcb.com/api/overseas-pcb-order/v1/shoppingCart/smtGood/selectSmtComponentList
+  with {"keyword": ..., "presaleType": "stock"} instead): TCA9548APWR
+  C130026 24.8k, BSC040N10NS5 C534334 36k, HoJLR 7 mOhm C2904232 3.9k,
+  XT60 14k, XT30 47k, TCA6424A 18k, LM5069MM-2 C111822 7k. New codes put
+  in: SMDJ60A C2990209 (1.6k; 5 kW 5.0SMDJ60A C522704 15k fits the same
+  SMC pads), 47 u 100 V 10 x 10 RVT2A470M1010 C87862 (14k), 6 mOhm 2512 3 W
+  SMA25A3FR006T C2692028 (7.6k). OPEN: LM5069MM-1 C486026 has 1 in stock
+  (no other code); PH 12 THT C157943 has 40, the SMD S12B-PH-SM4-TB C378994
+  now 1578.
+NEXT: user review of both placements and the LM5069-1 / PH header
+choices; then routing per board (unit: reuse
 route_hand.py slot copper / In2 bus / channel with origin at x = 100 and
 the channel starting at J301 instead of a column edge; strip power copper
 new; core: route_hand.py core() minus the tile copper, channel rows to
-J301), and the parts with no stock above.
+J301). The boards' LCSC fields predate the new codes: update the
+footprints from the schematic before jlcfab.
 
 ## 2026-10-29: NEXT = chained plane (ADR 0005, Proposed, all asks decided)
 

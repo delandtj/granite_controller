@@ -3293,7 +3293,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "bus TVS 3 kW, unidirectional: cathode (pad 1) on VIN; 60 V standoff, breakdown >= 66.7 V, clamp 96.8 V; LCSC code to check"
+		(property "Description" "bus TVS 3 kW, unidirectional: cathode (pad 1) on VIN; 60 V standoff, breakdown >= 66.7 V, clamp 96.8 V"
 			(at 35.56 68.58 0)
 			(hide yes)
 			(show_name no)
@@ -3305,7 +3305,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C2990209"
 			(at 35.56 68.58 0)
 			(hide yes)
 			(show_name no)
@@ -3387,7 +3387,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "input bulk, damps cable ringing when the hot-swap opens; LCSC code to check"
+		(property "Description" "input bulk, damps cable ringing when the hot-swap opens"
 			(at 50.8 68.58 0)
 			(hide yes)
 			(show_name no)
@@ -3399,7 +3399,19 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C87862"
+			(at 50.8 68.58 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "MPN" "Lelon RVT2A470M1010"
 			(at 50.8 68.58 0)
 			(hide yes)
 			(show_name no)
@@ -3575,7 +3587,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "shunt, two 6 mOhm in parallel = 3 mOhm: limit 18.3 A, breaker 35 A; LCSC code to check"
+		(property "Description" "shunt, two 6 mOhm in parallel = 3 mOhm: limit 18.3 A, breaker 35 A"
 			(at 77.47 60.96 0)
 			(hide yes)
 			(show_name no)
@@ -3587,7 +3599,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C2692028"
 			(at 77.47 60.96 0)
 			(hide yes)
 			(show_name no)
@@ -3681,7 +3693,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C2692028"
 			(at 77.47 68.58 0)
 			(hide yes)
 			(show_name no)
@@ -3763,7 +3775,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "100 V 4 mOhm pass FET; carries the start-up SOA alone (power limit 75 W, 10 ms); LCSC stock to check"
+		(property "Description" "100 V 4 mOhm pass FET; carries the start-up SOA alone (power limit 75 W, 10 ms)"
 			(at 157.48 63.5 0)
 			(hide yes)
 			(show_name no)
@@ -4157,7 +4169,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "unit hot-swap, 55 mV current limit, power limit, LATCH-OFF (-1); LCSC stock low (5 in a 2026-10-29 snapshot)"
+		(property "Description" "unit hot-swap, 55 mV current limit, power limit, LATCH-OFF (-1); LCSC stock 1 on 2026-10-29 (LM5069MM-2 C111822 has 7k)"
 			(at 154.94 91.44 0)
 			(hide yes)
 			(show_name no)

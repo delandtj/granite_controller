@@ -1373,7 +1373,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "bus TVS 3 kW, unidirectional: cathode (pad 1) on VIN; 60 V standoff, breakdown >= 66.7 V, clamp 96.8 V; LCSC code to check"
+		(property "Description" "bus TVS 3 kW, unidirectional: cathode (pad 1) on VIN; 60 V standoff, breakdown >= 66.7 V, clamp 96.8 V"
 			(at 35.56 68.58 0)
 			(hide yes)
 			(show_name no)
@@ -1385,7 +1385,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C2990209"
 			(at 35.56 68.58 0)
 			(hide yes)
 			(show_name no)
@@ -1467,7 +1467,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "input bulk, damps the ringing of a live plug-in; LCSC code to check"
+		(property "Description" "input bulk, damps the ringing of a live plug-in"
 			(at 50.8 68.58 0)
 			(hide yes)
 			(show_name no)
@@ -1479,7 +1479,19 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C87862"
+			(at 50.8 68.58 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "MPN" "Lelon RVT2A470M1010"
 			(at 50.8 68.58 0)
 			(hide yes)
 			(show_name no)

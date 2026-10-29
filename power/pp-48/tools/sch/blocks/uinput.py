@@ -75,17 +75,17 @@ def block():
         {"1": "GND", "2": "VIN"}, (-8, 30), mirror="y", fields={"LCSC": "C98732", "MPN": "Amass XT60PW-M"},
         desc="unit input, keyed (pin 1 -, pin 2 +), 30 A rated; cable from the top edge")
     sym("D201", "Device:D_Zener", "SMDJ60A", "Diode_SMD:D_SMC", {"1": "VIN", "2": "GND"}, (2, 38), rot=270,
-        desc="bus TVS 3 kW, unidirectional: cathode (pad 1) on VIN; 60 V standoff, breakdown >= 66.7 V, clamp 96.8 V; LCSC code to check")
+        fields={"LCSC": "C2990209"}, desc="bus TVS 3 kW, unidirectional: cathode (pad 1) on VIN; 60 V standoff, breakdown >= 66.7 V, clamp 96.8 V")
     sym("C201", "Device:C_Polarized", "47u 100V", "Capacitor_SMD:CP_Elec_10x10", {"1": "VIN", "2": "GND"}, (14, 38),
-        desc="input bulk, damps cable ringing when the hot-swap opens; LCSC code to check")
+        fields={"LCSC": "C87862", "MPN": "Lelon RVT2A470M1010"}, desc="input bulk, damps cable ringing when the hot-swap opens")
     C(202, "2.2u 100V", C1210, {"1": "VIN", "2": "GND"}, (24, 38), fields={"LCSC": "C338133"}, desc="input HF")
 
     # ========================================================== hot-swap (as the slot front end)
-    R(201, "6m 2W", R2512, {"1": "VIN", "2": "USENSE"}, (35, 32), rot=90,
-      desc="shunt, two 6 mOhm in parallel = 3 mOhm: limit 18.3 A, breaker 35 A; LCSC code to check")
-    R(202, "6m 2W", R2512, {"1": "VIN", "2": "USENSE"}, (35, 38), rot=90, desc="shunt (parallel)")
+    R(201, "6m 2W", R2512, {"1": "VIN", "2": "USENSE"}, (35, 32), rot=90, fields={"LCSC": "C2692028"},
+      desc="shunt, two 6 mOhm in parallel = 3 mOhm: limit 18.3 A, breaker 35 A")
+    R(202, "6m 2W", R2512, {"1": "VIN", "2": "USENSE"}, (35, 38), rot=90, fields={"LCSC": "C2692028"}, desc="shunt (parallel)")
     sym("Q202", PFET, "BSC040N10NS5", TDSON, by_name(PFET, {"G": "GATE_A", "S": "VBUS", "D": "USENSE"}), (98, 34), rot=90,
-        fields={"LCSC": "C534334"}, desc="100 V 4 mOhm pass FET; carries the start-up SOA alone (power limit 75 W, 10 ms); LCSC stock to check")
+        fields={"LCSC": "C534334"}, desc="100 V 4 mOhm pass FET; carries the start-up SOA alone (power limit 75 W, 10 ms)")
     sym("Q203", PFET, "BSC040N10NS5", TDSON, by_name(PFET, {"G": "GATE_B", "S": "VBUS", "D": "USENSE"}), (98, 8), rot=90,
         fields={"LCSC": "C534334"}, desc="parallel pass FET, for conduction loss")
     R(210, "10", R0402, {"1": "GATE", "2": "GATE_A"}, (90, 41), rot=90, desc="gate resistor (parallel FETs)")
@@ -93,7 +93,7 @@ def block():
     sym("U207", "Power_Management:LM5069MM-1", "LM5069MM-1", "Package_SO:MSOP-10_3x3mm_P0.5mm",
         {"1": "USENSE", "2": "VIN", "3": "UVLO", "4": "OVLO", "5": "GND", "6": "TIMER", "7": "PWR", "8": "U_PGD", "9": "VBUS", "10": "GATE"},
         (96, 56), fields={"LCSC": "C486026"},
-        desc="unit hot-swap, 55 mV current limit, power limit, LATCH-OFF (-1); LCSC stock low (5 in a 2026-10-29 snapshot)")
+        desc="unit hot-swap, 55 mV current limit, power limit, LATCH-OFF (-1); LCSC stock 1 on 2026-10-29 (LM5069MM-2 C111822 has 7k)")
     R(233, "143k", R0805, {"1": "VIN", "2": "UVLO"}, (68, 69), desc="UVLO: on 38.3 V, off 35.3 V (21 uA hysteresis)")
     R(234, "10k", R0402, {"1": "UVLO", "2": "GND"}, (68, 77))
     R(235, "124k", R0805, {"1": "VIN", "2": "OVLO"}, (76, 55), desc="OVLO: off 64.6 V, as the slots")
