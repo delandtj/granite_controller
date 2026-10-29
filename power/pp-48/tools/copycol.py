@@ -8,7 +8,7 @@ column itself) are deleted in columns 2..N and replaced by column 1's,
 translated by 25 mm per column, with the nets renamed: /Column 1/X ->
 /Column c/X, /COL1_* -> /COLc_*; GND, VBUS and +3V3 stay. A routed track or
 via that is not wholly inside column 1 stops the copy: such a route would
-not be the same in every column. The plane zones (whole board) are left
+not be the same in every column. Core routes (left of column 1) stay. The plane zones (whole board) are left
 alone; refill them afterwards (kicad-cli pcb drc --refill-zones).
 """
 import sys
@@ -50,8 +50,8 @@ def main(src, dst, n):
             template.append(it)
         elif 1 in cols:
             bad.append(it)
-        else:
-            other.append(it)
+        elif min(cols) >= 2:
+            other.append(it)                    # core routes (column 0) stay
     if bad:
         for it in bad:
             print('crosses the column 1 edge: %s %s (%.2f, %.2f)-(%.2f, %.2f)' % (

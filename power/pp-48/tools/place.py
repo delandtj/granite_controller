@@ -86,7 +86,8 @@ COL['J3'] = (*mount['AUX'], 270, F)
 SOLID = [('SO1', '1'), ('SO2', '1'), ('SO3', '1'), ('SO4', '1'), ('J1', '1'), ('J1', '2'),
          # small GND pads whose thermal spokes are blocked by their neighbours (starved_thermal)
          ('U3', '1'), ('U3', '4'), ('C4', '2'), ('C10', '2'),
-         ('U2', '2'), ('U10', '1'), ('U10', '2'), ('U10', '4')]
+         ('U2', '2'), ('U10', '1'), ('U10', '2'), ('U10', '4'), ('Q9', '2'),
+         ('R29', '2'), ('U5', '21')]
 
 
 def mm(v):

@@ -74,9 +74,9 @@ def block(N=2):
 
     # ========================================================== connector, TVS, bulk (VIN rail y = 32)
     sym("J1", "Connector_Generic_MountingPin:Conn_01x02_MountingPin", "XT90PW-M",
-        "Connector_AMASS:AMASS_XT90PW-M_1x02_P10.90mm_Horizontal", {"1": "GND", "2": "VIN", "MP": "NC"}, (-8, 30),
+        "Connector_AMASS:AMASS_XT90PW-M_1x02_P10.90mm_Horizontal", {"1": "GND", "2": "VIN", "MP": "GND"}, (-8, 30),
         mirror="y", fields={"MPN": "Amass XT90PW-M"},
-        desc="tile input, keyed (pin 1 -, pin 2 +), 30 A; LCSC code to check")
+        desc="tile input, keyed (pin 1 -, pin 2 +), 30 A; retention pegs (MP) soldered to GND; LCSC code to check")
     sym("D1", "Device:D_Zener", "SMDJ60A", "Diode_SMD:D_SMC", {"1": "VIN", "2": "GND"}, (2, 38), rot=270,
         desc="bus TVS 3 kW, unidirectional: cathode (pad 1) on VIN; 60 V standoff, breakdown >= 66.7 V, clamp 96.8 V; LCSC code to check")
     sym("C1", "Device:C_Polarized", "47u 100V", "Capacitor_SMD:CP_Elec_10x10", {"1": "VIN", "2": "GND"}, (14, 38),

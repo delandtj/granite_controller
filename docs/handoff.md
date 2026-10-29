@@ -22,19 +22,32 @@ when such an inductor is found at LCSC. Also open on that sheet: C11
 have no LCSC code yet. J4 (JST PH 2, pin 1 CTRL_12V, pin 2 CTRL_GND)
 is the controller's 12 V input: match it in the controller revisit.
 
-Core PLACEMENT DRAFT for review (2026-10-29, tools/core.py, not yet in
-pp-48.kicad_pcb, which is still the routed 2-column board): core 48 mm at
-the left (x 52-100), 8 mm end strip, outline 106 x 72 mm for N = 2 with
-4 corner M3 holes (pcbkit.toml [outline]). Flow: mkboard -> outline ->
-place.py -> core.py. Controller world top left (J2 / J3 / J4, isolators
-U4 / U5 across v = 22, 12 V module U2 top right with its outputs at the
-top edge); MCU left middle; 3V3 buck L1 + C11 on F between U2 and the
-XT90, U1 and parts on B; XT90 J1 bottom right, the tile hot-swap on B
-under its body (VIN pad -> shunts -> FETs -> VBUS via field); C1 and the
-mux U6 bottom left on F by the In2 channel. Column D1 now rot 180 on B
-(cathode pad 1 toward the OUT pour). Not done: core copper (pours, In2
-row extensions to the mux, +3V3 trunk end, CTRL_GND domain and the
-isolation gap), routing.
+Board ROUTED with the core (2026-10-29, N = 2, 106 x 72 mm): DRC 0
+unconnected, 0 parity, 0 errors; 3 silk warnings (TVS D1 outline under
+the XT90 pads, clipped by the fab); the 5 old exclusions are gone. Flow
+(pcbkit.toml header): mkboard -> outline -> setrules -> place.py ->
+core.py -> route_hand.py -> netsplit.py split -> krt-route -> netsplit.py
+join -> route_hand.py -> copycol.py -> gndstitch.py -> pcbkit silk. KRT
+does not count In2 tracks as connections, so +3V3 and the COLn_SDA / SCL
+nets are renamed per column for the router (tools/netsplit.py) and joined
+back after; without that it tries to join core and columns on F / B and
+leaves the columns open. Core copper (route_hand.py core()): XT90 VIN ->
+TVS / C2 / shunts as wide B tracks, C1 by an F track; TSENSE pour shunts
+-> FET tabs; VBUS pour under the FET sources with 30 vias to In2; Kelvin
+U7 SENSE (over F) / VIN and U8 IN- / IN+ to the shunt pads. In2 channel
+rows dip at the core edge UNDER that via field (so the tile VBUS feeds the
+In2 plane above the rows, which reaches the columns), run left along the
+bottom to a via ladder, F tracks up to the mux pins; +3V3 trunk ends on a
+via at the core edge, F track to L1. Isolation: CTRL_GND pours F / In1 / B
+over the controller world, 2 mm rule-area band around it (no copper on any
+layer), no In2 under it. Placement changes from the reviewed draft: U7 and
+its parts left of the shunts (the room right of Q3 is VBUS vias), mux U6
+and C1 rot 180, C14 / C15 on F by C1, shunts 0.45 mm up (courtyards), R11
+under Q3's gate pin. J1's retention pegs (MP) now on GND (were one NC net
+that DRC wanted joined). LIMIT: the core channel handles N <= 4 (mux
+channels 0-3 face the ladder); N = 6 / 8 needs channels 4-7 from the far
+side of U6, route_hand.py stops with a message. Not reviewed by the user
+yet: core routing, KRT's F runs under the XT90 body.
 
 FIXED 2026-10-29: the slot clamp D1 (SMBJ60A) and bus TVS D1 (SMDJ60A)
 were drawn with Device:D_TVS (bidirectional symbol) and pad 1 (= cathode

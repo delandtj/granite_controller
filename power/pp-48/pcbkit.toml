@@ -1,12 +1,12 @@
 # pcbkit settings for the PP-48 plane (docs/adr/0004-plane-column-layout.md).
 # 4L JLC 1.6 mm: F parts and pours, In1 GND, In2 VBUS + the SDA/SCL channel, B parts and pours.
 #
-# DRAFT (2026-10-28): two columns only (50 x 72 mm), placement for review; the
-# core block, the end strip / end cap and all routing come later.
+# N = 2: core (48 mm) + 2 columns + 8 mm end strip (106 x 72 mm).
 # Board flow: gensch.py N -> netlist -> mkboard -> outline -> setrules -> tools/place.py ->
-# tools/route_hand.py -> pcbkit krt-route (krt-reroute as needed) -> tools/route_hand.py again
-# (KRT moves kept copper: it put the In2 +3V3 trunk on B.Cu) -> tools/copycol.py ->
-# kicad-cli pcb drc --refill-zones --save-board
+# tools/core.py -> tools/route_hand.py -> tools/netsplit.py split -> pcbkit krt-route (krt-reroute
+# --keep on the split board as needed) -> tools/netsplit.py join -> tools/route_hand.py again (KRT
+# moves kept copper) -> tools/copycol.py -> tools/gndstitch.py -> pcbkit silk ->
+# kicad-cli pcb drc --refill-zones --save-board --schematic-parity
 
 [project]
 name = "pp-48"
@@ -44,11 +44,14 @@ via = [0.5, 0.2]
 track_width = 0.2
 same_net_pad_clearance = 0.15
 signal_layers = ["F.Cu", "B.Cu"]
-# tools/route_hand.py copper (power pours, shunt vias, Kelvin, In2 channel, taps)
+# tools/route_hand.py copper (power pours, shunt vias, Kelvin, In2 channel, taps, core power path,
+# CTRL_GND pours and the isolation band)
 keep_groups = ["hand"]
 # OUT's 7 A path is the hand pours; the router only adds the sense taps (U1 OUT, INA238 VBUS)
-power_nets = ["+3V3"]
-power_widths = [0.3]
+# core: VIN small pads (U1, U2, C11, dividers; the tile path is hand copper), the controller's 12 V / 3V3
+# (+3V3* also matches the per-column +3V3_Cn of tools/netsplit.py)
+power_nets = ["+3V3*", "VIN", "CTRL_12V", "CTRL_3V3"]
+power_widths = [0.3, 0.4, 0.4, 0.3]
 # GND: F / In1 / B pours drawn by tools/route_hand.py (kept group): KRT then skips GND (no GND
 # tracks; a plane-tapped GND took 640 stubs and cost signal routes); tools/gndstitch.py ties F / B
 # islands to In1 after the copy

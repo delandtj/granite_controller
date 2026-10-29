@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tie floating F / B GND pour islands to the In1 GND plane with one via each.
+"""Tie floating F / B GND (and CTRL_GND) pour islands to In1 with one via each.
 Usage: gndstitch.py <in.kicad_pcb> <out.kicad_pcb>
 
 Run after tools/copycol.py. The GND pours of tools/route_hand.py are in the
@@ -19,6 +19,7 @@ import sys
 import pcbnew
 
 GROUP = 'gnd-stitch'
+NETS = ('GND', 'CTRL_GND')          # CTRL_GND: the controller world's pours (core top left)
 VIA, DRILL, CLR, STEP = 0.6, 0.3, 0.2, 0.1
 
 
@@ -26,18 +27,8 @@ def mm(v):
     return pcbnew.FromMM(v)
 
 
-def main(src, dst):
-    board = pcbnew.LoadBoard(src)
-    for g in list(board.Groups()):
-        if g.GetName() == GROUP:
-            for it in list(g.GetItems()):
-                board.Delete(it)
-            board.Delete(g)
-    gnd = board.FindNet('GND')
-    filler = pcbnew.ZONE_FILLER(board)
-    zones = [z for z in board.Zones() if not z.GetIsRuleArea()]
-    filler.Fill(zones)
-
+def stitch(board, gnd, zones, g):
+    """one via per F / B island of net gnd with no via or through-hole pad of that net"""
     t = board.Tracks()
     items = [t[i] for i in range(len(t))]
     vias = [it for it in items if it.Type() == pcbnew.PCB_VIA_T]
@@ -47,7 +38,7 @@ def main(src, dst):
                 if p.GetNetCode() == gnd.GetNetCode() and p.GetAttribute() == pcbnew.PAD_ATTRIB_PTH]
     others = [it for it in items if it.GetNetCode() != gnd.GetNetCode()]
     opads = [p for p in pads if p.GetNetCode() != gnd.GetNetCode()]
-    # other-net pours on F / B (OUT, SENSE, NODE, VBUS); the inner planes give way to a via by themselves
+    # other-net pours on F / B (OUT, SENSE, NODE, VBUS, ...); the inner planes give way to a via by themselves
     ozones = [z for z in zones if z.GetNetCode() != gnd.GetNetCode() and z.GetLayer() in (pcbnew.F_Cu, pcbnew.B_Cu)]
     reach = mm(VIA / 2 + CLR)
 
@@ -68,9 +59,6 @@ def main(src, dst):
                     return False
         return True
 
-    g = pcbnew.PCB_GROUP(board)
-    g.SetName(GROUP)
-    board.Add(g)
     placed, stuck = 0, []
     for z in zones:
         if z.GetNetCode() != gnd.GetNetCode() or z.GetLayer() not in (pcbnew.F_Cu, pcbnew.B_Cu):
@@ -101,11 +89,32 @@ def main(src, dst):
                     placed += 1
                     break
             else:
-                stuck.append((pcbnew.ToMM(cx), pcbnew.ToMM(cy), z.GetLayerName(), one.Area() / 1e12))
+                stuck.append((gnd.GetNetname(), pcbnew.ToMM(cx), pcbnew.ToMM(cy), z.GetLayerName(), one.Area() / 1e12))
+    return placed, stuck
+
+
+def main(src, dst):
+    board = pcbnew.LoadBoard(src)
+    for g in list(board.Groups()):
+        if g.GetName() == GROUP:
+            for it in list(g.GetItems()):
+                board.Delete(it)
+            board.Delete(g)
+    filler = pcbnew.ZONE_FILLER(board)
+    zones = [z for z in board.Zones() if not z.GetIsRuleArea()]
+    filler.Fill(zones)
+    g = pcbnew.PCB_GROUP(board)
+    g.SetName(GROUP)
+    board.Add(g)
+    placed, stuck = 0, []
+    for name in NETS:
+        p, st = stitch(board, board.FindNet(name), zones, g)
+        placed += p
+        stuck += st
     board.Save(dst)
     print('gnd-stitch vias:', placed)
-    for x, y, lay, a in stuck:
-        print('no room for a via in the %s GND island at (%.2f, %.2f), %.2f mm2' % (lay, x, y, a))
+    for net, x, y, lay, a in stuck:
+        print('no room for a via in the %s %s island at (%.2f, %.2f), %.2f mm2' % (lay, net, x, y, a))
 
 
 if __name__ == '__main__':
