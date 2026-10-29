@@ -10,6 +10,11 @@
 //! - [`node`]: per-node state, LED debounce, names, boot policy.
 //! - [`actuator`]: the action table from the ADR as a state machine over
 //!   [`hal::NodeSwitches`] plus a clock, with a bounded job queue.
+//! - [`plane`]: the controller's side of the plane link (ADR 0004
+//!   decision 5): discovery, the poll schedule, the plane / unit / node
+//!   models, the command jobs, the events, the config push and the
+//!   plane firmware updates, over [`hal::PlaneLink`] and
+//!   `granite_proto`.
 //! - [`observed`]: the single sensor snapshot every reader works from.
 //! - [`rules`]: up to 16 standalone rules evaluated against the snapshot.
 //! - [`config`]: one `Config`, serialised per section, secrets separate.
@@ -39,6 +44,7 @@ pub mod modbus_server;
 pub mod msg;
 pub mod node;
 pub mod observed;
+pub mod plane;
 pub mod rules;
 
 /// Number of nodes a controller drives.

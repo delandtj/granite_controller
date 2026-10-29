@@ -6,6 +6,7 @@ version.workspace = true
 license.workspace = true
 
 [dependencies]
+granite-proto = { version = "0.1.0", path = "../granite-proto" }
 heapless = "0.9.3"
 hmac = { version = "0.13.0", default-features = false }
 rmodbus = { version = "0.12.2", default-features = false, features = ["alloc"] }

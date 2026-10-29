@@ -773,6 +773,7 @@ dependencies = [
 name = "granite-core"
 version = "0.1.0"
 dependencies = [
+ "granite-proto",
  "heapless",
  "hmac",
  "pbkdf2",
