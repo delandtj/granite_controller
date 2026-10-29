@@ -179,6 +179,11 @@ Value types in brackets. Units: V in 10 mV, I in mA, P in 0.1 W, T in
 - 0x4D reset unit expanders [u32 magic 0x45585252] (EXP_RSTN, bused:
   every unit's expander at once, so every slot goes ON before the
   plane re-applies the state; recovery for a wedged expander only)
+- 0x50 node on [u8 slot, u16 LED timeout s] (rail on if off, then a PWR
+  press if the host LED stays dark; controller ADR 0004 verb `on`)
+- 0x51 node off [u8 slot, u16 timeout s, u8 escalate: 0 none, 1 hold
+  PWR 5 s, 2 cut the rail] (short PWR press, wait for the LED to go
+  dark; controller ADR 0004 verb `off`)
 
 Result codes (0x16): 0 ok, 1 accepted (running; a later result
 follows), 2 busy, 3 bad argument, 4 conflict (sequence running on that
