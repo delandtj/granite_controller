@@ -2,6 +2,7 @@
 
 **Status**: Proposed
 **Date**: 2026-10-29
+**Updated**: 2026-10-29 (review asks answered by the user: EV_ACK, SUMMARY, asynchronous command outcome)
 
 Related: docs/adr/0001-48v-power-plane.md ("Message format": the first
 draft of this protocol), firmware/docs/adr/0002-plane-core-firmware.md
@@ -402,17 +403,15 @@ while; there is room.
   target.
 - Golden frames shared between plane-logic and granite-core tests.
 
-Review asks:
-1. Events: explicit EV_ACK instead of clear-on-read, yes / no?
-2. SUMMARY block for the 1 Hz poll, yes / no?
-3. Command outcome via seq + STATUS (asynchronous), yes / no?
+Review asks: answered 2026-10-29, all three as proposed (EV_ACK,
+SUMMARY for the 1 Hz poll, command outcome via seq + STATUS).
 
 ---
 
 ## Open Questions
 
 **Architecture-changers**
-- [ ] Review asks 1-3.
+- [x] EV_ACK, SUMMARY, asynchronous outcome (user 2026-10-29).
 
 **Behavior definers**
 - [ ] Number of planes on one daisy chain before the link needs a
