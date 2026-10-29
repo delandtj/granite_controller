@@ -2,11 +2,13 @@
 #
 # granite-core is host-testable (no_std + alloc, no ESP-IDF); granite-sim
 # runs it against fake hardware on the host (std, axum).
+# granite-proto is the plane link wire format (no_std, no alloc, no
+# dependencies), shared with the plane firmware.
 # granite-fw is excluded on purpose: it is an ESP-IDF crate with its own
 # target, linker and .cargo/config.toml, and must not share this
 # workspace's build settings.
 [workspace]
-members = ["granite-core", "granite-sim"]
+members = ["granite-core", "granite-proto", "granite-sim"]
 exclude = ["granite-fw"]
 resolver = "3"
 

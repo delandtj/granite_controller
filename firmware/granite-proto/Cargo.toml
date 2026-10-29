@@ -1,0 +1,11 @@
+[package]
+name = "granite-proto"
+description = "Wire format of the controller-to-plane I2C link: CRC-8 framing, TLV records and the typed records of firmware ADR 0003"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+
+[dev-dependencies]
+proptest = "1.12.0"
