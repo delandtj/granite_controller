@@ -1,4 +1,38 @@
-# Handoff - granite controller (updated 2026-10-29)
+# Handoff - granite-plane (updated 2026-10-29)
+
+Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
+
+## 2026-10-29: repo split from granite_controller
+
+This repo was split out of granite_controller (filter-repo, history
+kept): power/pp-48, pp-48-core, pp-48-unit, firmware/, the plane ADRs
+and docs. granite_controller keeps rev C (board + firmware) for demos;
+the plane copies there are stale from the split on and get removed once
+no session works on them there.
+
+Decided by the user (2026-10-29), see README.md "Direction": own A/B
+bootloader on the plane core, flashed from the controller over the
+link; plane core owns sequencing; several planes per controller on
+isolated I2C (ADR 0005's "RS-485 link" wording is wrong, link.py is
+ISO1640 I2C); rev D hardware lands here too.
+
+NEXT:
+- Firmware ADRs as component specs: plane-core firmware (I2C slave,
+  chain scan per mux channel with re-scan on NAK, per unit TCA6424A /
+  INA238 x3 / ID ADCs / U_OFF / U_PGD, sequencing, EVENTS + EXP_INT,
+  bootloader and update over TLV), the shared TLV protocol crate (ADR
+  0001 tag table plus a UNIT block and topology in INFO), controller
+  rev D node model (Plane trait replacing NodeSwitches / NodeSense,
+  nodes = (plane, slot), Modbus map v2).
+- Then the workspace: granite-proto, plane-fw + plane-boot (thumbv6m),
+  granite-fw's hw layer for rev D, a fake plane in granite-sim.
+- Rev D board: new KiCad project here (from rev C minus the node
+  section, 12 V input matching the plane's J4).
+
+
+## (history from granite_controller below)
+
+Handoff - granite controller (updated 2026-10-29)
 
 Read this first, then docs/controller.md and docs/power-board.md.
 
