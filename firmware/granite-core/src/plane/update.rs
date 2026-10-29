@@ -71,7 +71,12 @@ pub const CONFIRM_TIMEOUT_MS: u64 = 10_000;
 /// the update runs, so nothing has to hold a whole image in RAM: the
 /// firmware's implementation can read straight out of the OTA
 /// partition.
-pub trait ImageSource {
+///
+/// `Send` is required because the client that holds a running update is
+/// owned by a task (and, in the simulator, by a shared state an axum
+/// handler locks); an image source that cannot move between threads
+/// would pin the whole client to one.
+pub trait ImageSource: Send {
     /// Bytes in the image.
     fn size(&self) -> u32;
 
@@ -111,7 +116,7 @@ impl<B: AsRef<[u8]>> BufferedImage<B> {
     }
 }
 
-impl<B: AsRef<[u8]>> ImageSource for BufferedImage<B> {
+impl<B: AsRef<[u8]> + Send> ImageSource for BufferedImage<B> {
     fn size(&self) -> u32 {
         self.bytes.as_ref().len() as u32
     }

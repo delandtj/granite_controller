@@ -208,8 +208,11 @@ struct PlaneState {
     config: Option<DesiredConfig>,
     /// A CONFIG_W set has gone out and INFO has not been re-read.
     config_written: bool,
-    /// The boot count the intended-OFF set was last re-applied for.
-    reapplied_boot: Option<u32>,
+    /// Per slot, the SUMMARY timestamp at which the intended-OFF
+    /// re-apply last wrote: the next attempt waits for a fresher one,
+    /// so one lost state is answered once per slot report and not once
+    /// per STATUS read.
+    reapplied_after: [u64; SLOT_COUNT],
     pending_intent: Vec<PendingIntent>,
     /// The collision flag has been reported once.
     collision_reported: bool,
@@ -232,7 +235,7 @@ impl PlaneState {
             queue: VecDeque::new(),
             config: None,
             config_written: false,
-            reapplied_boot: None,
+            reapplied_after: [0; SLOT_COUNT],
             pending_intent: Vec::new(),
             collision_reported: false,
         }
@@ -402,7 +405,6 @@ impl PlaneClient {
                     state.next_info_ms = now_ms + INFO_PERIOD_MS;
                     state.info_due = false;
                     state.config_written = false;
-                    state.reapplied_boot = None;
                     state.dirty_all();
                     let (firmware, boot_count) = (state.plane.firmware, state.plane.boot_count);
                     self.events.push_back(ClientEvent::PlaneFound {
@@ -474,7 +476,6 @@ impl PlaneClient {
                         (state.plane.boot_count, state.plane.last_reset_cause);
                     let lost = state.plane.intended_state_lost();
                     state.dirty_all();
-                    state.reapplied_boot = None;
                     self.events.push_back(ClientEvent::PlaneRebooted {
                         address,
                         boot_count,
@@ -556,26 +557,74 @@ impl PlaneClient {
     }
 
     /// What hangs off a fresh STATUS: the intended-OFF re-apply.
+    ///
+    /// A plane that lost its core power says so until a reset that keeps
+    /// VDD, and it comes back with its boot count at 1 - the counter
+    /// lives in the backup domain that went with it (ADR 0002
+    /// decision 3) - so neither the flag's edge nor the boot count can
+    /// say whether this loss has been answered. What can is the state
+    /// itself: while the plane flags the loss, every node the controller
+    /// last commanded rail-off whose rail is up again gets its OFF
+    /// re-applied (ADR 0004, "What an Expert Would Ask"). That is
+    /// self-limiting - the slot goes off and stops matching - and a verb
+    /// that wants the rail up takes the node out of the set, so a user
+    /// who turns a node on is never fought over.
     fn after_status(&mut self, i: usize, now_ms: u64) {
         let state = &self.planes[i];
         if !state.plane.intended_state_lost() || state.plane.info_ms == 0 {
             return;
         }
-        let boot = state.plane.boot_count;
-        if state.reapplied_boot == Some(boot) {
-            return;
-        }
         let address = state.plane.address;
-        self.planes[i].reapplied_boot = Some(boot);
-        let nodes = self.intent.of_plane(address);
+        let nodes: Vec<NodeId> = self
+            .intent
+            .of_plane(address)
+            .into_iter()
+            .filter(|node| self.reapply_due(*node))
+            .collect();
         if nodes.is_empty() {
             return;
         }
         for node in &nodes {
+            if let Some((_, slot)) = node_location(*node) {
+                let seen = self.planes[i]
+                    .plane
+                    .node(slot)
+                    .map(|n| n.summary_ms)
+                    .unwrap_or(0);
+                self.planes[i].reapplied_after[slot as usize] = seen;
+            }
             self.submit(now_ms, NodeCommand::PowerOff { node: *node });
         }
         self.events
             .push_back(ClientEvent::IntendedOffReapplied { address, nodes });
+    }
+
+    /// True when a node the controller wants off needs its OFF put
+    /// back: the plane reports its rail enabled, a SUMMARY newer than
+    /// the last attempt says so, and no job of ours is already running
+    /// on it.
+    fn reapply_due(&self, node: NodeId) -> bool {
+        let Some((address, slot)) = node_location(node) else {
+            return false;
+        };
+        let Some(n) = granite_proto::plane_of_address(address) else {
+            return false;
+        };
+        let state = &self.planes[n as usize];
+        let fresh = state.plane.node(slot).is_some_and(|node| {
+            node.summary_ms != 0
+                && node.summary_ms > state.reapplied_after[slot as usize]
+                && node.status.contains(granite_proto::SlotStatus::ENABLED)
+        });
+        fresh && !self.has_job_for(node)
+    }
+
+    /// True while a job of this client is running on a node: a re-apply
+    /// never queues a second OFF behind the first.
+    fn has_job_for(&self, node: NodeId) -> bool {
+        self.jobs
+            .iter()
+            .any(|job| job.command.nodes().contains(&node))
     }
 
     /// Read SUMMARY.
@@ -1123,6 +1172,10 @@ impl PlaneClient {
             return;
         };
         if !outcome.is_ok() {
+            // A rail-off that did not happen is not a state to
+            // remember. The re-apply of ADR 0004 needs nothing of us
+            // here: it looks at the slot, so a failed attempt is simply
+            // made again on the next STATUS.
             return;
         }
         if node_command.intends_rail_on() {
