@@ -9,6 +9,8 @@ I2C2 (PB10 / PB11) the master for the mux and the plane front end (tile
 INA238). GPIO: TILE_OFF (tile hot-swap off), TILE_PGD, TILE_AL (tile
 INA238 ALERT), MUX_RST; TILE2_* for the end cap's second group (N = 6 / 8,
 NC otherwise). ADC: VIN_SNS (bus ahead of the tile hot-swap).
+block(tile=False) is the chained core (docs/adr/0005): no TILE_* pins, the
+unit hot-swaps are read and reset over each unit's expander.
 """
 from sch.draw import Block, R0402, C0402, C0603, LED0603, SJ
 
@@ -18,7 +20,7 @@ RIGHT_PORTS = {"SCL2": "bidirectional", "SDA2": "bidirectional",
                "INT_OUT": "output", "SCL1": "bidirectional", "SDA1": "bidirectional"}
 
 
-def mcu_nets(N):
+def mcu_nets(N, tile=True):
     # pins 29 and 32 are not bonded on the G070 (UCPD pins on the G071/G0B1)
     nets = {
         "1": "ADR0", "2": "ADR1", "3": "ADR2", "4": "+3V3", "5": "+3V3", "6": "+3V3", "7": "GND",
@@ -30,8 +32,10 @@ def mcu_nets(N):
         "30": "TILE_OFF", "31": "TILE_PGD", "38": "TILE2_OFF", "39": "TILE2_PGD", "40": "NC", "41": "NC", "42": "NC", "43": "NC",
         "35": "SWDIO", "36": "SWCLK", "37": "NC", "44": "NC", "45": "SCL1", "46": "SDA1", "47": "LED_RUN", "48": "NC",
     }
-    if N <= 4:                       # one hot-swap group, in the core
+    if N <= 4 or not tile:           # one hot-swap group, in the core
         nets["38"] = nets["39"] = "NC"
+    if not tile:                     # chained plane (ADR 0005): the hot-swaps are in the units, on their expanders
+        nets["25"] = nets["30"] = nets["31"] = "NC"
     return nets
 
 
@@ -44,10 +48,10 @@ def shape(net):
     return SHAPES[net]
 
 
-def block(N=2):
+def block(N=2, tile=True):
     b = Block("MCU")
     X, Y = 160 * G, 130 * G            # U3 origin
-    nets = mcu_nets(N)
+    nets = mcu_nets(N, tile)
     u = b.sym("U3", "MCU_ST_STM32G0:STM32G070CBTx", "STM32G070CBT6", "Package_QFP:LQFP-48_7x7mm_P0.5mm", nets,
               at=(X, Y), fields={"LCSC": "C529338"},
               desc="plane MCU: I2C1 slave to the controller (PB6/PB7), I2C2 master to the mux and front end (PB10/PB11), SWD on PA13/PA14")

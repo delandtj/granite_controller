@@ -9,7 +9,8 @@ address straps (INA238 A0 and ADC ADR0 on +3V3: 0x41 / 0x52 against slot
 A's 0x40 / 0x51), and the unit parts drawn once with slot A: the segment
 pull-ups R26 / R27 (placed in slot A) and the expander U5 (TCA6424A, 0x22,
 11 lines per slot, reset = all inputs; placed in slot B) with its caps C9 /
-C13 and /RESET pull-up R30.
+C13 and /RESET pull-up R30. The expander's two spares carry the unit
+hot-swap (docs/adr/0005 decision 3): P13 U_OFF out, P27 U_PGD in (ports).
 
 The slot: the front end (shunts, LM5069-2,
 pass FET, UVLO / OVLO, timer, PGD, output clamp), the INA238, the enable
@@ -69,10 +70,12 @@ SLOT_DX, SLOT_REF = 300, 50           # slot B: drawn 300 grid units right, refe
 # bottom right and right side toward their parts; slot A's lines on the left side and bottom left,
 # in the order of the In2 bus ladder (tools/route_hand.py bus(): via j = line j, top-left first)
 EXP_IO = {"1": "A_DISARM", "2": "A_OFF", "3": "A_PGD", "4": "A_LQ", "5": "A_LCLR", "6": "A_OVK", "7": "A_PG",
-          "8": "A_RUNOFF", "9": "A_LED", "10": "A_PWRD", "11": "A_RSTD", "12": "NC",
+          "8": "A_RUNOFF", "9": "A_LED", "10": "A_PWRD", "11": "A_RSTD", "12": "U_OFF",
           "13": "B_PWRD", "14": "B_RSTD", "15": "B_LED", "16": "B_RUNOFF",
           "17": "B_PG", "18": "B_OVK", "19": "B_LCLR", "20": "B_LQ", "21": "B_PGD", "22": "B_OFF", "23": "B_DISARM",
-          "24": "NC"}
+          "24": "U_PGD"}
+
+UNIT_IO = {"U_OFF": "output", "U_PGD": "input"}   # unit hot-swap on the Input sheet (docs/adr/0005 decision 3)
 
 
 def P(x, y):
@@ -105,7 +108,9 @@ def expander(b):
     b.wire("EXP_RSTN", [("R30", "1"), (66 * G, 173 * G), ("U5", "28")])
     b.name("EXP_RSTN", P(66, 177), 90)
     for pin, net in EXP_IO.items():
-        if net != "NC":
+        if net in UNIT_IO:
+            b.port(net, UNIT_IO[net], side="right", pos=("U5", pin))
+        elif net != "NC":
             b.tie(net, ("U5", pin))
 
 

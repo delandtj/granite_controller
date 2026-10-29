@@ -1,6 +1,7 @@
 # Chained plane: one core board and identical 2-slot unit boards
 
-**Status**: Proposed
+**Status**: Accepted (2026-10-29, implementation started: power/pp-48-core,
+power/pp-48-unit)
 **Date**: 2026-10-29
 
 **Updated**: 2026-10-29 (user: chain on JST PH 2.0, 3V3 from the core,
@@ -83,8 +84,15 @@ a column edge.
    left connector's P0 is this unit's segment, its P1..P3 are wired to
    the right connector's P0..P2, the right connector's P3 is not
    connected. At the core connector Pk = mux channel k (4 used, as
-   rev1). Cable: straight 1:1, ~50-100 mm, made by the user
+   rev1). Cable: flat and straight, ~50-100 mm, made by the user
    (PHR-12 housing + SPH-002T-P0.5 crimps). No VBUS in the chain.
+   Pinout (2026-10-29, power/pp-48/tools/sch/blocks/chain.py): the
+   facing headers are turned 180 deg to each other, so a flat cable
+   joins pin n to pin 13 - n. OUT headers (core, unit right edge):
+   1 3V3, 2 / 3 P0 SDA / SCL, 4 GND, 5 / 6 P1, 7 GND, 8 / 9 P2,
+   10 GND, 11 / 12 P3. The unit's IN header is the same read
+   backwards (pin n = OUT pin 13 - n). LCSC: S12B-PH-K-S C157943 (THT,
+   40 in stock 2026-10-29); the SMD S12B-PH-SM4-TB C378994 had 7.
 
 5. **3V3 for the units' logic comes from the core** (user 2026-10-29) through the chain
    (expanders, INA238s, ID ADCs, latches, photoMOS LEDs: < 50 mA per

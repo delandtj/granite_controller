@@ -1,6 +1,8 @@
 # Plane of N/2 identical 2-slot units (2 x 25 mm), front end under the module
 
-**Status**: Proposed
+**Status**: Partly superseded by docs/adr/0005-chained-plane-boards.md
+(decisions 3, 4, 5 as far as the column edge goes, 7 and 8; 1, 1a, 2, 6 and 9
+stand). Built as the single-board rev1 at tag pp48-rev1.
 **Date**: 2026-10-28
 **Updated**: 2026-10-28 (user: end cap for N = 6/8, mounting holes at
 the ends only, narrow end strip for N = 2/4; node power on a 2-pole
