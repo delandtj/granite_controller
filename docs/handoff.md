@@ -22,6 +22,14 @@ when such an inductor is found at LCSC. Also open on that sheet: C11
 have no LCSC code yet. J4 (JST PH 2, pin 1 CTRL_12V, pin 2 CTRL_GND)
 is the controller's 12 V input: match it in the controller revisit.
 
+NEXT (user 2026-10-29): the repeated block becomes a 2-slot UNIT (2 x
+25 mm, one I2C segment) with one TCA6424A 24-bit expander (LCSC C80692)
+instead of a TCA9535 per column; slot B straps INA238 0x41 / ADC 0x52.
+ADR 0004 decisions 4-7 and 9 are updated; the channel band drops to 4
+pairs, so the core channel serves N up to 8. Column schematic, place.py,
+route_hand.py (channel, fences) and copycol (50 mm pitch) still to be
+redone; the routed board below is the per-column version.
+
 Board ROUTED with the core (2026-10-29, N = 2, 106 x 72 mm): DRC 0
 unconnected, 0 parity, 0 errors; 3 silk warnings (TVS D1 outline under
 the XT90 pads, clipped by the fab); the 5 old exclusions are gone. Flow

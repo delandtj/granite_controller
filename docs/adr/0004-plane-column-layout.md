@@ -1,10 +1,13 @@
-# Plane of N identical 25 mm columns, front end under the module
+# Plane of N/2 identical 2-slot units (2 x 25 mm), front end under the module
 
 **Status**: Proposed
 **Date**: 2026-10-28
 **Updated**: 2026-10-28 (user: end cap for N = 6/8, mounting holes at
 the ends only, narrow end strip for N = 2/4; node power on a 2-pole
 screw terminal, front panel on JST GH, ID ADC ADC121C027, 25 mm pitch)
+**Updated**: 2026-10-29 (user: the repeated block is a 2-slot unit with
+one 24-bit expander instead of one column with a 16-bit expander per
+slot; decisions 4-7 and 9 below)
 
 Related: docs/adr/0003-plane-tile-and-module-interface.md (decisions
 1-4 and 11 are replaced here, 5-10 and 12-14 stand),
@@ -61,7 +64,8 @@ connector edge).
      pads, plane ~83 mm), PCB DC jacks (none stocked above 10 A at
      >= 24 V in the width).
 2. **Front end under its own module.** LM5069-2, pass FET (TDSON-8),
-   shunt (2512), INA238, TCA9535, the ID ADC and the small passives sit
+   shunt (2512), INA238, the ID ADC, the unit's expander (under one of
+   the two modules, decision 9) and the small passives sit
    on the plane F side inside the module outline (max 2.0 mm, >= 1.0
    mm from standoff bodies and the aux socket). Parts over 2.0 mm (SMB
    clamp, 1210 bus caps, SOIC-4 photoMOS and opto, LEDs if any) go on
@@ -74,26 +78,31 @@ connector edge).
    band (decision 5), B parts and pours. No VBUS strip along the top
    edge and no bus bar: 1 oz In2 across ~50 mm is ~1 mOhm per 100 mm,
    with the B and F pours in parallel.
-4. **Family**: N = 2, 4, 6, 8. A plane is a core block plus N columns,
-   generated from N (the 6-slot plane is a real 6-slot board). One MCU
-   per plane, whatever N. The column copper is the same in every
-   column and every variant, placed by translation only (pcbkit
-   script, or KiCad 10 multichannel repeat layout).
-5. **Rotating channel to the core.** The core sits at the left end.
-   Below the modules a band of 8 pair positions (P0..P7) runs along
-   the board on In2. Each column connects its own SDA/SCL to P0 at its
-   core-side boundary and passes the far-side P0..P6 through to
-   core-side P1..P7 (a jog of one pair per column); far-side P7 ends.
-   At the core, Pk is the segment of column k+1. Every column has the
-   same copper, no column is special, unused positions end at the far
-   edge. 16 tracks at 0.35 mm pitch: a ~6 mm band on In2 under the
-   lower part of the module, between the aux socket and S3/S4, so it
-   adds no height (to confirm in the column layout). 3V3 and GND run
-   straight through the band (same copper per column).
-6. **Two lines per column (replaces ADR 0003 decisions 3 and 4 in
+4. **Family and unit (revised 2026-10-29)**: N = 2, 4, 6, 8. A plane
+   is a core block plus N/2 units, generated from N (the 6-slot plane
+   is a real 6-slot board). A unit is two slot columns at 25.0 mm
+   pitch (50.0 mm wide) on one I2C segment: slot A (core side) and
+   slot B (far side). The two columns share the front-end copper
+   except for the address straps (decision 9) and the expander, which
+   sits in one of them. One MCU per plane, whatever N. The unit copper
+   is the same in every unit and every variant, placed by translation
+   only (pcbkit script, or KiCad 10 multichannel repeat layout).
+5. **Rotating channel to the core (revised 2026-10-29).** The core
+   sits at the left end. Below the modules a band of 4 pair positions
+   (P0..P3) runs along the board on In2. Each unit connects its own
+   SDA/SCL to P0 at its core-side boundary and passes the far-side
+   P0..P2 through to core-side P1..P3 (a jog of one pair per unit);
+   far-side P3 ends. At the core, Pk is the segment of unit k+1. Every
+   unit has the same copper, no unit is special, unused positions end
+   at the far edge. 8 tracks at 0.35 mm pitch: a ~3 mm band on In2
+   under the lower part of the modules, between the aux socket and
+   S3/S4, so it adds no height. 3V3 and GND run straight through the
+   band (same copper per unit). The core's channel rows (4 pairs) now
+   serve every N up to 8.
+6. **Two lines per unit (replaces ADR 0003 decisions 3 and 4 in
    part)**: SDA_n and SCL_n only.
-   - INT_n dropped: the MCU polls each column's expander on the same
-     mux visit as its INA238 (10-20 Hz). Status latency <= 100 ms;
+   - INT_n dropped: the MCU polls each unit's expander on the same
+     mux visit as its two INA238s (10-20 Hz). Status latency <= 100 ms;
      nothing in the safety chain uses INT (OV latch, current limits
      and PGOOD latch are local hardware).
    - ID_n becomes digital: a single-channel I2C ADC per column
@@ -105,22 +114,41 @@ connector edge).
      column, behind the mux. The ID table and "ID open = slot fault"
      rule of pm-interface.md are unchanged; the MCU applies them to
      the ADC reading.
-   - Mux: TCA9548A, channel k = column k+1 (all 8 used at N = 8). The
-     plane front end (INA238, expander) moves to the G070's second I2C
-     port.
+   - Mux: TCA9548A, channel k = unit k+1 (4 used at N = 8, channels
+     4-7 left open). The plane front end (INA238, expander) moves to
+     the MCU's second I2C port.
 7. **Input current scales with N** (decided 2026-10-28): N x
    ~265 W input is ~44 A at 48 V and ~56 A at 38 V for N = 8, twice the
-   30 A class of ADR 0003. One 30 A hot-swap group per 4 columns. N <= 4: one group in the core (ADR 0003 decision 8 as is).
+   30 A class of ADR 0003. One 30 A hot-swap group per 4 slots (2
+   units). N <= 4: one group in the core (ADR 0003 decision 8 as is).
    N = 6/8: a second group in an end-cap block at the right end with
    its own keyed input connector; the In2 VBUS plane splits at the
-   column 4/5 boundary. Column copper does not change; only the pour
-   split and the end cap are added. Fault unit on the bus side stays
-   4 slots; the MCU (one per plane) controls both groups through its
-   second I2C port.
+   unit 2/3 boundary (slots 4/5). Unit copper does not change; only
+   the pour split and the end cap are added. Fault unit on the bus
+   side stays 4 slots; the MCU (one per plane) controls both groups
+   through its second I2C port.
 8. **Plane mounting**: holes at the ends only (core block and, for
    N = 6/8, the end cap; for N = 2/4 a narrow end strip, ~8 mm, with a
    hole pair). No hole strip
    along the top: height stays ~72 mm.
+9. **One 24-bit expander per unit (2026-10-29, replaces the TCA9535
+   per column)**: TI TCA6424ARGJR, VQFN-32 5 x 5 mm 0.5 mm pitch, LCSC
+   C80692 (~7k stock, ~$0.60-1.06; recheck at order). Each slot uses
+   11 lines (out: OFF, LCLR, RUNOFF, DISARM, PWRD, RSTD; in: PGD, PG,
+   LQ, OVK, LED), 22 of 24 used, 2 spare. All pins are inputs after
+   power-on and /RESET, as with the TCA9535, so the reset defaults of
+   the slot (ON, latch kept, module running, photoMOS dark) are
+   unchanged. Pin assignment by board side: slot A lines on the ports
+   nearest slot A, slot B lines on the far ports (fixed in the unit
+   schematic). INT unused (polled), /RESET pulled up.
+   Addresses on the unit segment, slot A / slot B:
+   - INA238: 0x40 (A0 A1 GND) / 0x41 (A0 VS, A1 GND)
+   - ADC121C027: 0x51 (ADR0 GND) / 0x52 (ADR0 VA)
+   - TCA6424A: 0x22 (ADDR GND), one per unit
+   The address straps are the only copper difference between the two
+   columns of a unit. Second source: NXP PCAL6524HEAZ (HUQFN-32,
+   different register map and footprint; not stocked at LCSC when
+   checked), so the TCA6424A is single source for now.
 
 ---
 
@@ -139,11 +167,13 @@ connector edge).
 |        | S4   S3 | S4   S3 |         | S4   S3 |        |  |
 | [30A][link][12V] |[TB2][GH]   ...    |         | [30A]  | ~12
 +--------+---------+---------+-- ... --+---------+--------+  -
-                                                      ~72 mm total
+         |<---- unit 1 ----->|                            ~72 mm total
+         | slot A  | slot B  |  (2 x 25 mm, one I2C segment,
+                                 rotating channel P0..P3)
 ```
 
-Approximate sizes: N=2 ~100 x 72, N=4 ~150 x 72, N=6 ~215 x 72, N=8
-~265 x 72 mm (core ~40, end strip ~8 or end cap ~25).
+Approximate sizes: N=2 ~106 x 72, N=4 ~156 x 72, N=6 ~225 x 72, N=8
+~275 x 72 mm (core 48, end strip ~8 or end cap ~25).
 
 ---
 
@@ -154,6 +184,20 @@ Approximate sizes: N=2 ~100 x 72, N=4 ~150 x 72, N=6 ~215 x 72, N=8
 - **Sharpest tradeoff**: ~130 mm tall; the area under every module is
   wasted.
 - **Bets on**: board height not mattering in the box.
+
+### One column per slot with its own TCA9535 (the 2026-10-28 draft)
+- **Optimizes for**: one 25 mm block, both columns literally identical.
+- **Sharpest tradeoff**: one expander and one mux channel per slot; the
+  channel band is 8 pairs (~6 mm), and the core channel needs mux
+  channels 4-7 from the far side of the mux for N = 6/8.
+- **Bets on**: the extra expanders and channel width being cheap.
+
+### 2-slot unit with one TCA9535 (8 lines per slot)
+- **Optimizes for**: a TSSOP part, no QFN.
+- **Sharpest tradeoff**: three status / control lines per slot dropped
+  (e.g. OVK, LQ, DISARM): less diagnosis, and DISARM moves into
+  hardware in the safety chain.
+- **Bets on**: the dropped lines never being needed.
 
 ### Four lines per column (SDA, SCL, INT, analog ID)
 - **Optimizes for**: interrupt-driven status, no ID ADC part.
@@ -184,15 +228,21 @@ Approximate sizes: N=2 ~100 x 72, N=4 ~150 x 72, N=6 ~215 x 72, N=8
 
 ### Positive
 - Plane height ~72 mm instead of ~130 mm.
-- One column layout serves every variant and every position.
-- Two signal lines per column; MCU pin count no longer grows with N.
+- One unit layout serves every variant and every position.
+- Two signal lines per unit; MCU pin count no longer grows with N.
+- One expander and one set of segment pull-ups per 2 slots; 4 mux
+  channels and a 4-pair channel band for N = 8.
 
 ### Negative
 - Two-sided plane assembly (JLC cost per board goes up).
 - The front end is hidden under the module: probing needs the module
   off (test points on the B side under the outline, or at the channel
   band).
-- One ADC part more per column.
+- One ADC part more per slot.
+- A hung segment or a dead expander loses control and telemetry of 2
+  slots, not 1 (slots stay ON by hardware).
+- The expander is a 0.5 mm QFN-32 with an exposed pad under a module,
+  and single source at LCSC.
 - One MCU per plane means a dead MCU loses telemetry for up to 8
   slots (slots stay ON by hardware, ADR 0001 rules).
 
@@ -222,3 +272,7 @@ Approximate sizes: N=2 ~100 x 72, N=4 ~150 x 72, N=6 ~215 x 72, N=8
 - [x] ID ADC: ADC121C027 (decision 6).
 - [x] Node power: DG128 2-pole screw terminal (decision 1a).
 - [ ] DG128 drawing check (depth, clamp, entry) and second source.
+- [x] Repeated block: 2-slot unit with one 24-bit expander (decision 9,
+  user 2026-10-29).
+- [ ] Mux: keep the TCA9548A (4 of 8 channels used) or move to the
+  4-channel TCA9546A (smaller, stock to check).
