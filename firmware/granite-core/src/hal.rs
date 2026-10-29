@@ -134,6 +134,64 @@ pub trait DryInputs {
     fn read_dry(&mut self) -> HalResult<u8>;
 }
 
+/// What a plane link transaction can fail with.
+///
+/// Deliberately coarse, the way [`HalError`] is: the plane client only
+/// has to tell "nobody there" (an address with no plane, which is how
+/// discovery reads absence) from "the link misbehaved" (retry), and a
+/// caller that sized its buffer wrong is a bug, not a bus event. A bad
+/// CRC or a short answer is **not** in here: those are
+/// `granite_proto::FrameError`, raised by the frame check above this
+/// trait, because the link only moves bytes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LinkError {
+    /// The address was not acknowledged: no plane is strapped to it, or
+    /// the plane is gone.
+    Nak,
+    /// Transport error on the link (arbitration, a stuck line, a
+    /// peripheral fault).
+    Bus,
+    /// The plane did not answer, or did not finish answering, in time.
+    Timeout,
+    /// The caller's buffer cannot hold the answer.
+    BufferTooSmall,
+}
+
+impl fmt::Display for LinkError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            LinkError::Nak => f.write_str("not acknowledged"),
+            LinkError::Bus => f.write_str("link bus error"),
+            LinkError::Timeout => f.write_str("link timeout"),
+            LinkError::BufferTooSmall => f.write_str("answer buffer too small"),
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for LinkError {}
+
+/// The isolated I2C link to the planes, plus their shared EXP_INT
+/// (controller ADR 0004 decision 5).
+///
+/// Bytes only: the framing, the CRC, the records and the retries are
+/// `granite_proto` and the plane client's business (ADR 0003). An
+/// implementation does one I2C transaction per call, with a repeated
+/// start between the request and the read in [`Self::write_read`].
+pub trait PlaneLink {
+    /// Write `req` to `addr`, then read the answer into `resp`, and
+    /// report how many bytes came back.
+    fn write_read(&mut self, addr: u8, req: &[u8], resp: &mut [u8]) -> Result<usize, LinkError>;
+
+    /// Write one frame to `addr`. A write has no answer; its outcome is
+    /// read back from STATUS.
+    fn write(&mut self, addr: u8, frame: &[u8]) -> Result<(), LinkError>;
+
+    /// True while EXP_INT is asserted. The line is the wired OR of every
+    /// plane's, so it says "someone has events", not which one.
+    fn int_asserted(&mut self) -> bool;
+}
+
 /// A DS18B20 ROM id.
 pub type RomId = u64;
 
