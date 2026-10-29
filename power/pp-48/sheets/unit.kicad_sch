@@ -7379,8 +7379,8 @@
 		(uuid "f2c7d29b-ea4a-5844-9624-2f7a30d11ff3")
 	)
 	(no_connect
-		(at 114.3 227.33)
-		(uuid "0a7560a5-8f2b-5434-a641-2fc4fdb53300")
+		(at 114.3 240.03)
+		(uuid "64eaee56-04fa-53ec-929c-02333742b222")
 	)
 	(no_connect
 		(at 114.3 273.05)
@@ -8382,7 +8382,7 @@
 		)
 		(uuid "03791713-3657-5320-aff9-bb8c4166b4bb")
 	)
-	(label "A_PWRD"
+	(label "A_LCLR"
 		(at 114.3 219.71 0)
 		(effects
 			(font
@@ -8390,9 +8390,9 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "ef76f10f-9bc2-5d51-8e63-e875efaef9ec")
+		(uuid "e145d57d-aa34-55ca-bb15-183d3015643c")
 	)
-	(label "A_RSTD"
+	(label "A_OVK"
 		(at 114.3 222.25 0)
 		(effects
 			(font
@@ -8400,9 +8400,9 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "97aca247-0de9-52eb-8aa7-da31ddb13ff4")
+		(uuid "f16bc6f4-7636-51d7-bf5e-238eea9302df")
 	)
-	(label "A_LED"
+	(label "A_PG"
 		(at 114.3 224.79 0)
 		(effects
 			(font
@@ -8410,9 +8410,19 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "1155f989-3d78-53f9-bb6b-b9a46f347f3b")
+		(uuid "07de4b56-e0e1-5636-aacc-f09572049e3a")
 	)
-	(label "A_LCLR"
+	(label "A_RUNOFF"
+		(at 114.3 227.33 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "0ee73b0d-3a7c-5690-86f9-b7f1e54c5379")
+	)
+	(label "A_LED"
 		(at 114.3 232.41 0)
 		(effects
 			(font
@@ -8420,9 +8430,9 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "bc4ae488-837a-513a-8b58-0d4f910aa6ed")
+		(uuid "36556879-3c92-534f-b782-57cfa8f08d7a")
 	)
-	(label "A_OVK"
+	(label "A_PWRD"
 		(at 114.3 234.95 0)
 		(effects
 			(font
@@ -8430,9 +8440,9 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "57d1a3b5-900d-5d5e-8850-83e5a262e257")
+		(uuid "3a35bc61-eca8-5518-9dc9-041bc6ee43b0")
 	)
-	(label "A_PG"
+	(label "A_RSTD"
 		(at 114.3 237.49 0)
 		(effects
 			(font
@@ -8440,17 +8450,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "6eb47dd1-bf5f-5c7e-be34-52bc8a2408d2")
-	)
-	(label "A_RUNOFF"
-		(at 114.3 240.03 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "2ba81f94-0670-50fc-9f67-2827e96365dd")
+		(uuid "efc933f6-4e71-5dba-b9f5-f4dab24b6159")
 	)
 	(label "B_PWRD"
 		(at 114.3 242.57 0)
@@ -8482,7 +8482,7 @@
 		)
 		(uuid "f3570efd-3156-58dc-bafb-7350bbc1902e")
 	)
-	(label "B_DISARM"
+	(label "B_RUNOFF"
 		(at 114.3 250.19 0)
 		(effects
 			(font
@@ -8490,9 +8490,9 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "5974bc1e-132c-540c-934f-bea22cfa1808")
+		(uuid "4fc3738d-d9eb-5aa3-90b4-26ecbb95d65c")
 	)
-	(label "B_RUNOFF"
+	(label "B_PG"
 		(at 114.3 255.27 0)
 		(effects
 			(font
@@ -8500,9 +8500,9 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "5fe251f8-05ba-5bb3-9e13-b7f2eb0db3e5")
+		(uuid "f2bb3352-5c90-5788-a486-0401195ae3ec")
 	)
-	(label "B_PG"
+	(label "B_OVK"
 		(at 114.3 257.81 0)
 		(effects
 			(font
@@ -8510,9 +8510,9 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "fa8208ab-36bd-5c5a-8a95-4925051f31a7")
+		(uuid "702ad31f-085b-53cf-9f08-1bf17af98ac2")
 	)
-	(label "B_OVK"
+	(label "B_LCLR"
 		(at 114.3 260.35 0)
 		(effects
 			(font
@@ -8520,9 +8520,9 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "0b871d3d-ea62-56fd-9328-15a7e2a6d38e")
+		(uuid "d2cd07b4-297b-5d4e-a270-4407c4878382")
 	)
-	(label "B_LCLR"
+	(label "B_LQ"
 		(at 114.3 262.89 0)
 		(effects
 			(font
@@ -8530,9 +8530,9 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "b54f748b-f048-52cc-9e3d-34b1ce0f0455")
+		(uuid "b6cc1d91-6395-5b02-b321-05be91cb5e3a")
 	)
-	(label "B_LQ"
+	(label "B_PGD"
 		(at 114.3 265.43 0)
 		(effects
 			(font
@@ -8540,9 +8540,9 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "4dfd8035-2102-526c-b940-0c354a370409")
+		(uuid "a6f64c4c-86ae-5f3d-a8a0-2ec75e637cee")
 	)
-	(label "B_PGD"
+	(label "B_OFF"
 		(at 114.3 267.97 0)
 		(effects
 			(font
@@ -8550,9 +8550,9 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "c1a585bb-1710-51ed-b809-401b9e691b7b")
+		(uuid "d8cb9436-139e-515c-842c-05024f96e78a")
 	)
-	(label "B_OFF"
+	(label "B_DISARM"
 		(at 114.3 270.51 0)
 		(effects
 			(font
@@ -8560,7 +8560,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "4864f207-62c3-50ce-ab83-ca7cceaf08fc")
+		(uuid "045cb729-2fd9-5156-b1c6-22c602197522")
 	)
 	(text "SLOT A: 48 V HOT-SWAP, INA238, OV LATCH, MODULE MOUNT, ID ADC, NODE TERMINAL"
 		(exclude_from_sim no)
@@ -20079,7 +20079,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "unit GPIO, address 0x22 (ADDR GND); 11 lines per slot: slot A P00-P07 / P10-P12, slot B P13-P17 / P20-P26 (P0 left, P1 bottom, P2 right side of the package at rot 0); INT unused (polled); all inputs after reset"
+		(property "Description" "unit GPIO in slot B, address 0x22 (ADDR GND); 11 lines per slot: slot A P00-P07 / P10-P12 (to slot A over the In2 bus), slot B P14-P17 / P20-P26; INT unused (polled); all inputs after reset"
 			(at 101.6 241.3 0)
 			(hide yes)
 			(show_name no)

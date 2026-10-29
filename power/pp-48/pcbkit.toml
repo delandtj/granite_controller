@@ -1,12 +1,12 @@
 # pcbkit settings for the PP-48 plane (docs/adr/0004-plane-column-layout.md).
 # 4L JLC 1.6 mm: F parts and pours, In1 GND, In2 VBUS + the SDA/SCL channel, B parts and pours.
 #
-# N = 2: core (48 mm) + 2 columns + 8 mm end strip (106 x 72 mm).
+# N = 2: core (48 mm) + 1 unit of 2 slot columns + 8 mm end strip (106 x 72 mm).
 # Board flow: gensch.py N -> netlist -> mkboard -> outline -> setrules -> tools/place.py ->
 # tools/core.py -> tools/route_hand.py -> tools/netsplit.py split -> pcbkit krt-route (krt-reroute
-# --keep on the split board as needed) -> tools/netsplit.py join -> tools/route_hand.py again (KRT
-# moves kept copper) -> tools/copycol.py -> tools/gndstitch.py -> pcbkit silk ->
-# kicad-cli pcb drc --refill-zones --save-board --schematic-parity
+# on the split board as needed) -> tools/netsplit.py join -> tools/route_hand.py again (KRT
+# moves kept copper) -> tools/copycol.py -> tools/gndstitch.py -> pcbkit prune (until no dangling)
+# -> pcbkit silk -> kicad-cli pcb drc --refill-zones --save-board --schematic-parity
 
 [project]
 name = "pp-48"
@@ -20,7 +20,7 @@ cell = 14.0
 per_row = 6
 
 [outline]
-# core (48 mm, tools/core.py) + N x 25 mm columns + 8 mm end strip (N = 2/4; ADR 0004 decision 8):
+# core (48 mm, tools/core.py) + N/2 x 50 mm units + 8 mm end strip (N = 2/4; ADR 0004 decision 8):
 # corner holes at the ends only, 4 mm inset
 length = 106.0
 height = 72.0
@@ -49,7 +49,7 @@ signal_layers = ["F.Cu", "B.Cu"]
 keep_groups = ["hand"]
 # OUT's 7 A path is the hand pours; the router only adds the sense taps (U1 OUT, INA238 VBUS)
 # core: VIN small pads (U1, U2, C11, dividers; the tile path is hand copper), the controller's 12 V / 3V3
-# (+3V3* also matches the per-column +3V3_Cn of tools/netsplit.py)
+# (+3V3* also matches the per-unit +3V3_Cn of tools/netsplit.py)
 power_nets = ["+3V3*", "VIN", "CTRL_12V", "CTRL_3V3"]
 power_widths = [0.3, 0.4, 0.4, 0.3]
 # GND: F / In1 / B pours drawn by tools/route_hand.py (kept group): KRT then skips GND (no GND

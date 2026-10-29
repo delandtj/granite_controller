@@ -145,8 +145,13 @@ connector edge).
    - INA238: 0x40 (A0 A1 GND) / 0x41 (A0 VS, A1 GND)
    - ADC121C027: 0x51 (ADR0 GND) / 0x52 (ADR0 VA)
    - TCA6424A: 0x22 (ADDR GND), one per unit
-   The address straps are the only copper difference between the two
-   columns of a unit. Second source: NXP PCAL6524HEAZ (HUQFN-32,
+   The address straps and the unit parts are the only differences
+   between the two columns of a unit. Layout (2026-10-29): the expander
+   sits in slot B, where slot B's 11 lines stay local; slot A's 11
+   lines cross on an In2 bus (11 tracks, 0.5 mm pitch, between via
+   ladders at the expander spot of each slot, below the shunts' VBUS
+   feed, so the VBUS plane only gets a slot). Routing them on F / B
+   through slot A's front end left nets open. Second source: NXP PCAL6524HEAZ (HUQFN-32,
    different register map and footprint; not stocked at LCSC when
    checked), so the TCA6424A is single source for now.
 

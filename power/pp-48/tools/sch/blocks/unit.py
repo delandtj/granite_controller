@@ -7,8 +7,9 @@ references + 50, nets B_*, drawn to the right) are the same slot drawing;
 GND, +3V3, VBUS, SDA and SCL are shared. The only differences: slot B's
 address straps (INA238 A0 and ADC ADR0 on +3V3: 0x41 / 0x52 against slot
 A's 0x40 / 0x51), and the unit parts drawn once with slot A: the segment
-pull-ups R26 / R27 and the expander U5 (TCA6424A, 0x22, 11 lines per slot,
-reset = all inputs) with its caps C9 / C13 and /RESET pull-up R30.
+pull-ups R26 / R27 (placed in slot A) and the expander U5 (TCA6424A, 0x22,
+11 lines per slot, reset = all inputs; placed in slot B) with its caps C9 /
+C13 and /RESET pull-up R30.
 
 The slot: the front end (shunts, LM5069-2,
 pass FET, UVLO / OVLO, timer, PGD, output clamp), the INA238, the enable
@@ -64,12 +65,13 @@ TLP176 = ("pp:TLP176AM", "TLP176AM", "Package_SO:SOIC-4_4.55x3.7mm_P2.54mm")
 STANDOFF = "pp48:PM_Standoff_M2x7_SMTSO"
 SHARED = ("GND", "+3V3", "VBUS", "SDA", "SCL", "NC")
 SLOT_DX, SLOT_REF = 300, 50           # slot B: drawn 300 grid units right, references + 50
-# expander ports (TCA6424A pin: slot net); rot 0 on the board: P0 left, P1 bottom, P2 right side,
-# slot B (the far column) on P2 and the right half of P1
-EXP_IO = {"1": "A_DISARM", "2": "A_OFF", "3": "A_PGD", "4": "A_LQ", "5": "A_PWRD", "6": "A_RSTD", "7": "A_LED",
-          "8": "NC", "9": "A_LCLR", "10": "A_OVK", "11": "A_PG", "12": "A_RUNOFF",
-          "13": "B_PWRD", "14": "B_RSTD", "15": "B_LED", "16": "B_DISARM",
-          "17": "B_RUNOFF", "18": "B_PG", "19": "B_OVK", "20": "B_LCLR", "21": "B_LQ", "22": "B_PGD", "23": "B_OFF",
+# expander ports (TCA6424A pin: slot net). U5 sits in slot B at rot 0: slot B's lines on the
+# bottom right and right side toward their parts; slot A's lines on the left side and bottom left,
+# in the order of the In2 bus ladder (tools/route_hand.py bus(): via j = line j, top-left first)
+EXP_IO = {"1": "A_DISARM", "2": "A_OFF", "3": "A_PGD", "4": "A_LQ", "5": "A_LCLR", "6": "A_OVK", "7": "A_PG",
+          "8": "A_RUNOFF", "9": "A_LED", "10": "A_PWRD", "11": "A_RSTD", "12": "NC",
+          "13": "B_PWRD", "14": "B_RSTD", "15": "B_LED", "16": "B_RUNOFF",
+          "17": "B_PG", "18": "B_OVK", "19": "B_LCLR", "20": "B_LQ", "21": "B_PGD", "22": "B_OFF", "23": "B_DISARM",
           "24": "NC"}
 
 
@@ -95,8 +97,8 @@ def expander(b):
                  "29": "SCL", "30": "SDA", "32": "NC"})
     b.sym("U5", "pp:TCA6424ARGJR", "TCA6424ARGJR", "Package_DFN_QFN:VQFN-32-1EP_5x5mm_P0.5mm_EP3.15x3.15mm", nets,
           at=P(80, 190), fields={"LCSC": "C80692"},
-          desc="unit GPIO, address 0x22 (ADDR GND); 11 lines per slot: slot A P00-P07 / P10-P12, slot B P13-P17 / P20-P26 "
-               "(P0 left, P1 bottom, P2 right side of the package at rot 0); INT unused (polled); all inputs after reset")
+          desc="unit GPIO in slot B, address 0x22 (ADDR GND); 11 lines per slot: slot A P00-P07 / P10-P12 (to slot A over "
+               "the In2 bus), slot B P14-P17 / P20-P26; INT unused (polled); all inputs after reset")
     b.sym("C9", "Device:C", "100n", C0402, {"1": "+3V3", "2": "GND"}, at=P(66, 154), desc="TCA6424A VCCI")
     b.sym("C13", "Device:C", "100n", C0402, {"1": "+3V3", "2": "GND"}, at=P(96, 154), desc="TCA6424A VCCP")
     b.sym("R30", "Device:R", "10k", R0402, {"1": "EXP_RSTN", "2": "+3V3"}, at=P(66, 182), desc="TCA6424A /RESET pull-up")

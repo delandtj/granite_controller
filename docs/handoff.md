@@ -22,14 +22,35 @@ when such an inductor is found at LCSC. Also open on that sheet: C11
 have no LCSC code yet. J4 (JST PH 2, pin 1 CTRL_12V, pin 2 CTRL_GND)
 is the controller's 12 V input: match it in the controller revisit.
 
-NEXT (user 2026-10-29): the repeated block becomes a 2-slot UNIT (2 x
-25 mm, one I2C segment) with one TCA6424A 24-bit expander (LCSC C80692)
-instead of a TCA9535 per column; slot B straps INA238 0x41 / ADC 0x52.
-ADR 0004 decisions 4-7 and 9 are updated; the channel band drops to 4
-pairs, so the core channel serves N up to 8. Column schematic, place.py,
-route_hand.py (channel, fences) and copycol (50 mm pitch) still to be
-redone; the routed board below is the per-column version.
+Board ROUTED as 2-slot UNITS (2026-10-29, ADR 0004 decision 9; N = 2 =
+core + 1 unit + end strip, 106 x 72 mm): DRC 0 unconnected, 0 parity, 0
+errors, 3 silk warnings (core D1, as before). Not yet reviewed by the
+user. Schematic: sheets/unit.kicad_sch (blocks/unit.py) instantiated N/2
+times, refs +100 per unit, slot B +50, nets /Unit u/A_* and B_*; root
+nets UNITu_SDA / SCL, mux channel k = unit k+1. TCA6424A U5 (pp symbol,
+VQFN-32 EP3.15) with C9 / C13 / R30 placed in slot B; segment pull-ups in
+slot A; slot B straps INA238 0x41 / ADC 0x52. Board:
+- place.py: slot table for both slots, unit parts UNIT_A / UNIT_B;
+  photoMOS stack 0.6 mm lower (clear of the bus ladder).
+- route_hand.py: slot copper in every slot; per unit the In2 channel (4
+  pair positions), +3V3 trunk and the In2 BUS of slot A's expander lines
+  (via ladders at slot A's old expander spot and beside U5 in slot B);
+  bus ends and the expander supply escapes are one-pad board-only
+  footprints (Col.pad_via, refs BV / PV) because KRT only routes to pads;
+  In2 no-via rule area over the bus ("bus u", KRT places vias without
+  looking at In2), F rule areas over the SENSE pours ("pour c", KRT runs
+  signals through other nets' pours); U10 PGD escape via like U3; J3 GND
+  pins 5-6 joined; 4 GND vias in U5's exposed pad. Fences "unit-edge" at
+  every unit edge incl. last unit / end strip.
+- netsplit.py: +3V3 / UNIT* per unit, and slot A's expander nets
+  /Unit u/A_* split at the bus (<net>_SB in slot B).
+- copycol.py: unit pitch 50, /Unit 1/ -> /Unit u/ (N = 4/6/8 copy path
+  not exercised yet: N = 2 has one unit).
+The run needed krt-reroute passes on the split board for a few nets
+(UNIT1_SCL, A_PGD_SB, A_OVK, B_PG, A_LQ) and pcbkit prune for 3 unused
+escape vias and the core VIN stub. Core channel now serves N up to 8.
 
+Earlier (per-column board, superseded above; the core details still hold):
 Board ROUTED with the core (2026-10-29, N = 2, 106 x 72 mm): DRC 0
 unconnected, 0 parity, 0 errors; 3 silk warnings (TVS D1 outline under
 the XT90 pads, clipped by the fab); the 5 old exclusions are gone. Flow

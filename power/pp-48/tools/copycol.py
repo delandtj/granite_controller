@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
-"""Copy column 1's routed copper to columns 2..N (docs/adr/0004 decision 4).
+"""Copy unit 1's routed copper to units 2..N/2 (docs/adr/0004 decisions 4, 9).
 Usage: copycol.py <in.kicad_pcb> <out.kicad_pcb> [N]
 
-krt-route routes every column; only column 1 is kept as the template. Tracks
+krt-route routes every unit; only unit 1 is kept as the template. Tracks
 and vias outside group "hand" (tools/route_hand.py draws that copper in every
-column itself) are deleted in columns 2..N and replaced by column 1's,
-translated by 25 mm per column, with the nets renamed: /Column 1/X ->
-/Column c/X, /COL1_* -> /COLc_*; GND, VBUS and +3V3 stay. A routed track or
-via that is not wholly inside column 1 stops the copy: such a route would
-not be the same in every column. Core routes (left of column 1) stay. The plane zones (whole board) are left
+slot itself) are deleted in units 2..N/2 and replaced by unit 1's,
+translated by 50 mm per unit, with the nets renamed: /Unit 1/X ->
+/Unit u/X, /UNIT1_* -> /UNITu_*; GND, VBUS and +3V3 stay. A routed track or
+via that is not wholly inside unit 1 stops the copy: such a route would
+not be the same in every unit. Core routes (left of unit 1) stay. The plane zones (whole board) are left
 alone; refill them afterwards (kicad-cli pcb drc --refill-zones).
 """
 import sys
 
 import pcbnew
 
-PITCH, X0 = 25.0, 100.0
+PITCH, X0 = 50.0, 100.0            # unit pitch
 GROUP = 'hand'
 
 
@@ -28,10 +28,10 @@ def col_of(x):
 
 
 def rename(name, c):
-    if name.startswith('/Column 1/'):
-        return '/Column %d/%s' % (c, name[len('/Column 1/'):])
-    if name.startswith('/COL1_'):
-        return '/COL%d_%s' % (c, name[len('/COL1_'):])
+    if name.startswith('/Unit 1/'):
+        return '/Unit %d/%s' % (c, name[len('/Unit 1/'):])
+    if name.startswith('/UNIT1_'):
+        return '/UNIT%d_%s' % (c, name[len('/UNIT1_'):])
     return name
 
 
@@ -51,17 +51,17 @@ def main(src, dst, n):
         elif 1 in cols:
             bad.append(it)
         elif min(cols) >= 2:
-            other.append(it)                    # core routes (column 0) stay
+            other.append(it)                    # core routes (unit 0) stay
     if bad:
         for it in bad:
-            print('crosses the column 1 edge: %s %s (%.2f, %.2f)-(%.2f, %.2f)' % (
+            print('crosses the unit 1 edge: %s %s (%.2f, %.2f)-(%.2f, %.2f)' % (
                 it.GetNetname(), it.GetLayerName(), pcbnew.ToMM(it.GetStart().x), pcbnew.ToMM(it.GetStart().y),
                 pcbnew.ToMM(it.GetEnd().x), pcbnew.ToMM(it.GetEnd().y)))
-        raise SystemExit('%d routed items leave column 1; reroute before copying' % len(bad))
+        raise SystemExit('%d routed items leave unit 1; reroute before copying' % len(bad))
     for it in other:
         board.Delete(it)
     made = 0
-    for c in range(2, n + 1):
+    for c in range(2, n // 2 + 1):
         d = pcbnew.VECTOR2I(mm(PITCH * (c - 1)), 0)
         for it in template:
             ni = board.FindNet(rename(it.GetNetname(), c))
@@ -73,7 +73,7 @@ def main(src, dst, n):
             board.Add(cp)
             made += 1
     board.Save(dst)
-    print('template', len(template), 'items; removed', len(other), '; copied', made, 'into columns 2..%d' % n)
+    print('template', len(template), 'items; removed', len(other), '; copied', made, 'into units 2..%d' % (n // 2))
 
 
 if __name__ == '__main__':

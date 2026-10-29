@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Placement of the PP-48 plane columns (docs/adr/0004-plane-column-layout.md).
+"""Placement of the PP-48 plane units (docs/adr/0004-plane-column-layout.md).
 Usage: place.py <in.kicad_pcb> <out.kicad_pcb> [N]
 
-DRAFT for review (2026-10-28): one column table, copied to every column by
-translation only (references +100 per column, x + 25 mm). Column-local
-coordinates (u, v) in mm from the column's top-left corner; column c starts
-at x = X0 + 25 (c - 1). The column is 25 x 72 mm.
+DRAFT for review (2026-10-29): one slot column table, used for both slots
+of every 2-slot unit by translation only (references +100 per unit, +50 for
+slot B; unit u starts at x = X0 + 50 (u - 1), slot B 25 mm right of slot
+A), plus the unit parts: segment pull-ups in slot A, the expander with its
+caps and /RESET pull-up in slot B (their references are slot A's, +0). Slot-local coordinates (u, v) in mm from the
+column's top-left corner. A column is 25 x 72 mm, a unit 50 x 72 mm.
 
 Module (PM-19V-250W) centred at (12.5, 30.7), host rotation 270, input end
 up: the standoffs and the aux socket come from power/tools/pmmount.py
@@ -51,8 +53,6 @@ COL = {
     'R11': (21.2, 32.8, 90, F), 'C5': (22.8, 32.8, 90, F),
     'Q4': (21.5, 36.6, 0, F), 'R12': (18.0, 36.8, 0, F),
     'R13': (23.6, 39.6, 90, F),
-    # expander in the middle: outputs / inputs on the side they go to (tools/sch/blocks/column.py U5)
-    'U5': (10.0, 36.5, 0, F), 'C9': (12.0, 31.2, 0, F),
     # ID ADC, RUN FET and module-signal pull-ups around the socket (pins: top row ID GND OVK,
     # bottom row RUN GND PG, at u 19.08 / 20.35 / 21.62)
     'R15': (17.2, 39.4, 90, F), 'R24': (16.2, 41.6, 0, F),
@@ -60,7 +60,6 @@ COL = {
     'C10': (12.4, 47.2, 90, F), 'C11': (13.8, 47.2, 90, F),
     'Q5': (19.4, 49.2, 0, F), 'R23': (16.4, 49.6, 90, F),
     'R14': (23.6, 46.6, 90, F),
-    'R26': (11.0, 57.0, 270, F), 'R27': (12.6, 57.0, 270, F),     # segment pull-ups at the In2 channel tap
     # B side under the module: clamp and cap by S1; photoMOS and opto in the lower left, next to
     # the expander's PWRD / RSTD / LED pins and above the GH connector
     'D1': (13.0, 5.0, 180, B), 'C2': (13.0, 9.0, 180, B),       # clamp (cathode pad 1 to the OUT side) and cap between S2 (GND) and S1 (VIN)
@@ -71,9 +70,9 @@ COL = {
     'U10': (2.8, 25.6, 0, F), 'C12': (5.6, 25.6, 90, F), 'R28': (7.6, 25.6, 90, F),
     'Q8': (2.4, 29.8, 0, F), 'Q9': (6.6, 29.8, 0, F),
     'Q6': (17.0, 40.5, 0, B),
-    'U8': (6.0, 41.0, 0, B), 'R21': (11.4, 41.0, 90, B), 'R22': (12.8, 41.0, 90, B),
-    'U6': (6.0, 45.6, 0, B), 'R19': (11.4, 45.6, 90, B),
-    'U7': (6.0, 50.2, 0, B), 'R20': (11.4, 50.2, 90, B),
+    'U8': (6.0, 41.6, 0, B), 'R21': (11.4, 41.6, 90, B), 'R22': (12.8, 41.6, 90, B),
+    'U6': (6.0, 46.2, 0, B), 'R19': (11.4, 46.2, 90, B),
+    'U7': (6.0, 50.8, 0, B), 'R20': (11.4, 50.8, 90, B),
     # bottom edge, entry faces down
     'J2': (6.0, 68.5, 0, F),
     'J1': (15.5, 66.8, 0, F),
@@ -81,43 +80,61 @@ COL = {
 mount = pmmount.host_parts(*MOD, 270)
 COL.update({'SO%s' % n: (*mount['S' + n], 0, F) for n in '1234'})
 COL['J3'] = (*mount['AUX'], 270, F)
+# unit parts: segment pull-ups in slot A at the In2 channel tap; the expander in slot B in the middle
+# (slot B's lines to its own parts, slot A's lines over the In2 bus, tools/route_hand.py bus()) with
+# its caps above it and the /RESET pull-up behind it
+EX, EY = 11.8, 37.6
+UNIT_A = {'R26': (11.0, 57.0, 270, F), 'R27': (12.6, 57.0, 270, F)}
+UNIT_B = {'U5': (EX, EY, 0, F), 'C9': (EX + 2.0, EY - 5.3, 0, F), 'C13': (EX - 3.1, EY - 3.9, 180, F),
+          'R30': (EX + 0.6, EY - 4.9, 0, B)}
 
 # high-current pads join their pours solidly (no thermal spokes)
 SOLID = [('SO1', '1'), ('SO2', '1'), ('SO3', '1'), ('SO4', '1'), ('J1', '1'), ('J1', '2'),
          # small GND pads whose thermal spokes are blocked by their neighbours (starved_thermal)
          ('U3', '1'), ('U3', '4'), ('C4', '2'), ('C10', '2'),
          ('U2', '2'), ('U10', '1'), ('U10', '2'), ('U10', '4'), ('Q9', '2'),
-         ('R29', '2'), ('U5', '21')]
+         ('R29', '2'), ('R23', '2')]
+UNIT_SOLID = [('U5', '33')]                  # slot B
 
 
 def mm(v):
     return pcbnew.FromMM(v)
 
 
-def col_ref(ref, c):
+def unit_ref(ref, u, s):
     i = len(ref.rstrip('0123456789'))
-    return '%s%d' % (ref[:i], int(ref[i:]) + 100 * c)
+    return '%s%d' % (ref[:i], int(ref[i:]) + 100 * u + (50 if s == 'B' else 0))
+
+
+def put(board, ref, u, v, rot, side, x0):
+    fp = board.FindFootprintByReference(ref)
+    if fp is None:
+        raise SystemExit('no footprint %s' % ref)
+    if fp.IsFlipped() != (side == B):
+        fp.Flip(fp.GetPosition(), pcbnew.FLIP_DIRECTION_TOP_BOTTOM)
+    fp.SetPosition(pcbnew.VECTOR2I(mm(x0 + u), mm(Y0 + v)))
+    fp.SetOrientationDegrees(rot)
+
+
+def solid(board, ref, num):
+    for pad in board.FindFootprintByReference(ref).Pads():
+        if pad.GetNumber() == num:
+            pad.SetLocalZoneConnection(pcbnew.ZONE_CONNECTION_FULL)
 
 
 def main(src, dst, n):
     outline = pcbnew.FootprintLoad(LIB, 'PM_Module_Outline')    # before LoadBoard
     board = pcbnew.LoadBoard(src)
     placed = 0
-    for c in range(1, n + 1):
+    for c in range(1, n + 1):                   # slot c: unit (c + 1) // 2, A if odd
+        un, s = (c + 1) // 2, 'A' if c % 2 else 'B'
         x0 = X0 + PITCH * (c - 1)
-        for ref, (u, v, rot, side) in COL.items():
-            fp = board.FindFootprintByReference(col_ref(ref, c))
-            if fp is None:
-                raise SystemExit('no footprint %s' % col_ref(ref, c))
-            if fp.IsFlipped() != (side == B):
-                fp.Flip(fp.GetPosition(), pcbnew.FLIP_DIRECTION_TOP_BOTTOM)
-            fp.SetPosition(pcbnew.VECTOR2I(mm(x0 + u), mm(Y0 + v)))
-            fp.SetOrientationDegrees(rot)
+        parts = dict(COL, **(UNIT_A if s == 'A' else UNIT_B))
+        for ref, (u, v, rot, side) in parts.items():
+            put(board, unit_ref(ref, un, 'A' if ref in UNIT_B else s), u, v, rot, side, x0)
             placed += 1
-        for ref, num in SOLID:
-            for pad in board.FindFootprintByReference(col_ref(ref, c)).Pads():
-                if pad.GetNumber() == num:
-                    pad.SetLocalZoneConnection(pcbnew.ZONE_CONNECTION_FULL)
+        for ref, num in SOLID + (UNIT_SOLID if s == 'B' else []):
+            solid(board, unit_ref(ref, un, 'A' if (ref, num) in UNIT_SOLID else s), num)
         mref = 'MOD%d' % c
         old = board.FindFootprintByReference(mref)
         if old:
@@ -131,7 +148,7 @@ def main(src, dst, n):
     left = [fp.GetReference() for fp in board.GetFootprints()
             if pcbnew.ToMM(fp.GetPosition().x) < X0 and not fp.GetReference().startswith('MOD')]
     board.Save(dst)
-    print('placed', placed, 'in', n, 'columns; not placed:', ' '.join(sorted(left)) or '-')
+    print('placed', placed, 'in', n, 'slots (%d units); not placed:' % (n // 2), ' '.join(sorted(left)) or '-')
 
 
 if __name__ == '__main__':
