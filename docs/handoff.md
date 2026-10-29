@@ -1,6 +1,43 @@
-# Handoff - granite controller (updated 2026-10-27)
+# Handoff - granite controller (updated 2026-10-29)
 
 Read this first, then docs/controller.md and docs/power-board.md.
+
+## 2026-10-29: NEXT = chained plane (ADR 0005, Proposed, all asks decided)
+
+The single-board PP-48 is frozen at tag pp48-rev1 (b607eca: N = 2,
+core + 1 unit, routed, DRC clean, never reviewed by the user). The user
+wants it different: docs/adr/0005-chained-plane-boards.md. Summary:
+- Two board designs: a CORE board (MCU, mux, link + isolators, isolated
+  12 V module, 3V3 buck, own XT30 48 V input with TVS, no fuse) and an
+  identical UNIT board (~66 x 72 mm: the rev1 unit - two 25 mm slots,
+  TCA6424A in slot B, In2 bus - plus a ~16 mm input strip on the FAR
+  side, right of slot B).
+- Unit input strip: XT60PW-M at the top edge, SMDJ60A, input caps,
+  LM5069-1 LATCH-OFF hot-swap (~3 mOhm, ~18 A; 1-2 BSC040N10NS5, SOA to
+  check incl. riding through both slots' insertion), INA238 0x44 on the
+  unit segment, U_OFF on expander P13 / U_PGD on P27 (the two spares),
+  two M3 holes; In2 VBUS plane per board.
+- Chain: JST PH 2.0 12-pin side entry at the unit's left edge and in the
+  strip at the right edge, core at its right edge; straight 1:1 cable.
+  Pins: P0..P3 SDA/SCL, 3V3 (from the core, units have no buck), GND x 3.
+  The rotating channel goes through each board: left P0 = own segment,
+  left P1..P3 -> right P0..P2, right P3 n.c.; core Pk = mux channel k.
+  Max 4 units = 8 slots. No VBUS in the chain.
+- First steps: LCSC checks (PH 12-pin side entry + clone, XT60PW-M,
+  XT30PW-M, 6 mOhm 2512, LM5069-1), then the project split (default: two
+  KiCad projects power/pp-48-core and power/pp-48-unit sharing the
+  tools; ADR open question), unit schematic (unit.py + chain ports +
+  input block from input.py scaled), core schematic (input.py shrinks to
+  the XT30 input, mux channels 0-3 to the chain connector), then
+  placement / routing per board. Mark ADR 0004 decisions 3, 4, 5, 7, 8
+  superseded and set ADR 0005 Accepted when implementation starts.
+- Reusable from rev1: tools/sch (unit.py, TCA6424A symbol in
+  pp.kicad_sym), route_hand.py's slot copper, In2 bus, Col.pad_via,
+  keep-outs (bus no-via band, SENSE pour areas), U3 / U10 escapes;
+  netsplit (per-unit split is moot with one unit per board; the slot A
+  expander split at the bus still applies); copycol is not needed.
+- KRT gotchas learned in rev1 are in the memory file
+  tool-gotchas-mcp-krt (pads only, In2 blindness, pours).
 
 ## 2026-10-28: plane redesign direction (ADR 0004, Proposed)
 

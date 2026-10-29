@@ -3,7 +3,8 @@
 **Status**: Proposed
 **Date**: 2026-10-29
 
-**Updated**: 2026-10-29 (user: chain on JST PH 2.0, 3V3 from the core)
+**Updated**: 2026-10-29 (user: chain on JST PH 2.0, 3V3 from the core,
+unit hot-swap latch-off, input strip on the far side)
 
 Related: docs/adr/0004-plane-column-layout.md (decisions 1, 1a, 2, 6
 and 9 stand; 3, 4, 5, 7 and 8 are replaced here, see "What changes"),
@@ -261,8 +262,8 @@ to size with the SOA check of decision 3.
   board edge and the cables; pinout stays.
 - **Unit shunt / limit**: ~3 mOhm, ~18 A. Alternative: 2.5 mOhm, 22 A.
   Cost to change: a resistor value, if the footprint is 2512.
-- **Strip side**: far side (right of slot B), next to the expander.
-  Alternative: core side. Cost to change: the strip layout mirrors;
+- **Strip side**: far side (right of slot B), next to the expander
+  (decided). Alternative: core side. Cost to change: the strip layout mirrors;
   cheap before routing, expensive after.
 - **Core input**: XT30PW. Alternative: a 2-pole screw terminal. Cheap.
 
@@ -288,11 +289,10 @@ to size with the SOA check of decision 3.
 - Docs: ADR 0004 marked partly superseded, handoff, plane requirements
   (R7-R9a, R21) checked against per-unit inputs.
 
-Review asks:
-1. Unit hot-swap per 2 slots at ~18 A limit, LM5069-1 latch-off (stays
-   off after a fault until the MCU resets it): yes / auto-retry?
-2. Input strip on the far side (right of slot B): yes / core side?
-(Decided: chain on JST PH 2.0; 3V3 from the core.)
+Review asks: none open. Decided by the user 2026-10-29: chain on JST
+PH 2.0; 3V3 from the core; unit hot-swap LM5069-1 latch-off (stays off
+after a fault until the MCU resets it over U_OFF or the 48 V cycles);
+input strip on the far side (right of slot B).
 
 ---
 
