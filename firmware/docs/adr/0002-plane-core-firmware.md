@@ -29,6 +29,8 @@ firmware exists for it yet. Everything it touches:
 | PC13-PC15 | ADR0-2 | straps, pulled up, closed = 0; slave address 0x30 + ADR[2:0] |
 | PB0 | VIN_SNS | core 48 V input, 220k / 10k divider |
 | PB8 | LED_RUN | heartbeat LED |
+| PC6 | PRESS_TRIG | edge retriggers U301 74LVC1G123 (~1 s): PRESS_EN to every unit, photoMOS LEDs dark without it |
+| PC7 | EXP_RSTN | open drain, every unit's TCA6424A /RESET (bused) |
 | PA13 / PA14, NRST | SWD | bench flashing and debug |
 
 Per unit, on mux channel k (unit k + 1), every unit with the same
@@ -430,14 +432,20 @@ proposed); the state after a unit glitch stays open.
 
 **Architecture-changers**
 - [x] Image integrity: controller-verified, CRC-32 on the plane.
-- [ ] Press deadline line in the chain: the hardware session is
-  moving the chain to 14 pins with both PRESS_EN (gates every unit's
-  photoMOS LED return, deadline circuit on the core) and EXP_RSTN
-  (bused expander reset, open drain from the core), 2026-10-29, not
-  committed yet. Once in: the press path keeps PRESS_EN alive only
-  while a press runs, the capability bit "press deadline hardware" is
-  set, and EXP_RSTN becomes the CTRL 0x4D recovery action (ADR 0003).
-  Core pins to take from mcu.py when it lands.
+- [x] Press deadline line in the chain: in the hardware (377e93a,
+  docs/press-deadline-line.md options B + A, 14-pin chain). Firmware:
+  - PRESS_EN is high for ~1 s after the last edge on PC6 (retriggerable
+    74LVC1G123). The press task toggles PC6 every ~200 ms while a
+    press runs, from software in the same task that owns the press
+    deadline. Never from a timer peripheral or DMA: those keep running
+    in a hung firmware and would defeat the deadline.
+  - A press longer than ~1 s needs the toggling throughout; a press
+    ends within ~1 s of the firmware stopping, whatever the expander
+    holds.
+  - Capability bit "press deadline hardware" set in INFO.
+  - EXP_RSTN (PC7, open drain) is the CTRL 0x4D recovery action:
+    every unit's expander resets (all slots ON), then the plane
+    restores the intended state (decision 3).
 
 **Behavior definers**
 - [x] State after a reset or a unit glitch: OFF slots go back OFF

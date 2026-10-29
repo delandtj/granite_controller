@@ -2,6 +2,30 @@
 
 Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
 
+## 2026-10-29: firmware specs written (all review asks answered)
+
+firmware/docs/adr, Proposed, every review ask answered by the user:
+- 0002 plane core firmware: embassy on the STM32G070, host-testable
+  plane-logic crate, A/B bootloader updated over the link (controller
+  verifies the signature, plane CRC-32, controller confirms), start-up
+  rule (release presses first, OFF slots go back OFF after any reset or
+  unit glitch, from backup registers / RAM; core power loss -> STATUS
+  "intended state lost" -> controller re-applies), chain discovery and
+  2 s re-scan, 20 Hz poll, plane-side sequencing, latches by command
+  only, no boot stagger. Press deadline: PC6 toggled by software only.
+- 0003 link protocol / granite-proto crate: CRC-8 over address +
+  request, block ids, full tag table, command seq with results in
+  STATUS, events kept until EV_ACK, SUMMARY block for the 1 Hz poll.
+- 0004 controller rev D node model: node id = 8 x (plane addr - 0x30)
+  + slot + 1, power / host state axes, rev C verbs kept (force_off =
+  hold 5 s then rail cut if the LED stays on; off escalates to it),
+  PlaneLink HAL + plane client in granite-core, Modbus map v2, plane
+  updates manual by default, rev D hardware assumptions (plane link on
+  HP I2C, dry inputs on GPIOs, two 12 V inputs OR-ed).
+NEXT (firmware): rev D hardware spec; then code: granite-proto, the
+plane-link spike (embassy I2C slave on the G070 against the ESP32
+through an ISO1640), plane-logic + fake plane in granite-sim.
+
 ## 2026-10-29 (late): plane boards - press deadline drawn, unit routing in progress
 
 Schematics (ERC 0 both): chain now JST PH 14 (S14B-PH-K-S C157938, 381 in
