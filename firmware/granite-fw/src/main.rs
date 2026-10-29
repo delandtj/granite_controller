@@ -34,41 +34,42 @@ use std::time::Duration;
 use esp_idf_svc::eventloop::EspSystemEventLoop;
 use esp_idf_svc::hal::gpio::PinDriver;
 use esp_idf_svc::hal::peripherals::Peripherals;
-use granite_core::actuator::{Actuator, apply_to_nodes};
 use granite_core::config::Section;
 use granite_core::dispatch::{DispatchCtx, SideEffect, dispatch};
 use granite_core::hal::{
-    BoardTemp, BusVoltage, DryInputs, LedPattern, NodeSense, NodeSwitches, Probes, StatusLed,
+    BoardTemp, BusVoltage, DryInputs, LedPattern, PlaneLink, Probes, StatusLed,
 };
+use granite_core::jobs::JobLog;
 use granite_core::modbus_map::fault_bits;
-use granite_core::msg::{Event, EventKind, event_from_actuator, event_from_rule};
-use granite_core::node::Nodes;
+use granite_core::msg::{Command, Event, EventKind, event_from_client, event_from_rule};
+use granite_core::node::BootPolicy;
 use granite_core::observed::{Observed, ProbeObs, Stamped};
+use granite_core::plane::PlaneClient;
 use granite_core::rules::RuleEngine;
-use granite_fw::platform::{self, NullSwitches, Platform};
+use granite_core::{NodeId, Target};
+use granite_fw::platform::{self, Platform};
 use granite_fw::{http, hw, modbus, mqtt};
 
 /// Heartbeat interval of the idle loop.
 const HEARTBEAT: Duration = Duration::from_secs(10);
-/// Dispatcher tick: the actuator state machine and the rule engine both
-/// need regular ticks, and a command may arrive between two of them.
+/// Dispatcher tick: the plane client and the rule engine both need
+/// regular ticks, and a command may arrive between two of them. 50 ms is
+/// the poll cadence ADR 0004 decision 5 asks of the plane client.
 const DISPATCH_TICK: Duration = Duration::from_millis(50);
 /// Rule engine period (ADR component 5: every 1 s).
 const RULES_PERIOD_MS: u64 = 1000;
-/// Sense tick: U15, the TMP1075 and VIN are all 1 s in the ADR.
+/// Sense tick: the dry inputs, the TMP1075 and VIN are all 1 s in the
+/// ADR.
 const SENSE_TICK: Duration = Duration::from_secs(1);
 /// How often the config watcher looks for a `sec.modbus` change and
 /// refreshes the broker state the status page reads.
 const CONFIG_WATCH: Duration = Duration::from_secs(5);
 
-/// Marks [`LED_BITS`] as carrying a real reading.
-const LED_BITS_VALID: u16 = 0x100;
-
-/// Raw node power-LED byte from U15, handed from the sense thread to the
-/// dispatcher, which owns the 100 ms debounce and the `Busy` overlay.
-/// Zero means "U15 has not answered"; [`LED_BITS_VALID`] distinguishes
-/// that from a genuine "all eight nodes off".
-static LED_BITS: AtomicU16 = AtomicU16::new(0);
+/// How long the dispatcher waits after start before it applies the boot
+/// policies \[ms\]: long enough for the plane client to find its planes
+/// and read a first SUMMARY of each (ADR 0004 decision 5 scans at boot
+/// and polls at 1 Hz).
+const BOOT_POLICY_AFTER_MS: u64 = 3_000;
 
 /// The parts of the `nodes` section the sense thread works from.
 ///
@@ -131,16 +132,16 @@ fn main() -> anyhow::Result<()> {
     let peripherals = Peripherals::take()?;
     let pins = peripherals.pins;
 
-    // 3. THE FIRST GPIO ACTION: hold U14/U15 in reset. While GPIO10 is
-    //    low every relay output is open, whatever the firmware does next.
-    //    The pin has a pull-down, so this also survives a chip reset.
-    //    Nothing may be inserted above this.
-    let mut exp_reset_int = PinDriver::output(pins.gpio10)?;
-    exp_reset_int.set_low()?;
-
-    // Header expander (J8) reset, also low for now.
-    let mut exp_reset = PinDriver::output(pins.gpio4)?;
-    exp_reset.set_low()?;
+    // 3. There is no expander to hold in reset any more (ADR 0004
+    //    decision 1): the photoMOS relays, U14 and U15 are gone with the
+    //    rev C node section, and nothing this firmware drives can move a
+    //    node by itself. The two reset lines of the rev C board are
+    //    parked as inputs so a rev C board under a rev D image leaves
+    //    its relays open (both lines have pull-downs) and neither pin is
+    //    left floating.
+    let _parked_exp_reset_int =
+        PinDriver::input(pins.gpio10, esp_idf_svc::hal::gpio::Pull::Down)?;
+    let _parked_header_reset = PinDriver::input(pins.gpio4, esp_idf_svc::hal::gpio::Pull::Down)?;
 
     // 4 and 5. Shared state first, because the platform layer wants the
     //          command sender and the snapshot handle.
@@ -172,11 +173,6 @@ fn main() -> anyhow::Result<()> {
         modem: peripherals.modem,
     };
 
-    // The hardware layer is in this build, so the OTA probation ladder has
-    // to wait for "expanders initialised" (step 1). This has to be said
-    // before platform::init, which is where the ladder starts.
-    platform::ota::expect_expanders();
-
     let platform = platform::init(
         net_hw,
         sysloop.clone(),
@@ -192,19 +188,18 @@ fn main() -> anyhow::Result<()> {
     );
     log::info!("image signing: {}", platform::signing_summary());
 
-    // INTEGRATION: hw::init. It takes GPIO10 over (still low), configures
-    // both MCP23017s, starts the sense task, the LED and the two I2C
-    // buses. GPIO4 (the J8 header expander reset) is not part of its pin
-    // map, so it stays held low here.
+    // INTEGRATION: hw::init. It brings up the two I2C buses, the status
+    // LED, the probes, the TMP1075, the VIN ADC, the plane link (a stub
+    // until the rev D board exists) and the dry inputs.
     //
-    // A hardware layer that does not come up is logged, not fatal: the USB
-    // console and the network have to stay reachable on a board whose I2C
-    // bus is dead, and the dispatcher then runs on
-    // platform::NullSwitches, which refuses every press honestly.
+    // A hardware layer that does not come up is logged, not fatal: the
+    // USB console and the network have to stay reachable on a board
+    // whose I2C bus is dead. The dispatcher then runs with no plane
+    // link at all, which refuses every node command honestly - exactly
+    // what a controller with no plane does (ADR 0004 decision 6).
     let vin_trim = platform.config().nodes.vin_trim;
     let hw = hw::init(hw::HwInit {
-        exp_reset: exp_reset_int,
-        exp_int: pins.gpio0,
+        plane_int: pins.gpio0,
         status_led: pins.gpio1,
         int_sda: pins.gpio2,
         int_scl: pins.gpio3,
@@ -216,7 +211,6 @@ fn main() -> anyhow::Result<()> {
         adc1: peripherals.adc1,
         vin_trim,
     });
-    let _held_header_reset = exp_reset;
 
     // 6. The console. Physical access is full access; it is the way in
     //    when the network is not.
@@ -246,32 +240,16 @@ fn main() -> anyhow::Result<()> {
     let dispatcher_platform = Arc::clone(&platform);
     match hw {
         Ok(hw) => {
-            // Every planned reboot and the OTA rollback path open the
-            // relays before restarting. force_reset_low is the lock-free
-            // path the press deadline and the panic hook also use: one
-            // GPIO register write, no I2C, safe from any context, so a
-            // wedged bus cannot stop a reboot from releasing the relays.
-            platform::set_release_hook(hw::expanders::force_reset_low);
-            // Probation step 1: the expanders answered.
-            platform::ota::mark_expanders();
-
-            let relays = hw.relays;
+            let plane = hw.plane;
+            let dry = hw.dry;
             let led = hw.led;
-            let sense = hw.sense;
             let probes = hw.probes;
             let board_temp = hw.board_temp;
             let vin = hw.vin;
-            // The rest of the hardware layer comes up on a board with no
-            // MCP23017 (a devboard): only this says whether a relay can
-            // actually close, and the boot policy depends on it.
-            let expanders_up = hw.expanders_up;
-            if !expanders_up {
-                faults.fetch_or(fault_bits::EXPANDER, Ordering::Relaxed);
-            }
 
             start_sense(
                 Arc::clone(&platform),
-                sense,
+                dry,
                 probes,
                 board_temp,
                 vin,
@@ -295,8 +273,7 @@ fn main() -> anyhow::Result<()> {
                     dispatcher(
                         dispatcher_platform,
                         commands_rx,
-                        relays,
-                        expanders_up,
+                        plane,
                         dispatch_faults,
                         fallback_sections,
                     )
@@ -304,10 +281,10 @@ fn main() -> anyhow::Result<()> {
         }
         Err(e) => {
             log::error!(
-                "hardware layer did not come up ({e:#}); relays stay in reset and every press \
-                 will be refused"
+                "hardware layer did not come up ({e:#}); there is no plane link, so every node \
+                 command will be refused as absent"
             );
-            faults.fetch_or(fault_bits::EXPANDER | fault_bits::SENSE, Ordering::Relaxed);
+            faults.fetch_or(fault_bits::NO_PLANE, Ordering::Relaxed);
             let dispatch_faults = Arc::clone(&faults);
             thread::Builder::new()
                 .name("dispatch".into())
@@ -316,8 +293,7 @@ fn main() -> anyhow::Result<()> {
                     dispatcher(
                         dispatcher_platform,
                         commands_rx,
-                        NullSwitches,
-                        false,
+                        platform::NoPlaneLink,
                         dispatch_faults,
                         fallback_sections,
                     )
@@ -481,13 +457,16 @@ fn main() -> anyhow::Result<()> {
     }
 }
 
-/// The one dispatcher (ADR, "Tasks and data flow").
+/// The one dispatcher (ADR 0001, "Tasks and data flow"; ADR 0004
+/// decisions 5 and 6).
 ///
-/// Owns the actuator queue, the node tracker and the rule engine, because
-/// all three are single-threaded state machines that only this thread
-/// ticks. Commands arrive from MQTT, HTTP and Modbus through one channel,
-/// go through `granite_core::dispatch`, and come back as a reply plus
-/// events plus side effects this thread carries out.
+/// Owns the plane client, the job log and the rule engine, because all
+/// three are single-threaded state machines that only this thread ticks,
+/// and the client is the only thing that may touch the plane link.
+/// Commands arrive from MQTT, HTTP and Modbus through one channel, go
+/// through `granite_core::dispatch`, come back as an `accepted` reply
+/// with a job id, and are answered again later - when the plane reports
+/// the job - with an ack event the waiting transports resolve against.
 /// ### Why this thread keeps its own `Config`
 ///
 /// An HTTP request holds the write guard on `platform.config` for its
@@ -497,37 +476,47 @@ fn main() -> anyhow::Result<()> {
 /// dispatcher would wait for each other. So: a local working copy,
 /// `try_write` to publish a change this thread made, `try_read` to pick
 /// up a change the HTTP task made, and never a blocking wait.
-fn dispatcher<S: NodeSwitches>(
+fn dispatcher<L: PlaneLink>(
     platform: Arc<Platform>,
     commands: Receiver<granite_fw::http::CommandRequest>,
-    switches: S,
-    expanders_up: bool,
+    mut link: L,
     faults: Arc<AtomicU16>,
     fallback_sections: Vec<Section>,
 ) {
-    // `switches` is the hardware layer's relay driver when it came up, and
-    // platform::NullSwitches (which refuses every press) when it did not.
-    let mut actuator = Actuator::new(switches);
-    let mut nodes = Nodes::new();
+    // `link` is the hardware layer's plane link when it came up, and
+    // platform::NoPlaneLink (which NAKs every address) when it did not.
+    let mut plane = PlaneClient::new(platform::random_u32());
+    let mut jobs = JobLog::new();
     let mut rules = RuleEngine::new();
-    // The rules and the actuator live here: a hang must not go unnoticed.
-    // Every wait in this loop is bounded (DISPATCH_TICK, try-locks).
+    // The rules and the plane client live here: a hang must not go
+    // unnoticed. Every wait in this loop is bounded (DISPATCH_TICK,
+    // try-locks).
     platform::watch_this_thread("dispatcher");
 
     let mut cfg = platform.config();
-    apply_config(&platform, &cfg, &mut actuator, &mut nodes, &mut rules);
+    apply_config(&platform, &cfg, &mut plane, &mut rules);
+    // The nodes the controller last commanded off, kept across reboots
+    // (ADR 0004, "What an Expert Would Ask"): a plane that lost its own
+    // state is put back from this.
+    if let Ok(mut store) = platform.store.lock() {
+        let saved = store.load_intended_off();
+        if !saved.is_empty() {
+            log::info!("intended-off set from NVS: {saved:?}");
+        }
+        plane.load_intended_off(&saved);
+    }
 
     let mut last_rules_ms = 0u64;
     // Set when this thread changed `cfg` and the shared copy has not
     // caught up yet.
     let mut push_pending = false;
-    // Boot policy (ADR component 3): once, t_settle after this thread
-    // started, and never when the hardware layer did not come up.
+    // Boot policy (ADR 0004 decision 2): once, after discovery has had
+    // its chance.
     let boot_ms = platform::now_ms();
     let mut boot_policy_done = false;
-    // Modbus fault bit 0 at runtime: set on an actuator fault, cleared
-    // once the hardware layer's 1 s readback has been clean again.
-    let mut expander_fault_seq: Option<u32> = None;
+    // The node states the last snapshot carried, so a change can be
+    // published (ADR 0004 decision 7).
+    let mut last_states: Vec<(NodeId, String, String)> = Vec::new();
     // Sections that fell back to their defaults at boot (fault bit 5).
     let mut fallback_pending = fallback_sections;
 
@@ -549,7 +538,8 @@ fn dispatcher<S: NodeSwitches>(
                     now_ms: now,
                     device_id: &device_id,
                     observed: &snapshot,
-                    actuator: &mut actuator,
+                    plane: &mut plane,
+                    jobs: &mut jobs,
                     rules: &mut rules,
                     config: &mut cfg,
                     verify_sig: None,
@@ -557,7 +547,17 @@ fn dispatcher<S: NodeSwitches>(
                 let out = dispatch(&cmd, &mut ctx);
 
                 let _ = reply.send(out.reply.clone());
-                events.extend(out.events);
+                if let Some(job) = out.job {
+                    events.push(Event::new(
+                        now,
+                        EventKind::Accepted {
+                            id: cmd.id.clone(),
+                            action: cmd.action,
+                            target: cmd.target,
+                            job,
+                        },
+                    ));
+                }
                 for effect in out.effects {
                     // A section that fell back at boot is trustworthy
                     // again the moment it is written (fault bit 5).
@@ -571,7 +571,7 @@ fn dispatcher<S: NodeSwitches>(
                 }
                 if cfg != before {
                     push_pending = true;
-                    apply_config(&platform, &cfg, &mut actuator, &mut nodes, &mut rules);
+                    apply_config(&platform, &cfg, &mut plane, &mut rules);
                 }
             }
             Err(RecvTimeoutError::Timeout) => {}
@@ -603,34 +603,49 @@ fn dispatcher<S: NodeSwitches>(
                 }
             }
             cfg = next;
-            apply_config(&platform, &cfg, &mut actuator, &mut nodes, &mut rules);
+            apply_config(&platform, &cfg, &mut plane, &mut rules);
         }
 
-        // Fold the raw LED byte the sense thread left behind into the node
-        // tracker, which debounces it (100 ms, ADR component 3).
-        let raw = LED_BITS.load(Ordering::Relaxed);
-        nodes.update_sense(
-            now,
-            if raw & LED_BITS_VALID != 0 {
-                Some((raw & 0xff) as u8)
-            } else {
-                None
-            },
-        );
+        // The plane client: discovery, the poll schedule, EXP_INT, the
+        // commands in flight, the config push and an update (ADR 0004
+        // decision 5). One bounded call; it never blocks.
+        plane.poll(now, &mut link);
 
-        // Tick the actuator state machine.
-        let snapshot = platform
-            .observed
-            .read()
-            .map(|o| o.clone())
-            .unwrap_or_else(|_| Observed::new());
-        events.extend(actuator.tick(now, &snapshot));
-        apply_to_nodes(&mut nodes, &events, now);
+        // What the planes said.
+        for event in plane.drain_events() {
+            if let Some(published) = event_from_client(&event, now) {
+                events.push(published);
+            }
+        }
+        // The jobs they finished: the ack of ADR 0004 decision 6, on the
+        // command's own id, plus the event the waiting transports watch
+        // for.
+        for finished in plane.drain_jobs() {
+            let done = jobs.finish(&finished, now);
+            if !done.outcome.is_ok() {
+                log::warn!(
+                    "job {} ({}) ended as {}",
+                    finished.id,
+                    finished.command.verb(),
+                    done.outcome
+                );
+            }
+            events.push(Event::new(now, done.event));
+        }
+        // The intended-OFF set is persisted, so it survives a reboot of
+        // the controller as well as of a plane.
+        if plane.take_intent_dirty()
+            && let Ok(mut store) = platform.store.lock()
+            && let Err(e) = store.save_intended_off(plane.intended_off())
+        {
+            log::warn!("intended-off set could not be stored: {e}");
+        }
 
         // Refresh the parts of the snapshot this thread owns. The sense
         // task owns the rest.
         if let Ok(mut observed) = platform.observed.write() {
-            observed.refresh_nodes(&nodes);
+            observed.refresh_planes(&plane);
+            jobs.apply(&mut observed);
             observed.uptime_s = Stamped::new((now / 1000) as u32, now);
             let net = platform.net.status();
             observed.link_up = Stamped::new(net.link, now);
@@ -639,41 +654,107 @@ fn dispatcher<S: NodeSwitches>(
             }
         }
 
-        // The boot policy, once (ADR component 3): t_settle after this
-        // thread started, so the LED debounce has a trustworthy value,
-        // then `on`/`off` on the nodes that ask for it, staggered, in
-        // nodes.order. Never on a board whose expanders did not answer:
-        // every press there would be refused anyway, and a silent
-        // "policy applied" would be a lie.
-        if !boot_policy_done && now >= boot_ms + u64::from(cfg.nodes.timings.t_settle_ms) {
+        // Modbus fault bits 0, 1 and 7: what the planes are doing.
+        {
+            let snapshot = platform
+                .observed
+                .read()
+                .map(|o| o.clone())
+                .unwrap_or_else(|_| Observed::new());
+            let mut set = 0u16;
+            let mut clear = 0u16;
+            if snapshot.planes.is_empty() {
+                set |= fault_bits::NO_PLANE;
+            } else {
+                clear |= fault_bits::NO_PLANE;
+            }
+            if snapshot
+                .nodes
+                .iter()
+                .any(|node| node.faults.any() && node.present)
+            {
+                set |= fault_bits::NODE_FAULT;
+            } else {
+                clear |= fault_bits::NODE_FAULT;
+            }
+            faults.fetch_or(set, Ordering::Relaxed);
+            faults.fetch_and(!clear, Ordering::Relaxed);
+
+            // A node whose state changed on either axis.
+            let now_states: Vec<(NodeId, String, String)> = snapshot
+                .nodes
+                .iter()
+                .map(|n| {
+                    (
+                        n.node,
+                        String::from(n.power.as_str()),
+                        String::from(n.host.as_str()),
+                    )
+                })
+                .collect();
+            for (node, power, host) in &now_states {
+                let before = last_states.iter().find(|(id, ..)| id == node);
+                let changed = match before {
+                    None => true,
+                    Some((_, p, h)) => p != power || h != host,
+                };
+                if changed {
+                    events.push(Event::new(
+                        now,
+                        EventKind::NodeState {
+                            node: *node,
+                            power: power.clone(),
+                            host: host.clone(),
+                        },
+                    ));
+                }
+            }
+            last_states = now_states;
+        }
+
+        // The boot policy, once (ADR 0004 decision 2): a node whose
+        // policy is not `leave` is commanded, after discovery has had
+        // time to find the planes and read a slot report of each. A node
+        // whose plane is not there is refused like any other absent
+        // node, which the log says.
+        if !boot_policy_done && now >= boot_ms + BOOT_POLICY_AFTER_MS {
             boot_policy_done = true;
-            if expanders_up {
-                let policies = cfg.nodes.boot_policies();
+            let policies = cfg.nodes.boot_policies();
+            if policies.is_empty() {
+                log::info!("boot policy: every node says leave");
+            }
+            for (node, policy) in policies {
+                let action = match policy {
+                    BootPolicy::Leave => continue,
+                    BootPolicy::On => granite_core::msg::CommandKind::On,
+                    BootPolicy::Off => granite_core::msg::CommandKind::Off,
+                };
+                let cmd = Command::new(format!("boot-{node}"), action)
+                    .with_target(Target::Node(node));
                 let snapshot = platform
                     .observed
                     .read()
                     .map(|o| o.clone())
                     .unwrap_or_else(|_| Observed::new());
-                let (submission, mut evs) =
-                    actuator.submit_boot_policy("boot", &policies, now, &snapshot);
-                log::info!(
-                    "boot policy after {} ms settle: {}, {:?}",
-                    cfg.nodes.timings.t_settle_ms,
-                    match submission {
-                        granite_core::actuator::Submission::Accepted { jobs } =>
-                            format!("{jobs} press job(s) queued"),
-                        granite_core::actuator::Submission::Done(ref result) =>
-                            format!("nothing queued ({})", result.as_str()),
-                    },
-                    policies
-                );
-                apply_to_nodes(&mut nodes, &evs, now);
-                events.append(&mut evs);
-            } else {
-                log::warn!(
-                    "boot policy not applied: the expanders did not answer, so no relay can \
-                     close and no node is touched"
-                );
+                let device_id = platform.identity.device_id.clone();
+                let mut ctx = DispatchCtx {
+                    now_ms: now,
+                    device_id: &device_id,
+                    observed: &snapshot,
+                    plane: &mut plane,
+                    jobs: &mut jobs,
+                    rules: &mut rules,
+                    config: &mut cfg,
+                    verify_sig: None,
+                };
+                let out = dispatch(&cmd, &mut ctx);
+                match out.job {
+                    Some(job) => log::info!("boot policy {policy} on node {node}: job {job}"),
+                    None => log::warn!(
+                        "boot policy {policy} on node {node} refused: {}",
+                        out.reply.error.unwrap_or_default()
+                    ),
+                }
             }
         }
 
@@ -696,65 +777,65 @@ fn dispatcher<S: NodeSwitches>(
                         .map_or_else(|| String::from("missing"), |v| v.to_string())
                 );
                 platform.publish(event_from_rule(&fired, now));
-                // A force_off from a rule acts on unknown nodes and takes
-                // over busy ones (Fired::request).
-                if let Some(req) = fired.request() {
-                    let (_, mut evs) = actuator.submit(&req, now, &snapshot);
-                    events.append(&mut evs);
+                // A force_off from a rule carries `force` (Fired::command).
+                if let Some(cmd) = fired.command() {
+                    let device_id = platform.identity.device_id.clone();
+                    let mut ctx = DispatchCtx {
+                        now_ms: now,
+                        device_id: &device_id,
+                        observed: &snapshot,
+                        plane: &mut plane,
+                        jobs: &mut jobs,
+                        rules: &mut rules,
+                        config: &mut cfg,
+                        verify_sig: None,
+                    };
+                    let out = dispatch(&cmd, &mut ctx);
+                    if !out.reply.ok {
+                        log::warn!(
+                            "rule {} could not act: {}",
+                            fired.rule_id,
+                            out.reply.error.clone().unwrap_or_default()
+                        );
+                        events.push(Event::new(
+                            now,
+                            EventKind::ActionFailed {
+                                id: cmd.id.clone(),
+                                node: cmd.target.node(),
+                                action: cmd.action,
+                                error: out.reply.error.unwrap_or_default(),
+                            },
+                        ));
+                    }
                 }
             }
         }
 
-        for ev in &events {
-            if let Some(event) = event_from_actuator(ev, now) {
-                platform.publish(event);
-            }
-            // Modbus fault bit 0 at runtime: a blown press deadline or an
-            // expander that did not behave. The bit is cleared again by
-            // the first clean 1 s readback after it (hw::expanders), not
-            // by the next press: a press can succeed on a chip that is
-            // still misconfigured.
-            if let granite_core::actuator::ActuatorEvent::Fault { fault, node, .. } = ev {
-                log::error!("actuator fault: {fault} (node {node:?})");
-                faults.fetch_or(fault_bits::EXPANDER, Ordering::Relaxed);
-                expander_fault_seq = Some(hw::expanders::verify_ok_seq());
-            }
-        }
-        if let Some(seq) = expander_fault_seq
-            && hw::expanders::verify_ok_seq() != seq
-        {
-            expander_fault_seq = None;
-            faults.fetch_and(!fault_bits::EXPANDER, Ordering::Relaxed);
-            log::info!("expander readback is clean again; fault bit cleared");
+        for event in events {
+            platform.publish(event);
         }
     }
 }
 
-/// Push the timings, node order, sense modes and rule set from `cfg` into
-/// the state machines this thread owns, and the sense modes into the
-/// snapshot so a publisher can say "this LED is not trusted" without
-/// reading the config.
+/// Push the rule set and the plane update policy from `cfg` into the
+/// state machines this thread owns.
 ///
-/// Also pushes what the two other threads cache: the VIN trim into the
-/// ADC reader and the probe list, probe period and VIN window into
+/// The per-node settings are read when a command is dispatched, so
+/// nothing has to be pushed for them (ADR 0004 decisions 2 and 4).
+///
+/// Also pushes what the other thread caches: the VIN trim into the ADC
+/// reader and the probe list, probe period and VIN window into
 /// [`SENSE_CFG`]. Those four used to be read once at boot, so editing
 /// them needed a reboot; they now apply on the next sense tick.
-fn apply_config<S: NodeSwitches>(
+fn apply_config(
     platform: &Arc<Platform>,
     cfg: &granite_core::config::Config,
-    actuator: &mut Actuator<S>,
-    nodes: &mut Nodes,
+    plane: &mut PlaneClient,
     rules: &mut RuleEngine,
 ) {
-    actuator.set_timings(cfg.nodes.timings);
-    actuator.set_order(cfg.nodes.order);
-    nodes.set_sense(cfg.nodes.sense_modes());
+    let _ = platform;
     rules.set_rules(cfg.rules.rules.clone());
-    if let Ok(mut observed) = platform.observed.write() {
-        for (i, mode) in cfg.nodes.sense_modes().into_iter().enumerate() {
-            observed.nodes[i].sense = mode;
-        }
-    }
+    plane.set_policy(cfg.nodes.plane_update);
     hw::vin::set_trim(cfg.nodes.vin_trim);
     push_sense_cfg(cfg);
 }
@@ -902,15 +983,15 @@ fn apply_effect(
     }
 }
 
-/// The sense task (ADR component 4): U15 through its handle, the TMP1075,
-/// VIN and the DS18B20 bus, all landing in the one [`Observed`] snapshot.
+/// The sense task (ADR component 4): the dry inputs, the TMP1075, VIN
+/// and the DS18B20 bus, all landing in the one [`Observed`] snapshot.
 ///
 /// This lives in `main.rs` because it is integration, not hardware: every
 /// call below is the hardware layer's public API and every write goes to
 /// the shared snapshot the rule engine and the publishers read.
 fn start_sense(
     platform: Arc<Platform>,
-    mut sense: hw::sense::SenseHandle,
+    mut dry_inputs: hw::dry::DryGpio,
     mut probes: hw::probes::OneWireProbes,
     mut board_temp: hw::tmp1075::Tmp1075,
     mut vin: hw::vin::Vin,
@@ -995,8 +1076,7 @@ fn start_sense(
                     );
                 }
 
-                let leds = sense.read_leds().ok();
-                let dry = sense.read_dry().ok();
+                let dry = dry_inputs.read_dry().ok();
                 let temp = board_temp.read_centi_c().ok();
                 let mv = vin.read_mv().ok();
 
@@ -1033,8 +1113,8 @@ fn start_sense(
                         faults.fetch_and(!fault_bits::PROBE_MISSING, Ordering::Relaxed);
                     }
                 }
-                // Modbus fault bit 3: the 19 V bus is outside the window
-                // from the `nodes` section. A VIN the ADC could not read
+                // Modbus fault bit 3: the input voltage is outside the
+                // window from the `nodes` section. A VIN the ADC could not read
                 // is not "out of window"; that is bit 1's territory.
                 let vin_bad = mv.is_some_and(|mv| {
                     granite_core::config::vin_out_of_window(mv, vin_min_mv, vin_max_mv)
@@ -1056,28 +1136,12 @@ fn start_sense(
                 }
 
                 if let Ok(mut observed) = platform.observed.write() {
-                    // The LED bits are folded into the node tracker by the
-                    // dispatcher; the raw byte goes here so it can.
                     observed.dry_in = Stamped::new(dry, now);
                     observed.board_temp = Stamped::new(temp, now);
                     observed.vin_mv = Stamped::new(mv, now);
                     if let Some(probes) = probe_obs {
                         observed.probes = probes;
                     }
-                }
-                // The node LED byte goes to the dispatcher, not into the
-                // snapshot: the debounce and the Busy overlay live in the
-                // node tracker, which only that thread owns.
-                LED_BITS.store(
-                    leds.map(|b| u16::from(b) | LED_BITS_VALID).unwrap_or(0),
-                    Ordering::Relaxed,
-                );
-                // Modbus fault bit 1: U15 did not answer, so no node LED
-                // on the register map can be trusted.
-                if leds.is_some() {
-                    faults.fetch_and(!fault_bits::SENSE, Ordering::Relaxed);
-                } else {
-                    faults.fetch_or(fault_bits::SENSE, Ordering::Relaxed);
                 }
                 thread::sleep(SENSE_TICK);
             }
@@ -1285,7 +1349,7 @@ fn start_led(platform: Arc<Platform>, mut led: hw::led::LedHandle, faults: Arc<A
                 };
                 // A press takes the LED solid, and the actuator owns that;
                 // only change the pattern when it is not pressing.
-                if last != Some(want) && led.pattern() != LedPattern::Press {
+                if last != Some(want) && led.pattern() != LedPattern::Busy {
                     if let Err(e) = led.set(want) {
                         log::error!("status led: {e}");
                     }

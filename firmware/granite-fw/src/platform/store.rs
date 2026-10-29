@@ -37,6 +37,9 @@ use granite_core::hal::{HalError, HalResult, Persist};
 /// Namespace holding staged (applied but unconfirmed) config sections.
 pub const STAGE_NAMESPACE: &str = "stage";
 
+/// Key in [`CONFIG_NAMESPACE`] holding the intended-OFF set.
+pub const INTENDED_OFF_KEY: &str = "intended_off";
+
 /// Key in [`SECRETS_NAMESPACE`] holding the serialised [`Secrets`].
 pub const SECRETS_KEY: &str = "secrets";
 /// Key holding the device certificate, PEM. In [`FACTORY_NAMESPACE`]
@@ -142,6 +145,33 @@ impl Store {
             log::warn!("config: {section} could not be read ({e}), using defaults");
         }
         Config::from_sections(|section| blobs.get(&section).cloned())
+    }
+
+    /// The nodes the controller last commanded rail-off, as stored.
+    ///
+    /// ADR 0004 keeps this set in NVS so an OFF survives a reboot of the
+    /// controller as well as of a plane: a plane that lost its own
+    /// intended state is put back from it. Stored as a comma-separated
+    /// list of node ids, which is a dozen bytes and readable from the
+    /// console.
+    pub fn load_intended_off(&mut self) -> Vec<granite_core::NodeId> {
+        let Ok(Some(text)) = self.get_str(CONFIG_NAMESPACE, INTENDED_OFF_KEY) else {
+            return Vec::new();
+        };
+        text.split(',')
+            .filter_map(|part| part.trim().parse::<granite_core::NodeId>().ok())
+            .filter(|node| granite_core::is_node(*node))
+            .collect()
+    }
+
+    /// Store the intended-OFF set.
+    pub fn save_intended_off(&mut self, nodes: &[granite_core::NodeId]) -> HalResult<()> {
+        let text = nodes
+            .iter()
+            .map(|node| node.to_string())
+            .collect::<Vec<String>>()
+            .join(",");
+        self.set_str(CONFIG_NAMESPACE, INTENDED_OFF_KEY, &text)
     }
 
     /// Persist one section as it now stands in `cfg`.

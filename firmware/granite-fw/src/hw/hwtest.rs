@@ -16,29 +16,27 @@
 //!
 //! 1. `hw::init` on a board with nothing on I2C logs errors and returns,
 //!    rather than panicking.
-//! 2. The press deadline really drops EXP_nRESET_INT: it arms a 600 ms
-//!    deadline by hand and logs the GPIO10 level before and after.
-//! 3. The probe bus enumerates to an empty list on an empty bus.
-//! 4. VIN, the board temperature and the external bus scan all answer
+//! 2. The plane link is the stub: every address NAKs and EXP_INT reads
+//!    as "no events" (controller ADR 0004 decision 9 - the real HP I2C
+//!    driver comes with the rev D board).
+//! 3. The dry inputs are unwired and say so.
+//! 4. The probe bus enumerates to an empty list on an empty bus.
+//! 5. VIN, the board temperature and the external bus scan all answer
 //!    without panicking.
-//! 5. The LED patterns run (watch GPIO1, or the log).
+//! 6. The LED patterns run (watch GPIO1, or the log).
 //!
 //! Remove the feature from the build to drop every line of it.
 
 use std::thread;
 use std::time::Duration;
 
-use esp_idf_hal::gpio::PinDriver;
 use esp_idf_hal::peripherals::Peripherals;
-use esp_idf_sys::{
-    gpio_get_level, gpio_mode_t_GPIO_MODE_INPUT_OUTPUT, gpio_set_direction, gpio_set_level,
-};
 use granite_core::hal::{
-    BoardTemp as _, BusVoltage as _, DryInputs as _, LedPattern, NodeSense as _,
-    NodeSwitches as _, Probes as _, StatusLed as _, Switch,
+    BoardTemp as _, BusVoltage as _, DryInputs as _, LedPattern, PlaneLink as _, Probes as _,
+    StatusLed as _,
 };
 
-use super::{HwInit, expanders, init};
+use super::{HwInit, init};
 
 /// Run the exercise. Never returns.
 pub fn run() -> anyhow::Result<()> {
@@ -48,16 +46,9 @@ pub fn run() -> anyhow::Result<()> {
     let peripherals = Peripherals::take()?;
     let pins = peripherals.pins;
 
-    // Same first action as main.rs: EXP_nRESET_INT low before anything.
-    let mut exp_reset = PinDriver::output(pins.gpio10)?;
-    exp_reset.set_low()?;
-    let mut header_reset = PinDriver::output(pins.gpio4)?;
-    header_reset.set_low()?;
-
     log::info!("hwtest: calling hw::init");
     let mut hw = init(HwInit {
-        exp_reset,
-        exp_int: pins.gpio0,
+        plane_int: pins.gpio0,
         status_led: pins.gpio1,
         int_sda: pins.gpio2,
         int_scl: pins.gpio3,
@@ -71,40 +62,32 @@ pub fn run() -> anyhow::Result<()> {
     })?;
     log::info!("hwtest: hw::init returned, no panic");
 
-    log::info!("hwtest: expander bus scan {:02x?}", {
-        let exp = expanders::lock(&hw.expanders);
-        exp.bus().scan()
-    });
+    // 1 and 2. The plane link: the stub refuses every address, which is
+    // how the client reads "no plane there".
+    let mut answer = [0u8; 64];
+    match hw.plane.write_read(0x30, &[0x01, 0xff], &mut answer) {
+        Ok(n) => log::warn!("hwtest: plane 0x30 answered {n} bytes - is the link real now?"),
+        Err(err) => log::info!("hwtest: plane 0x30 -> {err} (expected, the link is a stub)"),
+    }
+    log::info!(
+        "hwtest: EXP_INT asserted = {} (expected false with nothing on the line)",
+        hw.plane.int_asserted()
+    );
 
-    // 1. The absent expanders must be an error, not a panic.
-    match hw.relays.assert(1, Switch::Pwr) {
-        Ok(()) => log::warn!("hwtest: assert succeeded - is U14 actually present?"),
-        Err(err) => log::info!("hwtest: assert on an absent U14 -> {err} (expected)"),
-    }
-    match hw.relays.release_all() {
-        Ok(()) => log::info!("hwtest: release_all ok"),
-        Err(err) => log::info!("hwtest: release_all -> {err}"),
-    }
-    match hw.sense.read_leds() {
-        Ok(bits) => log::warn!("hwtest: leds 0x{bits:02x} - is U15 actually present?"),
-        Err(err) => log::info!("hwtest: read_leds on an absent U15 -> {err} (expected)"),
-    }
-    match hw.sense.read_dry() {
-        Ok(bits) => log::warn!("hwtest: dry 0x{bits:02x}"),
-        Err(err) => log::info!("hwtest: read_dry on an absent U15 -> {err} (expected)"),
+    // 3. The dry inputs.
+    log::info!("hwtest: dry inputs wired = {}", hw.dry.is_wired());
+    match hw.dry.read_dry() {
+        Ok(bits) => log::info!("hwtest: dry 0x{bits:02x}"),
+        Err(err) => log::info!("hwtest: dry -> {err} (expected while the pin map is unknown)"),
     }
 
-    // 2. The deadline timer, measured on GPIO10 with the mutex out of the
-    // way: raise the line by hand, arm a short deadline, watch it drop.
-    deadline_check(&mut hw);
-
-    // 3. Probes on an empty bus.
+    // 4. Probes on an empty bus.
     match hw.probes.scan() {
         Ok(roms) => log::info!("hwtest: probe scan -> {} rom id(s) {roms:016x?}", roms.len()),
         Err(err) => log::error!("hwtest: probe scan -> {err}"),
     }
 
-    // 4. Analogue and external bus.
+    // 5. Analogue and external bus.
     match hw.vin.read_mv() {
         Ok(mv) => log::info!("hwtest: vin {mv} mV (floating pin on a devboard)"),
         Err(err) => log::error!("hwtest: vin -> {err}"),
@@ -115,12 +98,12 @@ pub fn run() -> anyhow::Result<()> {
     }
     log::info!("hwtest: external bus scan {:02x?}", hw.ext_i2c.scan());
 
-    // 5. LED patterns.
+    // 6. LED patterns.
     for pattern in [
         LedPattern::Heartbeat,
         LedPattern::OtaPending,
         LedPattern::NoLink,
-        LedPattern::Press,
+        LedPattern::Busy,
         LedPattern::Off,
     ] {
         log::info!("hwtest: led pattern {pattern:?} for 3 s");
@@ -132,54 +115,6 @@ pub fn run() -> anyhow::Result<()> {
     log::info!("hwtest: done, idling");
     loop {
         thread::sleep(Duration::from_secs(10));
-        log::info!(
-            "hwtest: idle, gpio10 = {}",
-            unsafe { gpio_get_level(expanders::EXP_RESET_GPIO) }
-        );
+        log::info!("hwtest: idle, {} plane NAKs so far", hw.plane.naks());
     }
-}
-
-/// Arm the press deadline and log the EXP_nRESET_INT level around it.
-///
-/// Two devboard details matter here. The line is raised with
-/// `gpio_set_level` rather than through the expander code, because on a
-/// board with no U14 the configuration step would fail and park the line
-/// again before the timer could be seen. And `main`/`hw::init` configure
-/// GPIO10 as a plain output, whose input register reads 0 whatever the pad
-/// does, so the direction is widened to input-output first - otherwise
-/// this check measures nothing.
-fn deadline_check(hw: &mut super::Hw) {
-    const DEADLINE_MS: u32 = 600;
-    unsafe {
-        gpio_set_direction(expanders::EXP_RESET_GPIO, gpio_mode_t_GPIO_MODE_INPUT_OUTPUT);
-        gpio_set_level(expanders::EXP_RESET_GPIO, 1);
-    }
-    let before = unsafe { gpio_get_level(expanders::EXP_RESET_GPIO) };
-    let armed_us = unsafe { esp_idf_sys::esp_timer_get_time() };
-    if let Err(err) = hw.relays.arm_deadline(DEADLINE_MS) {
-        log::error!("hwtest: arming the deadline failed: {err}");
-        return;
-    }
-    log::info!("hwtest: deadline armed for {DEADLINE_MS} ms, gpio10 = {before} (expected 1)");
-    for _ in 0..30 {
-        thread::sleep(Duration::from_millis(50));
-        if unsafe { gpio_get_level(expanders::EXP_RESET_GPIO) } == 0 {
-            let after_us = unsafe { esp_idf_sys::esp_timer_get_time() };
-            log::info!(
-                "hwtest: deadline dropped gpio10 after {} ms",
-                (after_us - armed_us) / 1000
-            );
-            // The next call must report the fault once.
-            match hw.relays.release_all() {
-                Ok(()) => log::error!("hwtest: release_all did not report the deadline fault"),
-                Err(err) => log::info!("hwtest: fault reported as {err} (expected)"),
-            }
-            match hw.relays.release_all() {
-                Ok(()) => log::info!("hwtest: fault cleared after one report (expected)"),
-                Err(err) => log::info!("hwtest: second release_all -> {err}"),
-            }
-            return;
-        }
-    }
-    log::error!("hwtest: deadline did NOT drop gpio10 within 1.5 s");
 }

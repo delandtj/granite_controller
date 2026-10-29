@@ -20,11 +20,12 @@
 //!   thread with a [`CONN_STACK`]-byte stack, and goes away after
 //!   [`IDLE_TIMEOUT`] without a frame.
 //!
-//! Reads are served from a [`RegisterImage`] rebuilt from the shared
+//! Reads are served from a [`RegisterImage`] over the shared
 //! [`Observed`] per request, which is a handful of array writes. Writes
 //! become [`Command`]s and travel the same channel the HTTP and MQTT
 //! transports use, so the dispatcher is still the only thing that talks to
-//! the actuator; holding register 9 reports the ack of the last one.
+//! the plane client; the `last_result` register reports the ack of the
+//! last one.
 //!
 //! ### Entry point
 //!
@@ -293,7 +294,7 @@ impl Shared {
             2 => ResultCode::Accepted,
             3 => ResultCode::Refused,
             4 => ResultCode::Failed,
-            5 => ResultCode::ShutdownPending,
+            5 => ResultCode::Absent,
             _ => ResultCode::Idle,
         }
     }
@@ -302,21 +303,34 @@ impl Shared {
         self.last_result.store(code.as_u16(), Ordering::Relaxed);
     }
 
-    /// The image a read is served from: one snapshot, rendered through
-    /// the map.
-    fn image(&self) -> RegisterImage {
-        let faults = self.faults.load(Ordering::Relaxed);
-        let last = self.last_result();
+    /// The snapshot a read is served from.
+    ///
+    /// The map is sparse since version 2 (ADR 0004 decision 7), so a
+    /// [`RegisterImage`] borrows the snapshot and answers one address at
+    /// a time instead of rendering a thousand registers onto this
+    /// thread's stack. The caller holds the copy for the frame it is
+    /// serving.
+    fn snapshot(&self) -> Observed {
         match self.observed.read() {
-            Ok(o) => RegisterImage::build(&o, self.fw, faults, last),
+            Ok(o) => o.clone(),
             Err(_) => {
                 // A poisoned snapshot lock must not make the server lie
-                // about node state: every node reads as unknown, every
+                // about node state: every node reads as absent, every
                 // temperature as missing.
                 log::error!("modbus: the snapshot lock is poisoned; serving an empty snapshot");
-                RegisterImage::build(&Observed::new(), self.fw, faults, last)
+                Observed::new()
             }
         }
+    }
+
+    /// The image over one snapshot.
+    fn image<'a>(&self, snapshot: &'a Observed) -> RegisterImage<'a> {
+        RegisterImage::new(
+            snapshot,
+            self.fw,
+            self.faults.load(Ordering::Relaxed),
+            self.last_result(),
+        )
     }
 
     /// Send one command to the dispatcher and wait for its ack, and make
@@ -395,13 +409,14 @@ const EVENTS_STACK: usize = 3072;
 fn completions(shared: &Arc<Shared>, events: &Receiver<Event>) {
     while let Ok(event) = events.recv() {
         let (id, code) = match &event.kind {
-            EventKind::ActionDone { id, result, .. } => match result.as_str() {
-                // A step inside `off`, not its end.
-                "escalated" => continue,
-                "shutdown_pending" => (id, ResultCode::ShutdownPending),
-                _ => (id, ResultCode::Ok),
-            },
-            EventKind::ActionFailed { id, .. } => (id, ResultCode::Failed),
+            EventKind::ActionDone { id, .. } => (id, ResultCode::Ok),
+            EventKind::ActionFailed { id, error, .. } => {
+                if error.contains("absent") || error.contains("not present") {
+                    (id, ResultCode::Absent)
+                } else {
+                    (id, ResultCode::Failed)
+                }
+            }
             _ => continue,
         };
         if !id.starts_with(COMMAND_ID_PREFIX) {
@@ -627,7 +642,8 @@ fn connection(shared: &Arc<Shared>, mut stream: TcpStream, peer: SocketAddr, uni
         }
         match read_frame(&mut stream, &mut buf) {
             Ok(Some(len)) => {
-                let image = shared.image();
+                let snapshot = shared.snapshot();
+                let image = shared.image(&snapshot);
                 // One frame can carry at most 123 writes, so a span per
                 // frame keeps the command ids unique across connections
                 // without a lock.

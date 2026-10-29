@@ -26,7 +26,7 @@ const TICK: Duration = Duration::from_millis(25);
 /// second, so the half period is 500 ms.
 fn half_period(pattern: LedPattern) -> Option<Duration> {
     match pattern {
-        LedPattern::Off | LedPattern::Press => None,
+        LedPattern::Off | LedPattern::Busy => None,
         LedPattern::Heartbeat => Some(Duration::from_millis(500)),
         LedPattern::OtaPending => Some(Duration::from_millis(125)),
         LedPattern::NoLink => Some(Duration::from_millis(2000)),
@@ -37,7 +37,7 @@ fn half_period(pattern: LedPattern) -> Option<Duration> {
 fn encode(pattern: LedPattern) -> u8 {
     match pattern {
         LedPattern::Off => 0,
-        LedPattern::Press => 1,
+        LedPattern::Busy => 1,
         LedPattern::Heartbeat => 2,
         LedPattern::OtaPending => 3,
         LedPattern::NoLink => 4,
@@ -47,7 +47,7 @@ fn encode(pattern: LedPattern) -> u8 {
 
 fn decode(raw: u8) -> LedPattern {
     match raw {
-        1 => LedPattern::Press,
+        1 => LedPattern::Busy,
         2 => LedPattern::Heartbeat,
         3 => LedPattern::OtaPending,
         4 => LedPattern::NoLink,
@@ -96,7 +96,7 @@ pub fn start(mut pin: PinDriver<'static, Output>) -> anyhow::Result<LedHandle> {
                         // Solid or dark: start the next blinking pattern
                         // from a full half period.
                         elapsed = Duration::ZERO;
-                        matches!(current, LedPattern::Press)
+                        matches!(current, LedPattern::Busy)
                     }
                     Some(half) => {
                         if elapsed >= half {

@@ -277,13 +277,14 @@ fn wait_outcome(completions: &Receiver<Event>, pending: &PendingWait) -> Option<
 /// finishing.
 ///
 /// The same rule as the MQTT ack (`mqtt::resolve_from_event`), so both
-/// transports report the same outcome for the same command: `escalated`
-/// is a step inside `off`, not the end of it, so the wait goes on.
+/// transports report the same outcome for the same command. A plane job
+/// reports once, when it is done (ADR 0004 decision 6), so there is no
+/// intermediate step to skip.
 fn finished_reply(event: &Event, id: &str) -> Option<Reply> {
     match &event.kind {
         EventKind::ActionDone {
             id: done, result, ..
-        } if done == id && result != "escalated" => Some(Reply::ok(id, result.clone())),
+        } if done == id => Some(Reply::ok(id, result.clone())),
         EventKind::ActionFailed {
             id: failed, error, ..
         } if failed == id => Some(Reply::err(id, error.clone())),
@@ -844,7 +845,6 @@ fn write_response(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use granite_core::actuator::ActionKind;
     use granite_core::api::Dispatcher as _;
     use granite_core::msg::CommandKind;
 
@@ -854,7 +854,7 @@ mod tests {
             EventKind::ActionDone {
                 id: id.into(),
                 node: Some(1),
-                action: ActionKind::On,
+                action: CommandKind::On,
                 result: result.into(),
             },
         )
@@ -866,25 +866,24 @@ mod tests {
             EventKind::ActionFailed {
                 id: id.into(),
                 node: Some(1),
-                action: ActionKind::On,
+                action: CommandKind::On,
                 error: error.into(),
             },
         )
     }
 
-    /// `escalated` is a step inside `off`, not the end of it, and another
-    /// command's completion is not ours.
+    /// Another command's completion is not ours, and a job that ended
+    /// either way ends the wait (ADR 0004 decision 6).
     #[test]
     fn only_this_commands_final_event_resolves_the_wait() {
-        assert!(finished_reply(&done("x", "escalated"), "x").is_none());
-        assert!(finished_reply(&done("y", "on"), "x").is_none());
-        let reply = finished_reply(&done("x", "on"), "x").expect("on is final");
+        assert!(finished_reply(&done("y", "done"), "x").is_none());
+        let reply = finished_reply(&done("x", "done"), "x").expect("done is final");
         assert!(reply.ok);
-        assert_eq!(reply.result.as_deref(), Some("on"));
-        let reply =
-            finished_reply(&failed("x", "power_on_timeout"), "x").expect("a failure ends it");
+        assert_eq!(reply.result.as_deref(), Some("done"));
+        let reply = finished_reply(&failed("x", "failed: not_present"), "x")
+            .expect("a failure ends it");
         assert!(!reply.ok);
-        assert_eq!(reply.error.as_deref(), Some("power_on_timeout"));
+        assert_eq!(reply.error.as_deref(), Some("failed: not_present"));
     }
 
     /// `wait_for` never blocks: it records the wait and answers "this
@@ -894,7 +893,7 @@ mod tests {
     #[test]
     fn wait_for_records_the_wait_and_does_not_block() {
         let (commands, _rx) = CommandChannel::new();
-        let cmd = Command::new("x", CommandKind::of_action(ActionKind::On));
+        let cmd = Command::new("x", CommandKind::On);
 
         let (_tx, completions) = channel();
         let mut waiting = ChannelDispatcher {

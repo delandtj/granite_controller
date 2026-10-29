@@ -12,15 +12,19 @@
 //!
 //! The ladder (ADR: within `t_validate`, default 10 min):
 //!
-//!   1. expanders initialised - the hardware layer calls [`mark_expanders`],
-//!   2. link and an IP - the network monitor calls [`mark_link`],
-//!   3. **either** the broker connected ([`mark_broker`]) **or** an
+//!   1. link and an IP - the network monitor calls [`mark_link`],
+//!   2. **either** the broker connected ([`mark_broker`]) **or** an
 //!      authenticated HTTPS request served ([`mark_https`]).
 //!
-//! A step whose provider never registered (no hardware layer in this
-//! build, MQTT disabled in the config) is not required: see
-//! [`expect_expanders`] and [`expect_broker`]. Steps nobody can satisfy
+//! A step whose provider never registered (MQTT disabled in the config)
+//! is not required: see [`expect_broker`]. Steps nobody can satisfy
 //! would turn every boot into a rollback.
+//!
+//! Rev C had a step before those two: "both expanders initialised". The
+//! expanders are gone with the rev C node section (controller ADR 0004
+//! decision 1), and a plane found is deliberately **not** its
+//! replacement: a controller whose planes are unplugged still has to be
+//! able to take a firmware update.
 
 use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::Mutex;
@@ -116,18 +120,10 @@ pub fn ota_state() -> OtaState {
 mod ready {
     use std::sync::atomic::AtomicBool;
 
-    pub static EXPANDERS: AtomicBool = AtomicBool::new(false);
     pub static LINK: AtomicBool = AtomicBool::new(false);
     pub static BROKER: AtomicBool = AtomicBool::new(false);
     pub static HTTPS: AtomicBool = AtomicBool::new(false);
-    pub static WANT_EXPANDERS: AtomicBool = AtomicBool::new(false);
     pub static WANT_BROKER: AtomicBool = AtomicBool::new(false);
-}
-
-/// The hardware layer announces that it will report expander readiness.
-/// Without this the ladder does not wait for step 1.
-pub fn expect_expanders() {
-    ready::WANT_EXPANDERS.store(true, Ordering::Relaxed);
 }
 
 /// The MQTT worker announces that a broker is configured, so "broker
@@ -136,40 +132,32 @@ pub fn expect_broker() {
     ready::WANT_BROKER.store(true, Ordering::Relaxed);
 }
 
-/// Step 1: both expanders configured.
-pub fn mark_expanders() {
-    ready::EXPANDERS.store(true, Ordering::Relaxed);
-}
-
-/// Step 2: link up and an IP.
+/// Step 1: link up and an IP.
 pub fn mark_link() {
     ready::LINK.store(true, Ordering::Relaxed);
 }
 
-/// Step 3a: the configured broker connected. Also the moment a rollback
+/// Step 2a: the configured broker connected. Also the moment a rollback
 /// found at boot can be reported: see [`report_rollback`].
 pub fn mark_broker() {
     ready::BROKER.store(true, Ordering::Relaxed);
     report_rollback();
 }
 
-/// Step 3b: an authenticated HTTPS request was served.
+/// Step 2b: an authenticated HTTPS request was served.
 pub fn mark_https() {
     ready::HTTPS.store(true, Ordering::Relaxed);
 }
 
 fn ladder_passed() -> Option<&'static str> {
-    if ready::WANT_EXPANDERS.load(Ordering::Relaxed) && !ready::EXPANDERS.load(Ordering::Relaxed) {
-        return None;
-    }
     if !ready::LINK.load(Ordering::Relaxed) {
         return None;
     }
     let broker = ready::WANT_BROKER.load(Ordering::Relaxed) && ready::BROKER.load(Ordering::Relaxed);
     let https = ready::HTTPS.load(Ordering::Relaxed);
     match (broker, https) {
-        (true, _) => Some("expanders, link and the broker"),
-        (false, true) => Some("expanders, link and an authenticated https request"),
+        (true, _) => Some("link and the broker"),
+        (false, true) => Some("link and an authenticated https request"),
         _ => None,
     }
 }
@@ -377,8 +365,7 @@ fn probation(window_s: u32, events: Option<Sender<Event>>) {
         }
         if super::now_ms() >= deadline {
             let detail = format!(
-                "expanders={} link={} broker={} https={}",
-                ready::EXPANDERS.load(Ordering::Relaxed),
+                "link={} broker={} https={}",
                 ready::LINK.load(Ordering::Relaxed),
                 ready::BROKER.load(Ordering::Relaxed),
                 ready::HTTPS.load(Ordering::Relaxed),

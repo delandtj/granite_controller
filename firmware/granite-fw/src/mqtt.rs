@@ -77,7 +77,7 @@
 //!
 //! ```ignore
 //! if platform.config().mqtt.enabled {
-//!     platform::ota::expect_broker();           // probation step 3a
+//!     platform::ota::expect_broker();           // probation step 2a
 //! }
 //! let mqtt = mqtt::start(mqtt::MqttCtx {
 //!     config: Box::new({ let p = Arc::clone(&platform); move || p.config() }),
@@ -280,7 +280,7 @@ pub type HostFn = Box<dyn Fn() -> HostStatus + Send>;
 pub type CommandFn = Box<dyn FnMut(Command, Sender<Reply>) -> bool + Send>;
 
 /// Called on every successful connect. `main.rs` points this at
-/// `platform::ota::mark_broker` (probation step 3a); it is idempotent.
+/// `platform::ota::mark_broker` (probation step 2a); it is idempotent.
 pub type ConnectHook = Box<dyn Fn() + Send>;
 
 /// What the `status` payload needs and the MQTT worker cannot see itself.
@@ -1188,9 +1188,9 @@ fn resolve_pending(
     }
 }
 
-/// An `action_done` or `action_failed` event is the completion an accepted
-/// actuator command was waiting for; an `ota` outcome is the completion of
-/// an `ota` command.
+/// An `action_done` or `action_failed` event is the completion an
+/// accepted plane job was waiting for (ADR 0004 decision 6); an `ota`
+/// outcome is the completion of an `ota` command.
 fn resolve_from_event(
     event: &Event,
     client: &mut EspMqttClient<'static>,
@@ -1200,13 +1200,9 @@ fn resolve_from_event(
     session: bool,
 ) {
     let reply = match &event.kind {
-        EventKind::ActionDone { id, result, .. } => {
-            // Escalation is a step inside `off`, not the end of it.
-            if result == "escalated" {
-                return;
-            }
-            Reply::ok(id, result.clone())
-        }
+        // A plane job reports once, when it is done, so there is no
+        // intermediate step to skip here.
+        EventKind::ActionDone { id, result, .. } => Reply::ok(id, result.clone()),
         EventKind::ActionFailed { id, error, .. } => Reply::err(id, error.clone()),
         // An `ota` pull ends in `verified` (then a reboot) or `failed`;
         // neither event carries the command id, and only one pull runs.

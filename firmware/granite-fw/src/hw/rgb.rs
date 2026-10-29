@@ -135,7 +135,7 @@ const TICK: Duration = Duration::from_millis(20);
 const STACK_SIZE: usize = 4096;
 
 /// Bits that mean "the hardware layer is not healthy" for [`for_faults`].
-const FAULT_MASK: u16 = fault_bits::EXPANDER | fault_bits::SENSE;
+const FAULT_MASK: u16 = fault_bits::PLANE_LOST | fault_bits::NODE_FAULT | fault_bits::NO_PLANE;
 
 /// The fault pattern, when the fault word says so.
 ///
@@ -158,7 +158,7 @@ fn blink(pattern: LedPattern) -> Option<(u32, u32)> {
         LedPattern::OtaPending => Some((250, 125)),
         LedPattern::NoLink => Some((4000, 2000)),
         LedPattern::Fault => Some((500, 250)),
-        LedPattern::Off | LedPattern::Press | LedPattern::Heartbeat => None,
+        LedPattern::Off | LedPattern::Busy | LedPattern::Heartbeat => None,
     }
 }
 
@@ -180,7 +180,7 @@ fn colour(pattern: LedPattern, phase_ms: u32, broker_up: bool) -> (u8, u8, u8) {
     let lit = match pattern {
         LedPattern::Off => (0, 0, 0),
         // A press is short and has to be unmistakable.
-        LedPattern::Press => (MAX, MAX, MAX),
+        LedPattern::Busy => (MAX, MAX, MAX),
         LedPattern::Heartbeat => {
             let level = breath(phase_ms % 1000, 1000);
             if broker_up {
@@ -206,7 +206,7 @@ fn colour(pattern: LedPattern, phase_ms: u32, broker_up: bool) -> (u8, u8, u8) {
 fn describe(pattern: LedPattern) -> &'static str {
     match pattern {
         LedPattern::Off => "off (dark)",
-        LedPattern::Press => "press (white, solid)",
+        LedPattern::Busy => "busy (white, solid)",
         LedPattern::Heartbeat => "heartbeat (green, breathing 1 Hz)",
         LedPattern::OtaPending => "ota pending (blue, 4 Hz)",
         LedPattern::NoLink => "no link (amber, 0.25 Hz)",

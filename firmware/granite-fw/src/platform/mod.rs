@@ -36,10 +36,9 @@ use esp_idf_svc::sys::{
 };
 use granite_core::api::MqttStatus;
 use granite_core::config::{Config, LogLevel, Section, Secrets};
-use granite_core::hal::{BootReason, Clock, HalError, HalResult, NodeSwitches, Reboot, Switch};
+use granite_core::hal::{BootReason, Clock, HalResult, LinkError, PlaneLink, Reboot};
 use granite_core::msg::Event;
 use granite_core::observed::Observed;
-use granite_core::NodeId;
 
 use identity::Identity;
 use net::{Net, NetHw};
@@ -172,13 +171,13 @@ type ReleaseHook = Box<dyn Fn() + Send + Sync + 'static>;
 static RELEASE_HOOK: OnceLock<ReleaseHook> = OnceLock::new();
 static REBOOT_IN_PROGRESS: AtomicBool = AtomicBool::new(false);
 
-/// Register the callback that opens every relay.
+/// Register the callback that puts the outputs in a safe state.
 ///
-/// The hardware layer passes its "release all" here during `hw::init`. The
-/// platform layer never reaches into `hw` itself, so a build without the
-/// hardware layer still links; the cost of a missing hook is only that a
-/// reboot does not actively open the relays, which the GPIO10 pull-down
-/// does anyway.
+/// Nothing registers one on rev D: the controller drives no node output
+/// at all any more (ADR 0004 decision 1), and a plane holds its own
+/// state through a controller reboot. The hook stays because the reboot
+/// and rollback paths call [`release_outputs`], and a future add-on with
+/// an output of its own is where it earns its keep again.
 pub fn set_release_hook<F>(hook: F)
 where
     F: Fn() + Send + Sync + 'static,
@@ -188,7 +187,7 @@ where
     }
 }
 
-/// Open every relay now, if a hook is registered.
+/// Put the outputs in a safe state now, if a hook is registered.
 pub fn release_outputs() {
     if let Some(hook) = RELEASE_HOOK.get() {
         hook();
@@ -196,11 +195,11 @@ pub fn release_outputs() {
 }
 
 /// Put the calling thread under the task watchdog
-/// (`CONFIG_ESP_TASK_WDT_TIMEOUT_S`, which panics, and the panic hook
-/// opens the relays). From then on it must call [`feed_task_watchdog`]
-/// more often than that, or the board resets. For the threads whose
-/// silent hang would be dangerous: the dispatcher (actuator and rules)
-/// and the sense task (ADR 0001, "Tasks and data flow").
+/// (`CONFIG_ESP_TASK_WDT_TIMEOUT_S`, which panics). From then on it must
+/// call [`feed_task_watchdog`] more often than that, or the board
+/// resets. For the threads whose silent hang would be dangerous: the
+/// dispatcher (the plane client and the rules) and the sense task
+/// (ADR 0001, "Tasks and data flow").
 pub fn watch_this_thread(name: &str) {
     let err = unsafe { esp_idf_svc::sys::esp_task_wdt_add(core::ptr::null_mut()) };
     if err == esp_idf_svc::sys::ESP_OK {
@@ -362,32 +361,42 @@ impl EventBus {
 pub use crate::http::{CommandChannel, CommandRequest};
 
 // ---------------------------------------------------------------------------
-// A NodeSwitches that does nothing
+// A plane link that is not there
 // ---------------------------------------------------------------------------
 
-/// Stand-in for the relay driver until the hardware layer owns it.
+/// Stand-in for the plane link when the hardware layer did not come up.
 ///
-/// **This is a stub.** Every call is logged and refused with
-/// [`HalError::NotPresent`], so a command reaches the actuator, fails
-/// honestly and shows up as `action_failed` rather than silently
-/// pretending to press a button. `main.rs` replaces it with the hardware
-/// layer's `NodeSwitches` at the marked integration point.
+/// **This is a stub.** Every address answers [`LinkError::Nak`], which
+/// the plane client reads as "no plane is strapped there" (ADR 0004
+/// decision 5): the controller then has no planes, no nodes, and every
+/// node command is refused as absent, which is the truth. `main.rs` uses
+/// the hardware layer's link instead whenever `hw::init` succeeded.
 #[derive(Debug, Default)]
-pub struct NullSwitches;
+pub struct NoPlaneLink;
 
-impl NodeSwitches for NullSwitches {
-    fn assert(&mut self, node: NodeId, sw: Switch) -> HalResult<()> {
-        log::warn!("no relay driver: refusing to press {sw} on node {node}");
-        Err(HalError::NotPresent)
+impl PlaneLink for NoPlaneLink {
+    fn write_read(&mut self, addr: u8, _req: &[u8], _resp: &mut [u8]) -> Result<usize, LinkError> {
+        log::debug!("no plane link: read of {addr:#04x} refused");
+        Err(LinkError::Nak)
     }
 
-    fn release(&mut self, _node: NodeId, _sw: Switch) -> HalResult<()> {
-        Ok(())
+    fn write(&mut self, addr: u8, _frame: &[u8]) -> Result<(), LinkError> {
+        log::debug!("no plane link: write to {addr:#04x} refused");
+        Err(LinkError::Nak)
     }
 
-    fn release_all(&mut self) -> HalResult<()> {
-        Ok(())
+    fn int_asserted(&mut self) -> bool {
+        false
     }
+}
+
+/// A random 32-bit value from the hardware RNG.
+///
+/// The plane client seeds its per-plane command sequence numbers with
+/// this, so a controller that reboots mid-command cannot collide with
+/// the sequence memory a plane still holds (ADR 0003).
+pub fn random_u32() -> u32 {
+    unsafe { esp_idf_svc::sys::esp_random() }
 }
 
 // ---------------------------------------------------------------------------
