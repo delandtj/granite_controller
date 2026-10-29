@@ -175,6 +175,9 @@ Value types in brackets. Units: V in 10 mV, I in mA, P in 0.1 W, T in
 - 0x4A unit hot-swap reset [u8 unit]
 - 0x4B stagger on [u8 slot bitmap, u16 delay ms]
 - 0x4C reboot [u32 magic 0x52424F54]
+- 0x4D reset unit expanders [u32 magic 0x45585252] (EXP_RSTN, bused:
+  every unit's expander at once, so every slot goes ON before the
+  plane re-applies the state; recovery for a wedged expander only)
 
 Result codes (0x16): 0 ok, 1 accepted (running; a later result
 follows), 2 busy, 3 bad argument, 4 conflict (sequence running on that

@@ -428,8 +428,14 @@ proposed); the state after a unit glitch stays open.
 
 **Architecture-changers**
 - [x] Image integrity: controller-verified, CRC-32 on the plane.
-- [ ] Press deadline line in the chain (PRESS_EN or EXP_RSTN), asked
-  from the hardware: docs/press-deadline-line.md.
+- [ ] Press deadline line in the chain: the hardware session is
+  moving the chain to 14 pins with both PRESS_EN (gates every unit's
+  photoMOS LED return, deadline circuit on the core) and EXP_RSTN
+  (bused expander reset, open drain from the core), 2026-10-29, not
+  committed yet. Once in: the press path keeps PRESS_EN alive only
+  while a press runs, the capability bit "press deadline hardware" is
+  set, and EXP_RSTN becomes the CTRL 0x4D recovery action (ADR 0003).
+  Core pins to take from mcu.py when it lands.
 
 **Behavior definers**
 - [ ] State of a unit's slots after it comes back from a glitch
