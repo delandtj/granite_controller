@@ -1,6 +1,6 @@
 # Controller rev D: nodes on planes
 
-**Status**: Proposed (all review asks answered 2026-10-29)
+**Status**: Accepted (implemented 2026-10-29; see "As built" below)
 **Date**: 2026-10-29
 
 Related: firmware/docs/adr/0001-firmware-architecture.md (the rev C
@@ -92,6 +92,13 @@ This repo's firmware targets rev D only.
    Two plane commands are added to ADR 0003 (still Proposed): 0x50
    node on [u8 slot, u16 LED timeout s] and 0x51 node off [u8 slot,
    u16 timeout s, u8 escalate].
+
+   The per-node settings travel with the verb as a `NodeOptions` (LED
+   timeout, soft-off window, escalation), so the dispatcher is the only
+   place that reads a node's configuration. `args.no_escalate` of the
+   rev C vocabulary maps to escalation `none` and `args.hard` to "do
+   not wait for the host LED"; `args.force` is accepted and carried,
+   but the plane has the last word on presence.
 
 5. **Plane client** in granite-core (`plane` module), over one new
    HAL trait:
@@ -269,6 +276,16 @@ plane power loss the plane flags "intended state lost"; the controller
 then re-applies OFF to every node it last commanded OFF (kept in NVS,
 so this also works after both rebooted).
 
+The re-apply is driven by the slot, not by the boot count: a core power
+loss takes the boot counter with it (the plane comes back at 1) and the
+flag stays up until a reset that keeps VDD, so neither the count nor the
+flag's edge can say whether a loss has been answered. While the flag is
+up, every node the controller last commanded rail-off whose slot reports
+itself enabled again is commanded off, at most once per slot report.
+That is self-limiting, and a verb that wants the rail up takes the node
+out of the set, so an operator who powers a node on is never fought
+over.
+
 **Q: Two planes in one frame, and the frame numbers its nodes 1-16
 left to right. Plane 0 is the right-hand one.**
 A: Ids follow the straps, so strap the planes in frame order. Names
@@ -335,3 +352,104 @@ Review asks (answered 2026-10-29 except 2):
 - [x] Review ask 3 (user 2026-10-29).
 - [ ] HA: MQTT discovery now that the node set is dynamic, or
   templates as today.
+
+---
+
+## As built (2026-10-29)
+
+Implemented in granite-core, granite-sim and granite-fw. The decisions
+above are what was built; this section is the detail they left open and
+the few places the implementation chose for them. Everything here is a
+local choice, reversible without touching the wire format (granite-proto
+is untouched).
+
+### Where things live
+- **Config.** The per-node settings are a list keyed by node id in the
+  existing `nodes` section, not an array of 64: a node that is not
+  present keeps its entry (decision 2) and a config with no entries is
+  the default for every node. The plane update policy of decision 8 is
+  `nodes.plane_update` (`manual` / `auto`); no new section was added.
+  `nodes.vin_min_mv` / `vin_max_mv` default to 10 V / 14 V, because rev D
+  is fed 12 V from the planes (decision 9).
+- **Targets.** `Target` gained `plane` and `unit`, spelled `planeN` and
+  `planeN.unitU` on the wire and in a URL; a node id is still a bare
+  number and `all` is still `all`.
+- **Acks.** `Reply` gained `job`, the plane job id, and the `accepted`
+  event carries it too. `granite_core::jobs` holds the pending jobs, so
+  the MQTT ack, the HTTP `?wait=1` result and the per-node "last job" in
+  the state payload all come from one place in both the firmware and the
+  simulator.
+- **Events.** The plane's own events and the client's findings are one
+  new event kind, `"kind": "plane"`, keyed by `what` (`plane_found`,
+  `slot_on`, `ov_latched`, `intended_off_reapplied`, ...). `node_state`
+  carries `power` and `host` instead of rev C's `state` and `led`;
+  `soft_off_timeout` is gone, because the plane runs the wait and reports
+  the sequence itself.
+- **Telemetry rounding.** The state payload carries 0.1 V, 0.1 A, whole
+  watts, whole degrees and whole watt-hours. Energy had to be rounded to
+  something coarse (Wh) or an on-change publisher would fire every second
+  on a node that draws power.
+
+### Modbus map version 2
+Sparse, and everything outside it answers exception 2 - the rev C node
+registers included, so a version 1 client fails loudly instead of
+reading a plausible wrong node. The dry inputs, the link and MQTT bits
+and the whole first input-register block (probes, board temperature,
+VIN, uptime, firmware, faults, **map version at 14**) keep their
+addresses.
+
+| table | block |
+|---|---|
+| discrete inputs | `100 + id - 1` node rail, `200 + id - 1` node host |
+| input registers | `100 + 12 x (id - 1)` node block, `900 + 16 x plane` plane block, `15` planes present, `16` nodes present |
+| holding registers | `8` on_all, `9` last result, `100 + id - 1` node command word, `200 + plane` plane command word |
+| coils | `100 + id - 1` node rail, read and write |
+
+An absent node reads 0 everywhere with bit 0 of its faults word set. The
+per-plane command word (`plane_reboot`, `unit_reset` of unit 0-3) is an
+addition: decision 7 names only per-node words, and Modbus was otherwise
+the one surface that could not reach a unit latch. `last_result` reports
+`absent` where rev C reported `shutdown_pending`, and the fault bitmap's
+first two bits are now "a plane stopped answering" and "a node is in
+fault" (bit 7 is "no plane at all") where rev C had "expander" and
+"sense". `RegisterImage` borrows the snapshot and answers one address at
+a time rather than rendering a thousand registers onto a connection
+thread's stack.
+
+### HTTP
+Same routes, plus `GET /api/v1/planes`, `/api/v1/planes/{n}` and
+`/api/v1/planes/{n}/units`. `POST /api/v1/nodes/{target}/{action}` takes
+the twelve plane verbs and nothing else, with the new target spellings.
+
+### Boot policy
+`on` and `off` are the verbs of decision 4, so a boot policy of `off` on
+a node whose host is already dark leaves the rail up: `off` means "shut
+the host down", and `power_off` is the verb that means the rail. The
+policies run once, three seconds after the dispatcher starts, which is
+discovery plus a slot report of every plane.
+
+### granite-fw: two marked placeholders
+Rev D hardware does not exist, so the board firmware compiles against
+the new core with:
+- `hw::plane_link::StubPlaneLink`: every address answers NAK, which is
+  how the client reads absence. No I2C transaction is performed. The real
+  driver (HP I2C, 100 kHz, EXP_INT on GPIO0) comes with the board, and
+  the ISO1640 clock-stretch question is the bench test this ADR already
+  lists as a risk.
+- `hw::dry::DryGpio::unwired`: decision 9 says four dry inputs on
+  non-strapping GPIOs but leaves the numbers to the hardware spec, so the
+  reads answer "not present" (the snapshot says "never read") until
+  `DryGpio::wired` gets a pin map.
+
+Also deferred to the board: the TMP1075 stays on the HP I2C bus, where
+rev C has it, rather than moving to the LP pins as decision 9 says. The
+OTA probation ladder lost its "expanders initialised" step and did not
+gain a plane step: a controller whose planes are unplugged still has to
+be able to take a firmware update.
+
+### Still open
+- The web UI (`firmware/web`) is unchanged and still speaks the rev C
+  state payload; `docs/home-assistant.md` and `docs/modbus_map.md` are
+  stale (the second is generated: `granite-sim modbus-map`).
+- MQTT discovery for Home Assistant now that the node set is dynamic
+  (the open question below).
