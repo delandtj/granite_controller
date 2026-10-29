@@ -5,16 +5,14 @@
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use core::array;
 use core::fmt;
 
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
-use crate::NODE_COUNT;
 use crate::NodeId;
-use crate::actuator::{Timings, default_order, sanitise_order};
-use crate::node::{BootPolicy, NodeSettings, SenseMode};
+use crate::node::{BootPolicy, MAX_SOFT_OFF_S, NodeSettings};
+use crate::plane::UpdatePolicy;
 use crate::rules::{MAX_RULES, Rule, default_rules};
 
 /// Bumped whenever a stored section needs migrating.
@@ -35,7 +33,8 @@ pub enum Section {
     Net,
     /// Broker, TLS, topics, publish cadence.
     Mqtt,
-    /// Node names, order, boot policy, sense, timings, probes.
+    /// Node names, boot policy, LED sense, soft-off window, escalation,
+    /// the plane update policy and the probes.
     Nodes,
     /// The rule set.
     Rules,
@@ -251,15 +250,19 @@ pub fn vin_out_of_window(mv: u32, min_mv: u32, max_mv: u32) -> bool {
 }
 
 /// The `nodes` section.
+///
+/// `nodes` is a list keyed by node id and not an array of the nodes that
+/// happen to answer: a node's settings are kept while it is not present
+/// (ADR 0004 decision 2). A node with no entry uses the defaults.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct NodesCfg {
-    /// Per-node settings, index 0 is node 1.
-    pub nodes: [NodeSettings; NODE_COUNT],
-    /// Order used by staggered actions and boot policies.
-    pub order: [NodeId; NODE_COUNT],
-    /// Action timings.
-    pub timings: Timings,
+    /// Per-node settings, by node id. Nodes without an entry take the
+    /// defaults of [`NodeSettings`].
+    pub nodes: Vec<NodeSettings>,
+    /// Whether plane firmware updates are offered by hand or applied as
+    /// soon as a plane's version differs (ADR 0004 decision 8).
+    pub plane_update: UpdatePolicy,
     /// ROM id to name mapping, in slot order.
     pub probes: Vec<ProbeCfg>,
     /// Probe read period.
@@ -267,8 +270,7 @@ pub struct NodesCfg {
     /// Per-board correction for the VIN divider.
     pub vin_trim: f32,
     /// Lower bound of the healthy VIN window, in millivolts. Below it the
-    /// `vin` fault bit is set (Modbus input register 13 bit 3). `0`
-    /// disables the check.
+    /// `vin` fault bit is set. `0` disables the check.
     pub vin_min_mv: u32,
     /// Upper bound of the healthy VIN window, in millivolts. Above it the
     /// `vin` fault bit is set. `0` disables the check.
@@ -278,24 +280,69 @@ pub struct NodesCfg {
 impl Default for NodesCfg {
     fn default() -> Self {
         NodesCfg {
-            nodes: array::from_fn(|i| NodeSettings::for_node((i + 1) as NodeId)),
-            order: default_order(),
-            timings: Timings::default(),
+            nodes: Vec::new(),
+            plane_update: UpdatePolicy::Manual,
             probes: Vec::new(),
             t_probe_s: 10,
             vin_trim: 1.0,
-            // 19 V nominal, so the window is the supply plus the margin a
-            // long cable and a loaded bus eat: 16 V to 22 V.
-            vin_min_mv: 16_000,
-            vin_max_mv: 22_000,
+            // 12 V in from the planes on rev D (ADR 0004 decision 9),
+            // so the window is the supply plus what a long cable and a
+            // loaded bus eat: 10 V to 14 V.
+            vin_min_mv: 10_000,
+            vin_max_mv: 14_000,
         }
     }
 }
 
 impl NodesCfg {
-    /// Boot policies in node order (index 0 = node 1).
-    pub fn boot_policies(&self) -> [BootPolicy; NODE_COUNT] {
-        array::from_fn(|i| self.nodes[i].boot_policy)
+    /// The settings of one node: its entry, or the defaults.
+    pub fn settings(&self, node: NodeId) -> NodeSettings {
+        self.nodes
+            .iter()
+            .find(|n| n.node == node)
+            .cloned()
+            .unwrap_or_else(|| NodeSettings::for_node(node))
+            .clamped()
+    }
+
+    /// The settings of one node, mutably, creating the entry if it is
+    /// not there yet.
+    pub fn settings_mut(&mut self, node: NodeId) -> &mut NodeSettings {
+        if let Some(at) = self.nodes.iter().position(|n| n.node == node) {
+            return &mut self.nodes[at];
+        }
+        self.nodes.push(NodeSettings::for_node(node));
+        self.nodes.last_mut().expect("just pushed")
+    }
+
+    /// The display name of one node.
+    pub fn name_of(&self, node: NodeId) -> String {
+        self.nodes
+            .iter()
+            .find(|n| n.node == node)
+            .map(|n| n.display_name())
+            .unwrap_or_else(|| crate::node::default_name(node))
+    }
+
+    /// The boot policy of one node.
+    pub fn boot_policy(&self, node: NodeId) -> BootPolicy {
+        self.nodes
+            .iter()
+            .find(|n| n.node == node)
+            .map(|n| n.boot_policy)
+            .unwrap_or_default()
+    }
+
+    /// Every node whose boot policy is not `leave`.
+    pub fn boot_policies(&self) -> Vec<(NodeId, BootPolicy)> {
+        let mut out: Vec<(NodeId, BootPolicy)> = self
+            .nodes
+            .iter()
+            .filter(|n| n.boot_policy != BootPolicy::Leave && crate::is_node(n.node))
+            .map(|n| (n.node, n.boot_policy))
+            .collect();
+        out.sort_unstable_by_key(|(node, _)| *node);
+        out
     }
 
     /// True when `mv` is outside the configured VIN window, which is what
@@ -303,11 +350,6 @@ impl NodesCfg {
     /// window of `0`/`0` never faults.
     pub fn vin_out_of_window(&self, mv: u32) -> bool {
         vin_out_of_window(mv, self.vin_min_mv, self.vin_max_mv)
-    }
-
-    /// Sense flags in node order.
-    pub fn sense_modes(&self) -> [SenseMode; NODE_COUNT] {
-        array::from_fn(|i| self.nodes[i].sense)
     }
 }
 
@@ -613,13 +655,14 @@ impl Config {
     /// Fix up what can be fixed silently: node order, node names, rule
     /// count, timing clamping.
     pub fn normalise(&mut self) {
-        self.nodes.order = sanitise_order(self.nodes.order);
-        for (i, n) in self.nodes.nodes.iter_mut().enumerate() {
-            if n.name.trim().is_empty() {
-                n.name = crate::node::default_name((i + 1) as NodeId);
-            }
+        // One entry per node, in id order, with the clamped values; an
+        // entry for a node id that does not exist is dropped.
+        self.nodes.nodes.retain(|n| crate::is_node(n.node));
+        self.nodes.nodes.sort_unstable_by_key(|n| n.node);
+        self.nodes.nodes.dedup_by_key(|n| n.node);
+        for n in self.nodes.nodes.iter_mut() {
+            *n = n.clone().clamped();
         }
-        self.nodes.timings = self.nodes.timings.clamped();
         if self.nodes.t_probe_s == 0 {
             self.nodes.t_probe_s = 10;
         }
@@ -644,8 +687,20 @@ impl Config {
     /// Everything that must hold before the config is used.
     pub fn validate(&self) -> Result<(), Vec<String>> {
         let mut errs: Vec<String> = Vec::new();
-        if let Err(e) = self.nodes.timings.validate() {
-            errs.push(e.to_string());
+        for n in &self.nodes.nodes {
+            if !crate::is_node(n.node) {
+                errs.push(format!(
+                    "nodes.nodes: {} is not a node id (1..={})",
+                    n.node,
+                    crate::MAX_NODES
+                ));
+            }
+            if n.t_soft_off_s > MAX_SOFT_OFF_S {
+                errs.push(format!(
+                    "nodes.nodes[{}].t_soft_off_s ({}) is above the {MAX_SOFT_OFF_S} s limit",
+                    n.node, n.t_soft_off_s
+                ));
+            }
         }
         if self.nodes.probes.len() > crate::PROBE_SLOTS {
             errs.push(format!(

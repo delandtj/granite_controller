@@ -7,8 +7,10 @@
 //! (`granite-fw/src/modbus.rs`), the host simulator and the tests all run
 //! the same code:
 //!
-//! - [`RegisterImage`] is the read side: the four tables rendered from one
-//!   [`Observed`] snapshot. Cheap enough to rebuild per request.
+//! - [`RegisterImage`] is the read side: a borrow of one [`Observed`]
+//!   snapshot that answers one address at a time, because the map of
+//!   ADR 0004 decision 7 is sparse and a thousand rendered registers on
+//!   a connection thread's stack would be a thousand nobody read.
 //! - [`handle_frame`] parses one Modbus TCP (MBAP) request with `rmodbus`,
 //!   serves reads from the image, turns writes into [`Command`]s through
 //!   the map and returns the response bytes.
@@ -31,9 +33,12 @@
 //! | unit id 0 or 0xFF | served as this unit, the request's unit id echoed |
 //! | any other unit id that is not ours | ignored, no response |
 //!
-//! A write whose command is refused or fails is still a successful write
-//! at the protocol level: the outcome lands in holding register 9
-//! (`last_result`), because Modbus has no room for an error string.
+//! A write whose command is refused is still a successful write at the
+//! protocol level: the outcome lands in the `last_result` holding
+//! register, because Modbus has no room for an error string. A verb that
+//! was accepted finishes on the plane later still (ADR 0004
+//! decision 6); `last_result` says `accepted` and the node's own
+//! registers say what became of it.
 
 use alloc::format;
 use alloc::string::String;
@@ -44,12 +49,10 @@ use rmodbus::server::{ModbusFrame, Read, ReadBits, ReadWords, Write, WriteBits, 
 use rmodbus::{ErrorKind, ModbusProto};
 
 use crate::modbus_map::{
-    COIL_COUNT, DISCRETE_COUNT, FwVersion, HOLDING_COUNT, INPUT_COUNT, MapError, ResultCode,
-    check_coil, check_holding, coils, command_from_coil, command_from_holding, discrete_inputs,
-    holding_registers, input_registers,
+    Image, MapError, RegKind, ResultCode, check_coil, check_holding, command_from_coil,
+    command_from_holding,
 };
 use crate::msg::{Command, Reply};
-use crate::observed::Observed;
 
 /// Bytes of the MBAP header that precede every Modbus TCP PDU.
 pub const MBAP_HEADER: usize = 6;
@@ -89,52 +92,12 @@ pub fn mbap_payload_len(header: &[u8]) -> Option<usize> {
 // The read side
 // ---------------------------------------------------------------------
 
-/// The four Modbus tables as one snapshot.
+/// The read side of the four Modbus tables over one snapshot.
 ///
-/// Built from an [`Observed`] through [`crate::modbus_map`], so the map is
-/// still the single source of the layout.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RegisterImage {
-    /// Function 2.
-    pub discretes: [bool; DISCRETE_COUNT],
-    /// Function 4.
-    pub inputs: [u16; INPUT_COUNT],
-    /// Function 3.
-    pub holdings: [u16; HOLDING_COUNT],
-    /// Function 1.
-    pub coils: [bool; COIL_COUNT],
-}
-
-impl RegisterImage {
-    /// Render the tables from a snapshot.
-    ///
-    /// `faults` is the bitmap of [`crate::modbus_map::fault_bits`] and
-    /// `last_result` is what the last command word produced.
-    pub fn build(o: &Observed, fw: FwVersion, faults: u16, last_result: ResultCode) -> Self {
-        RegisterImage {
-            discretes: discrete_inputs(o),
-            inputs: input_registers(o, fw, faults),
-            holdings: holding_registers(o, last_result),
-            coils: coils(o),
-        }
-    }
-
-    /// An all-zero image: what a reader sees before the first snapshot.
-    pub fn empty() -> Self {
-        RegisterImage {
-            discretes: [false; DISCRETE_COUNT],
-            inputs: [0; INPUT_COUNT],
-            holdings: [0; HOLDING_COUNT],
-            coils: [false; COIL_COUNT],
-        }
-    }
-}
-
-impl Default for RegisterImage {
-    fn default() -> Self {
-        Self::empty()
-    }
-}
+/// The layout itself is [`crate::modbus_map`], so the map is still the
+/// single source; this is only the alias the server and the transports
+/// name.
+pub type RegisterImage<'a> = Image<'a>;
 
 // ---------------------------------------------------------------------
 // One frame
@@ -168,7 +131,7 @@ pub struct FrameOutcome {
 pub fn handle_frame(
     unit_id: u8,
     request: &[u8],
-    image: &RegisterImage,
+    image: &RegisterImage<'_>,
     seq: &mut u32,
     submit: &mut dyn FnMut(&Command) -> Reply,
 ) -> FrameOutcome {
@@ -269,7 +232,7 @@ fn write_span_present<V: rmodbus::VectorTrait<u8>>(
 
 fn serve_read<V: rmodbus::VectorTrait<u8>>(
     frame: &mut ModbusFrame<'_, V>,
-    image: &RegisterImage,
+    image: &RegisterImage<'_>,
 ) -> Result<(), ErrorKind> {
     let func = frame.func;
     let outcome = match frame.get_external_read() {
@@ -278,22 +241,22 @@ fn serve_read<V: rmodbus::VectorTrait<u8>>(
             count,
             buf,
         })) => {
-            let table: &[bool] = match func {
-                ModbusFunction::GetCoils => &image.coils,
-                _ => &image.discretes,
+            let kind = match func {
+                ModbusFunction::GetCoils => RegKind::Coil,
+                _ => RegKind::DiscreteInput,
             };
-            fill_bits(table, address, count, buf)
+            fill_bits(image, kind, address, count, buf)
         }
         Ok(Read::Words(ReadWords {
             address,
             count,
             buf,
         })) => {
-            let table: &[u16] = match func {
-                ModbusFunction::GetHoldings => &image.holdings,
-                _ => &image.inputs,
+            let kind = match func {
+                ModbusFunction::GetHoldings => RegKind::HoldingRegister,
+                _ => RegKind::InputRegister,
             };
-            fill_words(table, address, count, buf)
+            fill_words(image, kind, address, count, buf)
         }
         Err(e) => Err(e),
     };
@@ -302,16 +265,27 @@ fn serve_read<V: rmodbus::VectorTrait<u8>>(
 
 /// Pack `count` bits starting at `address` into `buf`, LSB of byte 0
 /// first. `buf` arrives zeroed and is exactly as long as it needs to be.
-fn fill_bits(table: &[bool], address: u16, count: u16, buf: &mut [u8]) -> Result<(), ErrorKind> {
+///
+/// An address the map does not have is exception 2 for the whole read,
+/// however far into the span it sits: a client never gets half an
+/// answer.
+fn fill_bits(
+    image: &RegisterImage<'_>,
+    kind: RegKind,
+    address: u16,
+    count: u16,
+    buf: &mut [u8],
+) -> Result<(), ErrorKind> {
     if count == 0 {
         return Err(ErrorKind::IllegalDataValue);
     }
-    let end = address as usize + count as usize;
-    if end > table.len() {
-        return Err(ErrorKind::IllegalDataAddress);
-    }
-    for i in 0..count as usize {
-        if table[address as usize + i] {
+    for i in 0..count {
+        let addr = address
+            .checked_add(i)
+            .ok_or(ErrorKind::IllegalDataAddress)?;
+        let bit = image.bit(kind, addr).ok_or(ErrorKind::IllegalDataAddress)?;
+        if bit {
+            let i = i as usize;
             buf[i / 8] |= 1 << (i % 8);
         }
     }
@@ -319,16 +293,25 @@ fn fill_bits(table: &[bool], address: u16, count: u16, buf: &mut [u8]) -> Result
 }
 
 /// Write `count` big-endian words starting at `address` into `buf`.
-fn fill_words(table: &[u16], address: u16, count: u16, buf: &mut [u8]) -> Result<(), ErrorKind> {
+fn fill_words(
+    image: &RegisterImage<'_>,
+    kind: RegKind,
+    address: u16,
+    count: u16,
+    buf: &mut [u8],
+) -> Result<(), ErrorKind> {
     if count == 0 {
         return Err(ErrorKind::IllegalDataValue);
     }
-    let end = address as usize + count as usize;
-    if end > table.len() {
-        return Err(ErrorKind::IllegalDataAddress);
-    }
-    for i in 0..count as usize {
-        let word = table[address as usize + i].to_be_bytes();
+    for i in 0..count {
+        let addr = address
+            .checked_add(i)
+            .ok_or(ErrorKind::IllegalDataAddress)?;
+        let word = image
+            .word(kind, addr)
+            .ok_or(ErrorKind::IllegalDataAddress)?
+            .to_be_bytes();
+        let i = i as usize;
         buf[i * 2] = word[0];
         buf[i * 2 + 1] = word[1];
     }

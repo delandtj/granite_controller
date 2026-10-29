@@ -1,23 +1,34 @@
 //! The one dispatcher. MQTT, the HTTP API and Modbus all build a
 //! [`Command`] and call [`dispatch`], so the three transports cannot
-//! drift apart in what they allow (ADR components 7, 8, 9).
+//! drift apart in what they allow (ADR 0001 components 7, 8, 9).
 //!
-//! The dispatcher never touches hardware other than through the
-//! actuator's [`crate::hal::NodeSwitches`]; everything it cannot do
-//! itself (probe scan, OTA, reboot, persisting a config section) comes
-//! back as a [`SideEffect`] for the firmware to carry out.
+//! Since rev D the dispatcher touches no hardware at all (ADR 0004
+//! decision 6): it checks the target, turns the verb into a plane
+//! command with the node's configured timings, hands it to the
+//! [`PlaneClient`] and answers `accepted` with the job id. The job
+//! finishes later, and the ack that carries the plane's result is built
+//! from [`crate::jobs`]. A command for a node, unit or plane that is not
+//! there fails here, before any write: the plane client itself finishes
+//! such a job at once, so the reply is a refusal rather than an ack.
+//!
+//! Everything the dispatcher cannot do itself (probe scan, OTA, reboot,
+//! persisting a config section) still comes back as a [`SideEffect`] for
+//! the firmware to carry out.
 
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 
 use serde_json::Value;
 
-use crate::actuator::{Actuator, ActuatorEvent, Submission};
 use crate::config::{Config, Section};
-use crate::hal::NodeSwitches;
-use crate::msg::{Command, CommandKind, PROTOCOL_VERSION, Reply};
+use crate::jobs::JobLog;
+use crate::msg::{Command, CommandKind, PROTOCOL_VERSION, Reply, TargetKind};
 use crate::observed::Observed;
+use crate::plane::{
+    Command as PlaneJob, JobId, NodeCommand, NodeOptions, PlaneClient, PlaneCommand,
+};
 use crate::rules::RuleEngine;
+use crate::{NodeId, Target};
 
 /// Work the firmware has to do on behalf of a command.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -47,22 +58,24 @@ pub enum SideEffect {
 pub struct Dispatched {
     /// The ack to publish or return.
     pub reply: Reply,
-    /// Actuator events to publish and to fold into the node tracker.
-    pub events: Vec<ActuatorEvent>,
+    /// The plane job it became, if it became one.
+    pub job: Option<JobId>,
     /// What the firmware still has to do.
     pub effects: Vec<SideEffect>,
 }
 
 /// What the dispatcher is allowed to touch.
-pub struct DispatchCtx<'a, S: NodeSwitches> {
+pub struct DispatchCtx<'a> {
     /// Monotonic now.
     pub now_ms: u64,
     /// Device id, needed by `factory_reset`'s confirmation.
     pub device_id: &'a str,
-    /// The current snapshot.
+    /// The current snapshot: what the target check reads.
     pub observed: &'a Observed,
-    /// The actuator queue.
-    pub actuator: &'a mut Actuator<S>,
+    /// The plane client every verb goes through.
+    pub plane: &'a mut PlaneClient,
+    /// The pending-job log, so the ack can find the command id again.
+    pub jobs: &'a mut JobLog,
     /// The rule engine.
     pub rules: &'a mut RuleEngine,
     /// The live configuration.
@@ -74,8 +87,7 @@ pub struct DispatchCtx<'a, S: NodeSwitches> {
 }
 
 /// Route one command.
-pub fn dispatch<S: NodeSwitches>(cmd: &Command, ctx: &mut DispatchCtx<'_, S>) -> Dispatched {
-    let mut events = Vec::new();
+pub fn dispatch(cmd: &Command, ctx: &mut DispatchCtx<'_>) -> Dispatched {
     let mut effects = Vec::new();
 
     if cmd.v != PROTOCOL_VERSION {
@@ -84,28 +96,20 @@ pub fn dispatch<S: NodeSwitches>(cmd: &Command, ctx: &mut DispatchCtx<'_, S>) ->
                 &cmd.id,
                 alloc::format!("unsupported payload version {}", cmd.v),
             ),
-            events,
             effects,
         );
     }
     if let Some(verify) = ctx.verify_sig
         && !verify(cmd)
     {
-        return done(Reply::err(&cmd.id, "signature rejected"), events, effects);
+        return done(Reply::err(&cmd.id, "signature rejected"), effects);
+    }
+
+    if cmd.action.is_plane_verb() {
+        return submit(cmd, ctx);
     }
 
     let reply = match cmd.action {
-        k if k.is_actuator() => {
-            let Some(req) = cmd.to_action_request() else {
-                return done(Reply::err(&cmd.id, "not an action"), events, effects);
-            };
-            let (submission, mut evs) = ctx.actuator.submit(&req, ctx.now_ms, ctx.observed);
-            events.append(&mut evs);
-            match submission {
-                Submission::Accepted { .. } => Reply::accepted(&cmd.id),
-                Submission::Done(result) => Reply::of_result(&cmd.id, &result),
-            }
-        }
         CommandKind::RuleAck => match cmd.args.rule {
             None => Reply::err(&cmd.id, "args.rule is required"),
             Some(id) => {
@@ -165,19 +169,170 @@ pub fn dispatch<S: NodeSwitches>(cmd: &Command, ctx: &mut DispatchCtx<'_, S>) ->
             }
             _ => Reply::err(&cmd.id, "args.confirm must be the device id"),
         },
-        // Every actuator kind is handled by the first arm.
+        // Every plane verb is handled above.
         _ => Reply::err(&cmd.id, "unhandled action"),
     };
 
-    done(reply, events, effects)
+    done(reply, effects)
 }
 
-fn done(reply: Reply, events: Vec<ActuatorEvent>, effects: Vec<SideEffect>) -> Dispatched {
+fn done(reply: Reply, effects: Vec<SideEffect>) -> Dispatched {
     Dispatched {
         reply,
-        events,
+        job: None,
         effects,
     }
+}
+
+/// Check the target, submit the plane job, answer `accepted`.
+fn submit(cmd: &Command, ctx: &mut DispatchCtx<'_>) -> Dispatched {
+    let job = match plane_job(cmd, ctx) {
+        Ok(job) => job,
+        Err(e) => return done(Reply::err(&cmd.id, e), Vec::new()),
+    };
+    let nodes = job.nodes();
+    let id = ctx.plane.submit(ctx.now_ms, job);
+    ctx.jobs
+        .note(id, &cmd.id, cmd.action, cmd.target, &nodes, ctx.now_ms);
+    Dispatched {
+        reply: Reply::accepted(&cmd.id).with_job(id),
+        job: Some(id),
+        effects: Vec::new(),
+    }
+}
+
+/// The plane command a verb and a target become, or why they cannot.
+///
+/// The presence check is the snapshot's: a node whose plane does not
+/// answer, or whose slot holds no module, is refused here and nothing is
+/// written (ADR 0004 decision 6, "commands to an absent node or plane
+/// fail at once"). A node the controller has not read yet is let
+/// through: the plane has the last word on presence.
+fn plane_job(cmd: &Command, ctx: &DispatchCtx<'_>) -> Result<PlaneJob, String> {
+    if !cmd.target.is_valid() {
+        return Err(alloc::format!("{} is not a target", cmd.target));
+    }
+    match cmd.action.wants() {
+        TargetKind::Plane => {
+            let plane = cmd
+                .target
+                .plane()
+                .ok_or_else(|| String::from("this action needs a plane target"))?;
+            let address = plane_address(plane, ctx)?;
+            Ok(PlaneJob::Plane(PlaneCommand::Reboot { address }))
+        }
+        TargetKind::Unit => {
+            let (plane, unit) = cmd
+                .target
+                .unit()
+                .ok_or_else(|| String::from("this action needs a unit target"))?;
+            let address = plane_address(plane, ctx)?;
+            if !ctx.observed.unit(plane, unit).is_some_and(|u| u.present) {
+                return Err(alloc::format!(
+                    "unit {unit} of plane {plane} is not present"
+                ));
+            }
+            Ok(PlaneJob::Plane(PlaneCommand::UnitReset { address, unit }))
+        }
+        TargetKind::Node => node_job(cmd, ctx),
+    }
+}
+
+/// The address of a plane that answers.
+fn plane_address(plane: u8, ctx: &DispatchCtx<'_>) -> Result<u8, String> {
+    ctx.observed
+        .plane(plane)
+        .map(|p| p.address)
+        .ok_or_else(|| alloc::format!("plane {plane} is not present"))
+}
+
+/// A node verb over one node or over every present node.
+fn node_job(cmd: &Command, ctx: &DispatchCtx<'_>) -> Result<PlaneJob, String> {
+    // `on_all` is a group by definition and ignores a node target, the
+    // way rev C did.
+    if cmd.action == CommandKind::OnAll {
+        let nodes = ctx.observed.present_nodes();
+        if nodes.is_empty() {
+            return Err(String::from("no node is present"));
+        }
+        let opts = group_options(&nodes, cmd, ctx);
+        return Ok(PlaneJob::Node(NodeCommand::on_all(nodes).with_opts(opts)));
+    }
+    let Target::Node(node) = cmd.target else {
+        // Every other verb acts on one node. `all` over a verb that is
+        // not `on_all` would be several jobs with one ack, which the
+        // job model has no room for.
+        return Err(alloc::format!(
+            "{} needs a single node target",
+            cmd.action.as_str()
+        ));
+    };
+    check_present(node, ctx)?;
+    let opts = cmd.args.apply_to(node_options(node, ctx));
+    let verb = match cmd.action {
+        CommandKind::On => NodeCommand::on(node),
+        CommandKind::Off => NodeCommand::off(node),
+        CommandKind::ForceOff => NodeCommand::force_off(node),
+        CommandKind::Cycle => NodeCommand::cycle(node),
+        CommandKind::Reset => NodeCommand::Reset { node },
+        CommandKind::Press => NodeCommand::Press {
+            node,
+            switch: cmd.args.press_switch(),
+            ms: cmd.args.press_ms(),
+        },
+        CommandKind::PowerOn => NodeCommand::PowerOn { node },
+        CommandKind::PowerOff => NodeCommand::PowerOff { node },
+        CommandKind::ClearLatch => NodeCommand::ClearLatch { node },
+        other => return Err(alloc::format!("{} is not a node action", other.as_str())),
+    };
+    Ok(PlaneJob::Node(verb.with_opts(opts)))
+}
+
+/// A node the controller knows is not there is refused at once.
+fn check_present(node: NodeId, ctx: &DispatchCtx<'_>) -> Result<(), String> {
+    let (address, _) = crate::plane::node_location(node)
+        .ok_or_else(|| alloc::format!("{node} is not a node id"))?;
+    if ctx.observed.plane_at(address).is_none() {
+        return Err(alloc::format!(
+            "node {node} is on plane {} which is not present",
+            address - granite_proto::ADDR_BASE
+        ));
+    }
+    match ctx.observed.node(node) {
+        Some(n) if n.present => Ok(()),
+        Some(_) => Err(alloc::format!("node {node} is not present")),
+        // The plane answers but this slot has not been read yet.
+        None if ctx
+            .observed
+            .plane_at(address)
+            .is_some_and(|p| p.info_ms != 0 && p.ts_ms == 0) =>
+        {
+            Ok(())
+        }
+        None => Err(alloc::format!("node {node} is not present")),
+    }
+}
+
+/// The timings of one node.
+fn node_options(node: NodeId, ctx: &DispatchCtx<'_>) -> NodeOptions {
+    NodeOptions::of_settings(&ctx.config.nodes.settings(node))
+}
+
+/// The timings of a group: the shortest LED timeout and soft-off window
+/// of the nodes in it, so no node in a staggered `on_all` waits longer
+/// than its own setting allows.
+fn group_options(nodes: &[NodeId], cmd: &Command, ctx: &DispatchCtx<'_>) -> NodeOptions {
+    let mut opts = NodeOptions::default();
+    for (i, node) in nodes.iter().enumerate() {
+        let one = node_options(*node, ctx);
+        if i == 0 {
+            opts = one;
+            continue;
+        }
+        opts.led_timeout_s = opts.led_timeout_s.min(one.led_timeout_s);
+        opts.soft_off_s = opts.soft_off_s.min(one.soft_off_s);
+    }
+    cmd.args.apply_to(opts)
 }
 
 /// `config_get`: one section, or the whole exportable document.

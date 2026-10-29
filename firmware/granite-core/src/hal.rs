@@ -10,8 +10,6 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use core::fmt;
 
-use crate::NodeId;
-
 /// Sentinel for "no reading" in a centi-degree temperature. Matches the
 /// Modbus convention in the ADR (0x8000 in a signed 16-bit register).
 pub const TEMP_MISSING: i16 = i16::MIN;
@@ -44,16 +42,12 @@ impl fmt::Display for Switch {
 
 /// Anything a HAL implementation can fail with.
 ///
-/// The variants are deliberately coarse: the core only distinguishes
-/// "the expander lied to us" (which fails an action and triggers a reset
-/// pulse in the firmware) from the rest.
+/// The variants are deliberately coarse: the core only has to tell a
+/// transport error from "nothing there" and from a bad argument.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HalError {
     /// I2C / SPI / 1-wire transport error.
     Bus,
-    /// A register readback did not match the shadow, or the press deadline
-    /// fired. This is the class the ADR calls `ExpanderFault`.
-    ExpanderFault,
     /// Addressed device or probe is not on the bus.
     NotPresent,
     /// Argument out of range (bad node id, bad duration).
@@ -70,7 +64,6 @@ impl fmt::Display for HalError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             HalError::Bus => f.write_str("bus error"),
-            HalError::ExpanderFault => f.write_str("expander fault"),
             HalError::NotPresent => f.write_str("not present"),
             HalError::OutOfRange => f.write_str("out of range"),
             HalError::Timeout => f.write_str("timeout"),
@@ -86,49 +79,11 @@ impl std::error::Error for HalError {}
 /// Result of a HAL call.
 pub type HalResult<T> = Result<T, HalError>;
 
-/// The 16 photoMOS relays on U14: one PWR and one RST per node.
+/// The 4 dry-contact inputs.
 ///
-/// Implementations hold U14 in reset (GPIO10 low) whenever no press is in
-/// progress, so `assert` implies "take U14 out of reset first" and
-/// `release_all` implies "drop it back into reset".
-pub trait NodeSwitches {
-    /// Close the relay for `sw` on `node` (press the button).
-    fn assert(&mut self, node: NodeId, sw: Switch) -> HalResult<()>;
-
-    /// Open the relay for `sw` on `node` (release the button).
-    fn release(&mut self, node: NodeId, sw: Switch) -> HalResult<()>;
-
-    /// Open every relay. Must be safe to call at any time, including from
-    /// a fault path, and must not depend on the I2C bus being healthy
-    /// (the reset line alone does it).
-    fn release_all(&mut self) -> HalResult<()>;
-
-    /// Arm the hardware press deadline: after `ms` the implementation
-    /// drops the expander reset line without any further software
-    /// involvement. The core computes the value (see
-    /// [`crate::actuator::deadline_for`]) and also enforces it in
-    /// software as a backstop.
-    ///
-    /// The default implementation is a no-op so host fakes and simulators
-    /// need not model the timer; a real board must override it.
-    fn arm_deadline(&mut self, ms: u32) -> HalResult<()> {
-        let _ = ms;
-        Ok(())
-    }
-
-    /// Cancel an armed deadline. Default: no-op, see [`Self::arm_deadline`].
-    fn disarm_deadline(&mut self) -> HalResult<()> {
-        Ok(())
-    }
-}
-
-/// The 8 node power LEDs read through U15.
-pub trait NodeSense {
-    /// Bit `n` (0-based) is node `n + 1`; true = LED lit = node powered.
-    fn read_leds(&mut self) -> HalResult<u8>;
-}
-
-/// The 4 dry-contact inputs read through U15.
+/// On rev D they sit straight on MCU GPIOs (ADR 0004 decision 9): no
+/// expander, so this is a plain trait with nothing behind it but four
+/// pins.
 pub trait DryInputs {
     /// Bit `n` (0-based) is input `n + 1`; true = contact closed.
     fn read_dry(&mut self) -> HalResult<u8>;
@@ -239,16 +194,16 @@ pub trait BusVoltage {
 pub enum LedPattern {
     /// Dark.
     Off,
-    /// Solid on: a relay press is in progress.
-    Press,
+    /// Solid on: a command is running on a plane.
+    Busy,
     /// 1 Hz: healthy.
     Heartbeat,
     /// 4 Hz: an OTA image is pending validation.
     OtaPending,
     /// 0.25 Hz: no Ethernet link.
     NoLink,
-    /// 2 Hz: a hardware fault is present (an expander that does not
-    /// answer, a readback mismatch, a blown press deadline).
+    /// 2 Hz: a hardware fault is present (a plane that stopped
+    /// answering, a node in fault).
     ///
     /// Not part of the four meanings ADR 0001 fixes for the plain status
     /// LED, and nothing in the shipped image selects it; it exists for

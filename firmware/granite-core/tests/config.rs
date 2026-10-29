@@ -4,11 +4,11 @@
 
 use std::collections::BTreeMap;
 
-use granite_core::actuator::Timings;
 use granite_core::config::{
     Config, ConfigError, IpMode, LogLevel, SCHEMA_VERSION, SecCfg, Secrets, Section,
 };
-use granite_core::node::{BootPolicy, SenseMode};
+use granite_core::node::{BootPolicy, DEFAULT_SOFT_OFF_S, Escalation, NodeSettings};
+use granite_core::plane::UpdatePolicy;
 use granite_core::rules::MAX_RULES;
 
 #[test]
@@ -28,13 +28,20 @@ fn the_default_config_is_full_valid_and_safe() {
     assert_eq!(c.sec.modbus.port, 502);
     assert!(!c.sec.admin_password_set);
     assert_eq!(c.sys.log_level, LogLevel::Warn);
-    assert_eq!(c.nodes.timings, Timings::default());
-    assert_eq!(c.nodes.order, [1, 2, 3, 4, 5, 6, 7, 8]);
-    for (i, n) in c.nodes.nodes.iter().enumerate() {
-        assert_eq!(n.boot_policy, BootPolicy::Leave, "node {}", i + 1);
-        assert_eq!(n.sense, SenseMode::Enabled);
-        assert_eq!(n.name, format!("node{}", i + 1));
+    // No per-node entries by default: a node that nobody configured
+    // takes the defaults, and its settings are kept when it goes away
+    // (ADR 0004 decision 2).
+    assert!(c.nodes.nodes.is_empty());
+    assert_eq!(c.nodes.plane_update, UpdatePolicy::Manual);
+    for node in [1u8, 17, 64] {
+        let n = c.nodes.settings(node);
+        assert_eq!(n.boot_policy, BootPolicy::Leave, "node {node}");
+        assert!(n.led_sense);
+        assert_eq!(n.escalation, Escalation::HoldThenCut);
+        assert_eq!(n.t_soft_off_s, DEFAULT_SOFT_OFF_S);
+        assert_eq!(c.nodes.name_of(node), format!("node{node}"));
     }
+    assert!(c.nodes.boot_policies().is_empty());
     assert_eq!(c.rules.rules.len(), 3);
     assert!(c.rules.rules.iter().all(|r| !r.enabled));
 }
@@ -47,10 +54,20 @@ fn export_import_round_trip() {
     c.net.gateway = "192.168.10.1".into();
     c.mqtt.enabled = true;
     c.mqtt.host = "broker.example".into();
-    c.nodes.nodes[2].name = "compute-3".into();
-    c.nodes.nodes[2].boot_policy = BootPolicy::On;
-    c.nodes.nodes[4].sense = SenseMode::Ignore;
-    c.nodes.order = [8, 7, 6, 5, 4, 3, 2, 1];
+    c.nodes.nodes.push(NodeSettings {
+        node: 3,
+        name: "compute-3".into(),
+        boot_policy: BootPolicy::On,
+        ..NodeSettings::for_node(3)
+    });
+    c.nodes.nodes.push(NodeSettings {
+        node: 40,
+        led_sense: false,
+        escalation: Escalation::Hold,
+        t_soft_off_s: 45,
+        ..NodeSettings::for_node(40)
+    });
+    c.nodes.plane_update = UpdatePolicy::Auto;
     c.rules.rules[0].enabled = true;
     c.sec.modbus.enabled = true;
     c.sec.modbus.allow = vec!["10.0.0.0/8".into()];
@@ -81,7 +98,11 @@ fn a_corrupt_section_falls_back_alone() {
     let mut good = Config::default();
     good.mqtt.enabled = true;
     good.mqtt.host = "broker.example".into();
-    good.nodes.nodes[0].name = "head".into();
+    good.nodes.nodes.push(NodeSettings {
+        node: 1,
+        name: "head".into(),
+        ..NodeSettings::for_node(1)
+    });
     good.sys.log_level = LogLevel::Debug;
 
     let mut store: BTreeMap<Section, String> = BTreeMap::new();
@@ -99,7 +120,7 @@ fn a_corrupt_section_falls_back_alone() {
     assert!(fallbacks[0].to_string().contains("nodes fell back"));
 
     // The nodes section is back to defaults...
-    assert_eq!(cfg.nodes.nodes[0].name, "node1");
+    assert_eq!(cfg.nodes.name_of(1), "node1");
     // ... and nothing else was lost.
     assert!(cfg.mqtt.enabled);
     assert_eq!(cfg.mqtt.host, "broker.example");
@@ -157,18 +178,29 @@ fn unknown_fields_are_tolerated_and_missing_ones_default() {
 #[test]
 fn normalise_repairs_what_it_can() {
     let mut c = Config::default();
-    c.nodes.order = [3, 3, 0, 9, 1, 1, 2, 2];
-    c.nodes.nodes[3].name = "   ".into();
-    c.nodes.timings.t_short_ms = 5;
+    c.nodes.nodes.push(NodeSettings {
+        node: 9,
+        name: "   ".into(),
+        t_soft_off_s: 0,
+        ..NodeSettings::for_node(9)
+    });
+    // A duplicate entry and one for a node that cannot exist.
+    c.nodes.nodes.push(NodeSettings {
+        node: 9,
+        name: "second".into(),
+        ..NodeSettings::for_node(9)
+    });
+    c.nodes.nodes.push(NodeSettings::for_node(200));
     c.nodes.t_probe_s = 0;
     c.nodes.vin_trim = 0.0;
     c.mqtt.site = String::new();
     c.mqtt.qos = 9;
     c.normalise();
 
-    assert_eq!(c.nodes.order, [3, 1, 2, 4, 5, 6, 7, 8]);
-    assert_eq!(c.nodes.nodes[3].name, "node4");
-    assert_eq!(c.nodes.timings.t_short_ms, 100);
+    assert_eq!(c.nodes.nodes.len(), 1, "one entry per node id, in range");
+    assert_eq!(c.nodes.nodes[0].node, 9);
+    assert_eq!(c.nodes.name_of(9), "node9", "a blank name is the default");
+    assert_eq!(c.nodes.nodes[0].t_soft_off_s, DEFAULT_SOFT_OFF_S);
     assert_eq!(c.nodes.t_probe_s, 10);
     assert_eq!(c.nodes.vin_trim, 1.0);
     assert_eq!(c.mqtt.site, "default");
@@ -215,15 +247,16 @@ fn validation_catches_the_things_normalise_cannot() {
 }
 
 #[test]
-fn the_vin_window_defaults_to_the_19_v_bus_and_zero_means_unchecked() {
+fn the_vin_window_defaults_to_the_12_v_feed_and_zero_means_unchecked() {
+    // Rev D takes 12 V from the planes (ADR 0004 decision 9).
     let c = Config::default();
-    assert_eq!(c.nodes.vin_min_mv, 16_000);
-    assert_eq!(c.nodes.vin_max_mv, 22_000);
-    assert!(c.nodes.vin_out_of_window(15_999));
-    assert!(!c.nodes.vin_out_of_window(16_000));
-    assert!(!c.nodes.vin_out_of_window(19_000));
-    assert!(!c.nodes.vin_out_of_window(22_000));
-    assert!(c.nodes.vin_out_of_window(22_001));
+    assert_eq!(c.nodes.vin_min_mv, 10_000);
+    assert_eq!(c.nodes.vin_max_mv, 14_000);
+    assert!(c.nodes.vin_out_of_window(9_999));
+    assert!(!c.nodes.vin_out_of_window(10_000));
+    assert!(!c.nodes.vin_out_of_window(12_000));
+    assert!(!c.nodes.vin_out_of_window(14_000));
+    assert!(c.nodes.vin_out_of_window(14_001));
 
     // Either bound at 0 is "do not check that side".
     let mut c = Config::default();
@@ -238,8 +271,8 @@ fn the_vin_window_defaults_to_the_19_v_bus_and_zero_means_unchecked() {
     // A window the wrong way round is refused, and one the divider
     // cannot reach is clamped.
     let mut c = Config::default();
-    c.nodes.vin_min_mv = 22_000;
-    c.nodes.vin_max_mv = 16_000;
+    c.nodes.vin_min_mv = 14_000;
+    c.nodes.vin_max_mv = 10_000;
     assert!(
         c.validate()
             .unwrap_err()

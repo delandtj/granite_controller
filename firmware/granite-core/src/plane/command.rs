@@ -40,6 +40,7 @@ use granite_proto::{
 
 use crate::NodeId;
 use crate::hal::Switch;
+use crate::node::NodeSettings;
 
 use super::node_location;
 
@@ -105,6 +106,50 @@ impl Step {
     }
 }
 
+/// The per-node settings a verb carries onto the plane (ADR 0004
+/// decisions 2 and 4).
+///
+/// The plane runs the waiting and the escalation, so the controller only
+/// has to hand it the numbers the operator configured: how long to wait
+/// for the host LED, how long a soft off waits before it escalates, and
+/// how far it goes. [`Default`] is the ADR's: wait
+/// [`ON_TIMEOUT_S`] for the light, [`OFF_TIMEOUT_S`] for the host, then
+/// hold PWR and cut the rail.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct NodeOptions {
+    /// How long the plane waits for the host LED \[s\]. `0` means the
+    /// LED is not trusted on this node: no waiting.
+    pub led_timeout_s: u16,
+    /// How long `off` waits for the host to go dark \[s\].
+    pub soft_off_s: u16,
+    /// How far `off` and `force_off` escalate.
+    pub escalate: Escalate,
+}
+
+impl Default for NodeOptions {
+    fn default() -> Self {
+        NodeOptions::DEFAULT
+    }
+}
+
+impl NodeOptions {
+    /// The ADR defaults, usable in a `const` context.
+    pub const DEFAULT: NodeOptions = NodeOptions {
+        led_timeout_s: ON_TIMEOUT_S,
+        soft_off_s: OFF_TIMEOUT_S,
+        escalate: Escalate::HoldPwrThenCutRail,
+    };
+
+    /// The options one node's configured settings ask for.
+    pub fn of_settings(settings: &NodeSettings) -> Self {
+        NodeOptions {
+            led_timeout_s: if settings.led_sense { ON_TIMEOUT_S } else { 0 },
+            soft_off_s: settings.t_soft_off_s,
+            escalate: settings.escalation.as_wire(),
+        }
+    }
+}
+
 /// What a command on one node or a set of them asks for.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum NodeCommand {
@@ -112,16 +157,22 @@ pub enum NodeCommand {
     On {
         /// Node id 1-64.
         node: NodeId,
+        /// Timings and escalation from the node's settings.
+        opts: NodeOptions,
     },
-    /// Soft off: short PWR, wait, then hold and cut the rail.
+    /// Soft off: short PWR, wait, then escalate.
     Off {
         /// Node id 1-64.
         node: NodeId,
+        /// Timings and escalation from the node's settings.
+        opts: NodeOptions,
     },
     /// Hold PWR five seconds; cut the rail if the host is still lit.
     ForceOff {
         /// Node id 1-64.
         node: NodeId,
+        /// Timings and escalation from the node's settings.
+        opts: NodeOptions,
     },
     /// Press RST.
     Reset {
@@ -132,6 +183,8 @@ pub enum NodeCommand {
     Cycle {
         /// Node id 1-64.
         node: NodeId,
+        /// Timings and escalation from the node's settings.
+        opts: NodeOptions,
     },
     /// A raw press of one button.
     Press {
@@ -146,6 +199,10 @@ pub enum NodeCommand {
     OnAll {
         /// The nodes, in any order; duplicates are ignored.
         nodes: Vec<NodeId>,
+        /// Timings of the nodes in the set. One set of options for the
+        /// group: a staggered `on_all` is one plane command per plane
+        /// and cannot carry a timeout per slot.
+        opts: NodeOptions,
     },
     /// The rail only, no buttons.
     PowerOn {
@@ -165,6 +222,59 @@ pub enum NodeCommand {
 }
 
 impl NodeCommand {
+    /// `on` with the default timings.
+    pub const fn on(node: NodeId) -> Self {
+        NodeCommand::On {
+            node,
+            opts: NodeOptions::DEFAULT,
+        }
+    }
+
+    /// `off` with the default timings.
+    pub const fn off(node: NodeId) -> Self {
+        NodeCommand::Off {
+            node,
+            opts: NodeOptions::DEFAULT,
+        }
+    }
+
+    /// `force_off` with the default escalation.
+    pub const fn force_off(node: NodeId) -> Self {
+        NodeCommand::ForceOff {
+            node,
+            opts: NodeOptions::DEFAULT,
+        }
+    }
+
+    /// `cycle` with the default timings.
+    pub const fn cycle(node: NodeId) -> Self {
+        NodeCommand::Cycle {
+            node,
+            opts: NodeOptions::DEFAULT,
+        }
+    }
+
+    /// `on_all` over a set of nodes with the default timings.
+    pub const fn on_all(nodes: Vec<NodeId>) -> Self {
+        NodeCommand::OnAll {
+            nodes,
+            opts: NodeOptions::DEFAULT,
+        }
+    }
+
+    /// The same verb with other timings: what the dispatcher does with
+    /// the node's configured settings.
+    pub fn with_opts(self, opts: NodeOptions) -> Self {
+        match self {
+            NodeCommand::On { node, .. } => NodeCommand::On { node, opts },
+            NodeCommand::Off { node, .. } => NodeCommand::Off { node, opts },
+            NodeCommand::ForceOff { node, .. } => NodeCommand::ForceOff { node, opts },
+            NodeCommand::Cycle { node, .. } => NodeCommand::Cycle { node, opts },
+            NodeCommand::OnAll { nodes, .. } => NodeCommand::OnAll { nodes, opts },
+            other => other,
+        }
+    }
+
     /// Lowercase wire name, the rev C verb where there is one.
     pub const fn verb(&self) -> &'static str {
         match self {
@@ -184,7 +294,7 @@ impl NodeCommand {
     /// The nodes this command acts on.
     pub fn nodes(&self) -> Vec<NodeId> {
         match self {
-            NodeCommand::OnAll { nodes } => {
+            NodeCommand::OnAll { nodes, .. } => {
                 let mut out: Vec<NodeId> = Vec::new();
                 for node in nodes {
                     if super::is_plane_node(*node) && !out.contains(node) {
@@ -194,11 +304,11 @@ impl NodeCommand {
                 out.sort_unstable();
                 out
             }
-            NodeCommand::On { node }
-            | NodeCommand::Off { node }
-            | NodeCommand::ForceOff { node }
+            NodeCommand::On { node, .. }
+            | NodeCommand::Off { node, .. }
+            | NodeCommand::ForceOff { node, .. }
             | NodeCommand::Reset { node }
-            | NodeCommand::Cycle { node }
+            | NodeCommand::Cycle { node, .. }
             | NodeCommand::Press { node, .. }
             | NodeCommand::PowerOn { node }
             | NodeCommand::PowerOff { node }
@@ -248,26 +358,26 @@ impl NodeCommand {
             return Vec::new();
         };
         let command = match self {
-            NodeCommand::On { .. } => Ctrl::NodeOn {
+            NodeCommand::On { opts, .. } => Ctrl::NodeOn {
                 slot,
-                led_timeout_s: ON_TIMEOUT_S,
+                led_timeout_s: opts.led_timeout_s,
             },
-            NodeCommand::Off { .. } => Ctrl::NodeOff {
+            NodeCommand::Off { opts, .. } => Ctrl::NodeOff {
                 slot,
-                timeout_s: OFF_TIMEOUT_S,
-                escalate: Escalate::HoldPwrThenCutRail,
+                timeout_s: opts.soft_off_s,
+                escalate: opts.escalate,
             },
-            NodeCommand::ForceOff { .. } => Ctrl::NodeOff {
+            NodeCommand::ForceOff { opts, .. } => Ctrl::NodeOff {
                 slot,
                 timeout_s: 0,
-                escalate: Escalate::HoldPwrThenCutRail,
+                escalate: opts.escalate,
             },
             NodeCommand::Reset { .. } => Ctrl::PressRst { slot, ms: PRESS_MS },
-            NodeCommand::Cycle { .. } => Ctrl::PowerCycle {
+            NodeCommand::Cycle { opts, .. } => Ctrl::PowerCycle {
                 slot,
                 off_delay_s: CYCLE_OFF_S,
                 press_if_dark: true,
-                led_timeout_s: ON_TIMEOUT_S,
+                led_timeout_s: opts.led_timeout_s,
             },
             NodeCommand::Press { switch, ms, .. } => {
                 let ms = (*ms).clamp(PRESS_MS_MIN, PRESS_MS_MAX);
@@ -293,6 +403,10 @@ impl NodeCommand {
     /// sent while the stagger still holds a slot off would release the
     /// rail behind the stagger's back.
     fn stagger_stages(&self) -> Vec<Vec<Step>> {
+        let opts = match self {
+            NodeCommand::OnAll { opts, .. } => *opts,
+            _ => NodeOptions::default(),
+        };
         let mut stagger: Vec<Step> = Vec::new();
         let mut on: Vec<Step> = Vec::new();
         for node in self.nodes() {
@@ -317,7 +431,7 @@ impl NodeCommand {
                 address,
                 Ctrl::NodeOn {
                     slot,
-                    led_timeout_s: ON_TIMEOUT_S,
+                    led_timeout_s: opts.led_timeout_s,
                 },
             ));
         }
@@ -544,7 +658,7 @@ mod tests {
     fn the_verbs_become_the_commands_of_the_table() {
         // Node 10 is plane 0x31, slot 1.
         assert_eq!(node_location(10), Some((0x31, 1)));
-        let stages = NodeCommand::On { node: 10 }.stages();
+        let stages = NodeCommand::on(10).stages();
         assert_eq!(stages.len(), 1);
         assert_eq!(stages[0].len(), 1);
         assert_eq!(stages[0][0].address, 0x31);
@@ -557,8 +671,8 @@ mod tests {
         );
 
         // force_off is off with the timeout at zero.
-        let off = NodeCommand::Off { node: 1 }.stages();
-        let force = NodeCommand::ForceOff { node: 1 }.stages();
+        let off = NodeCommand::off(1).stages();
+        let force = NodeCommand::force_off(1).stages();
         assert_eq!(
             off[0][0].commands[0],
             Ctrl::NodeOff {
@@ -592,16 +706,13 @@ mod tests {
             }
         );
 
-        assert!(NodeCommand::On { node: 0 }.stages().is_empty());
-        assert!(NodeCommand::On { node: 65 }.stages().is_empty());
+        assert!(NodeCommand::on(0).stages().is_empty());
+        assert!(NodeCommand::on(65).stages().is_empty());
     }
 
     #[test]
     fn on_all_staggers_per_plane_and_then_presses() {
-        let stages = NodeCommand::OnAll {
-            nodes: alloc::vec![1, 3, 9, 3],
-        }
-        .stages();
+        let stages = NodeCommand::on_all(alloc::vec![1, 3, 9, 3]).stages();
         assert_eq!(stages.len(), 2, "stagger, then the presses");
         assert_eq!(stages[0].len(), 2, "one stagger per plane");
         assert_eq!(stages[0][0].address, 0x30);
@@ -634,21 +745,13 @@ mod tests {
     #[test]
     fn intent_follows_the_verb() {
         assert!(NodeCommand::PowerOff { node: 1 }.intends_rail_off());
-        assert!(!NodeCommand::Off { node: 1 }.intends_rail_off());
-        assert!(NodeCommand::Off { node: 1 }.may_cut_rail());
-        assert!(NodeCommand::ForceOff { node: 1 }.may_cut_rail());
+        assert!(!NodeCommand::off(1).intends_rail_off());
+        assert!(NodeCommand::off(1).may_cut_rail());
+        assert!(NodeCommand::force_off(1).may_cut_rail());
         assert!(NodeCommand::PowerOn { node: 1 }.intends_rail_on());
-        assert!(
-            NodeCommand::OnAll {
-                nodes: alloc::vec![1]
-            }
-            .intends_rail_on()
-        );
+        assert!(NodeCommand::on_all(alloc::vec![1]).intends_rail_on());
         assert_eq!(
-            Command::Node(NodeCommand::OnAll {
-                nodes: alloc::vec![1, 9]
-            })
-            .addresses(),
+            Command::Node(NodeCommand::on_all(alloc::vec![1, 9])).addresses(),
             alloc::vec![0x30, 0x31]
         );
     }

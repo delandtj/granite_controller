@@ -18,11 +18,12 @@ use alloc::vec::Vec;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::actuator::{ActionArgs, ActionKind, ActionRequest, ActionResult, ActuatorEvent};
 use crate::config::{NodesCfg, Section};
 use crate::hal::{BootReason, Switch, rom_id_hex};
-use crate::node::LastAction;
-use crate::observed::Observed;
+use crate::node::LastJob;
+use crate::observed::{Observed, PlaneObs};
+use crate::plane::event::{ClientEvent, kind_name};
+use crate::plane::{JobOutcome, NodeOptions};
 use crate::rules::{Fired, RuleAction};
 use crate::{DRY_COUNT, NodeId, Target};
 
@@ -41,23 +42,38 @@ fn is_false(b: &bool) -> bool {
 }
 
 /// Everything a client can ask for.
+///
+/// The rev C verbs keep their names and their meaning (ADR 0004
+/// decision 4), so an MQTT or API client written for the relay
+/// controller keeps working; `power_on`, `power_off`, `clear_latch`,
+/// `unit_reset` and `plane_reboot` come with the plane.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum CommandKind {
-    /// Power a node on.
+    /// Rail on if needed, then PWR if the host stays dark.
     On,
-    /// Soft-off a node, escalating to `force_off`.
+    /// Soft-off, escalating per the node's setting.
     Off,
-    /// Hold PWR until the node is down.
+    /// Hold PWR, then cut the rail if the host is still lit.
     ForceOff,
     /// Short RST press.
     Reset,
-    /// Off, wait, on.
+    /// Rail off, wait, rail on, PWR if the host stays dark.
     Cycle,
-    /// Raw press.
+    /// Raw press of one button.
     Press,
-    /// Staggered on over every node.
+    /// Staggered `on` over a set of nodes.
     OnAll,
+    /// The rail only, no buttons.
+    PowerOn,
+    /// The rail only, no buttons.
+    PowerOff,
+    /// Clear a slot's overvoltage latch.
+    ClearLatch,
+    /// Re-arm a unit board's own hot-swap latch.
+    UnitReset,
+    /// Reboot a plane.
+    PlaneReboot,
     /// Acknowledge a `manual` rule (`args.rule`).
     RuleAck,
     /// Re-enumerate the 1-wire bus.
@@ -75,6 +91,23 @@ pub enum CommandKind {
 }
 
 impl CommandKind {
+    /// Every verb that goes to a plane, in table order (ADR 0004
+    /// decision 4).
+    pub const PLANE_VERBS: [CommandKind; 12] = [
+        CommandKind::On,
+        CommandKind::Off,
+        CommandKind::ForceOff,
+        CommandKind::Reset,
+        CommandKind::Cycle,
+        CommandKind::Press,
+        CommandKind::OnAll,
+        CommandKind::PowerOn,
+        CommandKind::PowerOff,
+        CommandKind::ClearLatch,
+        CommandKind::UnitReset,
+        CommandKind::PlaneReboot,
+    ];
+
     /// Wire name.
     pub const fn as_str(self) -> &'static str {
         match self {
@@ -85,6 +118,11 @@ impl CommandKind {
             CommandKind::Cycle => "cycle",
             CommandKind::Press => "press",
             CommandKind::OnAll => "on_all",
+            CommandKind::PowerOn => "power_on",
+            CommandKind::PowerOff => "power_off",
+            CommandKind::ClearLatch => "clear_latch",
+            CommandKind::UnitReset => "unit_reset",
+            CommandKind::PlaneReboot => "plane_reboot",
             CommandKind::RuleAck => "rule_ack",
             CommandKind::ProbeScan => "probe_scan",
             CommandKind::ConfigGet => "config_get",
@@ -95,37 +133,78 @@ impl CommandKind {
         }
     }
 
-    /// The actuator action behind this command, if it is one.
-    pub const fn action(self) -> Option<ActionKind> {
-        Some(match self {
-            CommandKind::On => ActionKind::On,
-            CommandKind::Off => ActionKind::Off,
-            CommandKind::ForceOff => ActionKind::ForceOff,
-            CommandKind::Reset => ActionKind::Reset,
-            CommandKind::Cycle => ActionKind::Cycle,
-            CommandKind::Press => ActionKind::Press,
-            CommandKind::OnAll => ActionKind::OnAll,
-            _ => return None,
-        })
+    /// Parse a verb name.
+    pub fn from_str_opt(s: &str) -> Option<Self> {
+        let name = s.trim();
+        [
+            CommandKind::On,
+            CommandKind::Off,
+            CommandKind::ForceOff,
+            CommandKind::Reset,
+            CommandKind::Cycle,
+            CommandKind::Press,
+            CommandKind::OnAll,
+            CommandKind::PowerOn,
+            CommandKind::PowerOff,
+            CommandKind::ClearLatch,
+            CommandKind::UnitReset,
+            CommandKind::PlaneReboot,
+            CommandKind::RuleAck,
+            CommandKind::ProbeScan,
+            CommandKind::ConfigGet,
+            CommandKind::ConfigSet,
+            CommandKind::Ota,
+            CommandKind::Reboot,
+            CommandKind::FactoryReset,
+        ]
+        .into_iter()
+        .find(|k| k.as_str() == name)
     }
 
-    /// The command that runs an actuator action.
-    pub const fn of_action(a: ActionKind) -> Self {
-        match a {
-            ActionKind::On => CommandKind::On,
-            ActionKind::Off => CommandKind::Off,
-            ActionKind::ForceOff => CommandKind::ForceOff,
-            ActionKind::Reset => CommandKind::Reset,
-            ActionKind::Cycle => CommandKind::Cycle,
-            ActionKind::Press => CommandKind::Press,
-            ActionKind::OnAll => CommandKind::OnAll,
+    /// True when the verb becomes a plane job: it names a node, a unit
+    /// or a plane and finishes asynchronously (ADR 0004 decision 6).
+    pub const fn is_plane_verb(self) -> bool {
+        matches!(
+            self,
+            CommandKind::On
+                | CommandKind::Off
+                | CommandKind::ForceOff
+                | CommandKind::Reset
+                | CommandKind::Cycle
+                | CommandKind::Press
+                | CommandKind::OnAll
+                | CommandKind::PowerOn
+                | CommandKind::PowerOff
+                | CommandKind::ClearLatch
+                | CommandKind::UnitReset
+                | CommandKind::PlaneReboot
+        )
+    }
+
+    /// True when the verb acts on a node rather than on a board.
+    pub const fn is_node_verb(self) -> bool {
+        self.is_plane_verb() && !matches!(self, CommandKind::UnitReset | CommandKind::PlaneReboot)
+    }
+
+    /// The target this verb needs: a node, a unit or a plane.
+    pub const fn wants(self) -> TargetKind {
+        match self {
+            CommandKind::UnitReset => TargetKind::Unit,
+            CommandKind::PlaneReboot => TargetKind::Plane,
+            _ => TargetKind::Node,
         }
     }
+}
 
-    /// True when the command may change node power.
-    pub const fn is_actuator(self) -> bool {
-        self.action().is_some()
-    }
+/// What kind of thing a verb acts on.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TargetKind {
+    /// One node, or every present node.
+    Node,
+    /// One unit board.
+    Unit,
+    /// One plane.
+    Plane,
 }
 
 impl core::fmt::Display for CommandKind {
@@ -139,13 +218,16 @@ impl core::fmt::Display for CommandKind {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Args {
-    /// Act on a node whose state is `Unknown`.
+    /// Submit the command even when the controller believes the node is
+    /// not there. Accepted and carried for rev C clients; the plane has
+    /// the last word on presence and refuses what is not there.
     #[serde(skip_serializing_if = "is_false")]
     pub force: bool,
-    /// `off` returns `shutdown_pending` instead of escalating.
+    /// `off` and `force_off` do not escalate: the short press, or the
+    /// hold, and nothing after it (escalation `none`).
     #[serde(skip_serializing_if = "is_false")]
     pub no_escalate: bool,
-    /// `cycle` uses `force_off` for the off half.
+    /// `cycle` does not wait for the host's LED on the way back up.
     #[serde(skip_serializing_if = "is_false")]
     pub hard: bool,
     /// Which switch a raw `press` uses.
@@ -180,16 +262,33 @@ impl Args {
         *self == Args::default()
     }
 
-    /// The subset the actuator cares about.
-    pub fn to_action_args(&self) -> ActionArgs {
-        ActionArgs {
-            force: self.force,
-            no_escalate: self.no_escalate,
-            hard: self.hard,
-            switch: self.switch,
-            duration_ms: self.duration_ms,
-            preempt: false,
+    /// The press duration this command asks for \[ms\], clamped to what
+    /// a plane accepts.
+    pub fn press_ms(&self) -> u16 {
+        let ms = self
+            .duration_ms
+            .unwrap_or(u32::from(crate::plane::PRESS_MS));
+        ms.clamp(
+            u32::from(granite_proto::PRESS_MS_MIN),
+            u32::from(granite_proto::PRESS_MS_MAX),
+        ) as u16
+    }
+
+    /// The switch a raw `press` uses; PWR unless the client said RST.
+    pub fn press_switch(&self) -> Switch {
+        self.switch.unwrap_or(Switch::Pwr)
+    }
+
+    /// The node options these args ask for, on top of the node's own
+    /// settings.
+    pub fn apply_to(&self, mut opts: NodeOptions) -> NodeOptions {
+        if self.no_escalate {
+            opts.escalate = granite_proto::Escalate::None;
         }
+        if self.hard {
+            opts.led_timeout_s = 0;
+        }
+        opts
     }
 }
 
@@ -250,21 +349,6 @@ impl Command {
     pub fn to_json(&self) -> Result<String, String> {
         serde_json::to_string(self).map_err(|e| e.to_string())
     }
-
-    /// The actuator request behind this command, if it is an action.
-    pub fn to_action_request(&self) -> Option<ActionRequest> {
-        let kind = self.action.action()?;
-        Some(ActionRequest {
-            id: self.id.clone(),
-            kind,
-            target: if kind == ActionKind::OnAll {
-                Target::All
-            } else {
-                self.target
-            },
-            args: self.args.to_action_args(),
-        })
-    }
 }
 
 /// The ack published on `.../ack/<id>` and returned by the HTTP API.
@@ -277,10 +361,15 @@ pub struct Reply {
     pub id: String,
     /// Whether the command was accepted or completed successfully.
     pub ok: bool,
-    /// Short outcome string ("accepted", "ok", "shutdown_pending", ...).
+    /// Short outcome string ("accepted", "ok", "done", "absent", ...).
     pub result: Option<String>,
     /// Error text when `ok` is false.
     pub error: Option<String>,
+    /// The plane job this command became, when it became one (ADR 0004
+    /// decision 6): the ack that follows the plane's result carries the
+    /// same number.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub job: Option<crate::plane::JobId>,
     /// Payload for the commands that return data (`config_get`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub data: Option<Value>,
@@ -295,14 +384,22 @@ impl Reply {
             ok: true,
             result: Some(result.into()),
             error: None,
+            job: None,
             data: None,
         }
     }
 
-    /// The reply for a queued action: the final outcome arrives later as
-    /// an `action_done` event and the ack on completion.
+    /// The reply for a queued command: the final outcome arrives later
+    /// as an `action_done` event and the ack on completion (ADR 0004
+    /// decision 6).
     pub fn accepted(id: impl Into<String>) -> Self {
         Reply::ok(id, "accepted")
+    }
+
+    /// Builder: note the plane job this command became.
+    pub fn with_job(mut self, job: crate::plane::JobId) -> Self {
+        self.job = Some(job);
+        self
     }
 
     /// A failed reply.
@@ -313,6 +410,7 @@ impl Reply {
             ok: false,
             result: None,
             error: Some(error.into()),
+            job: None,
             data: None,
         }
     }
@@ -323,13 +421,15 @@ impl Reply {
         self
     }
 
-    /// The reply for a finished action.
-    pub fn of_result(id: impl Into<String>, result: &ActionResult) -> Self {
-        let text = result.as_str();
-        if result.is_ok() {
-            Reply::ok(id, text)
+    /// The reply for a job the plane has finished.
+    pub fn of_outcome(id: impl Into<String>, outcome: JobOutcome, detail: Option<&str>) -> Self {
+        if outcome.is_ok() {
+            Reply::ok(id, outcome.as_str())
         } else {
-            Reply::err(id, text)
+            match detail {
+                Some(d) => Reply::err(id, alloc::format!("{}: {d}", outcome.as_str())),
+                None => Reply::err(id, outcome.as_str()),
+            }
         }
     }
 
@@ -343,52 +443,77 @@ impl Reply {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum EventKind {
-    /// A node's reported state changed.
+    /// A node's state changed on one of its two axes (ADR 0004
+    /// decision 3).
     NodeState {
         /// Node.
         node: NodeId,
-        /// New state name.
-        state: String,
-        /// Debounced LED, if known.
-        led: Option<bool>,
+        /// The rail: `off`, `on`, `starting`, `fault`, `absent`,
+        /// `unknown`.
+        power: String,
+        /// The host: `off`, `on`, `sleep`, `unknown`.
+        host: String,
     },
-    /// A command was queued. Emitted for long actions on receipt.
+    /// A command was accepted and became a plane job.
     Accepted {
         /// Command id.
         id: String,
-        /// Action.
-        action: ActionKind,
+        /// Verb.
+        action: CommandKind,
         /// Target.
         target: Target,
+        /// The plane job it became.
+        job: crate::plane::JobId,
     },
-    /// An action finished successfully.
+    /// A plane job finished as asked.
     ActionDone {
         /// Command id.
         id: String,
-        /// Node, absent for a group.
+        /// Node, absent for a unit, a plane or a group.
         node: Option<NodeId>,
-        /// Action.
-        action: ActionKind,
-        /// Outcome string.
+        /// Verb.
+        action: CommandKind,
+        /// Outcome string ("done").
         result: String,
     },
-    /// An action did not reach its goal.
+    /// A plane job did not reach its goal.
     ActionFailed {
         /// Command id.
         id: String,
-        /// Node, absent for a group.
+        /// Node, absent for a unit, a plane or a group.
         node: Option<NodeId>,
-        /// Action.
-        action: ActionKind,
-        /// Why.
+        /// Verb.
+        action: CommandKind,
+        /// Why ("failed: not_present", "absent", "link_lost", ...).
         error: String,
     },
-    /// Soft-off ran out of patience. Emitted before any escalation.
-    SoftOffTimeout {
-        /// Command id.
-        id: String,
-        /// Node.
-        node: NodeId,
+    /// Something the plane client learned: a plane found, lost or
+    /// rebooted, a slot or unit event the plane raised, a config set
+    /// pushed or refused, a plane firmware update, the OFF commands
+    /// re-applied after a plane lost its intended state (ADR 0004
+    /// decision 7: "new event kinds for the plane events").
+    ///
+    /// `what` is the kind: the plane's own event names (`slot_on`,
+    /// `ov_latched`, `unit_hot_swap_latched_off`, `sequence_failed`,
+    /// ...) and the client's (`plane_found`, `plane_lost`,
+    /// `plane_rebooted`, `address_collision`, `events_lost`,
+    /// `config_pushed`, `config_refused`, `update_confirmed`,
+    /// `update_failed`, `intended_off_reapplied`).
+    Plane {
+        /// Which kind.
+        what: String,
+        /// The plane's address, when it is about one.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        address: Option<u8>,
+        /// The node, when it is about one.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        node: Option<NodeId>,
+        /// The unit, when it is about one.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        unit: Option<u8>,
+        /// Free text.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        detail: Option<String>,
     },
     /// A rule fired.
     RuleFired {
@@ -480,72 +605,78 @@ impl Event {
     }
 }
 
-/// Translate an actuator event into a published event. Returns `None` for
-/// the internal press bookkeeping, which only goes to the log.
-pub fn event_from_actuator(ev: &ActuatorEvent, ts: u64) -> Option<Event> {
-    let kind = match ev {
-        ActuatorEvent::Accepted { id, node, action } => EventKind::Accepted {
-            id: id.clone(),
-            action: *action,
-            target: Target::Node(*node),
-        },
-        ActuatorEvent::SoftOffTimeout { id, node } => EventKind::SoftOffTimeout {
-            id: id.clone(),
-            node: *node,
-        },
-        ActuatorEvent::Escalated { id, node } => EventKind::ActionDone {
-            id: id.clone(),
-            node: Some(*node),
-            action: ActionKind::Off,
-            result: String::from("escalated"),
-        },
-        ActuatorEvent::Done {
-            id,
-            node,
-            action,
-            result,
-        } => {
-            if result.is_ok() {
-                EventKind::ActionDone {
-                    id: id.clone(),
-                    node: Some(*node),
-                    action: *action,
-                    result: result.as_str(),
-                }
+/// Translate one of the plane client's events into a published event
+/// (ADR 0004 decision 7).
+///
+/// A finished job is not one of these: the firmware answers it with the
+/// ack and the `action_done` / `action_failed` event of the command that
+/// asked for it, which [`crate::jobs`] builds.
+pub fn event_from_client(ev: &ClientEvent, ts: u64) -> Option<Event> {
+    use alloc::string::ToString as _;
+
+    if matches!(ev, ClientEvent::JobFinished { .. }) {
+        return None;
+    }
+    let detail = match ev {
+        ClientEvent::PlaneFound {
+            firmware,
+            boot_count,
+            ..
+        } => Some(format!(
+            "firmware {}, boot {boot_count}",
+            crate::observed::version_string(*firmware)
+        )),
+        ClientEvent::PlaneRebooted {
+            boot_count,
+            reset_cause,
+            intended_state_lost,
+            ..
+        } => Some(format!(
+            "boot {boot_count}, reset cause {reset_cause}{}",
+            if *intended_state_lost {
+                ", intended state lost"
             } else {
-                EventKind::ActionFailed {
-                    id: id.clone(),
-                    node: Some(*node),
-                    action: *action,
-                    error: result.as_str(),
-                }
+                ""
             }
+        )),
+        ClientEvent::EventsLost { count, .. } => Some(format!("{count} events lost")),
+        ClientEvent::ConfigPushed { hash, .. } => Some(format!("hash {hash:#010x}")),
+        ClientEvent::UpdateConfirmed { version, .. } => {
+            Some(crate::observed::version_string(*version))
         }
-        ActuatorEvent::GroupDone { id, action, result } => {
-            if result.is_ok() {
-                EventKind::ActionDone {
-                    id: id.clone(),
-                    node: None,
-                    action: *action,
-                    result: result.as_str(),
-                }
-            } else {
-                EventKind::ActionFailed {
-                    id: id.clone(),
-                    node: None,
-                    action: *action,
-                    error: result.as_str(),
-                }
-            }
+        ClientEvent::UpdateFailed {
+            version, reason, ..
+        } => Some(format!(
+            "{} at {}",
+            crate::observed::version_string(*version),
+            reason.as_str()
+        )),
+        ClientEvent::IntendedOffReapplied { nodes, .. } => Some(
+            nodes
+                .iter()
+                .map(|n| n.to_string())
+                .collect::<Vec<String>>()
+                .join(","),
+        ),
+        ClientEvent::Node { kind, .. } | ClientEvent::Plane { kind, .. } => {
+            Some(String::from(kind_name(*kind)))
         }
-        ActuatorEvent::Fault { id, node, fault } => EventKind::Fault {
-            fault: fault.to_string(),
-            node: *node,
-            id: id.clone(),
-        },
-        ActuatorEvent::PressStart { .. } | ActuatorEvent::PressEnd { .. } => return None,
+        ClientEvent::Unit { kind, unit, .. } => Some(format!("unit {unit}: {}", kind_name(*kind))),
+        _ => None,
     };
-    Some(Event::new(ts, kind))
+    Some(Event::new(
+        ts,
+        EventKind::Plane {
+            what: String::from(ev.as_str()),
+            address: ev.address(),
+            node: ev.node(),
+            unit: match ev {
+                ClientEvent::Unit { unit, .. } => Some(*unit),
+                _ => None,
+            },
+            detail,
+        },
+    ))
 }
 
 /// Translate a fired rule into a published event.
@@ -604,26 +735,104 @@ impl Status {
     }
 }
 
-/// One node inside the `.../state` payload.
+/// One node inside the `.../state` payload (ADR 0004 decision 7).
+///
+/// The telemetry is rounded: 0.1 V, 0.1 A, whole watts, whole degrees,
+/// whole watt-hours. That is what keeps a publisher that republishes
+/// "on change" from firing on sensor noise.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct NodeStatePayload {
-    /// Node id.
+    /// Node id 1-64.
     pub node: NodeId,
     /// User name.
     pub name: String,
-    /// `unknown`, `off`, `on` or `busy`.
-    pub state: String,
-    /// Debounced LED, if known.
-    pub led: Option<bool>,
-    /// What is running, while `busy`.
+    /// Plane number 0-7.
+    pub plane: u8,
+    /// Slot on the plane, 0-7.
+    pub slot: u8,
+    /// Unit board, 0-3.
+    pub unit: u8,
+    /// The rail: `off`, `on`, `starting`, `fault`, `absent`, `unknown`.
+    pub power: String,
+    /// The host: `off`, `on`, `sleep`, `unknown`.
+    pub host: String,
+    /// True while the plane runs a sequence on this slot.
+    #[serde(skip_serializing_if = "is_false")]
+    pub busy: bool,
+    /// Volts.
+    pub v: f32,
+    /// Amperes.
+    pub a: f32,
+    /// Watts.
+    pub w: u16,
+    /// Lowest power seen since the last min / max clear \[W\].
+    pub w_min: u16,
+    /// Highest power seen since the last min / max clear \[W\].
+    pub w_max: u16,
+    /// Slot temperature in degrees Celsius.
+    pub temp_c: i16,
+    /// Energy since the plane's first boot, in watt-hours.
+    pub energy_wh: u64,
+    /// The plane's module class code.
+    pub module_class: u8,
+    /// Which faults are set, by name; absent when there are none.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub faults: Vec<String>,
+    /// Last job the controller gave this node.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub busy_action: Option<ActionKind>,
-    /// Last action on this node.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub last_action: Option<LastAction>,
-    /// When the controller last reset it.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub last_reset_ms: Option<u64>,
+    pub last_job: Option<LastJob>,
+}
+
+/// One unit board inside the `.../state` payload.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct UnitPayload {
+    /// Unit index 0-3.
+    pub unit: u8,
+    /// True when the unit answers on the chain.
+    pub present: bool,
+    /// True when its own hot-swap latched off.
+    #[serde(skip_serializing_if = "is_false")]
+    pub latched_off: bool,
+    /// Input volts.
+    pub v: f32,
+    /// Input amperes.
+    pub a: f32,
+    /// Input watts.
+    pub w: u16,
+    /// Input temperature in degrees Celsius.
+    pub temp_c: i16,
+}
+
+/// One plane inside the `.../state` payload.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PlanePayload {
+    /// Plane number 0-7.
+    pub plane: u8,
+    /// Its I2C address.
+    pub address: u8,
+    /// What kind of plane it says it is.
+    #[serde(rename = "type")]
+    pub plane_type: String,
+    /// Firmware version.
+    pub firmware: String,
+    /// Core input (bus) volts.
+    pub bus_v: f32,
+    /// Core temperature in degrees Celsius.
+    pub temp_c: i16,
+    /// Boot count.
+    pub boot_count: u32,
+    /// Seconds since the plane booted.
+    pub uptime_s: u32,
+    /// What the plane says about its running image.
+    pub image_state: String,
+    /// True while a sequence runs on any of its slots.
+    #[serde(skip_serializing_if = "is_false")]
+    pub sequence_running: bool,
+    /// True while it says its intended state is lost.
+    #[serde(skip_serializing_if = "is_false")]
+    pub intended_state_lost: bool,
+    /// The unit boards.
+    pub units: Vec<UnitPayload>,
 }
 
 /// One probe inside the `.../state` payload.
@@ -647,8 +856,11 @@ pub struct State {
     pub v: u8,
     /// Monotonic milliseconds of the snapshot.
     pub ts: u64,
-    /// Nodes, 1..=8.
+    /// Every present node, by id (ADR 0004 decision 2: a node that is
+    /// not present is not listed).
     pub nodes: Vec<NodeStatePayload>,
+    /// Every plane that answers.
+    pub planes: Vec<PlanePayload>,
     /// Probes in slot order.
     pub probes: Vec<ProbePayload>,
     /// Board temperature in degrees Celsius.
@@ -668,24 +880,31 @@ pub struct State {
 impl State {
     /// Build the payload from the snapshot plus the names in config.
     pub fn from_observed(o: &Observed, nodes_cfg: &NodesCfg, ts: u64) -> Self {
-        let nodes = (1..=crate::NODE_COUNT as NodeId)
-            .map(|n| {
-                let obs = &o.nodes[n as usize - 1];
-                let busy_action = match &obs.state {
-                    crate::node::NodeState::Busy { action, .. } => Some(*action),
-                    _ => None,
-                };
-                NodeStatePayload {
-                    node: n,
-                    name: nodes_cfg.nodes[n as usize - 1].name.clone(),
-                    state: String::from(obs.state.as_str()),
-                    led: obs.led,
-                    busy_action,
-                    last_action: obs.last_action.clone(),
-                    last_reset_ms: obs.last_reset_ms,
-                }
+        let nodes: Vec<NodeStatePayload> = o
+            .nodes
+            .iter()
+            .map(|obs| NodeStatePayload {
+                node: obs.node,
+                name: nodes_cfg.name_of(obs.node),
+                plane: obs.plane,
+                slot: obs.slot,
+                unit: obs.unit,
+                power: String::from(obs.power.as_str()),
+                host: String::from(obs.host.as_str()),
+                busy: obs.busy,
+                v: f32::from(obs.telemetry.volts_tenths()) / 10.0,
+                a: f32::from(obs.telemetry.amps_tenths()) / 10.0,
+                w: obs.telemetry.watts_whole(),
+                w_min: div_round_u16(obs.telemetry.watts_min, 10),
+                w_max: div_round_u16(obs.telemetry.watts_max, 10),
+                temp_c: obs.telemetry.temp_whole_c(),
+                energy_wh: obs.telemetry.energy_wh(),
+                module_class: obs.telemetry.module_class,
+                faults: fault_names(&obs.faults),
+                last_job: obs.last_job.clone(),
             })
             .collect();
+        let planes: Vec<PlanePayload> = o.planes.iter().map(plane_payload).collect();
         let probes = o
             .probes
             .iter()
@@ -701,6 +920,7 @@ impl State {
             v: PROTOCOL_VERSION,
             ts,
             nodes,
+            planes,
             probes,
             board_temp_c: o.board_temp.value.map(|c| c as f32 / 100.0),
             vin_v: o.vin_mv.value.map(|mv| mv as f32 / 1000.0),
@@ -718,6 +938,68 @@ impl State {
     /// Serialise to JSON.
     pub fn to_json(&self) -> Result<String, String> {
         serde_json::to_string(self).map_err(|e| e.to_string())
+    }
+}
+
+/// Round a plane's deciwatt figure to whole watts.
+fn div_round_u16(value: u16, by: u16) -> u16 {
+    (value + by / 2) / by
+}
+
+/// The names of the faults that are set.
+fn fault_names(f: &crate::observed::NodeFaultsObs) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    for (set, name) in [
+        (f.absent, "absent"),
+        (f.ov_latched, "ov_latched"),
+        (f.power_limit, "power_limit"),
+        (f.retry_limit, "retry_limit"),
+        (f.unit_latched_off, "unit_latched_off"),
+        (f.cross_check, "cross_check"),
+    ] {
+        if set {
+            out.push(String::from(name));
+        }
+    }
+    out
+}
+
+/// One plane of the state payload.
+fn plane_payload(p: &PlaneObs) -> PlanePayload {
+    PlanePayload {
+        plane: p.plane,
+        address: p.address,
+        plane_type: p.plane_type.clone(),
+        firmware: p.firmware.clone(),
+        bus_v: f32::from(p.bus_volts_tenths()) / 10.0,
+        temp_c: div_round_i16(p.core_temperature, 10),
+        boot_count: p.boot_count,
+        uptime_s: p.uptime_s,
+        image_state: p.image_state.clone(),
+        sequence_running: p.sequence_running,
+        intended_state_lost: p.intended_state_lost,
+        units: p
+            .units
+            .iter()
+            .map(|u| UnitPayload {
+                unit: u.unit,
+                present: u.present,
+                latched_off: u.latched_off,
+                v: f32::from(u.volts) / 100.0,
+                a: f32::from(u.amps_tenths()) / 10.0,
+                w: u.watts_whole(),
+                temp_c: div_round_i16(u.temperature, 10),
+            })
+            .collect(),
+    }
+}
+
+/// Round a deci-degree reading to whole degrees.
+fn div_round_i16(value: i16, by: i16) -> i16 {
+    if value >= 0 {
+        (value + by / 2) / by
+    } else {
+        -((-value + by / 2) / by)
     }
 }
 

@@ -36,9 +36,8 @@
 //!
 //! `id = 8 * (address - 0x30) + slot + 1`, so 1-64 (ADR 0004
 //! decision 2). [`node_id`] and [`node_location`] are the only two
-//! places that arithmetic lives. Note that [`crate::is_node`] is still
-//! the rev C range (1-8); it goes with the rest of the rev C node
-//! section in a later step, and nothing in this module uses it.
+//! places that arithmetic lives, and [`crate::is_node`] is the same
+//! range.
 
 pub mod client;
 pub mod command;
@@ -53,8 +52,8 @@ use granite_proto::{ADDR_BASE, MAX_PLANES, SLOT_COUNT};
 
 pub use client::{PlaneClient, UpdatePolicy};
 pub use command::{
-    Command, FinishedJob, JobId, JobOutcome, NodeCommand, OFF_TIMEOUT_S, ON_TIMEOUT_S, PRESS_MS,
-    PlaneCommand, STAGGER_MS,
+    Command, FinishedJob, JobId, JobOutcome, NodeCommand, NodeOptions, OFF_TIMEOUT_S, ON_TIMEOUT_S,
+    PRESS_MS, PlaneCommand, STAGGER_MS,
 };
 pub use config::DesiredConfig;
 pub use event::ClientEvent;

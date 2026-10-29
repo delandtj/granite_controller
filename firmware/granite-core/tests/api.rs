@@ -2,11 +2,8 @@
 //! first-boot password rule, the login lockout, commit-confirm on a net
 //! section, and the JSON shapes clients depend on.
 
-mod common;
-
 use std::collections::BTreeMap;
 
-use granite_core::actuator::{ActionKind, Actuator};
 use granite_core::api::{
     self, Access, ApiCtx, ApiRequest, Auth, AuthState, Body, Dispatcher, Identity, Method,
     MqttStatus, NetControl, NetStatus, OtaFinish, OtaSink, OtaStatus, Platform, Rng, Route,
@@ -15,11 +12,12 @@ use granite_core::api::{
 use granite_core::config::{Config, Secrets, Section};
 use granite_core::dispatch::{DispatchCtx, SideEffect, dispatch};
 use granite_core::hal::BootReason;
-use granite_core::msg::{Command, EventKind, Reply};
-use granite_core::observed::Observed;
+use granite_core::jobs::JobLog;
+use granite_core::msg::{Command, CommandKind, EventKind, Reply};
+use granite_core::observed::{NodeObs, Observed, PlaneObs, UnitObs};
+use granite_core::plane::model::{HostState, PowerState};
+use granite_core::plane::{Plane, PlaneClient};
 use granite_core::rules::RuleEngine;
-
-use common::FakeSwitches;
 
 const DEVICE: &str = "granite-a1b2c3";
 
@@ -289,7 +287,8 @@ impl Rng for SeqRng {
 /// The real dispatcher over a fake expander, so a node action goes all
 /// the way into the actuator queue.
 struct CoreDispatcher {
-    actuator: Actuator<FakeSwitches>,
+    plane: PlaneClient,
+    jobs: JobLog,
     rules: RuleEngine,
     config: Config,
     observed: Observed,
@@ -304,19 +303,12 @@ struct CoreDispatcher {
 impl CoreDispatcher {
     fn new() -> Self {
         let config = Config::default();
-        // Every node sensed off, so state-dependent actions are not
-        // refused for `unknown_state` in these tests.
-        let mut observed = Observed::new();
-        for node in observed.nodes.iter_mut() {
-            node.led = Some(false);
-            node.state = granite_core::node::NodeState::Off;
-            node.ts_ms = 1;
-        }
         CoreDispatcher {
-            actuator: Actuator::new(FakeSwitches::default()),
+            plane: PlaneClient::new(1),
+            jobs: JobLog::new(),
             rules: RuleEngine::with_rules(config.rules.rules.clone()),
             config,
-            observed,
+            observed: snapshot(),
             effects: Vec::new(),
             seen: Vec::new(),
             wait_result: None,
@@ -332,7 +324,8 @@ impl Dispatcher for CoreDispatcher {
             now_ms: 1_000,
             device_id: DEVICE,
             observed: &self.observed,
-            actuator: &mut self.actuator,
+            plane: &mut self.plane,
+            jobs: &mut self.jobs,
             rules: &mut self.rules,
             config: &mut self.config,
             verify_sig: None,
@@ -372,7 +365,7 @@ impl Rig {
         Rig {
             now_ms: 10_000,
             config: Config::default(),
-            observed: Observed::new(),
+            observed: snapshot(),
             auth: AuthState::new(),
             store: FakeStore::default(),
             platform: FakePlatform::default(),
@@ -447,16 +440,44 @@ fn routes_match_the_table() {
     assert_eq!(
         api::route_of("/api/v1/nodes/3/force_off"),
         Some(Route::NodeAction {
-            node: Some(3),
-            action: ActionKind::ForceOff
+            target: granite_core::Target::Node(3),
+            action: CommandKind::ForceOff
         })
     );
     assert_eq!(
         api::route_of("/api/v1/nodes/all/on_all"),
         Some(Route::NodeAction {
-            node: None,
-            action: ActionKind::OnAll
+            target: granite_core::Target::All,
+            action: CommandKind::OnAll
         })
+    );
+    // The new verbs and the new targets (ADR 0004 decisions 4 and 7).
+    assert_eq!(
+        api::route_of("/api/v1/nodes/plane1.unit2/unit_reset"),
+        Some(Route::NodeAction {
+            target: granite_core::Target::Unit { plane: 1, unit: 2 },
+            action: CommandKind::UnitReset
+        })
+    );
+    assert_eq!(
+        api::route_of("/api/v1/nodes/plane3/plane_reboot"),
+        Some(Route::NodeAction {
+            target: granite_core::Target::Plane(3),
+            action: CommandKind::PlaneReboot
+        })
+    );
+    assert_eq!(
+        api::route_of("/api/v1/nodes/40/clear_latch"),
+        Some(Route::NodeAction {
+            target: granite_core::Target::Node(40),
+            action: CommandKind::ClearLatch
+        })
+    );
+    assert_eq!(api::route_of("/api/v1/planes"), Some(Route::Planes));
+    assert_eq!(api::route_of("/api/v1/planes/2"), Some(Route::Plane(2)));
+    assert_eq!(
+        api::route_of("/api/v1/planes/0/units"),
+        Some(Route::PlaneUnits(0))
     );
     assert_eq!(
         api::route_of("/api/v1/config/net"),
@@ -487,8 +508,14 @@ fn routes_match_the_table() {
     // Unknown API paths are 404, not assets.
     assert_eq!(api::route_of("/api/v1/nope"), None);
     assert_eq!(api::route_of("/api/v2/status"), None);
-    assert_eq!(api::route_of("/api/v1/nodes/9/on"), None);
+    assert_eq!(api::route_of("/api/v1/nodes/65/on"), None);
     assert_eq!(api::route_of("/api/v1/nodes/3/explode"), None);
+    assert_eq!(
+        api::route_of("/api/v1/nodes/3/config_get"),
+        None,
+        "only the plane verbs are node actions"
+    );
+    assert_eq!(api::route_of("/api/v1/planes/8"), None);
     assert_eq!(api::route_of("/api/v1/config/nosuch"), None);
 
     // Everything else is an asset, and traversal is stripped.
@@ -521,6 +548,8 @@ fn only_identity_recovery_login_and_assets_are_public() {
         "/api/v1/state",
         "/api/v1/cmd",
         "/api/v1/nodes/1/on",
+        "/api/v1/planes",
+        "/api/v1/planes/0",
         "/api/v1/config/net",
         "/api/v1/config/export",
         "/api/v1/rules",
@@ -722,24 +751,24 @@ fn wait_one_turns_an_accepted_node_action_into_its_outcome() {
 
     // A transport that can wait answers with the outcome: a failure is
     // the same client error a refusal already is.
-    rig.commands.wait_result = Some(Err(String::from("power_on_timeout")));
+    rig.commands.wait_result = Some(Err(String::from("failed: not_present")));
     let r = rig.go(ApiRequest::new(Method::Post, "/api/v1/nodes/3/on")
         .with_query("wait=1")
         .with_auth(Auth::Session(session.clone()))
         .with_body(b"{}"));
     assert_eq!(r.status, 400, "{}", body_text(&r));
     assert_eq!(body_json(&r)["ok"], false);
-    assert_eq!(body_json(&r)["error"], "power_on_timeout");
+    assert_eq!(body_json(&r)["error"], "failed: not_present");
     assert_eq!(rig.commands.waits, 2);
 
-    // And a success carries the actuator's own result string.
-    rig.commands.wait_result = Some(Ok(String::from("ok")));
+    // And a success carries the job's own outcome.
+    rig.commands.wait_result = Some(Ok(String::from("done")));
     let r = rig.go(ApiRequest::new(Method::Post, "/api/v1/nodes/4/on")
         .with_query("wait=true")
         .with_auth(Auth::Session(session))
         .with_body(b"{}"));
     assert_eq!(r.status, 200, "{}", body_text(&r));
-    assert_eq!(body_json(&r)["result"], "ok");
+    assert_eq!(body_json(&r)["result"], "done");
     assert_eq!(rig.commands.waits, 3);
 }
 
@@ -765,8 +794,9 @@ fn a_node_action_becomes_the_same_command_mqtt_takes() {
     assert_eq!(r.status, 200, "{}", body_text(&r));
     assert_eq!(body_json(&r)["id"], "c-7");
 
-    // A refused action is a client error, with the reason in the ack.
-    let r = rig.go(ApiRequest::new(Method::Post, "/api/v1/nodes/1/reset")
+    // A refused action is a client error, with the reason in the ack:
+    // node 5 is on a plane that does not answer.
+    let r = rig.go(ApiRequest::new(Method::Post, "/api/v1/nodes/20/reset")
         .with_auth(Auth::Session(session.clone()))
         .with_body(b"{}"));
     assert_eq!(r.status, 400);
@@ -1255,7 +1285,8 @@ fn status_and_state_have_the_documented_shape() {
         assert!(v.get(key).is_some(), "status is missing {key}");
     }
     assert_eq!(v["net"]["ip"], "192.168.1.10");
-    assert_eq!(v["state"]["nodes"].as_array().unwrap().len(), 8);
+    assert_eq!(v["state"]["nodes"].as_array().unwrap().len(), 4);
+    assert_eq!(v["state"]["planes"].as_array().unwrap().len(), 1);
     assert_eq!(v["ota"]["slots"][0]["label"], "ota_0");
 
     let r =
@@ -1265,15 +1296,17 @@ fn status_and_state_have_the_documented_shape() {
     let v = body_json(&r);
     assert_eq!(v["v"], 1);
     assert_eq!(v["nodes"][0]["node"], 1);
-    assert_eq!(v["nodes"][0]["state"], "unknown");
+    assert_eq!(v["nodes"][0]["power"], "off");
+    assert_eq!(v["nodes"][0]["host"], "unknown");
 
     let r =
         rig.go(
             ApiRequest::new(Method::Get, "/api/v1/nodes").with_auth(Auth::Session(session.clone()))
         );
     let v = body_json(&r);
-    assert_eq!(v["settings"]["order"][0], 1);
-    assert_eq!(v["nodes"].as_array().unwrap().len(), 8);
+    assert_eq!(v["settings"]["plane_update"], "manual");
+    assert_eq!(v["nodes"].as_array().unwrap().len(), 4);
+    assert_eq!(v["verbs"][0], "on");
 
     let r = rig.go(ApiRequest::new(Method::Get, "/api/v1/log/tail")
         .with_auth(Auth::Session(session))
@@ -1334,7 +1367,11 @@ fn a_new_token_is_stored_with_the_fast_hash() {
         rig.store.secrets.api_tokens[0].hash,
         api::token_hash(token.as_bytes(), &salt)
     );
-    assert!(rig.store.secrets.api_tokens[0].hash.starts_with(api::TOKEN_HASH_PREFIX));
+    assert!(
+        rig.store.secrets.api_tokens[0]
+            .hash
+            .starts_with(api::TOKEN_HASH_PREFIX)
+    );
 }
 
 #[test]
@@ -1344,13 +1381,17 @@ fn an_old_pbkdf2_token_still_works_and_is_rehashed() {
     let salt = api::unhex(&rig.store.secrets.admin_salt).unwrap();
     let token = "ab".repeat(api::TOKEN_BYTES);
     let iters = rig.store.secrets.admin_iters;
-    rig.store.secrets.api_tokens.push(granite_core::config::ApiToken {
-        name: String::from("old"),
-        hash: api::pbkdf2_hex(token.as_bytes(), &salt, iters),
-        created_s: 0,
-    });
+    rig.store
+        .secrets
+        .api_tokens
+        .push(granite_core::config::ApiToken {
+            name: String::from("old"),
+            hash: api::pbkdf2_hex(token.as_bytes(), &salt, iters),
+            created_s: 0,
+        });
 
-    let r = rig.go(ApiRequest::new(Method::Get, "/api/v1/state").with_auth(Auth::Bearer(token.clone())));
+    let r = rig
+        .go(ApiRequest::new(Method::Get, "/api/v1/state").with_auth(Auth::Bearer(token.clone())));
     assert_eq!(r.status, 200);
     assert_eq!(
         rig.store.secrets.api_tokens[0].hash,
@@ -1384,4 +1425,105 @@ fn pbkdf2_matches_the_documented_parameters() {
     // A corrupt stored value fails closed instead of panicking.
     assert!(!api::verify_hash(b"x", "zz", &hash, api::PBKDF2_ITERS));
     assert!(!api::verify_hash(b"x", "00", "", api::PBKDF2_ITERS));
+}
+
+/// A snapshot with one plane and nodes 1-4 present: enough for the route
+/// table and the command paths.
+fn snapshot() -> Observed {
+    let mut o = Observed::new();
+    let mut plane = PlaneObs::of_plane(&Plane::new(0x30));
+    plane.info_ms = 5;
+    plane.ts_ms = 10;
+    plane.units_present = 0b0011;
+    plane.nodes_present = 0b0000_1111;
+    plane.units = (0..4)
+        .map(|unit| UnitObs {
+            unit,
+            present: unit < 2,
+            ..UnitObs::default()
+        })
+        .collect();
+    o.planes.push(plane);
+    for node in 1..=4u8 {
+        let (address, slot) = granite_core::plane::node_location(node).unwrap();
+        let mut obs = NodeObs::unknown(node, address, slot);
+        obs.present = true;
+        obs.power = PowerState::Off;
+        obs.host = HostState::Unknown;
+        obs.ts_ms = 10;
+        o.nodes.push(obs);
+    }
+    o
+}
+
+#[test]
+fn the_plane_routes_report_the_planes_and_their_units() {
+    let mut rig = Rig::new();
+    let session = rig.setup();
+
+    let r = rig
+        .go(ApiRequest::new(Method::Get, "/api/v1/planes")
+            .with_auth(Auth::Session(session.clone())));
+    assert_eq!(r.status, 200, "{}", body_text(&r));
+    let v = body_json(&r);
+    assert_eq!(v["planes"].as_array().unwrap().len(), 1);
+    assert_eq!(v["planes"][0]["address"], 48);
+    assert_eq!(v["update_policy"], "manual");
+
+    let r = rig
+        .go(ApiRequest::new(Method::Get, "/api/v1/planes/0")
+            .with_auth(Auth::Session(session.clone())));
+    assert_eq!(r.status, 200);
+    let v = body_json(&r);
+    assert_eq!(v["plane"]["plane"], 0);
+    assert_eq!(v["nodes"].as_array().unwrap().len(), 4);
+
+    let r = rig.go(ApiRequest::new(Method::Get, "/api/v1/planes/0/units")
+        .with_auth(Auth::Session(session.clone())));
+    assert_eq!(r.status, 200);
+    assert_eq!(body_json(&r)["units"].as_array().unwrap().len(), 4);
+
+    // A plane that does not answer is a 404, not an empty object.
+    let r =
+        rig.go(ApiRequest::new(Method::Get, "/api/v1/planes/5").with_auth(Auth::Session(session)));
+    assert_eq!(r.status, 404);
+}
+
+#[test]
+fn the_new_verbs_reach_the_dispatcher() {
+    let mut rig = Rig::new();
+    let session = rig.setup();
+
+    for (path, action, target) in [
+        (
+            "/api/v1/nodes/1/power_off",
+            CommandKind::PowerOff,
+            granite_core::Target::Node(1),
+        ),
+        (
+            "/api/v1/nodes/2/clear_latch",
+            CommandKind::ClearLatch,
+            granite_core::Target::Node(2),
+        ),
+        (
+            "/api/v1/nodes/plane0.unit0/unit_reset",
+            CommandKind::UnitReset,
+            granite_core::Target::Unit { plane: 0, unit: 0 },
+        ),
+        (
+            "/api/v1/nodes/plane0/plane_reboot",
+            CommandKind::PlaneReboot,
+            granite_core::Target::Plane(0),
+        ),
+    ] {
+        let r = rig.go(ApiRequest::new(Method::Post, path)
+            .with_auth(Auth::Session(session.clone()))
+            .with_body(b"{}"));
+        assert_eq!(r.status, 200, "{path}: {}", body_text(&r));
+        let cmd = rig.commands.seen.last().unwrap().clone();
+        assert_eq!(cmd.action, action, "{path}");
+        assert_eq!(cmd.target, target, "{path}");
+        assert_eq!(body_json(&r)["result"], "accepted", "{path}");
+        assert!(body_json(&r)["job"].is_number(), "{path}");
+    }
 }

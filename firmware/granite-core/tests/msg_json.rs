@@ -2,14 +2,18 @@
 //! These are the wire contract; changing one means changing clients.
 
 use granite_core::Target;
-use granite_core::actuator::{ActionKind, ActionResult, ActuatorEvent, FailReason, FaultKind};
 use granite_core::config::{NodesCfg, Section};
 use granite_core::hal::{BootReason, Switch};
+use granite_core::jobs::JobLog;
 use granite_core::msg::{
     Args, Command, CommandKind, Event, EventKind, LWT_PAYLOAD, PROTOCOL_VERSION, Reply, State,
-    Status, Topics, event_from_actuator, event_from_rule,
+    Status, Topics, event_from_client, event_from_rule,
 };
-use granite_core::observed::{Observed, ProbeObs, Stamped};
+use granite_core::node::NodeSettings;
+use granite_core::observed::{NodeObs, Observed, PlaneObs, ProbeObs, Stamped, UnitObs};
+use granite_core::plane::event::ClientEvent;
+use granite_core::plane::model::{HostState, PowerState};
+use granite_core::plane::{Command as PlaneJob, FinishedJob, JobOutcome, NodeCommand, Plane};
 use granite_core::rules::{Fired, Rearm, RuleAction};
 use serde_json::{Value, json};
 
@@ -140,6 +144,11 @@ fn every_command_kind_has_a_fixture() {
         CommandKind::Cycle,
         CommandKind::Press,
         CommandKind::OnAll,
+        CommandKind::PowerOn,
+        CommandKind::PowerOff,
+        CommandKind::ClearLatch,
+        CommandKind::UnitReset,
+        CommandKind::PlaneReboot,
         CommandKind::RuleAck,
         CommandKind::ProbeScan,
         CommandKind::ConfigGet,
@@ -148,19 +157,38 @@ fn every_command_kind_has_a_fixture() {
         CommandKind::Reboot,
         CommandKind::FactoryReset,
     ];
-    assert_eq!(kinds.len(), 14);
+    assert_eq!(kinds.len(), 19);
     for k in kinds {
         let json = serde_json::to_string(&k).unwrap();
         assert_eq!(json, format!("\"{}\"", k.as_str()));
         let back: CommandKind = serde_json::from_str(&json).unwrap();
         assert_eq!(back, k);
+        assert_eq!(CommandKind::from_str_opt(k.as_str()), Some(k));
     }
-    assert!(CommandKind::On.is_actuator());
-    assert!(!CommandKind::Reboot.is_actuator());
-    assert_eq!(
-        CommandKind::of_action(ActionKind::Cycle),
-        CommandKind::Cycle
-    );
+    // The twelve verbs that become plane jobs (ADR 0004 decision 4).
+    assert_eq!(CommandKind::PLANE_VERBS.len(), 12);
+    assert!(CommandKind::On.is_plane_verb() && CommandKind::On.is_node_verb());
+    assert!(CommandKind::UnitReset.is_plane_verb());
+    assert!(!CommandKind::UnitReset.is_node_verb());
+    assert!(!CommandKind::Reboot.is_plane_verb());
+    assert_eq!(CommandKind::from_str_opt("nonsense"), None);
+}
+
+#[test]
+fn the_new_targets_round_trip() {
+    for (text, target) in [
+        ("all", Target::All),
+        ("plane2", Target::Plane(2)),
+        ("plane2.unit3", Target::Unit { plane: 2, unit: 3 }),
+    ] {
+        let cmd = Command::new("c-t", CommandKind::On).with_target(target);
+        let v: Value = serde_json::from_str(&cmd.to_json().unwrap()).unwrap();
+        assert_eq!(v["target"], json!(text));
+        assert_eq!(Command::from_json(&v.to_string()).unwrap().target, target);
+    }
+    let node = Command::new("c-t", CommandKind::On).with_target(Target::Node(40));
+    let v: Value = serde_json::from_str(&node.to_json().unwrap()).unwrap();
+    assert_eq!(v["target"], json!(40), "a node id stays a number");
 }
 
 #[test]
@@ -181,8 +209,9 @@ fn a_command_without_v_defaults_to_the_current_version() {
 
 #[test]
 fn a_bad_target_is_rejected_at_parse_time() {
-    assert!(Command::from_json(r#"{"id":"c","action":"on","target":9}"#).is_err());
+    assert!(Command::from_json(r#"{"id":"c","action":"on","target":65}"#).is_err());
     assert!(Command::from_json(r#"{"id":"c","action":"on","target":0}"#).is_err());
+    assert!(Command::from_json(r#"{"id":"c","action":"on","target":"plane8"}"#).is_err());
     assert!(Command::from_json(r#"{"id":"c","action":"on","target":"both"}"#).is_err());
     // The ADR's two spellings both work, and "3" as a string too.
     assert_eq!(
@@ -212,12 +241,22 @@ fn reply_fixtures() {
         json!({"v":1,"id":"c-1","ok":true,"result":"accepted","error":null})
     );
 
-    let failed = Reply::of_result("c-2", &ActionResult::failed(FailReason::PowerOnTimeout));
+    let queued = Reply::accepted("c-9").with_job(12);
+    assert_eq!(
+        serde_json::from_str::<Value>(&queued.to_json().unwrap()).unwrap(),
+        json!({"v":1,"id":"c-9","ok":true,"result":"accepted","error":null,"job":12})
+    );
+
+    let failed = Reply::of_outcome("c-2", JobOutcome::Failed, Some("not_present"));
     assert_eq!(
         serde_json::from_str::<Value>(&failed.to_json().unwrap()).unwrap(),
         json!({"v":1,"id":"c-2","ok":false,"result":null,
-               "error":"failed: power_on_timeout"})
+               "error":"failed: not_present"})
     );
+    let absent = Reply::of_outcome("c-3", JobOutcome::Absent, None);
+    assert_eq!(absent.error.as_deref(), Some("absent"));
+    let done = Reply::of_outcome("c-4", JobOutcome::Done, None);
+    assert_eq!(done.result.as_deref(), Some("done"));
 
     let data = Reply::ok("c-3", "ok").with_data(json!({"log_level":"warn"}));
     assert_eq!(
@@ -234,22 +273,24 @@ fn event_fixtures() {
             1_000,
             EventKind::NodeState {
                 node: 3,
-                state: "on".into(),
-                led: Some(true),
+                power: "on".into(),
+                host: "sleep".into(),
             },
         ),
-        json!({"v":1,"ts":1000,"kind":"node_state","node":3,"state":"on","led":true}),
+        json!({"v":1,"ts":1000,"kind":"node_state","node":3,"power":"on","host":"sleep"}),
     );
     roundtrip_event(
         &Event::new(
             1_100,
             EventKind::Accepted {
                 id: "c-1".into(),
-                action: ActionKind::OnAll,
+                action: CommandKind::OnAll,
                 target: Target::All,
+                job: 3,
             },
         ),
-        json!({"v":1,"ts":1100,"kind":"accepted","id":"c-1","action":"on_all","target":"all"}),
+        json!({"v":1,"ts":1100,"kind":"accepted","id":"c-1","action":"on_all",
+               "target":"all","job":3}),
     );
     roundtrip_event(
         &Event::new(
@@ -257,12 +298,12 @@ fn event_fixtures() {
             EventKind::ActionDone {
                 id: "c-1".into(),
                 node: Some(3),
-                action: ActionKind::On,
-                result: "ok".into(),
+                action: CommandKind::On,
+                result: "done".into(),
             },
         ),
         json!({"v":1,"ts":1200,"kind":"action_done","id":"c-1","node":3,
-               "action":"on","result":"ok"}),
+               "action":"on","result":"done"}),
     );
     roundtrip_event(
         &Event::new(
@@ -270,22 +311,25 @@ fn event_fixtures() {
             EventKind::ActionFailed {
                 id: "c-2".into(),
                 node: Some(4),
-                action: ActionKind::ForceOff,
-                error: "failed: still_on".into(),
+                action: CommandKind::ForceOff,
+                error: "failed: failed".into(),
             },
         ),
         json!({"v":1,"ts":1300,"kind":"action_failed","id":"c-2","node":4,
-               "action":"force_off","error":"failed: still_on"}),
+               "action":"force_off","error":"failed: failed"}),
     );
     roundtrip_event(
         &Event::new(
             1_400,
-            EventKind::SoftOffTimeout {
-                id: "c-3".into(),
-                node: 5,
+            EventKind::Plane {
+                what: "plane_lost".into(),
+                address: Some(0x31),
+                node: None,
+                unit: None,
+                detail: None,
             },
         ),
-        json!({"v":1,"ts":1400,"kind":"soft_off_timeout","id":"c-3","node":5}),
+        json!({"v":1,"ts":1400,"kind":"plane","what":"plane_lost","address":49}),
     );
     roundtrip_event(
         &Event::new(
@@ -342,54 +386,80 @@ fn event_fixtures() {
 }
 
 #[test]
-fn actuator_events_become_published_events() {
-    let done = ActuatorEvent::Done {
-        id: "c-1".into(),
-        node: 2,
-        action: ActionKind::Off,
-        result: ActionResult::ShutdownPending,
+fn plane_client_events_become_published_events() {
+    let found = ClientEvent::PlaneFound {
+        address: 0x30,
+        firmware: granite_proto::Version::new(0, 2, 1),
+        boot_count: 4,
     };
-    let ev = event_from_actuator(&done, 900).unwrap();
+    let ev = event_from_client(&found, 900).expect("a published event");
     assert_eq!(
         serde_json::from_str::<Value>(&ev.to_json().unwrap()).unwrap(),
-        json!({"v":1,"ts":900,"kind":"action_done","id":"c-1","node":2,
-               "action":"off","result":"shutdown_pending"})
+        json!({"v":1,"ts":900,"kind":"plane","what":"plane_found","address":48,
+               "detail":"firmware 0.2.1, boot 4"})
     );
 
-    let failed = ActuatorEvent::Done {
-        id: "c-2".into(),
-        node: 2,
-        action: ActionKind::On,
-        result: ActionResult::failed(FailReason::DeadlineExceeded),
+    let slot = ClientEvent::Node {
+        node: 3,
+        address: 0x30,
+        slot: 2,
+        kind: granite_proto::EventKind::OvLatched,
+        uptime_s: 12,
     };
-    assert!(matches!(
-        event_from_actuator(&failed, 1).unwrap().kind,
-        EventKind::ActionFailed { .. }
-    ));
+    let ev = event_from_client(&slot, 1).expect("a published event");
+    assert_eq!(
+        serde_json::from_str::<Value>(&ev.to_json().unwrap()).unwrap(),
+        json!({"v":1,"ts":1,"kind":"plane","what":"ov_latched","address":48,
+               "node":3,"detail":"ov_latched"})
+    );
 
-    let fault = ActuatorEvent::Fault {
-        id: None,
-        node: None,
-        fault: FaultKind::Expander,
+    let unit = ClientEvent::Unit {
+        address: 0x31,
+        unit: 2,
+        kind: granite_proto::EventKind::UnitHotSwapLatchedOff,
+        uptime_s: 12,
     };
-    assert!(matches!(
-        event_from_actuator(&fault, 1).unwrap().kind,
-        EventKind::Fault { .. }
-    ));
+    let ev = event_from_client(&unit, 2).expect("a published event");
+    let v: Value = serde_json::from_str(&ev.to_json().unwrap()).unwrap();
+    assert_eq!(v["unit"], json!(2));
+    assert_eq!(v["what"], json!("unit_hot_swap_latched_off"));
 
-    // Press bookkeeping is log-only.
+    // A finished job is answered by the ack and by action_done, not by a
+    // plane event.
     assert!(
-        event_from_actuator(
-            &ActuatorEvent::PressStart {
-                id: "c".into(),
-                node: 1,
-                switch: Switch::Pwr,
-                duration_ms: 250,
-                deadline_ms: 750,
+        event_from_client(
+            &ClientEvent::JobFinished {
+                id: 1,
+                outcome: JobOutcome::Done,
+                code: None,
             },
             1
         )
         .is_none()
+    );
+}
+
+#[test]
+fn a_finished_job_becomes_an_ack_and_an_event() {
+    let mut log = JobLog::new();
+    log.note(5, "c-7", CommandKind::ForceOff, Target::Node(2), &[2], 100);
+    let finished = FinishedJob {
+        id: 5,
+        command: PlaneJob::Node(NodeCommand::force_off(2)),
+        outcome: JobOutcome::Done,
+        code: Some(granite_proto::ResultCode::Ok),
+        submitted_ms: 100,
+        finished_ms: 900,
+    };
+    let done = log.finish(&finished, 900);
+    assert_eq!(
+        serde_json::from_str::<Value>(&done.reply.to_json().unwrap()).unwrap(),
+        json!({"v":1,"id":"c-7","ok":true,"result":"done","error":null,"job":5})
+    );
+    assert_eq!(
+        serde_json::from_str::<Value>(&Event::new(900, done.event).to_json().unwrap()).unwrap(),
+        json!({"v":1,"ts":900,"kind":"action_done","id":"c-7","node":2,
+               "action":"force_off","result":"done"})
     );
 }
 
@@ -399,7 +469,7 @@ fn fired_rules_become_published_events() {
         rule_id: 2,
         name: "leak float closed".into(),
         action: RuleAction::Act {
-            kind: ActionKind::ForceOff,
+            kind: CommandKind::ForceOff,
         },
         target: Target::All,
         value: Some(1),
@@ -431,10 +501,47 @@ fn status_and_lwt_fixtures() {
 #[test]
 fn state_payload_shape() {
     let mut o = Observed::new();
-    o.nodes[0].led = Some(true);
-    o.nodes[0].state = granite_core::node::NodeState::On;
-    o.nodes[1].led = Some(false);
-    o.nodes[1].state = granite_core::node::NodeState::Off;
+    let mut plane = PlaneObs::of_plane(&Plane::new(0x30));
+    plane.plane_type = "pp48_chained".into();
+    plane.firmware = "0.2.1".into();
+    plane.bus_volts = 1_204;
+    plane.core_temperature = 352;
+    plane.boot_count = 3;
+    plane.uptime_s = 77;
+    plane.image_state = "confirmed".into();
+    plane.units = vec![UnitObs {
+        unit: 0,
+        present: true,
+        volts: 1_200,
+        amps: 4_149,
+        watts: 4_980,
+        temperature: 301,
+        ..UnitObs::default()
+    }];
+    o.planes.push(plane);
+
+    let (address, slot) = granite_core::plane::node_location(1).unwrap();
+    let mut node = NodeObs::unknown(1, address, slot);
+    node.present = true;
+    node.power = PowerState::On;
+    node.host = HostState::On;
+    node.telemetry.volts = 4_804;
+    node.telemetry.amps = 1_049;
+    node.telemetry.watts = 504;
+    node.telemetry.watts_min = 120;
+    node.telemetry.watts_max = 910;
+    node.telemetry.temperature = 314;
+    node.telemetry.energy_joules = 7_300;
+    node.telemetry.module_class = 2;
+    o.nodes.push(node);
+
+    let (address, slot) = granite_core::plane::node_location(2).unwrap();
+    let mut off = NodeObs::unknown(2, address, slot);
+    off.present = true;
+    off.power = PowerState::Off;
+    off.faults.ov_latched = true;
+    o.nodes.push(off);
+
     o.probes.push(ProbeObs {
         rom: 0x28_1234_5678_9abc,
         name: "inlet".into(),
@@ -448,34 +555,107 @@ fn state_payload_shape() {
         ts_ms: 10,
     });
     o.board_temp = Stamped::new(Some(3_100), 10);
-    o.vin_mv = Stamped::new(Some(19_120), 10);
+    o.vin_mv = Stamped::new(Some(12_120), 10);
     o.dry_in = Stamped::new(Some(0b0101), 10);
     o.link_up = Stamped::new(true, 10);
     o.mqtt_connected = Stamped::new(true, 10);
     o.uptime_s = Stamped::new(99, 10);
 
-    let state = State::from_observed(&o, &NodesCfg::default(), 1_234);
+    let mut cfg = NodesCfg::default();
+    cfg.nodes.push(NodeSettings {
+        node: 1,
+        name: "head".into(),
+        ..NodeSettings::for_node(1)
+    });
+
+    let state = State::from_observed(&o, &cfg, 1_234);
     let v: Value = serde_json::from_str(&state.to_json().unwrap()).unwrap();
 
     assert_eq!(v["v"], json!(1));
     assert_eq!(v["ts"], json!(1234));
-    assert_eq!(v["nodes"].as_array().unwrap().len(), 8);
+    // Only present nodes are listed (ADR 0004 decision 2).
+    assert_eq!(v["nodes"].as_array().unwrap().len(), 2);
     assert_eq!(v["nodes"][0]["node"], json!(1));
-    assert_eq!(v["nodes"][0]["name"], json!("node1"));
-    assert_eq!(v["nodes"][0]["state"], json!("on"));
-    assert_eq!(v["nodes"][0]["led"], json!(true));
-    assert_eq!(v["nodes"][1]["state"], json!("off"));
-    assert_eq!(v["nodes"][7]["state"], json!("unknown"));
+    assert_eq!(v["nodes"][0]["name"], json!("head"));
+    assert_eq!(v["nodes"][0]["plane"], json!(0));
+    assert_eq!(v["nodes"][0]["slot"], json!(0));
+    assert_eq!(v["nodes"][0]["unit"], json!(0));
+    assert_eq!(v["nodes"][0]["power"], json!("on"));
+    assert_eq!(v["nodes"][0]["host"], json!("on"));
+    // Rounded telemetry: 48.0 V, 1.0 A, 50 W, 31 C, 2 Wh.
+    assert_eq!(v["nodes"][0]["v"], json!(48.0));
+    assert_eq!(v["nodes"][0]["a"], json!(1.0));
+    assert_eq!(v["nodes"][0]["w"], json!(50));
+    assert_eq!(v["nodes"][0]["w_min"], json!(12));
+    assert_eq!(v["nodes"][0]["w_max"], json!(91));
+    assert_eq!(v["nodes"][0]["temp_c"], json!(31));
+    assert_eq!(v["nodes"][0]["energy_wh"], json!(2));
+    assert_eq!(v["nodes"][0]["module_class"], json!(2));
+    assert_eq!(v["nodes"][1]["name"], json!("node2"));
+    assert_eq!(v["nodes"][1]["power"], json!("off"));
+    assert_eq!(v["nodes"][1]["host"], json!("unknown"));
+    assert_eq!(v["nodes"][1]["faults"], json!(["ov_latched"]));
+
+    assert_eq!(v["planes"].as_array().unwrap().len(), 1);
+    assert_eq!(v["planes"][0]["plane"], json!(0));
+    assert_eq!(v["planes"][0]["address"], json!(48));
+    assert_eq!(v["planes"][0]["type"], json!("pp48_chained"));
+    assert_eq!(v["planes"][0]["firmware"], json!("0.2.1"));
+    assert_eq!(v["planes"][0]["bus_v"], json!(12.0));
+    assert_eq!(v["planes"][0]["temp_c"], json!(35));
+    assert_eq!(v["planes"][0]["boot_count"], json!(3));
+    assert_eq!(v["planes"][0]["units"][0]["present"], json!(true));
+    assert_eq!(v["planes"][0]["units"][0]["v"], json!(12.0));
+    assert_eq!(v["planes"][0]["units"][0]["a"], json!(4.1));
+    assert_eq!(v["planes"][0]["units"][0]["w"], json!(498));
+
     assert_eq!(v["probes"][0]["slot"], json!(1));
     assert_eq!(v["probes"][0]["rom"], json!("0028123456789abc"));
     assert_eq!(v["probes"][0]["temp_c"], json!(25.37));
     assert_eq!(v["probes"][1]["temp_c"], Value::Null);
     assert_eq!(v["board_temp_c"], json!(31.0));
-    assert_eq!(v["vin_v"], json!(19.12));
+    assert_eq!(v["vin_v"], json!(12.12));
     assert_eq!(v["dry_in"], json!([true, false, true, false]));
     assert_eq!(v["link_up"], json!(true));
     assert_eq!(v["mqtt_connected"], json!(true));
     assert_eq!(v["uptime_s"], json!(99));
+}
+
+#[test]
+fn rounded_telemetry_does_not_move_on_noise() {
+    let mut o = Observed::new();
+    let (address, slot) = granite_core::plane::node_location(1).unwrap();
+    let mut node = NodeObs::unknown(1, address, slot);
+    node.present = true;
+    node.power = PowerState::On;
+    node.telemetry.volts = 4_800;
+    node.telemetry.amps = 1_000;
+    node.telemetry.watts = 480;
+    node.telemetry.energy_joules = 7_200;
+    o.nodes.push(node);
+    let before = State::from_observed(&o, &NodesCfg::default(), 0)
+        .to_json()
+        .unwrap();
+
+    // A few millivolts, a few milliamps, a tenth of a watt and a minute
+    // of energy at 50 W: nothing a dashboard needs to hear about.
+    let node = o.node_mut(1).unwrap();
+    node.telemetry.volts = 4_803;
+    node.telemetry.amps = 1_004;
+    node.telemetry.watts = 483;
+    node.telemetry.energy_joules = 9_000;
+    let after = State::from_observed(&o, &NodesCfg::default(), 0)
+        .to_json()
+        .unwrap();
+    assert_eq!(before, after, "an on-change publisher stays quiet");
+
+    // A real change does show up.
+    let node = o.node_mut(1).unwrap();
+    node.telemetry.watts = 1_480;
+    let changed = State::from_observed(&o, &NodesCfg::default(), 0)
+        .to_json()
+        .unwrap();
+    assert_ne!(before, changed);
 }
 
 #[test]

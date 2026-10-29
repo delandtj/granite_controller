@@ -2,8 +2,11 @@
 //! [`Observed`] once a second, whether or not the broker is reachable.
 //!
 //! Thresholds are in the source's own unit, so nothing has to guess a
-//! scale: temperatures in centi-degrees Celsius, `vin` in millivolts,
-//! booleans as 0/1, `uptime_s` in seconds.
+//! scale: temperatures in centi-degrees Celsius, voltages in millivolts,
+//! currents in milliamperes, power in deciwatts (0.1 W), booleans as
+//! 0/1, `uptime_s` in seconds. The node, plane and unit sources are the
+//! ones ADR 0004 decision 7 adds; they read the same snapshot the
+//! publishers do, so a rule never waits for a plane transaction.
 
 use alloc::string::String;
 use alloc::vec::Vec;
@@ -11,9 +14,9 @@ use core::fmt;
 
 use serde::{Deserialize, Serialize};
 
-use crate::actuator::{ActionArgs, ActionKind, ActionRequest};
+use crate::msg::{Args, Command, CommandKind};
 use crate::observed::Observed;
-use crate::{DRY_COUNT, NODE_COUNT, PROBE_SLOTS, Target};
+use crate::{DRY_COUNT, MAX_NODES, PROBE_SLOTS, Target};
 
 /// Most rules the engine holds (ADR: 16).
 pub const MAX_RULES: usize = 16;
@@ -31,17 +34,72 @@ pub enum Source {
     ProbeMax,
     /// TMP1075, centi-degrees C.
     BoardTemp,
-    /// Bus voltage in millivolts.
+    /// Controller input voltage in millivolts.
     Vin,
     /// Dry contact, 1-based: 1 = closed.
     DryIn {
         /// Input 1..=4.
         n: u8,
     },
-    /// Node power LED, 1-based: 1 = on.
+    /// 1 while a node's rail carries it (power axis `on`).
     NodeOn {
-        /// Node 1..=8.
+        /// Node 1..=64.
         n: u8,
+    },
+    /// 1 while a node's host LED is lit (host axis `on`).
+    NodeHostOn {
+        /// Node 1..=64.
+        n: u8,
+    },
+    /// A node's power axis as a code: 0 unknown, 1 off, 2 on,
+    /// 3 starting, 4 fault, 5 absent.
+    NodePower {
+        /// Node 1..=64.
+        n: u8,
+    },
+    /// A node's host axis as a code: 0 unknown, 1 off, 2 on, 3 sleep.
+    NodeHost {
+        /// Node 1..=64.
+        n: u8,
+    },
+    /// A node's slot voltage in millivolts.
+    NodeVolts {
+        /// Node 1..=64.
+        n: u8,
+    },
+    /// A node's slot current in milliamperes.
+    NodeAmps {
+        /// Node 1..=64.
+        n: u8,
+    },
+    /// A node's slot power in deciwatts.
+    NodeWatts {
+        /// Node 1..=64.
+        n: u8,
+    },
+    /// A node's slot temperature in centi-degrees C.
+    NodeTemp {
+        /// Node 1..=64.
+        n: u8,
+    },
+    /// A plane's core input (bus) voltage in millivolts.
+    PlaneBusVolts {
+        /// Plane 0..=7.
+        p: u8,
+    },
+    /// A unit board's input current in milliamperes.
+    UnitAmps {
+        /// Plane 0..=7.
+        p: u8,
+        /// Unit 0..=3.
+        u: u8,
+    },
+    /// A unit board's input power in deciwatts.
+    UnitWatts {
+        /// Plane 0..=7.
+        p: u8,
+        /// Unit 0..=3.
+        u: u8,
     },
     /// 1 while the MQTT session is up.
     MqttConnected,
@@ -71,12 +129,19 @@ impl Source {
                 }
                 o.dry(n).map(i32::from)
             }
-            Source::NodeOn { n } => {
-                if n == 0 || n as usize > NODE_COUNT {
-                    return None;
-                }
-                o.node_led(n).map(i32::from)
+            Source::NodeOn { n } => node(o, n).map(|x| i32::from(x.is_on())),
+            Source::NodeHostOn { n } => {
+                node(o, n).map(|x| i32::from(x.host == crate::plane::model::HostState::On))
             }
+            Source::NodePower { n } => node(o, n).map(|x| i32::from(power_code(x.power))),
+            Source::NodeHost { n } => node(o, n).map(|x| i32::from(host_code(x.host))),
+            Source::NodeVolts { n } => node(o, n).map(|x| i32::from(x.telemetry.volts) * 10),
+            Source::NodeAmps { n } => node(o, n).map(|x| i32::from(x.telemetry.amps)),
+            Source::NodeWatts { n } => node(o, n).map(|x| i32::from(x.telemetry.watts)),
+            Source::NodeTemp { n } => node(o, n).map(|x| i32::from(x.telemetry.temperature) * 10),
+            Source::PlaneBusVolts { p } => o.plane(p).map(|plane| i32::from(plane.bus_volts) * 10),
+            Source::UnitAmps { p, u } => o.unit(p, u).map(|unit| i32::from(unit.amps)),
+            Source::UnitWatts { p, u } => o.unit(p, u).map(|unit| i32::from(unit.watts)),
             Source::MqttConnected => {
                 if o.mqtt_connected.ts_ms == 0 {
                     None
@@ -98,12 +163,75 @@ impl Source {
     /// Unit hint for the UI and the generated documentation.
     pub const fn unit(&self) -> &'static str {
         match self {
-            Source::Probe { .. } | Source::ProbeMax | Source::BoardTemp => "centi-degrees C",
-            Source::Vin => "mV",
-            Source::DryIn { .. } | Source::NodeOn { .. } => "0/1",
-            Source::MqttConnected | Source::LinkUp => "0/1",
+            Source::Probe { .. }
+            | Source::ProbeMax
+            | Source::BoardTemp
+            | Source::NodeTemp { .. } => "centi-degrees C",
+            Source::Vin | Source::NodeVolts { .. } | Source::PlaneBusVolts { .. } => "mV",
+            Source::NodeAmps { .. } | Source::UnitAmps { .. } => "mA",
+            Source::NodeWatts { .. } | Source::UnitWatts { .. } => "0.1 W",
+            Source::NodePower { .. } => "0 unknown, 1 off, 2 on, 3 starting, 4 fault, 5 absent",
+            Source::NodeHost { .. } => "0 unknown, 1 off, 2 on, 3 sleep",
+            Source::DryIn { .. }
+            | Source::NodeOn { .. }
+            | Source::NodeHostOn { .. }
+            | Source::MqttConnected
+            | Source::LinkUp => "0/1",
             Source::UptimeS => "s",
         }
+    }
+
+    /// True when the ids the source names are in range.
+    pub const fn is_valid(&self) -> bool {
+        match *self {
+            Source::Probe { n } => n != 0 && n as usize <= PROBE_SLOTS,
+            Source::DryIn { n } => n != 0 && n as usize <= DRY_COUNT,
+            Source::NodeOn { n }
+            | Source::NodeHostOn { n }
+            | Source::NodePower { n }
+            | Source::NodeHost { n }
+            | Source::NodeVolts { n }
+            | Source::NodeAmps { n }
+            | Source::NodeWatts { n }
+            | Source::NodeTemp { n } => n != 0 && n as usize <= MAX_NODES,
+            Source::PlaneBusVolts { p } => crate::is_plane(p),
+            Source::UnitAmps { p, u } | Source::UnitWatts { p, u } => {
+                crate::is_plane(p) && crate::is_unit(u)
+            }
+            _ => true,
+        }
+    }
+}
+
+/// One node of a snapshot, if it is a node id and the node is there.
+fn node(o: &Observed, n: u8) -> Option<&crate::observed::NodeObs> {
+    if n == 0 || n as usize > MAX_NODES {
+        return None;
+    }
+    o.node(n)
+}
+
+/// The power axis as the Modbus map and the rules encode it.
+pub const fn power_code(power: crate::plane::model::PowerState) -> u8 {
+    use crate::plane::model::PowerState as P;
+    match power {
+        P::Unknown => 0,
+        P::Off => 1,
+        P::On => 2,
+        P::Starting => 3,
+        P::Fault => 4,
+        P::Absent => 5,
+    }
+}
+
+/// The host axis as the Modbus map and the rules encode it.
+pub const fn host_code(host: crate::plane::model::HostState) -> u8 {
+    use crate::plane::model::HostState as H;
+    match host {
+        H::Unknown => 0,
+        H::Off => 1,
+        H::On => 2,
+        H::Sleep => 3,
     }
 }
 
@@ -147,10 +275,12 @@ impl fmt::Display for Op {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "action", rename_all = "snake_case")]
 pub enum RuleAction {
-    /// Run an actuator action on the target.
+    /// Run a verb on the target. Any of the node, unit or plane verbs
+    /// of ADR 0004 decision 4 (decision 7: "new actions are the new
+    /// verbs").
     Act {
-        /// Which action.
-        kind: ActionKind,
+        /// Which verb.
+        kind: CommandKind,
     },
     /// Publish an event only.
     Event,
@@ -252,24 +382,23 @@ pub struct Fired {
 }
 
 impl Fired {
-    /// The actuator request this firing makes, if it acts.
+    /// The command this firing submits, if it acts.
     ///
     /// `force_off` is the safety action (leak, over-temperature), so it
-    /// does what a manual command would refuse: it acts on a node whose
-    /// state is `unknown` (power-LED sense broken is no reason to leave a
-    /// node running in a leak) and takes over a node that is busy with
-    /// something else. Every other action follows the usual rules.
-    pub fn request(&self) -> Option<ActionRequest> {
+    /// carries `force`: a node the controller is unsure about is still
+    /// commanded off, because a stale snapshot is no reason to leave a
+    /// node running in a leak. Every other verb follows the usual rules.
+    pub fn command(&self) -> Option<Command> {
         let RuleAction::Act { kind } = self.action else {
             return None;
         };
-        let safety = kind == ActionKind::ForceOff;
+        let safety = kind == CommandKind::ForceOff;
         Some(
-            ActionRequest::new(alloc::format!("rule{}", self.rule_id), kind, self.target)
-                .with_args(ActionArgs {
+            Command::new(alloc::format!("rule-{}", self.rule_id), kind)
+                .with_target(self.target)
+                .with_args(Args {
                     force: safety,
-                    preempt: safety,
-                    ..ActionArgs::default()
+                    ..Args::default()
                 }),
         )
     }
@@ -381,10 +510,7 @@ impl RuleEngine {
             // Re-arm first, so a rule that cleared in the same tick in
             // which it would fire again behaves predictably. A missing
             // value never clears anything.
-            if !st.armed
-                && rule.rearm == Rearm::Auto
-                && value.is_some_and(|v| cleared(&rule, v))
-            {
+            if !st.armed && rule.rearm == Rearm::Auto && value.is_some_and(|v| cleared(&rule, v)) {
                 st.armed = true;
             }
 
@@ -445,7 +571,7 @@ pub fn default_rules() -> Vec<Rule> {
             hysteresis: 500,
             hold_s: 30,
             action: RuleAction::Act {
-                kind: ActionKind::ForceOff
+                kind: CommandKind::ForceOff
             },
             target: Target::All,
             rearm: Rearm::Auto,
@@ -462,7 +588,7 @@ pub fn default_rules() -> Vec<Rule> {
             hysteresis: 0,
             hold_s: 2,
             action: RuleAction::Act {
-                kind: ActionKind::ForceOff
+                kind: CommandKind::ForceOff
             },
             target: Target::All,
             rearm: Rearm::Manual,

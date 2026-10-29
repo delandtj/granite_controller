@@ -2,8 +2,10 @@
 //! missing values, and the three disabled defaults.
 
 use granite_core::Target;
-use granite_core::actuator::ActionKind;
+use granite_core::msg::CommandKind;
+use granite_core::observed::NodeObs;
 use granite_core::observed::{Observed, ProbeObs, Stamped};
+use granite_core::plane::model::PowerState;
 use granite_core::rules::{
     MAX_RULES, Missing, Op, Rearm, Rule, RuleAction, RuleEngine, Source, default_rules,
 };
@@ -30,7 +32,7 @@ fn over_temp_rule() -> Rule {
         hysteresis: 500,
         hold_s: 30,
         action: RuleAction::Act {
-            kind: ActionKind::ForceOff,
+            kind: CommandKind::ForceOff,
         },
         target: Target::All,
         rearm: Rearm::Auto,
@@ -52,7 +54,7 @@ fn the_condition_must_hold_for_hold_s() {
     assert_eq!(
         fired[0].action,
         RuleAction::Act {
-            kind: ActionKind::ForceOff
+            kind: CommandKind::ForceOff
         }
     );
     assert!(
@@ -111,7 +113,7 @@ fn manual_rearm_needs_an_ack() {
         threshold: 1,
         hold_s: 2,
         action: RuleAction::Act {
-            kind: ActionKind::ForceOff,
+            kind: CommandKind::ForceOff,
         },
         rearm: Rearm::Manual,
         ..Rule::default()
@@ -190,10 +192,8 @@ fn changed_fires_once_per_change() {
     };
     let mut e = RuleEngine::with_rules(vec![rule]);
 
-    let mut on = Observed::new();
-    on.nodes[0].led = Some(true);
-    let mut off = Observed::new();
-    off.nodes[0].led = Some(false);
+    let on = snapshot_with_node(1, PowerState::On);
+    let off = snapshot_with_node(1, PowerState::Off);
 
     assert!(
         e.tick(0, &on).is_empty(),
@@ -231,7 +231,7 @@ fn the_shipped_defaults_are_the_adr_examples_and_all_disabled() {
     assert_eq!(
         rules[0].action,
         RuleAction::Act {
-            kind: ActionKind::ForceOff
+            kind: CommandKind::ForceOff
         }
     );
     assert_eq!(rules[0].target, Target::All);
@@ -299,7 +299,10 @@ fn a_missing_value_trips_only_when_asked() {
     let no_probe = Observed::new();
     let mut ignore = RuleEngine::with_rules(vec![over_temp_rule()]);
     ignore.tick(0, &no_probe);
-    assert!(ignore.tick(60_000, &no_probe).is_empty(), "ignore waits for a value");
+    assert!(
+        ignore.tick(60_000, &no_probe).is_empty(),
+        "ignore waits for a value"
+    );
 
     let mut rule = over_temp_rule();
     rule.missing = Missing::Trip;
@@ -325,4 +328,104 @@ fn the_shipped_over_temperature_rule_trips_on_no_probe() {
     let old = r#"{"id":9,"enabled":true,"source":"vin","op":"<","threshold":1,"action":"event"}"#;
     let rule: Rule = serde_json::from_str(old).unwrap();
     assert_eq!(rule.missing, Missing::Ignore);
+}
+
+/// A snapshot with one node of plane 0 in a given rail state.
+fn snapshot_with_node(node: granite_core::NodeId, power: PowerState) -> Observed {
+    let (address, slot) = granite_core::plane::node_location(node).expect("a node id");
+    let mut obs = NodeObs::unknown(node, address, slot);
+    obs.present = true;
+    obs.power = power;
+    obs.ts_ms = 10;
+    let mut observed = Observed::new();
+    observed.nodes.push(obs);
+    observed
+}
+
+#[test]
+fn the_new_sources_read_the_plane_model() {
+    use granite_core::observed::{PlaneObs, UnitObs};
+    use granite_core::plane::Plane;
+
+    let mut observed = snapshot_with_node(3, PowerState::On);
+    let node = observed.node_mut(3).expect("node 3");
+    node.host = granite_core::plane::model::HostState::Sleep;
+    node.telemetry.volts = 4_810;
+    node.telemetry.amps = 1_250;
+    node.telemetry.watts = 601;
+    node.telemetry.temperature = 412;
+
+    let mut plane = PlaneObs::of_plane(&Plane::new(0x30));
+    plane.bus_volts = 1_205;
+    plane.units = vec![UnitObs {
+        unit: 0,
+        present: true,
+        amps: 3_300,
+        watts: 1_580,
+        ..UnitObs::default()
+    }];
+    observed.planes.push(plane);
+
+    for (source, expected) in [
+        (Source::NodeOn { n: 3 }, 1),
+        (Source::NodeHostOn { n: 3 }, 0),
+        (Source::NodePower { n: 3 }, 2),
+        (Source::NodeHost { n: 3 }, 3),
+        (Source::NodeVolts { n: 3 }, 48_100),
+        (Source::NodeAmps { n: 3 }, 1_250),
+        (Source::NodeWatts { n: 3 }, 601),
+        (Source::NodeTemp { n: 3 }, 4_120),
+        (Source::PlaneBusVolts { p: 0 }, 12_050),
+        (Source::UnitAmps { p: 0, u: 0 }, 3_300),
+        (Source::UnitWatts { p: 0, u: 0 }, 1_580),
+    ] {
+        assert_eq!(source.read(&observed), Some(expected), "{source:?}");
+        assert!(source.is_valid());
+    }
+
+    // A node, plane or unit that is not there has no value, which makes
+    // every comparison false.
+    assert_eq!(Source::NodeWatts { n: 4 }.read(&observed), None);
+    assert_eq!(Source::PlaneBusVolts { p: 2 }.read(&observed), None);
+    assert_eq!(Source::UnitAmps { p: 0, u: 2 }.read(&observed), None);
+    assert!(!Source::NodeOn { n: 65 }.is_valid());
+    assert!(!Source::UnitWatts { p: 8, u: 0 }.is_valid());
+}
+
+#[test]
+fn a_firing_rule_builds_the_command_it_asks_for() {
+    use granite_core::rules::Fired;
+
+    let fired = Fired {
+        rule_id: 4,
+        name: String::from("leak"),
+        action: RuleAction::Act {
+            kind: CommandKind::ForceOff,
+        },
+        target: granite_core::Target::Node(9),
+        value: Some(1),
+        rearm: granite_core::rules::Rearm::Manual,
+    };
+    let cmd = fired.command().expect("an acting rule");
+    assert_eq!(cmd.id, "rule-4");
+    assert_eq!(cmd.action, CommandKind::ForceOff);
+    assert_eq!(cmd.target, granite_core::Target::Node(9));
+    assert!(cmd.args.force, "the safety verb acts on a doubtful node");
+
+    let plane_verb = Fired {
+        action: RuleAction::Act {
+            kind: CommandKind::UnitReset,
+        },
+        target: granite_core::Target::Unit { plane: 1, unit: 2 },
+        ..fired.clone()
+    };
+    let cmd = plane_verb.command().expect("a plane verb acts too");
+    assert_eq!(cmd.action, CommandKind::UnitReset);
+    assert!(!cmd.args.force);
+
+    let event_only = Fired {
+        action: RuleAction::Event,
+        ..fired
+    };
+    assert!(event_only.command().is_none());
 }

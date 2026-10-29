@@ -1537,14 +1537,14 @@ mod tests {
     #[test]
     fn a_command_to_an_unknown_plane_fails_at_once() {
         let mut client = PlaneClient::new(7);
-        let id = client.submit(100, NodeCommand::On { node: 1 });
+        let id = client.submit(100, NodeCommand::on(1));
         let finished = client.drain_jobs();
         assert_eq!(finished.len(), 1);
         assert_eq!(finished[0].id, id);
         assert_eq!(finished[0].outcome, JobOutcome::Absent);
         assert!(client.jobs_running() == 0);
         // And a node id that is not one at all.
-        client.submit(100, NodeCommand::On { node: 200 });
+        client.submit(100, NodeCommand::on(200));
         assert_eq!(client.drain_jobs()[0].outcome, JobOutcome::Absent);
     }
 }

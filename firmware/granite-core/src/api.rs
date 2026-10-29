@@ -11,9 +11,13 @@
 //!
 //! The API speaks the same `Command` vocabulary as MQTT: `POST
 //! /api/v1/cmd` takes exactly the payload of the `.../cmd` topic, and
-//! `POST /api/v1/nodes/<n>/<action>` is sugar for it. Both go through
+//! `POST /api/v1/nodes/<target>/<action>` is sugar for it, where
+//! `<target>` is a node id, `all`, `planeN` or `planeN.unitU` and
+//! `<action>` is any verb of ADR 0004 decision 4. Both go through
 //! [`Dispatcher`], which is the one hook into
-//! [`crate::dispatch::dispatch`].
+//! [`crate::dispatch::dispatch`]. A verb is accepted and finishes on the
+//! plane later (decision 6): the reply says `accepted` with the job id,
+//! and `?wait=1` holds the reply until the plane reports.
 //!
 //! Authentication (ADR component 8): one admin password, PBKDF2-HMAC-
 //! SHA256 with [`PBKDF2_ITERS`] iterations and a per-device salt; a
@@ -34,9 +38,7 @@ use alloc::vec::Vec;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-use crate::NodeId;
 use crate::Target;
-use crate::actuator::ActionKind;
 use crate::config::{ApiToken, Config, Secrets, Section};
 use crate::hal::BootReason;
 use crate::msg::{Args, Command, CommandKind, EventKind, PROTOCOL_VERSION, Reply, State};
@@ -1038,13 +1040,20 @@ pub enum Route {
     State,
     /// `GET /api/v1/nodes`.
     Nodes,
-    /// `POST /api/v1/nodes/<n|all>/<action>`.
+    /// `POST /api/v1/nodes/<target>/<action>`: `<target>` is a node id,
+    /// `all`, `planeN` or `planeN.unitU`.
     NodeAction {
-        /// Target node, `None` for `all`.
-        node: Option<NodeId>,
-        /// The actuator action.
-        action: ActionKind,
+        /// What to act on.
+        target: Target,
+        /// The verb.
+        action: CommandKind,
     },
+    /// `GET /api/v1/planes`.
+    Planes,
+    /// `GET /api/v1/planes/<n>`.
+    Plane(u8),
+    /// `GET /api/v1/planes/<n>/units`.
+    PlaneUnits(u8),
     /// `POST /api/v1/cmd`.
     Cmd,
     /// `GET`/`PUT /api/v1/config`.
@@ -1156,9 +1165,12 @@ pub fn route_of(path: &str) -> Option<Route> {
         ["state"] => Route::State,
         ["nodes"] => Route::Nodes,
         ["nodes", target, action] => Route::NodeAction {
-            node: parse_target(target)?,
-            action: ActionKind::from_str_opt(action)?,
+            target: Target::parse(target)?,
+            action: CommandKind::from_str_opt(action).filter(|k| k.is_plane_verb())?,
         },
+        ["planes"] => Route::Planes,
+        ["planes", n] => Route::Plane(parse_plane(n)?),
+        ["planes", n, "units"] => Route::PlaneUnits(parse_plane(n)?),
         ["cmd"] => Route::Cmd,
         ["config"] => Route::Config,
         ["config", "export"] => Route::ConfigExport,
@@ -1188,13 +1200,10 @@ pub fn route_of(path: &str) -> Option<Route> {
     Some(route)
 }
 
-/// `1`..`8` or `all`.
-fn parse_target(s: &str) -> Option<Option<NodeId>> {
-    if s.eq_ignore_ascii_case("all") {
-        return Some(None);
-    }
-    let n: NodeId = s.parse().ok()?;
-    crate::is_node(n).then_some(Some(n))
+/// A plane number, `0`..`7`.
+fn parse_plane(s: &str) -> Option<u8> {
+    let n: u8 = s.trim().parse().ok()?;
+    crate::is_plane(n).then_some(n)
 }
 
 /// Route one request.
@@ -1257,7 +1266,10 @@ fn dispatch_route(route: Route, req: &ApiRequest, ctx: &mut ApiCtx<'_>) -> ApiRe
             }
         }
         (Route::Nodes, Get | Head) => nodes(ctx),
-        (Route::NodeAction { node, action }, Post) => node_action(*node, *action, req, ctx),
+        (Route::NodeAction { target, action }, Post) => node_action(*target, *action, req, ctx),
+        (Route::Planes, Get | Head) => planes(ctx),
+        (Route::Plane(n), Get | Head) => plane(*n, ctx),
+        (Route::PlaneUnits(n), Get | Head) => plane_units(*n, ctx),
         (Route::Cmd, Post) => raw_command(req, ctx),
         (Route::Config, Get | Head) => match ctx.config.export_json() {
             Ok(text) => json_text(200, text),
@@ -1592,8 +1604,8 @@ fn status(ctx: &mut ApiCtx<'_>) -> ApiResponse {
     }))
 }
 
-/// `GET /api/v1/nodes`: names, order, policy and live state together,
-/// which is what the Nodes page needs.
+/// `GET /api/v1/nodes`: names, policies and live state together, which
+/// is what the Nodes page needs.
 fn nodes(ctx: &mut ApiCtx<'_>) -> ApiResponse {
     let state = State::from_observed(ctx.observed, &ctx.config.nodes, ctx.now_ms);
     let settings = match serde_json::to_value(&ctx.config.nodes) {
@@ -1604,18 +1616,66 @@ fn nodes(ctx: &mut ApiCtx<'_>) -> ApiResponse {
         Ok(v) => v,
         Err(e) => return ApiResponse::error(500, e.to_string()),
     };
-    ApiResponse::ok(json!({"ok": true, "settings": settings, "nodes": live}))
+    ApiResponse::ok(json!({
+        "ok": true,
+        "settings": settings,
+        "nodes": live,
+        "verbs": CommandKind::PLANE_VERBS.map(|v| v.as_str()),
+    }))
+}
+
+/// `GET /api/v1/planes`: every plane that answers, with its units
+/// (ADR 0004 decision 7: "new read routes for planes and units").
+fn planes(ctx: &mut ApiCtx<'_>) -> ApiResponse {
+    let state = State::from_observed(ctx.observed, &ctx.config.nodes, ctx.now_ms);
+    match serde_json::to_value(&state.planes) {
+        Ok(v) => ApiResponse::ok(json!({
+            "ok": true,
+            "planes": v,
+            "update_policy": ctx.config.nodes.plane_update.as_str(),
+        })),
+        Err(e) => ApiResponse::error(500, e.to_string()),
+    }
+}
+
+/// `GET /api/v1/planes/<n>`: one plane, its units and its nodes.
+fn plane(number: u8, ctx: &mut ApiCtx<'_>) -> ApiResponse {
+    let Some(obs) = ctx.observed.plane(number) else {
+        return ApiResponse::error(404, format!("plane {number} is not present"));
+    };
+    let nodes: Vec<Value> = ctx
+        .observed
+        .nodes
+        .iter()
+        .filter(|n| n.plane == number)
+        .filter_map(|n| serde_json::to_value(n).ok())
+        .collect();
+    match serde_json::to_value(obs) {
+        Ok(v) => ApiResponse::ok(json!({"ok": true, "plane": v, "nodes": nodes})),
+        Err(e) => ApiResponse::error(500, e.to_string()),
+    }
+}
+
+/// `GET /api/v1/planes/<n>/units`: the unit boards of one plane.
+fn plane_units(number: u8, ctx: &mut ApiCtx<'_>) -> ApiResponse {
+    let Some(obs) = ctx.observed.plane(number) else {
+        return ApiResponse::error(404, format!("plane {number} is not present"));
+    };
+    match serde_json::to_value(&obs.units) {
+        Ok(v) => ApiResponse::ok(json!({"ok": true, "plane": number, "units": v})),
+        Err(e) => ApiResponse::error(500, e.to_string()),
+    }
 }
 
 /// Longest a node action may hold its HTTP reply with `?wait=1`.
 ///
-/// A node action is queued, so the honest answer is `accepted` and the
-/// outcome arrives in `state.nodes[i].last_action` (which the setup page
-/// polls). `?wait=1` is the convenience for scripts: it holds the reply
-/// until the action is done. The cap is deliberately well under a
-/// `t_soft_off_ms` of two minutes, because on the board the handler runs
-/// on the one HTTPS server task and nothing else is answered while it
-/// waits.
+/// A verb becomes a plane job, so the honest answer is `accepted` with
+/// the job id and the outcome arrives in `state.nodes[].last_job` (which
+/// the setup page polls). `?wait=1` is the convenience for scripts: it
+/// holds the reply until the plane reports. The cap is deliberately well
+/// under a soft-off window of two minutes, because on the board the
+/// handler runs on the one HTTPS server task and nothing else is
+/// answered while it waits.
 pub const ACTION_WAIT_MS: u32 = 30_000;
 
 /// True when the request asked for the outcome rather than the ack
@@ -1629,12 +1689,12 @@ pub fn wants_wait(req: &ApiRequest) -> bool {
     matches!(req.param("wait"), Some("1" | "true" | "yes"))
 }
 
-/// `POST /api/v1/nodes/<n|all>/<action>`: the same `Command` the MQTT
-/// `cmd` topic takes, with the action and the target in the path and the
+/// `POST /api/v1/nodes/<target>/<action>`: the same `Command` the MQTT
+/// `cmd` topic takes, with the verb and the target in the path and the
 /// optional `args` object as the body.
 fn node_action(
-    node: Option<NodeId>,
-    action: ActionKind,
+    target: Target,
+    action: CommandKind,
     req: &ApiRequest,
     ctx: &mut ApiCtx<'_>,
 ) -> ApiResponse {
@@ -1649,16 +1709,13 @@ fn node_action(
             Err(e) => return ApiResponse::error(400, format!("bad args: {e}")),
         },
     };
-    let mut cmd = new_command(ctx, CommandKind::of_action(action));
-    cmd.target = match node {
-        Some(n) => Target::Node(n),
-        None => Target::All,
-    };
+    let mut cmd = new_command(ctx, action);
+    cmd.target = target;
     cmd.args = args;
     reply_response(dispatch_action(&cmd, req, ctx))
 }
 
-/// Queue one action and, with `?wait=1`, wait for its outcome instead of
+/// Queue one verb and, with `?wait=1`, wait for its outcome instead of
 /// its ack. A transport that cannot wait, or a wait that ran out of time,
 /// leaves the `accepted` reply as it was.
 fn dispatch_action(cmd: &Command, req: &ApiRequest, ctx: &mut ApiCtx<'_>) -> Reply {
