@@ -2,6 +2,7 @@
 
 **Status**: Proposed
 **Date**: 2026-10-29
+**Updated**: 2026-10-29 (user answers: image integrity, stagger, latches decided; unit glitch state open; press deadline line asked from the hardware, docs/press-deadline-line.md)
 
 Related: docs/adr/0001-48v-power-plane.md (safety rules, TLV message
 format, data flow), docs/adr/0005-chained-plane-boards.md (core + unit
@@ -117,9 +118,12 @@ Two things in the hardware shape the firmware more than the ADRs say:
    present unit that NAKs twice in a row is marked lost (event), its
    channel goes back on the 2 s re-scan. A unit that appears or comes
    back is configured from scratch (expander direction, INA238
-   configuration and power limits) and then gets the core's intended
-   state re-applied: a slot the controller turned OFF stays OFF after
-   a unit glitch (event "unit reset" either way). A bus that stays
+   configuration and power limits) and then put in the state it
+   should be in. What that state is after a glitch is open (user
+   2026-10-29: leaning to ON, i.e. leave the hardware defaults, or the
+   state the slot should have; to work out). Until then: re-apply the
+   OFF of a slot the controller turned OFF, and an event "unit reset"
+   either way. A bus that stays
    stuck (SDA low) gets nine SCL clocks, then a MUX_RST pulse, then
    the channel is skipped until the next re-scan.
 
@@ -347,16 +351,16 @@ fed (a stuck task, the watchdog fed from another)?**
 A: The watchdog is fed only from the bus task, after a full poll cycle
 in which the sequencer also ran. A hung sequencer stalls the cycle. A
 press is also released by the bus task when its deadline has passed,
-not only by the timer that set it. A rev with an expander reset line
-on the chain (one of the three GND pins) would make it hardware; not
-asked for now.
+not only by the timer that set it. A hardware deadline through the chain
+(PRESS_EN, docs/press-deadline-line.md) is asked from the hardware;
+until it exists this is the only bound.
 
 **Q: Unit 2's chain cable is pulled and replugged. What do the slots
 on units 2-4 see?**
 A: Units 2-4 lose 3V3: their expanders reset to inputs, so every slot
 there goes ON (and a slot that was OFF powers up its node) for as long
-as the cable is out. When the units come back the firmware re-applies
-OFF. The plane cannot prevent the ON while the cable is out; that is
+as the cable is out. When the units come back the firmware sets the
+state they should have (decision 4, open). The plane cannot prevent the ON while the cable is out; that is
 the hardware default by design. Events record it.
 
 **Q: How long does it take to see a node's LED blink pattern, and can
@@ -377,21 +381,19 @@ link load and to keep one failure at a time.
 ## Implementation Plan
 
 ### Decisions you will probably want to tweak
-- **Re-apply OFF after a unit glitch.** Choice: yes, the core's
-  intended state wins. Alternative: leave the unit at hardware
-  defaults and report. Cost to change: one branch in discovery.
-- **Image integrity.** Choice: controller verifies the signature, plane
-  checks CRC-32. Alternative: Ed25519 in plane-boot. Cost to change
-  later: high, plane-boot is SWD-only, every deployed plane keeps its
-  bootloader.
-- **Latches never cleared automatically.** Choice: OV latch and unit
-  hot-swap latch need a controller command. Alternative: N retries for
-  the unit hot-swap. Cost: config fields, the protocol has room.
-- **Power-up stagger.** Choice: dropped as a boot behaviour; each unit
-  has its own input and its slots start before the core can act. The
-  stagger stays as a command (stagger on). Alternative: the core holds
-  every slot OFF at boot and releases them in turn, which only works
-  when the core has 3V3 before the units' 48 V. Cost: small.
+- **State after a unit glitch.** Open (user leans to ON / the state
+  the slot should have). Interim: re-apply OFF. Alternative: leave the
+  hardware defaults and report. Cost to change: one branch in
+  discovery.
+- **Image integrity.** Decided (user 2026-10-29): controller verifies
+  the signature, plane checks CRC-32. Alternative: Ed25519 in
+  plane-boot. Cost to change later: high, plane-boot is SWD-only.
+- **Latches never cleared automatically.** Decided (user 2026-10-29):
+  OV latch and unit hot-swap latch need a controller command.
+  Alternative: N retries for the unit hot-swap. Cost: config fields.
+- **Power-up stagger.** Decided (user 2026-10-29): dropped as a boot
+  behaviour; each unit has its own input and its slots start before
+  the core can act. The stagger stays as a command (stagger on).
 - **Flash split.** 16 / 52 / 54 KB. Cost to change: a re-flash over SWD
   of every plane (bootloader and partition table move together).
 
@@ -417,26 +419,22 @@ link load and to keep one failure at a time.
   controller-side tool to push an update (reuse of the controller
   OTA host tool).
 
-Review asks:
-1. Re-apply the core's OFF to a unit that comes back after a glitch:
-   yes / no?
-2. Image integrity: controller-verified + CRC-32 on the plane, or
-   Ed25519 in plane-boot?
-3. Power-up stagger: drop it as a boot behaviour (keep the command), yes / no?
-4. Unit hot-swap latch: controller command only, or automatic retries?
+Review asks: answered 2026-10-29 (integrity, stagger, latches as
+proposed); the state after a unit glitch stays open.
 
 ---
 
 ## Open Questions
 
 **Architecture-changers**
-- [ ] Image integrity on the plane (review ask 2).
-- [ ] An expander reset line in the chain (hardware deadline for
-  presses), at the cost of one GND pin. Default: no.
+- [x] Image integrity: controller-verified, CRC-32 on the plane.
+- [ ] Press deadline line in the chain (PRESS_EN or EXP_RSTN), asked
+  from the hardware: docs/press-deadline-line.md.
 
 **Behavior definers**
-- [ ] Re-apply OFF after a unit glitch (review ask 1).
-- [ ] Unit hot-swap latch policy (review ask 4).
-- [ ] Power-up stagger (review ask 3).
+- [ ] State of a unit's slots after it comes back from a glitch
+  (leaning ON / the state it should be; to work out).
+- [x] Unit hot-swap and OV latches: controller command only.
+- [x] Power-up stagger: dropped, command only.
 - [ ] After a rollback, adopt the intended state too (see the first
   expert question). Default: no in the first release.
