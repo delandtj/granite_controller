@@ -183,8 +183,10 @@ Value types in brackets. Units: V in 10 mV, I in mA, P in 0.1 W, T in
 - 0x50 node on [u8 slot, u16 LED timeout s] (rail on if off, then a PWR
   press if the host LED stays dark; controller ADR 0004 verb `on`)
 - 0x51 node off [u8 slot, u16 timeout s, u8 escalate: 0 none, 1 hold
-  PWR 5 s, 2 cut the rail] (short PWR press, wait for the LED to go
-  dark; controller ADR 0004 verb `off`)
+  PWR 5 s, 2 cut the rail, 3 hold PWR 5 s then cut the rail if the LED
+  is still on] (short PWR press, wait for the LED to go dark, then
+  escalate; timeout 0 skips the short press and escalates at once:
+  controller ADR 0004 verbs `off` and `force_off`)
 
 Result codes (0x16): 0 ok, 1 accepted (running; a later result
 follows), 2 busy, 3 bad argument, 4 conflict (sequence running on that

@@ -1,6 +1,6 @@
 # Controller rev D: nodes on planes
 
-**Status**: Proposed
+**Status**: Proposed (all review asks answered 2026-10-29)
 **Date**: 2026-10-29
 
 Related: firmware/docs/adr/0001-firmware-architecture.md (the rev C
@@ -72,8 +72,8 @@ This repo's firmware targets rev D only.
    | Verb | Meaning | Plane command |
    |---|---|---|
    | on | rail on if needed, then PWR if the host stays dark | node on (new, see below) |
-   | off | soft off: short PWR, wait for the host to go dark | node off (new) with escalate per config |
-   | force_off | cut the rail now | enable 0 |
+   | off | soft off: short PWR, wait for the host to go dark, then force_off | node off (new), escalate 3 |
+   | force_off | hold PWR 5 s; rail cut if the host is still on | node off, timeout 0, escalate 3 |
    | reset | RST press | press RST |
    | cycle | rail off, wait, rail on, PWR if dark | power-cycle (0x47) |
    | press | raw PWR / RST press | press PWR / RST |
@@ -81,10 +81,13 @@ This repo's firmware targets rev D only.
 
    New verbs: `power_on` / `power_off` (rail only, no buttons),
    `clear_latch`, `unit_reset` (unit hot-swap), `plane_reboot`.
-   `force_off` changes meaning: rev C held PWR for 5 s; rev D cuts the
-   rail, the honest "force". Escalation of `off` (none / hold PWR /
-   cut the rail) is a per-node setting, default cut after
-   t_soft_off.
+   `force_off` keeps its rev C meaning (hold PWR 5 s) and adds a rail
+   cut when the host LED is still on after the hold, so it always
+   ends with the node off (user 2026-10-29). `off` escalates to the
+   same after t_soft_off. A node turned off by the hold keeps its
+   standby power; only a node that ignored the button loses it. The
+   escalation is a per-node setting (none / hold / hold then cut),
+   default hold then cut.
 
    Two plane commands are added to ADR 0003 (still Proposed): 0x50
    node on [u8 slot, u16 LED timeout s] and 0x51 node off [u8 slot,
@@ -227,16 +230,15 @@ This repo's firmware targets rev D only.
 
 ### Positive
 - A node shows its real power state, telemetry and faults; force_off
-  is a real power cut.
+  ends with the node off even when the board ignores its button.
 - Up to 64 nodes per controller with no code change.
 - Clients written for rev C verbs keep working.
 
 ### Negative
 - MQTT state and Modbus change shape: map version 2, HA templates to
   update.
-- force_off means something different from rev C (rail cut instead
-  of a 5 s press); clients that relied on the old behaviour see a
-  harder off.
+- force_off can take ~5 s longer than a plain cut when the board
+  ignores the hold.
 - The controller can no longer act on a node without a working plane.
 
 ### Risks
@@ -285,11 +287,10 @@ with the reason. `on` does not reset a unit latch; that is
 ### Decisions you will probably want to tweak
 - **Node id from straps and slot (1-64).** Alternative: config map.
   Cost to change later: every client and the Modbus map.
-- **force_off = rail cut.** Alternative: keep the 5 s PWR hold and add
-  `power_off` for the cut. Cost: small in code, large in client
-  behaviour once deployed.
-- **off escalates to a rail cut by default.** Alternative: escalate to
-  a 5 s hold, or not at all. Cost: a config default.
+- **force_off = 5 s hold, then a rail cut if the LED stays on**, and
+  `off` escalates to it. Decided (user 2026-10-29). Alternatives: a
+  plain rail cut, or the hold alone. Cost to change: the escalate
+  value.
 - **Plane updates manual by default.** Alternative: auto. Cost: a
   config default.
 
@@ -312,7 +313,8 @@ with the reason. `on` does not reset a unit latch; that is
 Review asks (answered 2026-10-29 except 2):
 1. Node id derived from plane straps and slot (1-64), names in config:
    yes.
-2. `force_off` becomes a rail cut (and `off` escalates to it): open.
+2. `force_off`: 5 s hold, then a rail cut if the host is still on;
+   `off` escalates to the same: decided.
 3. Plane firmware updates manual by default, auto as an option: yes.
 4. Rev D hardware: plane link on the HP I2C, dry inputs on GPIOs, two
    12 V inputs OR-ed: yes, into the rev D hardware spec.
@@ -323,7 +325,8 @@ Review asks (answered 2026-10-29 except 2):
 
 **Architecture-changers**
 - [x] Review asks 1 and 4 (user 2026-10-29).
-- [ ] Review ask 2: meaning of force_off and the escalation of off.
+- [x] Review ask 2: force_off = hold then cut, off escalates to it
+  (user 2026-10-29).
 
 **Behavior definers**
 - [x] OFF slots go back OFF after any reset or glitch (user
