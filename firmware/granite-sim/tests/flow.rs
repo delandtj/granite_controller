@@ -1,7 +1,8 @@
 //! The first-boot flow end to end over HTTP: set the admin password, log
-//! in, power a node on, watch the fake motherboard answer and the node
-//! state change. This is the regression test for the whole stack
-//! (axum -> granite_core::api -> dispatch -> actuator -> fake board).
+//! in, power a node on, watch the host behind the plane slot answer and
+//! the node state change. This is the regression test for the whole
+//! stack: axum -> granite_core::api -> dispatch -> the plane client ->
+//! the plane link -> a simulated plane running plane-logic.
 
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
@@ -50,9 +51,7 @@ impl Server {
         path: &str,
         body: Option<serde_json::Value>,
     ) -> (u16, String) {
-        let mut req = self
-            .client
-            .request(method, format!("{}{path}", self.base));
+        let mut req = self.client.request(method, format!("{}{path}", self.base));
         if let Some(cookie) = &self.cookie {
             req = req.header("cookie", cookie);
         }
@@ -80,9 +79,7 @@ impl Server {
     }
 
     async fn post(&mut self, path: &str, body: serde_json::Value) -> (u16, serde_json::Value) {
-        let (status, text) = self
-            .call(reqwest::Method::POST, path, Some(body))
-            .await;
+        let (status, text) = self.call(reqwest::Method::POST, path, Some(body)).await;
         (status, parse(&text))
     }
 }
@@ -144,47 +141,83 @@ async fn first_boot_then_power_a_node_on() {
     let (status, st) = s.get("/api/v1/status").await;
     assert_eq!(status, 200);
     assert_eq!(st["device"], device.as_str());
-    assert_eq!(st["state"]["nodes"].as_array().unwrap().len(), 8);
-    let before = st["state"]["nodes"][2]["state"].as_str().unwrap().to_string();
+    // The default scenario is one plane with a module in every slot:
+    // nodes 1-8 (ADR 0004 decision 2).
+    let deadline = Instant::now() + Duration::from_secs(10);
+    let mut nodes = 0;
+    while Instant::now() < deadline {
+        let (_, st) = s.get("/api/v1/state").await;
+        nodes = st["nodes"].as_array().map(|a| a.len()).unwrap_or(0);
+        if nodes == 8 {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(100)).await;
+    }
+    assert_eq!(nodes, 8, "the plane's eight slots never showed up");
+    let (_, st) = s.get("/api/v1/status").await;
+    assert_eq!(st["state"]["planes"].as_array().unwrap().len(), 1);
+    assert_eq!(st["state"]["planes"][0]["address"], 48);
+    // The rail is up (a plane comes up with its slots enabled) and the
+    // host behind it is dark: exactly the case `on` has to press.
+    let before = st["state"]["nodes"][2]["host"]
+        .as_str()
+        .unwrap()
+        .to_string();
     assert!(
         before == "off" || before == "unknown",
-        "node 3 starts dark, got {before}"
+        "the host behind node 3 starts dark, got {before}"
     );
 
-    // Power node 3 on. The fake motherboard lights its LED 1.5 s after
-    // the press, so the action completes a moment later.
-    let (status, reply) = s
-        .post("/api/v1/nodes/3/on", serde_json::json!({}))
-        .await;
+    // Power node 3 on. The plane runs the sequence: rail on, and a PWR
+    // press if the host stays dark.
+    let (status, reply) = s.post("/api/v1/nodes/3/on", serde_json::json!({})).await;
     assert_eq!(status, 200, "{reply}");
     assert_eq!(reply["ok"], true);
+    assert_eq!(reply["result"], "accepted", "a plane job was queued");
+    assert!(reply["job"].is_number(), "with its job id");
 
-    let deadline = Instant::now() + Duration::from_secs(15);
-    let mut state = String::new();
+    let deadline = Instant::now() + Duration::from_secs(30);
+    let mut power = String::new();
+    let mut host = String::new();
     while Instant::now() < deadline {
         tokio::time::sleep(Duration::from_millis(100)).await;
         let (_, st) = s.get("/api/v1/state").await;
-        state = st["nodes"][2]["state"].as_str().unwrap_or("").to_string();
-        if state == "on" {
+        power = st["nodes"][2]["power"].as_str().unwrap_or("").to_string();
+        host = st["nodes"][2]["host"].as_str().unwrap_or("").to_string();
+        if power == "on" && host == "on" {
             break;
         }
     }
-    assert_eq!(state, "on", "node 3 never came up");
+    assert_eq!(power, "on", "node 3's rail never came up");
+    assert_eq!(host, "on", "the host behind node 3 never lit its LED");
 
-    // The press really went through the relays: the fake board's LED is
-    // lit, which is what the controller then sensed.
+    // The press really went to the plane: its own fake host is running,
+    // and the slot draws current.
     {
         let mut sim = s.sim.lock().unwrap();
-        assert!(
-            sim.core.actuator.switches_mut().is_lit(3),
-            "the fake motherboard LED should be lit"
-        );
+        let plane = sim.planes_mut().plane_mut(0x30).expect("plane 0x30");
+        let slot = plane.slot_mut(2).expect("slot 2");
+        assert!(slot.node.on, "the host behind slot 2 should be running");
+        assert!(slot.pgd, "and its rail should carry it");
     }
 
     // An action event was recorded.
-    let (status, log) = s.call(reqwest::Method::GET, "/api/v1/log/tail?lines=200", None).await;
+    let (status, log) = s
+        .call(reqwest::Method::GET, "/api/v1/log/tail?lines=200", None)
+        .await;
     assert_eq!(status, 200);
     assert!(log.contains("action_done"), "log was: {log}");
+
+    // The job's ack came back on the simulator's ack topic.
+    {
+        let sim = s.sim.lock().unwrap();
+        let acks = &sim.core.acks;
+        assert!(
+            acks.iter()
+                .any(|r| r.ok && r.result.as_deref() == Some("done")),
+            "no finished job ack: {acks:?}"
+        );
+    }
 
     // The same command through the raw MQTT-shaped route, on node 4.
     let (status, reply) = s
@@ -207,13 +240,17 @@ async fn first_boot_then_power_a_node_on() {
     assert_eq!(status, 200, "{staged}");
     let (_, st) = s.get("/api/v1/status").await;
     assert_eq!(st["staged"]["sections"][0], "net");
-    let (status, _) = s.post("/api/v1/config/confirm", serde_json::json!({})).await;
+    let (status, _) = s
+        .post("/api/v1/config/confirm", serde_json::json!({}))
+        .await;
     assert_eq!(status, 200);
     let (_, st) = s.get("/api/v1/status").await;
     assert!(st["staged"].is_null());
 
     // Logging out invalidates the cookie.
-    let (status, _) = s.call(reqwest::Method::DELETE, "/api/v1/session", None).await;
+    let (status, _) = s
+        .call(reqwest::Method::DELETE, "/api/v1/session", None)
+        .await;
     assert_eq!(status, 200);
     let (status, _) = s.get("/api/v1/status").await;
     assert_eq!(status, 401);

@@ -2,7 +2,7 @@
 //!
 //! ```toml
 //! [hardware]
-//! vin_mv = 19000
+//! vin_mv = 12000
 //! board_temp_c = 32.5
 //! dry_in = [false, false, false, false]
 //!
@@ -11,14 +11,10 @@
 //! name = "inlet"
 //! temp_c = 41.0
 //! ramp_c_per_min = 0.0
-//!
-//! [[nodes]]
-//! node = 1
-//! powered = false
-//! respond = "normal"   # normal | never | slow
-//! on_delay_ms = 1500
-//! off_delay_ms = 4000
 //! ```
+//!
+//! There is no node section: a node is a slot on a plane (controller
+//! ADR 0004 decision 2), so what a scenario describes is the planes.
 //!
 //! A `[[plane]]` section describes one simulated plane on the link
 //! (controller ADR 0004 architecture item 3), its units, what is in each
@@ -45,64 +41,13 @@
 //! unit = 1
 //! ```
 //!
-//! Everything is optional; the defaults are a healthy 8-node frame with
-//! every node off, one probe at 40 C, 19 V on the bus and one plane at
-//! 0x30 with its four units populated.
+//! Everything is optional; the defaults are one plane at 0x30 with its
+//! four units populated and a module in every slot (nodes 1-8, every
+//! host off), one probe at 40 C and 12 V in.
 
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
-
-/// How a node's power LED answers a press.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum Respond {
-    /// A cooperative motherboard: short press powers on, short press
-    /// starts an ACPI shutdown, a 4 s hold cuts power.
-    #[default]
-    Normal,
-    /// The LED never changes: `on` times out, `off` escalates to
-    /// `force_off`, and `press` still works. This is the hung-node case.
-    Never,
-    /// Like `normal` but slower than the default timings, so `off`
-    /// escalates and `on` is late.
-    Slow,
-}
-
-/// One node in the scenario.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(default)]
-pub struct NodeScenario {
-    /// Node id, 1..=8.
-    pub node: u8,
-    /// Initial LED state.
-    pub powered: bool,
-    /// How it answers presses.
-    pub respond: Respond,
-    /// How long after a short press the LED comes on.
-    pub on_delay_ms: u64,
-    /// How long after a short press the LED goes off (ACPI shutdown).
-    pub off_delay_ms: u64,
-    /// The LED wire is broken: this node always reads dark, even while it
-    /// is powered. That is the failure mode ADR 0001 calls out ("an unlit
-    /// LED on a running node reads as Off"), and the reason a per-node
-    /// `sense = ignore` exists. When every node is marked broken the
-    /// whole U15 read fails instead and every node is `unknown`.
-    pub sense_broken: bool,
-}
-
-impl Default for NodeScenario {
-    fn default() -> Self {
-        NodeScenario {
-            node: 1,
-            powered: false,
-            respond: Respond::Normal,
-            on_delay_ms: 1_500,
-            off_delay_ms: 4_000,
-            sense_broken: false,
-        }
-    }
-}
 
 /// One DS18B20 on the fake 1-wire bus.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -329,7 +274,8 @@ impl PlaneScenario {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct HardwareScenario {
-    /// Bus voltage.
+    /// Controller input voltage: 12 V from the planes on rev D
+    /// (ADR 0004 decision 9).
     pub vin_mv: u32,
     /// TMP1075 reading.
     pub board_temp_c: f32,
@@ -337,14 +283,15 @@ pub struct HardwareScenario {
     pub dry_in: [bool; 4],
     /// Ethernet link.
     pub link_up: bool,
-    /// Drift on the bus voltage, so the low-voltage rule can be tested.
+    /// Drift on the input voltage, so the low-voltage rule can be
+    /// tested.
     pub vin_ramp_mv_per_min: i32,
 }
 
 impl Default for HardwareScenario {
     fn default() -> Self {
         HardwareScenario {
-            vin_mv: 19_000,
+            vin_mv: 12_000,
             board_temp_c: 32.0,
             dry_in: [false; 4],
             link_up: true,
@@ -369,8 +316,6 @@ pub struct Scenario {
     pub hardware: HardwareScenario,
     /// Probes on the bus.
     pub probes: Vec<ProbeScenario>,
-    /// Nodes.
-    pub nodes: Vec<NodeScenario>,
     /// Planes on the link, `[[plane]]` in the file.
     #[serde(rename = "plane")]
     pub planes: Vec<PlaneScenario>,
@@ -385,12 +330,9 @@ impl Default for Scenario {
             recovery_token: String::new(),
             hardware: HardwareScenario::default(),
             probes: vec![ProbeScenario::default()],
-            nodes: (1..=8)
-                .map(|node| NodeScenario {
-                    node,
-                    ..Default::default()
-                })
-                .collect(),
+            // One plane with every unit on the chain and a module in
+            // every slot: nodes 1-8 on plane 0, which is what a single
+            // frame looks like.
             planes: vec![PlaneScenario::default()],
         }
     }
@@ -405,18 +347,8 @@ impl Scenario {
         Ok(scenario)
     }
 
-    /// Fill in the nodes the file left out and fix the obvious mistakes.
+    /// Fix the obvious mistakes a file can contain.
     pub fn normalise(&mut self) {
-        self.nodes.retain(|n| (1..=8).contains(&n.node));
-        for node in 1..=8u8 {
-            if !self.nodes.iter().any(|n| n.node == node) {
-                self.nodes.push(NodeScenario {
-                    node,
-                    ..Default::default()
-                });
-            }
-        }
-        self.nodes.sort_by_key(|n| n.node);
         self.probes.truncate(granite_core::PROBE_SLOTS);
         if self.device_id.trim().is_empty() {
             self.device_id = String::from("granite-510000");
@@ -438,12 +370,12 @@ impl Scenario {
         self.planes.iter().find(|p| p.address == address)
     }
 
-    /// The scenario for one node.
-    pub fn node(&self, node: u8) -> NodeScenario {
-        self.nodes
-            .iter()
-            .find(|n| n.node == node)
-            .cloned()
-            .unwrap_or_default()
+    /// The plane and slot a node id names, and the scenario for that
+    /// slot, if the file has the plane (ADR 0004 decision 2:
+    /// `id = 8 * (address - 0x30) + slot + 1`).
+    pub fn node(&self, node: u8) -> Option<(u8, PlaneSlotScenario)> {
+        let (address, slot) = granite_core::plane::node_location(node)?;
+        let plane = self.plane(address)?;
+        Some((address, plane.slot(slot)))
     }
 }

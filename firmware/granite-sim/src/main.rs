@@ -129,9 +129,7 @@ fn serve(
             .name(String::from("sim-tick"))
             .spawn(move || {
                 loop {
-                    std::thread::sleep(std::time::Duration::from_millis(
-                        granite_sim::sim::TICK_MS,
-                    ));
+                    std::thread::sleep(std::time::Duration::from_millis(granite_sim::sim::TICK_MS));
                     if let Ok(mut sim) = sim.lock() {
                         sim.tick();
                     }
@@ -142,10 +140,16 @@ fn serve(
         let sim = sim.lock().expect("lock");
         println!("device   {}", sim.identity.device_id);
         println!("mac      {}", sim.identity.mac);
-        println!("cert     sha256 {}", granite_core::api::Identity::cert_sha256(&sim.identity));
-        println!("recovery {} (shown once on the page)", sim.identity.recovery_token);
+        println!(
+            "cert     sha256 {}",
+            granite_core::api::Identity::cert_sha256(&sim.identity)
+        );
+        println!(
+            "recovery {} (shown once on the page)",
+            sim.identity.recovery_token
+        );
         let planes: Vec<String> = sim
-            .planes
+            .planes()
             .planes()
             .map(|plane| {
                 let units = plane.sim.plane.units_present().bits().count_ones();
@@ -176,7 +180,12 @@ fn serve(
     ))
 }
 
-fn recover(host: &str, key_path: &std::path::Path, tls: bool, port: Option<u16>) -> anyhow::Result<()> {
+fn recover(
+    host: &str,
+    key_path: &std::path::Path,
+    tls: bool,
+    port: Option<u16>,
+) -> anyhow::Result<()> {
     let key = keys::load_signing_key(key_path)?;
     let scheme = if tls { "https" } else { "http" };
     let authority = match port {
@@ -205,15 +214,14 @@ fn recover(host: &str, key_path: &std::path::Path, tls: bool, port: Option<u16>)
     eprintln!(
         "device {device} fw {} cert sha256 {}",
         id.get("fw").and_then(|v| v.as_str()).unwrap_or("?"),
-        id.get("cert_sha256").and_then(|v| v.as_str()).unwrap_or("?")
+        id.get("cert_sha256")
+            .and_then(|v| v.as_str())
+            .unwrap_or("?")
     );
 
     let sig = keys::sign_recovery(&key, device, nonce);
     let body = serde_json::json!({"device": device, "nonce": nonce, "sig": sig});
-    let response = client
-        .post(format!("{base}/recover"))
-        .json(&body)
-        .send()?;
+    let response = client.post(format!("{base}/recover")).json(&body).send()?;
     let status = response.status();
     let text = response.text().unwrap_or_default();
     if !status.is_success() {

@@ -430,7 +430,7 @@ fn every_verb_ends_with_the_right_result() {
 
     // on, on a node whose host is already lit: the plane has nothing to
     // do and says so at once.
-    harness.verb_ok(NodeCommand::On { node: 1 }, 2_000);
+    harness.verb_ok(NodeCommand::on(1), 2_000);
     assert_eq!(harness.node(1).host, granite_core::plane::HostState::On);
 
     // press: a raw PWR press. The host takes it and goes down.
@@ -447,11 +447,11 @@ fn every_verb_ends_with_the_right_result() {
 
     // on, on a node whose host is dark: the plane waits for the LED,
     // presses PWR and waits again.
-    harness.verb_ok(NodeCommand::On { node: 1 }, 60_000);
+    harness.verb_ok(NodeCommand::on(1), 60_000);
     assert_eq!(harness.node(1).host, granite_core::plane::HostState::On);
 
     // off: the short press is enough for a host that listens.
-    harness.verb_ok(NodeCommand::Off { node: 1 }, 20_000);
+    harness.verb_ok(NodeCommand::off(1), 20_000);
     harness.run(2_000);
     assert!(
         harness.status(1).contains(SlotStatus::ENABLED),
@@ -467,7 +467,7 @@ fn every_verb_ends_with_the_right_result() {
     harness.verb_ok(NodeCommand::Reset { node: 2 }, 5_000);
 
     // cycle: rail off, wait, rail on, press if dark.
-    harness.verb_ok(NodeCommand::Cycle { node: 2 }, 60_000);
+    harness.verb_ok(NodeCommand::cycle(2), 60_000);
     assert_eq!(harness.node(2).power, PowerState::On);
 
     // power_off / power_on: the rail and nothing else.
@@ -496,7 +496,7 @@ fn every_verb_ends_with_the_right_result() {
     );
 
     // on_all: one stagger per plane, then a node-on per slot.
-    let job = harness.do_verb(NodeCommand::OnAll { nodes: vec![9, 10] }, 90_000);
+    let job = harness.do_verb(NodeCommand::on_all(vec![9, 10]), 90_000);
     assert_eq!(job.outcome, JobOutcome::Done, "{:?}", job.code);
     assert_eq!(harness.node(9).power, PowerState::On);
     assert_eq!(harness.node(10).power, PowerState::On);
@@ -520,18 +520,14 @@ fn a_verb_for_a_node_or_unit_that_is_not_there_fails_at_once() {
     let mut harness = Harness::new(&scenario());
 
     // Node 5 is on a unit that is not on the chain.
-    let id = harness
-        .client
-        .submit(harness.now_ms, NodeCommand::On { node: 5 });
+    let id = harness.client.submit(harness.now_ms, NodeCommand::on(5));
     let jobs = harness.client.drain_jobs();
     assert_eq!(jobs.len(), 1, "it never reached the link");
     assert_eq!(jobs[0].id, id);
     assert_eq!(jobs[0].outcome, JobOutcome::Absent);
 
     // A plane that is not there.
-    harness
-        .client
-        .submit(harness.now_ms, NodeCommand::On { node: 20 });
+    harness.client.submit(harness.now_ms, NodeCommand::on(20));
     assert_eq!(harness.client.drain_jobs()[0].outcome, JobOutcome::Absent);
 
     // A unit that is not on the chain.
@@ -557,7 +553,7 @@ fn force_off_cuts_the_rail_of_a_host_that_ignores_its_button() {
     // force_off is node off with the timeout at zero: no short press,
     // straight to the five-second hold, then the rail (ADR 0004
     // decision 4).
-    harness.verb_ok(NodeCommand::ForceOff { node: 9 }, 30_000);
+    harness.verb_ok(NodeCommand::force_off(9), 30_000);
     assert!(
         !harness.status(9).contains(SlotStatus::ENABLED),
         "the rail was cut"
@@ -778,18 +774,42 @@ fn a_persisted_intended_off_set_is_re_applied_to_a_plane_that_lost_its_state() {
         "a load is not a change to store back"
     );
 
+    // Both planes get their OFF nodes back. The client keeps at it
+    // while a slot it wants off reports itself enabled, so a plane that
+    // was busy with its own boot sequence may take a couple of goes.
+    let down = |h: &Harness, id: u8| {
+        h.client
+            .node(id)
+            .is_some_and(|node| node.summary_ms != 0 && !node.status.contains(SlotStatus::ENABLED))
+    };
     assert!(
-        harness.run_until(10_000, |h| h
+        harness.run_until(15_000, |h| down(h, 2) && down(h, 9)),
+        "the rails never went down again"
+    );
+    for address in [0x30u8, 0x31] {
+        assert!(
+            harness.saw(|e| matches!(
+                e,
+                ClientEvent::IntendedOffReapplied { address: a, .. } if *a == address
+            )),
+            "plane {address:#x} never got its OFF back"
+        );
+    }
+    // And once the rails are down it stops: nothing to put back.
+    let before = harness
+        .events
+        .iter()
+        .filter(|e| matches!(e, ClientEvent::IntendedOffReapplied { .. }))
+        .count();
+    harness.run(10_000);
+    assert_eq!(
+        harness
             .events
             .iter()
             .filter(|e| matches!(e, ClientEvent::IntendedOffReapplied { .. }))
-            .count()
-            == 2),
-        "both planes got their OFF nodes back"
-    );
-    assert!(
-        harness.run_until(5_000, |h| !h.status(2).contains(SlotStatus::ENABLED)
-            && !h.status(9).contains(SlotStatus::ENABLED))
+            .count(),
+        before,
+        "the re-apply stops once the slots are off"
     );
     assert_eq!(harness.client.intended_off(), &[2, 9]);
 }
@@ -825,9 +845,7 @@ fn a_unit_unplugged_takes_its_nodes_absent_and_a_replug_brings_them_back() {
     );
 
     // A command for a node whose unit is gone fails without a write.
-    harness
-        .client
-        .submit(harness.now_ms, NodeCommand::On { node: 3 });
+    harness.client.submit(harness.now_ms, NodeCommand::on(3));
     assert_eq!(harness.client.drain_jobs()[0].outcome, JobOutcome::Absent);
 
     // And back in: the plane puts the OFF slot back off by itself
@@ -1075,9 +1093,7 @@ fn an_update_is_refused_while_a_sequence_runs() {
 
     // A node off on a host that will not listen keeps a sequence
     // running for a while.
-    harness
-        .client
-        .submit(harness.now_ms, NodeCommand::Off { node: 9 });
+    harness.client.submit(harness.now_ms, NodeCommand::off(9));
     assert!(harness.run_until(5_000, |h| {
         h.client.plane(0x31).is_some_and(|p| p.sequence_running())
     }));

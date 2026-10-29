@@ -5,39 +5,52 @@
 
 use std::time::Instant;
 
-use granite_core::actuator::{Actuator, ActuatorEvent, apply_to_nodes};
 use granite_core::api::{ApiCtx, ApiRequest, ApiResponse, AuthState, Dispatcher};
-use granite_core::config::{Config, Section, Secrets};
+use granite_core::config::{Config, Secrets, Section};
 use granite_core::dispatch::{DispatchCtx, SideEffect, dispatch};
-use granite_core::msg::{Command, EventKind, Reply, event_from_actuator, event_from_rule};
-use granite_core::node::Nodes;
+use granite_core::jobs::JobLog;
+use granite_core::msg::{
+    Command, CommandKind, EventKind, Reply, event_from_client, event_from_rule,
+};
+use granite_core::node::BootPolicy;
 use granite_core::observed::{Observed, ProbeObs};
-use granite_core::rules::{RuleAction, RuleEngine};
-use granite_core::{NODE_COUNT, NodeId};
+use granite_core::plane::{PlaneClient, UpdatePolicy};
+use granite_core::rules::RuleEngine;
+use granite_core::{NodeId, Target};
 
-use crate::fakes::{FakeSensors, FakeSwitches};
+use crate::fakes::FakeSensors;
 use crate::planes::FakePlaneLink;
 use crate::platform::{SimIdentity, SimNet, SimOta, SimPlatform, SimRng, SimStore};
 use crate::scenario::Scenario;
 
-/// How often the simulator ticks. The firmware ticks the actuator on a
-/// 10 ms loop and the rules once a second; 20 Hz is plenty on the host
-/// and keeps the press timing within a tick of the real thing.
+/// How often the simulator ticks.
+///
+/// The firmware polls the plane client every 50-100 ms and the rules
+/// once a second; 20 Hz on the host is the same cadence, and it matches
+/// the planes' own 20 Hz cycle.
 pub const TICK_MS: u64 = 50;
 
-/// The part of the simulator the core owns: the actuator over the fake
-/// expander, the node tracker, the rule engine and the snapshot they work
-/// from. [`Dispatcher`] is implemented here, which is how the HTTP API
-/// reaches [`granite_core::dispatch::dispatch`].
+/// How long the boot policies wait after start before they are applied
+/// \[ms\]: long enough for discovery and the first SUMMARY of every
+/// plane.
+pub const BOOT_POLICY_AFTER_MS: u64 = 3_000;
+
+/// The part of the simulator the core owns: the plane client over the
+/// fake plane link, the job log, the rule engine and the snapshot they
+/// work from. [`Dispatcher`] is implemented here, which is how the HTTP
+/// API reaches [`granite_core::dispatch::dispatch`].
 pub struct SimCore {
     /// Device id, needed by `factory_reset`.
     pub device_id: String,
-    /// The actuator, owning the fake U14.
-    pub actuator: Actuator<FakeSwitches>,
-    /// The fake sensors.
+    /// The controller's side of the plane link (ADR 0004 decision 5).
+    pub plane: PlaneClient,
+    /// The plane link and the planes on it. A plane is a separate MCU:
+    /// it runs whether or not the controller asks it anything.
+    pub planes: FakePlaneLink,
+    /// The jobs a command became, waiting for the plane's result.
+    pub jobs: JobLog,
+    /// The fake sensors of the controller board.
     pub sensors: FakeSensors,
-    /// LED debounce and per-node state.
-    pub nodes: Nodes,
     /// The rule engine.
     pub rules: RuleEngine,
     /// The working snapshot.
@@ -46,12 +59,17 @@ pub struct SimCore {
     pub config: Config,
     /// Side effects the dispatcher asked for.
     pub effects: Vec<SideEffect>,
-    /// Actuator and rule events, drained by the tick loop.
+    /// Events, drained by the tick loop into the MQTT stream.
     pub events: Vec<EventKind>,
+    /// Acks of finished jobs, newest last: the simulator's `.../ack/`
+    /// topic.
+    pub acks: Vec<Reply>,
     /// Monotonic now.
     pub now_ms: u64,
     /// True once the boot policies have been applied.
     boot_policy_done: bool,
+    /// The last state of each node, so a change can be published.
+    last_states: Vec<(NodeId, String, String)>,
 }
 
 impl SimCore {
@@ -59,20 +77,24 @@ impl SimCore {
     pub fn new(scenario: &Scenario, config: &Config) -> Self {
         let mut core = SimCore {
             device_id: scenario.device_id.clone(),
-            actuator: Actuator::new(FakeSwitches::new(scenario)),
+            // A fixed seed: the sequence numbers have to be
+            // reproducible for the tests, and the firmware is the one
+            // that passes something from its RNG.
+            plane: PlaneClient::new(0x5EED_1234),
+            planes: FakePlaneLink::from_scenario(scenario),
+            jobs: JobLog::new(),
             sensors: FakeSensors::new(scenario),
-            nodes: Nodes::new(),
             rules: RuleEngine::with_rules(config.rules.rules.clone()),
             observed: Observed::new(),
             config: config.clone(),
             effects: Vec::new(),
             events: Vec::new(),
+            acks: Vec::new(),
             now_ms: 0,
             boot_policy_done: false,
+            last_states: Vec::new(),
         };
-        core.actuator.set_timings(config.nodes.timings);
-        core.actuator.set_order(config.nodes.order);
-        core.nodes.set_sense(config.nodes.sense_modes());
+        core.plane.set_policy(config.nodes.plane_update);
         core.refresh_probes();
         core
     }
@@ -100,39 +122,66 @@ impl SimCore {
         self.observed.probes = probes;
     }
 
-    /// One pass: hardware, sense, actuator, rules.
+    /// One pass: the planes, the plane client, the sensors, the
+    /// snapshot, the boot policies and the rules.
     pub fn tick(&mut self, now_ms: u64) {
         self.now_ms = now_ms;
 
-        // 1. The fake board moves first (scheduled LED changes, a long
-        //    PWR hold cutting power).
-        self.actuator.switches_mut().tick(now_ms);
-        let leds = self.actuator.switches_mut().leds();
+        // 1. The planes move first: they are their own MCUs and run on
+        //    their own clock.
+        self.planes.tick(now_ms);
 
-        // 2. Sense, with the debounce the firmware applies.
-        self.nodes.update_sense(now_ms, leds);
+        // 2. The plane client does whatever is due: discovery, the poll
+        //    schedule, EXP_INT, the commands in flight, the config push
+        //    and an update (ADR 0004 decision 5).
+        self.plane.poll(now_ms, &mut self.planes);
 
-        // 3. The actuator state machine.
-        let events = self.actuator.tick(now_ms, &self.observed);
-        apply_to_nodes(&mut self.nodes, &events, now_ms);
-        for event in &events {
-            if let Some(e) = event_from_actuator(event, now_ms) {
-                self.events.push(e.kind);
+        // 3. The plane's events and the jobs it finished.
+        for event in self.plane.drain_events() {
+            if let Some(published) = event_from_client(&event, now_ms) {
+                self.events.push(published.kind);
             }
-            if let ActuatorEvent::Fault { fault, .. } = event {
-                self.events.push(EventKind::Fault {
-                    fault: fault.to_string(),
-                    node: None,
-                    id: None,
-                });
-            }
+        }
+        for finished in self.plane.drain_jobs() {
+            let done = self.jobs.finish(&finished, now_ms);
+            self.events.push(done.event);
+            self.acks.push(done.reply);
         }
 
         // 4. The snapshot every reader works from.
-        self.observed.refresh_nodes(&self.nodes);
-        for i in 0..NODE_COUNT {
-            self.observed.nodes[i].sense = self.config.nodes.nodes[i].sense;
+        self.observed.refresh_planes(&self.plane);
+        self.jobs.apply(&mut self.observed);
+        self.read_sensors(now_ms);
+        self.note_state_changes();
+
+        // 5. Boot policies, once, after discovery has had its chance.
+        if !self.boot_policy_done && now_ms >= BOOT_POLICY_AFTER_MS {
+            self.boot_policy_done = true;
+            self.apply_boot_policies();
         }
+
+        // 6. Rules, once a second.
+        if now_ms.is_multiple_of(1_000) {
+            let fired = self.rules.tick(now_ms, &self.observed);
+            for f in fired {
+                self.events.push(event_from_rule(&f, now_ms).kind);
+                if let Some(cmd) = f.command() {
+                    let reply = self.dispatch(&cmd);
+                    if !reply.ok {
+                        self.events.push(EventKind::ActionFailed {
+                            id: cmd.id.clone(),
+                            node: f.target.node(),
+                            action: cmd.action,
+                            error: reply.error.unwrap_or_default(),
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    /// Read the controller's own sensors into the snapshot.
+    fn read_sensors(&mut self, now_ms: u64) {
         let probes: Vec<(u64, usize)> = self
             .observed
             .probes
@@ -155,60 +204,75 @@ impl SimCore {
             granite_core::observed::Stamped::new(self.sensors.link_up(), now_ms);
         self.observed.uptime_s =
             granite_core::observed::Stamped::new((now_ms / 1000) as u32, now_ms);
+    }
 
-        // 5. Boot policies, once, after the settle time.
-        if !self.boot_policy_done && now_ms >= u64::from(self.config.nodes.timings.t_settle_ms) {
-            self.boot_policy_done = true;
-            let policies = self.config.nodes.boot_policies();
-            let (_, events) =
-                self.actuator
-                    .submit_boot_policy("boot", &policies, now_ms, &self.observed);
-            for event in &events {
-                if let Some(e) = event_from_actuator(event, now_ms) {
-                    self.events.push(e.kind);
-                }
+    /// Publish a `node_state` event for every node whose axes moved.
+    fn note_state_changes(&mut self) {
+        let now: Vec<(NodeId, String, String)> = self
+            .observed
+            .nodes
+            .iter()
+            .map(|n| {
+                (
+                    n.node,
+                    String::from(n.power.as_str()),
+                    String::from(n.host.as_str()),
+                )
+            })
+            .collect();
+        for (node, power, host) in &now {
+            let before = self.last_states.iter().find(|(id, ..)| id == node);
+            let changed = match before {
+                None => true,
+                Some((_, p, h)) => p != power || h != host,
+            };
+            if changed {
+                self.events.push(EventKind::NodeState {
+                    node: *node,
+                    power: power.clone(),
+                    host: host.clone(),
+                });
             }
         }
+        self.last_states = now;
+    }
 
-        // 6. Rules, once a second.
-        if now_ms.is_multiple_of(1_000) {
-            let fired = self.rules.tick(now_ms, &self.observed);
-            for f in fired {
-                self.events.push(event_from_rule(&f, now_ms).kind);
-                if let RuleAction::Act { kind } = f.action {
-                    let cmd = Command::new(
-                        format!("rule-{}", f.rule_id),
-                        granite_core::msg::CommandKind::of_action(kind),
-                    )
-                    .with_target(f.target);
-                    let reply = self.dispatch(&cmd);
-                    if !reply.ok {
-                        self.events.push(EventKind::ActionFailed {
-                            id: cmd.id.clone(),
-                            node: f.target.node(),
-                            action: kind,
-                            error: reply.error.unwrap_or_default(),
-                        });
-                    }
-                }
+    /// The boot policies of ADR 0004 decision 2, once per controller
+    /// start: a node whose policy is not `leave` is commanded.
+    fn apply_boot_policies(&mut self) {
+        for (node, policy) in self.config.nodes.boot_policies() {
+            let action = match policy {
+                BootPolicy::Leave => continue,
+                BootPolicy::On => CommandKind::On,
+                BootPolicy::Off => CommandKind::Off,
+            };
+            let cmd = Command::new(format!("boot-{node}"), action).with_target(Target::Node(node));
+            let reply = self.dispatch(&cmd);
+            if !reply.ok {
+                self.events.push(EventKind::ActionFailed {
+                    id: cmd.id.clone(),
+                    node: Some(node),
+                    action,
+                    error: reply.error.unwrap_or_default(),
+                });
             }
         }
     }
 
     /// Apply a configuration change to the parts of the core that cache
-    /// it (timings, order, sense, probe names, rules).
+    /// it (the update policy, the probe names, the rules). The per-node
+    /// settings are read when a command is dispatched, so nothing has
+    /// to be pushed for them.
     pub fn reconfigure(&mut self, config: &Config) {
         self.config = config.clone();
-        self.actuator.set_timings(config.nodes.timings);
-        self.actuator.set_order(config.nodes.order);
-        self.nodes.set_sense(config.nodes.sense_modes());
+        self.plane.set_policy(config.nodes.plane_update);
         self.rules.set_rules(config.rules.rules.clone());
         self.refresh_probes();
     }
 
-    /// Set a node's LED by hand, as a scenario step would.
-    pub fn set_led(&mut self, node: NodeId, value: bool) {
-        self.actuator.switches_mut().set_led(node, value);
+    /// The update policy the client is running under.
+    pub fn update_policy(&self) -> UpdatePolicy {
+        self.plane.policy()
     }
 }
 
@@ -218,24 +282,27 @@ impl Dispatcher for SimCore {
             now_ms: self.now_ms,
             device_id: &self.device_id,
             observed: &self.observed,
-            actuator: &mut self.actuator,
+            plane: &mut self.plane,
+            jobs: &mut self.jobs,
             rules: &mut self.rules,
             config: &mut self.config,
             verify_sig: None,
         };
         let out = dispatch(cmd, &mut ctx);
-        for event in &out.events {
-            if let Some(e) = event_from_actuator(event, self.now_ms) {
-                self.events.push(e.kind);
-            }
+        if let Some(job) = out.job {
+            self.events.push(EventKind::Accepted {
+                id: cmd.id.clone(),
+                action: cmd.action,
+                target: cmd.target,
+                job,
+            });
         }
         self.effects.extend(out.effects);
         out.reply
     }
 
-    /// `?wait=1`: keep ticking until this command's `action_done` or
-    /// `action_failed` shows up, or until `timeout_ms` of wall clock has
-    /// passed.
+    /// `?wait=1`: keep ticking until the plane reports this command's
+    /// job, or until `timeout_ms` of wall clock has passed.
     ///
     /// The simulator's HTTP handler holds the whole `Sim` while it runs,
     /// so nothing else can advance the clock: this loop does it itself,
@@ -258,19 +325,11 @@ impl Dispatcher for SimCore {
 }
 
 impl SimCore {
-    /// The final ack for `id`, if one of the events this tick produced is
-    /// that command finishing. Scans and does not consume: the event list
-    /// is the simulator's MQTT stream and still has to be published.
-    fn finished_reply(&self, id: &str) -> Option<Reply> {
-        self.events.iter().find_map(|kind| match kind {
-            EventKind::ActionDone {
-                id: ev_id, result, ..
-            } if ev_id == id => Some(Reply::ok(id, result.clone())),
-            EventKind::ActionFailed {
-                id: ev_id, error, ..
-            } if ev_id == id => Some(Reply::err(id, error.clone())),
-            _ => None,
-        })
+    /// The final ack for `id`, if the plane has reported its job.
+    /// Scans and does not consume: the ack list is the simulator's
+    /// `.../ack/` topic and still has to be published.
+    pub fn finished_reply(&self, id: &str) -> Option<Reply> {
+        self.acks.iter().rev().find(|r| r.id == id).cloned()
     }
 }
 
@@ -299,13 +358,8 @@ pub struct Sim {
     pub ota: SimOta,
     /// Randomness.
     pub rng: SimRng,
-    /// The core over the fake board.
+    /// The core over the fake board and the planes.
     pub core: SimCore,
-    /// The plane link and the planes on it. Nothing in granite-core
-    /// reads it yet: the plane client is the next step (ADR 0004
-    /// decision 5). The planes still run, because a plane is a separate
-    /// MCU and does not wait to be asked.
-    pub planes: FakePlaneLink,
     /// The scenario, kept for a reset.
     scenario: Scenario,
     /// Set when the dispatcher asked for a reboot.
@@ -328,7 +382,6 @@ impl Sim {
             ota: SimOta::default(),
             rng: SimRng,
             core: SimCore::new(&scenario, &config),
-            planes: FakePlaneLink::from_scenario(&scenario),
             config,
             scenario,
             reboot_requested: false,
@@ -353,9 +406,8 @@ impl Sim {
         self.now_ms = self.started.elapsed().as_millis() as u64;
         self.platform.now_ms = self.now_ms;
         self.net.now_ms = self.now_ms;
-        // The planes first: they run at 20 Hz on their own clock, and
-        // the controller sees whatever they have got to by now.
-        self.planes.tick(self.now_ms);
+        // The core ticks the planes itself: they run on their own clock
+        // and the controller sees whatever they have got to by now.
         self.core.tick(self.now_ms);
         self.observed = self.core.observed.clone();
         self.drain_events();
@@ -412,7 +464,8 @@ impl Sim {
         }
         if self.platform.rollback_requested {
             self.platform.rollback_requested = false;
-            self.platform.log_line("warn", "rollback to the previous slot");
+            self.platform
+                .log_line("warn", "rollback to the previous slot");
             self.reboot();
         }
     }
@@ -471,13 +524,13 @@ impl Sim {
     fn reboot(&mut self) {
         let config = self.config.clone();
         self.auth.close_all();
+        // The planes are not rebuilt: ADR 0004 ("the controller
+        // reboots, does any node change state?") answers no. They keep
+        // running, the fresh client rediscovers them, and whatever a
+        // node was doing it keeps doing.
+        let planes = std::mem::replace(&mut self.core.planes, FakePlaneLink::new());
         self.core = SimCore::new(&self.scenario, &config);
-        // The LEDs keep the state the fake board had: a controller
-        // restart must not move a node.
-        for node in 1..=NODE_COUNT as NodeId {
-            let lit = self.observed.node_led(node).unwrap_or(false);
-            self.core.set_led(node, lit);
-        }
+        self.core.planes = planes;
         self.net.clear();
         self.platform.ota.pending_verify = false;
     }
@@ -498,6 +551,16 @@ impl Sim {
             change: String::from("factory_reset"),
             detail: None,
         });
+    }
+
+    /// The plane link and the planes on it.
+    pub fn planes(&self) -> &FakePlaneLink {
+        &self.core.planes
+    }
+
+    /// The plane link, mutably: what a scenario fault injection uses.
+    pub fn planes_mut(&mut self) -> &mut FakePlaneLink {
+        &mut self.core.planes
     }
 
     /// Is this credential good? The transport needs to know before it

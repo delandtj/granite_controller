@@ -1,14 +1,15 @@
 //! Host simulator for the Granite controller (ADR 0001, "Crates").
 //!
-//! The simulator runs the real [`granite_core`] - actuator, node state
-//! machine, rule engine, dispatcher and the HTTP route table - against
-//! fake hardware driven by a scenario file, and serves the real setup
-//! page over HTTPS. The point is that the browser experience and the API
-//! contract can be exercised, and regression-tested, without a board.
+//! The simulator runs the real [`granite_core`] (the plane client, the
+//! node model, the rule engine, the dispatcher and the HTTP route table)
+//! against fake hardware driven by a scenario file, and serves the real
+//! setup page over HTTPS. The point is that the browser experience and
+//! the API contract can be exercised, and regression-tested, without a
+//! board.
 //!
 //! - [`scenario`]: the TOML file that scripts the fake hardware.
-//! - [`fakes`]: the fake U14/U15, probes, dry contacts, VIN and board
-//!   temperature, including how a motherboard answers a button press.
+//! - [`fakes`]: the probes, dry contacts, VIN and board temperature of
+//!   the controller board itself.
 //! - [`planes`]: the fake plane link of controller ADR 0004 decision 5,
 //!   with up to eight simulated planes running plane-logic (ADR 0002)
 //!   behind it, including the fault knobs a plane client needs.
