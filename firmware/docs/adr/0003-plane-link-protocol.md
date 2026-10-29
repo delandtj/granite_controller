@@ -86,8 +86,8 @@ tags by length and never assumes order. L <= 254.
 | 0x13 | FW | W | 0xFF | firmware update records |
 
 Slot index on the wire: 2 x unit + (A = 0, B = 1), unit 0-3, slot 0-7.
-Reading a slot or unit that is not present returns L = 1 with a status
-record that says so, never an I2C NAK (a NAK means the plane is gone).
+Reading a slot or unit that is not present returns one status record
+(0x20 or 0x30, L = 4) with the present bit clear, never an I2C NAK (a NAK means the plane is gone).
 
 ### 3. Tags
 
@@ -121,7 +121,8 @@ Value types in brackets. Units: V in 10 mV, I in mA, P in 0.1 W, T in
 - 0x16 command result [u8 seq, u8 code], one per finished or
   refused command still held (the last 8)
 - 0x17 event head [u16 next seq]
-- 0x18 update state [u8 state, u32 next offset]
+- 0x18 update state [u8 state: 0 idle, 1 erasing, 2 receiving, 3
+  verifying, 4 ready, 5 failed; u32 next offset]
 - 0x19 link errors [u16 bad CRC, u16 bad length]
 - 0x1A segment errors [u16 x4, per channel]
 - 0x1B last reset cause [u8]
