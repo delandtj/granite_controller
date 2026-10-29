@@ -22,9 +22,18 @@ firmware/docs/adr, Proposed, every review ask answered by the user:
   PlaneLink HAL + plane client in granite-core, Modbus map v2, plane
   updates manual by default, rev D hardware assumptions (plane link on
   HP I2C, dry inputs on GPIOs, two 12 V inputs OR-ed).
-NEXT (firmware): rev D hardware spec; then code: granite-proto, the
-plane-link spike (embassy I2C slave on the G070 against the ESP32
-through an ISO1640), plane-logic + fake plane in granite-sim.
+Done since: docs/controller-rev-d.md (rev D board as a delta to rev
+C); granite-proto (d08bcc0, 83 tests); plane-logic (5ad42b8, 9c6f2b6,
+106 tests, Plane = 2.6 KB RAM, thumbv6m clean); PlaneLink trait in
+granite-core hal.rs (dcb9b9a); fake plane link in granite-sim
+(e781f98: planes from plane-logic's sim devices, scenario [[plane]],
+fault knobs, scenarios/two-planes.toml, tests/plane_link.rs = a hand
+client that is the seed of the real one). Workspace 373 tests green.
+NEXT (firmware): the controller plane client in granite-core (ADR 0004
+decision 5) against the fake plane, then the node model swap (rev C
+paths out, msg / Observed / rules / Modbus v2 / API). Hardware for the
+link spike: NUCLEO-G070RB (to order) + the C6 devboard; then plane-fw
+and plane-boot (embassy) on the Nucleo.
 
 ## 2026-10-29 (late): plane boards - press deadline drawn, unit routing in progress
 

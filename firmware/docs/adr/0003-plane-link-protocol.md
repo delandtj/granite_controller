@@ -74,7 +74,7 @@ tags by length and never assumes order. L <= 254.
 |---|---|---|---|---|
 | 0x01 | INFO | R | 0xFF | identity, versions, topology, config hash, image state |
 | 0x02 | STATUS | R | 0xFF | bus, flags, last command results, event head, counters |
-| 0x03 | SUMMARY | R | 0xFF | one compact record per present slot (the 1 Hz poll) |
+| 0x03 | SUMMARY | R | 0xFF | one compact record per slot of every present unit (the 1 Hz poll) |
 | 0x04 | UNIT | R | 0-3 | one unit: presence, hot-swap, input V / I / P |
 | 0x05 | SLOT | R | 0-7 | one slot, full telemetry and state |
 | 0x06 | EVENTS | R | 0xFF | oldest unacknowledged events, up to L |
@@ -129,7 +129,8 @@ Value types in brackets. Units: V in 10 mV, I in mA, P in 0.1 W, T in
 
 **SUMMARY (0x1C)**
 - 0x1C slot summary [u8 slot, u16 status, u16 V, u16 I, u16 P, u8
-  LED], one per present slot: 10 bytes, 8 slots = 96 bytes.
+  LED], one per slot of every present unit (a slot without a module
+  is listed with its present bit clear): 10 bytes, 8 slots = 96 bytes.
 
 **SLOT (0x20-0x2F, 0x70-0x7F)**
 - 0x20 slot status [u16 bits: present (module ID), enabled (OFF
