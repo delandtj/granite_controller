@@ -36,6 +36,28 @@ re-run; then the core (route_hand.py core() minus the tile, band rows to
 J301), gndstitch, silk, jlcfab. tools/pmmount.py was missing from the
 split: copied to power/tools/.
 
+Re-run from scratch (unit; the core the same with place_core.py, no
+route script yet), in power/pp-48-unit with W a scratch dir outside the
+project and PCBKIT_CONFIG=$PWD/pcbkit.toml:
+
+    python3 ../pp-48/tools/gensch.py unit
+    kicad-cli sch export netlist --format kicadxml -o $W/net.xml pp-48-unit.kicad_sch
+    pcbkit mkboard $W/net.xml . $W/mk.kicad_pcb
+    pcbkit outline $W/mk.kicad_pcb $W/ol.kicad_pcb
+    python3 ../pp-48/tools/place_unit.py $W/ol.kicad_pcb $W/pl.kicad_pcb
+    ../pp-48/tools/route_unit.sh $W/pl.kicad_pcb      # writes pp-48-unit.kicad_pcb
+    kicad-cli pcb drc --refill-zones --schematic-parity --severity-all pp-48-unit.kicad_pcb
+
+(pcbkit = ~/Electronics/pcbkit/bin/pcbkit; DRC in a copy next to the
+.kicad_pro, tools that save through pcbnew rewrite the .kicad_pro beside
+their output.) Where the unit's U5 opens are: route_hand.py expander()
+draws U5's supply escapes (pins 27 / 31 out to pad vias); its top pins
+28 EXP_RSTN / 29 SCL / 30 SDA and right pins 12 U_OFF / 24 U_PGD need the
+same treatment or more room (U5 sits in slot B at EX, EY of route_hand.py
+and place.py UNIT_B; the strip's B side starts at x 150). Open item kept
+from before: LM5069MM-1 C486026 has 1 in stock (LM5069MM-2 C111822 7k
+would need a firmware latch through U_OFF): user decision.
+
 ## 2026-10-29: repo split from granite_controller
 
 This repo was split out of granite_controller (filter-repo, history
