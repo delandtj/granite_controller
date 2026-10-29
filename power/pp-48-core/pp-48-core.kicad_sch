@@ -1590,59 +1590,9 @@
 				(justify left top)
 			)
 		)
-		(pin "UNIT1_SDA" bidirectional
+		(pin "UNIT4_SCL" bidirectional
 			(at 127 193.04 180)
-			(uuid "78462acc-7c58-5568-a5f7-a0f6eae40eb7")
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(pin "UNIT1_SCL" bidirectional
-			(at 127 195.58 180)
-			(uuid "12e0e1ec-66f6-592b-b59e-5d843f24bc1d")
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(pin "UNIT2_SDA" bidirectional
-			(at 127 198.12 180)
-			(uuid "0cb9d31c-98c9-524a-b281-f785431598e5")
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(pin "UNIT2_SCL" bidirectional
-			(at 127 200.66 180)
-			(uuid "d4a3e14f-5438-5cf5-96d7-4ce7f067c48e")
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(pin "UNIT3_SDA" bidirectional
-			(at 127 203.2 180)
-			(uuid "8c02429d-3e17-580c-88ce-b413ec2b4d0e")
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(pin "UNIT3_SCL" bidirectional
-			(at 127 205.74 180)
-			(uuid "e7d20195-0a18-5329-8b09-97f92ca90890")
+			(uuid "6d93199d-426d-5c12-ba80-48af3a05e0ee")
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1651,7 +1601,7 @@
 			)
 		)
 		(pin "UNIT4_SDA" bidirectional
-			(at 127 208.28 180)
+			(at 127 195.58 180)
 			(uuid "0fcadca2-b9ce-59bc-a203-799732181653")
 			(effects
 				(font
@@ -1660,9 +1610,59 @@
 				(justify left)
 			)
 		)
-		(pin "UNIT4_SCL" bidirectional
+		(pin "UNIT3_SCL" bidirectional
+			(at 127 198.12 180)
+			(uuid "e7d20195-0a18-5329-8b09-97f92ca90890")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "UNIT3_SDA" bidirectional
+			(at 127 200.66 180)
+			(uuid "8c02429d-3e17-580c-88ce-b413ec2b4d0e")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "UNIT2_SCL" bidirectional
+			(at 127 203.2 180)
+			(uuid "d4a3e14f-5438-5cf5-96d7-4ce7f067c48e")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "UNIT2_SDA" bidirectional
+			(at 127 205.74 180)
+			(uuid "0cb9d31c-98c9-524a-b281-f785431598e5")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "UNIT1_SCL" bidirectional
+			(at 127 208.28 180)
+			(uuid "12e0e1ec-66f6-592b-b59e-5d843f24bc1d")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "UNIT1_SDA" bidirectional
 			(at 127 210.82 180)
-			(uuid "6d93199d-426d-5c12-ba80-48af3a05e0ee")
+			(uuid "78462acc-7c58-5568-a5f7-a0f6eae40eb7")
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1686,9 +1686,9 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "ecea3ff9-e67b-5c16-854d-1b73bcbf3d5b")
+		(uuid "ea012d2c-5441-5021-89aa-576abaa29c66")
 	)
-	(label "UNIT1_SDA"
+	(label "UNIT4_SCL"
 		(at 119.38 193.04 180)
 		(effects
 			(font
@@ -1696,7 +1696,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "7320e62c-b7da-598a-855f-b785e819e7a3")
+		(uuid "8f75384e-b283-575c-b7ff-1965ac3e56b0")
 	)
 	(wire
 		(pts
@@ -1706,9 +1706,9 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "3b22f1a3-69d6-5adf-b7a3-12a76345bbf9")
+		(uuid "c27a9a80-aeb8-58c5-9cba-323535fb388a")
 	)
-	(label "UNIT1_SCL"
+	(label "UNIT4_SDA"
 		(at 119.38 195.58 180)
 		(effects
 			(font
@@ -1716,7 +1716,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "2904f9cc-be1c-5b20-98bf-9d730961fa9b")
+		(uuid "6b612798-f9fd-5659-b10f-eb0ed12707ec")
 	)
 	(wire
 		(pts
@@ -1726,9 +1726,9 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "098d2da4-4f64-5373-a63f-b297205463f0")
+		(uuid "9b4f053a-e70a-5d8c-98cd-5ba847afc6c0")
 	)
-	(label "UNIT2_SDA"
+	(label "UNIT3_SCL"
 		(at 119.38 198.12 180)
 		(effects
 			(font
@@ -1736,7 +1736,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "27a9cc48-7f06-586d-a2fb-7c10df3b065c")
+		(uuid "3622bbd9-2dc5-55c1-8774-320c7a65f3fd")
 	)
 	(wire
 		(pts
@@ -1746,9 +1746,9 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "1af6ff0a-8a7a-57f8-93b1-0bee913701d6")
+		(uuid "230d99fe-0018-5112-abca-04d82798b4e3")
 	)
-	(label "UNIT2_SCL"
+	(label "UNIT3_SDA"
 		(at 119.38 200.66 180)
 		(effects
 			(font
@@ -1756,7 +1756,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "d8321517-ece8-5384-b6be-f20504062a31")
+		(uuid "67edc95e-130e-5433-8c83-0bcf31de5413")
 	)
 	(wire
 		(pts
@@ -1766,9 +1766,9 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "22be1e7d-fd3b-55c2-8c97-da463a7d33dc")
+		(uuid "e651fdd1-9a62-50f2-82a2-de980aff46cf")
 	)
-	(label "UNIT3_SDA"
+	(label "UNIT2_SCL"
 		(at 119.38 203.2 180)
 		(effects
 			(font
@@ -1776,7 +1776,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "efcb7eec-c2b1-5c6c-b00f-eb85aa1122bc")
+		(uuid "f60a3329-3496-5a27-9835-9d2c1bc7516b")
 	)
 	(wire
 		(pts
@@ -1786,9 +1786,9 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "4865b2dd-376b-5b29-a5f9-be825a738845")
+		(uuid "863f0445-09cf-5884-b28e-5c5eb6ade309")
 	)
-	(label "UNIT3_SCL"
+	(label "UNIT2_SDA"
 		(at 119.38 205.74 180)
 		(effects
 			(font
@@ -1796,7 +1796,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "aade99c9-e7d8-574a-90f7-7d0189271ce4")
+		(uuid "1e6ad3b8-5c04-5e9d-a029-f02e21811191")
 	)
 	(wire
 		(pts
@@ -1806,9 +1806,9 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "9224e7b8-e9b4-574f-b9d3-23549fc0bbc3")
+		(uuid "9d0abaa3-b66e-51be-a8fa-a0f2b972098c")
 	)
-	(label "UNIT4_SDA"
+	(label "UNIT1_SCL"
 		(at 119.38 208.28 180)
 		(effects
 			(font
@@ -1816,7 +1816,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "fb02975b-063f-5a30-a6c6-bc529ca0aa38")
+		(uuid "55fabe16-7801-587e-9cad-bcba29c7dc6c")
 	)
 	(wire
 		(pts
@@ -1826,9 +1826,9 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "c7578ac6-0f3d-5aa2-b432-5c328d334c51")
+		(uuid "79d1e086-fa47-5113-b166-c96c90e1ab9e")
 	)
-	(label "UNIT4_SCL"
+	(label "UNIT1_SDA"
 		(at 119.38 210.82 180)
 		(effects
 			(font
@@ -1836,7 +1836,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "8dc1a1bc-f624-5f80-801b-871c667fe1ac")
+		(uuid "ab4e08dd-9311-5c96-90da-a4142a254a13")
 	)
 	(text "POWER ANCHORS"
 		(exclude_from_sim no)

@@ -893,9 +893,9 @@
 				(justify left top)
 			)
 		)
-		(pin "SCL" bidirectional
+		(pin "SDA" bidirectional
 			(at 215.9 40.64 180)
-			(uuid "3284aaf7-8053-5901-bfa0-82a279c25c5e")
+			(uuid "18471d50-1a82-5aa1-8b69-d997598e3860")
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -903,9 +903,9 @@
 				(justify left)
 			)
 		)
-		(pin "SDA" bidirectional
+		(pin "SCL" bidirectional
 			(at 215.9 43.18 180)
-			(uuid "18471d50-1a82-5aa1-8b69-d997598e3860")
+			(uuid "3284aaf7-8053-5901-bfa0-82a279c25c5e")
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -929,9 +929,9 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "a7843ae0-c620-5e7d-95f7-c388e87ad68c")
+		(uuid "fae3cbce-369d-5f0c-9c9e-51b9aae29b02")
 	)
-	(label "SEG_SCL"
+	(label "SEG_SDA"
 		(at 208.28 40.64 180)
 		(effects
 			(font
@@ -939,7 +939,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "0a3fcc6c-86e8-5522-b5f4-2f982852fffd")
+		(uuid "99c22fc6-f4b2-5d26-a3bc-070e5a65fff7")
 	)
 	(wire
 		(pts
@@ -949,9 +949,9 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "36afa426-a392-500c-b25a-3f1610894844")
+		(uuid "e5fb9284-7a9c-5dba-91de-5b5697ed7709")
 	)
-	(label "SEG_SDA"
+	(label "SEG_SCL"
 		(at 208.28 43.18 180)
 		(effects
 			(font
@@ -959,7 +959,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "b90b4459-fc89-5c8e-bd82-dbd19dcbdf6a")
+		(uuid "7612f2fb-0308-55d2-9c68-e25b0345ff3b")
 	)
 	(text "POWER ANCHORS"
 		(exclude_from_sim no)

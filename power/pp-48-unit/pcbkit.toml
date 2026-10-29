@@ -1,0 +1,56 @@
+# pcbkit settings for the PP-48 UNIT board (docs/adr/0005-chained-plane-boards.md).
+# 4L JLC 1.6 mm: F parts and pours, In1 GND, In2 VBUS + the SDA/SCL channel, B parts and pours.
+#
+# 76 x 72 mm: 9 mm left margin (chain IN header J301 on B, two M3 holes), slot A (x 100-125), slot B
+# (125-150), 17 mm input strip (150-167: XT60, unit hot-swap, chain OUT header J302 on B, two M3 holes).
+# Board flow (tools in ../pp-48/tools): gensch.py unit -> netlist -> mkboard -> outline -> setrules ->
+# place_unit.py; routing to follow (rev1 flow: route_hand.py, netsplit.py, krt-route, gndstitch.py).
+
+[project]
+name = "pp-48-unit"
+libs = { pp48 = "../pp-48/pp48.pretty" }
+
+[mkboard]
+copper_layers = 4
+stage_x = -120.0
+sheet_pitch = 90.0
+cell = 14.0
+per_row = 6
+
+[outline]
+length = 76.0
+height = 72.0
+origin = [91.0, 100.0]
+hole_refs = ["H1", "H2", "H3", "H4"]
+
+[rules]
+stackup = "jlc04161h-7628"
+layers = { "In1.Cu" = ["power", "GND"], "In2.Cu" = ["mixed", "VBUS"] }
+
+[rules.netclasses]
+# name = [track, clearance, via_dia, via_drill]
+Default = [0.2, 0.15, 0.5, 0.2]
+GND     = [0.4, 0.2, 0.6, 0.3]
+
+[krt]
+work = "~/.cache/pcbkit/pp-48-unit/route"
+rework = "~/.cache/pcbkit/pp-48-unit/reroute"
+clearance = 0.15
+via = [0.5, 0.2]
+track_width = 0.2
+same_net_pad_clearance = 0.15
+signal_layers = ["F.Cu", "B.Cu"]
+# tools/route_hand.py copper (power pours, shunt vias, Kelvin, In2 channel, taps, core power path,
+# CTRL_GND pours and the isolation band)
+keep_groups = ["hand"]
+# OUT's 7 A path is the hand pours; the router only adds the sense taps (U1 OUT, INA238 VBUS)
+# core: VIN small pads (U1, U2, C11, dividers; the tile path is hand copper), the controller's 12 V / 3V3
+# (+3V3* also matches the per-unit +3V3_Cn of tools/netsplit.py)
+power_nets = ["+3V3*", "VIN", "CTRL_12V", "CTRL_3V3"]
+power_widths = [0.3, 0.4, 0.4, 0.3]
+# GND: F / In1 / B pours drawn by tools/route_hand.py (kept group): KRT then skips GND (no GND
+# tracks; a plane-tapped GND took 640 stubs and cost signal routes); tools/gndstitch.py ties F / B
+# islands to In1 after the copy
+planes = { nets = ["VBUS"], layers = ["In2.Cu"], via = [0.6, 0.3] }
+ground = { net = "GND", width = 0.4 }
+

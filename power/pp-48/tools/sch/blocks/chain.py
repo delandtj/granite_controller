@@ -8,12 +8,16 @@ Pinouts. Both headers are side entry (S12B-PH-K-S) on the F side; the core's
 and a unit's right-hand header face right ("OUT"), a unit's left-hand
 header faces left ("IN", the footprint turned 180 deg). The cable is flat
 and straight: every wire runs straight across, so header pin n at one end
-meets pin 13 - n at the other, and the IN pinout is the OUT pinout read
+meets pin 13 - n at the other, and the OUT pinout is the IN pinout read
 backwards:
 
-    OUT  1 3V3   2 P0_SDA  3 P0_SCL  4 GND  5 P1_SDA  6 P1_SCL
+    IN   1 3V3   2 P0_SDA  3 P0_SCL  4 GND  5 P1_SDA  6 P1_SCL
          7 GND   8 P2_SDA  9 P2_SCL 10 GND 11 P3_SDA 12 P3_SCL
-    IN   pin n = OUT pin 13 - n (1 P3_SCL ... 12 3V3)
+    OUT  pin n = IN pin 13 - n (1 P3_SCL ... 12 3V3)
+
+On B the headers' handedness puts an IN header's pin 1 at the bottom
+(body to the left) and an OUT header's pin 1 at the top: 3V3 and P0 sit at
+the bottom end of every header, by the In2 channel.
 
 Cable: two PHR-12 housings, 12 wires, wire k from pin k to pin 13 - k.
 
@@ -29,9 +33,9 @@ from sch.draw import Block
 G = 1.27
 PH12 = "Connector_JST:JST_PH_S12B-PH-K_1x12_P2.00mm_Horizontal"
 FIELDS = {"LCSC": "C157943", "MPN": "JST S12B-PH-K-S(LF)(SN)"}
-OUT = {1: "+3V3", 2: "P0_SDA", 3: "P0_SCL", 4: "GND", 5: "P1_SDA", 6: "P1_SCL",
-       7: "GND", 8: "P2_SDA", 9: "P2_SCL", 10: "GND", 11: "P3_SDA", 12: "P3_SCL"}
-IN = {n: OUT[13 - n] for n in OUT}
+IN = {1: "+3V3", 2: "P0_SDA", 3: "P0_SCL", 4: "GND", 5: "P1_SDA", 6: "P1_SCL",
+      7: "GND", 8: "P2_SDA", 9: "P2_SCL", 10: "GND", 11: "P3_SDA", 12: "P3_SCL"}
+OUT = {n: IN[13 - n] for n in IN}
 
 
 def P(x, y):

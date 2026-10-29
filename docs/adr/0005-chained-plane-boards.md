@@ -88,10 +88,11 @@ a column edge.
    (PHR-12 housing + SPH-002T-P0.5 crimps). No VBUS in the chain.
    Pinout (2026-10-29, power/pp-48/tools/sch/blocks/chain.py): the
    facing headers are turned 180 deg to each other, so a flat cable
-   joins pin n to pin 13 - n. OUT headers (core, unit right edge):
+   joins pin n to pin 13 - n. IN headers (unit left edge):
    1 3V3, 2 / 3 P0 SDA / SCL, 4 GND, 5 / 6 P1, 7 GND, 8 / 9 P2,
-   10 GND, 11 / 12 P3. The unit's IN header is the same read
-   backwards (pin n = OUT pin 13 - n). LCSC: S12B-PH-K-S C157943 (THT,
+   10 GND, 11 / 12 P3. OUT headers (core, unit right edge) are the
+   same read backwards (pin n = IN pin 13 - n); on B the IN pin 1 and
+   the OUT pin 12 are at the bottom, by the In2 channel. LCSC: S12B-PH-K-S C157943 (THT,
    40 in stock 2026-10-29); the SMD S12B-PH-SM4-TB C378994 had 7.
 
 5. **3V3 for the units' logic comes from the core** (user 2026-10-29) through the chain

@@ -2,6 +2,51 @@
 
 Read this first, then docs/controller.md and docs/power-board.md.
 
+## 2026-10-29 (later): chained plane STARTED - both projects drawn and placed
+
+ADR 0005 Accepted, ADR 0004 marked partly superseded. Two projects:
+power/pp-48-core and power/pp-48-unit (own .kicad_pro / sch / pcb,
+pcbkit.toml); tools, pp.kicad_sym and pp48.pretty stay in power/pp-48 and
+are shared (lib tables point at ../pp-48). Schematic: `tools/gensch.py
+core|unit` (blocks cinput.py, uinput.py, chain.py new; mcu.py
+block(tile=False); unit.py expander P13 U_OFF / P27 U_PGD are ports).
+ERC 0 on both. Unit refs: slots as drawn (slot B +50), input 2xx, chain
+J301 IN / J302 OUT; core keeps rev1 refs, chain J301.
+- Chain pinout (chain.py, ADR 0005 decision 4): IN 1 3V3, 2/3 P0, 4 GND,
+  5/6 P1, 7 GND, 8/9 P2, 10 GND, 11/12 P3; OUT = IN read backwards; flat
+  cable pin n -> 13 - n. All headers on B (F is under the modules), THT
+  S12B-PH-K-S C157943 (40 in stock; SMD S12B-PH-SM4-TB C378994 had 7).
+  On B the IN pin 1 and the OUT pin 12 (3V3, then P0) are at the bottom,
+  pins at v 39..61 on every board, so the cables run flat.
+- Unit board 76 x 72 (user 2026-10-29: 9 mm left margin for the IN header
+  and the left holes, instead of squeezing it into slot A): margin x 91-100,
+  slots at x 100 / 125 as rev1, strip x 150-167 (17 mm: XT60 courtyard is
+  16.55). tools/place_unit.py: rev1 slot table + strip (XT60 top, H3 below,
+  C201, D201, shunts, Q202 / Q203 on F; U207 / U208 / dividers on B; J302
+  on B at the right edge; H4 bottom right). Unit hot-swap: 2 x 6 mOhm =
+  3 mOhm (18.3 A), PWR 20.0k (~75 W), INA238 0x44.
+- Core board 56 x 72: rev1 core (tools/core.py table, x 52-100) minus the
+  tile parts plus an 8 mm right margin (J301 on B, H3 / H4); mux U6 moved
+  by the header (rot 180, channel 0 lowest = P0), XT30 J1 at the bottom
+  edge. tools/place_core.py. The former tile area (bottom right) is mostly
+  empty now: the core could shrink if the user wants.
+- tools/boardfit.py: put / fit (by courtyard) / chain (header orientation
+  search) shared by both placement scripts.
+- Board flow (per project dir, scratch for out files): gensch ->
+  netlist -> pcbkit mkboard -> outline -> setrules -> place_unit.py /
+  place_core.py -> copy the .kicad_pcb in -> setrules on the project.
+  Placement DRC: 0 errors besides unconnected (unit 371, core 170),
+  parity clean. NOT ROUTED, not reviewed by the user.
+- LCSC (2026-10-29 snapshot): XT60PW-M C98732 ok, XT30PW-M C431092 ok,
+  LM5069MM-1 C486026 5 in stock (need 1 per unit), TCA9548APWR C130026 0,
+  BSC040N10NS5 C534334 0, HoJLR 7 mOhm C2904232 0 (slot shunts!), no LCSC
+  code found for SMDJ60A, 6 mOhm 2512, the 47 uF / 100 V electrolytic.
+NEXT: user review of both placements; then routing per board (unit: reuse
+route_hand.py slot copper / In2 bus / channel with origin at x = 100 and
+the channel starting at J301 instead of a column edge; strip power copper
+new; core: route_hand.py core() minus the tile copper, channel rows to
+J301), and the parts with no stock above.
+
 ## 2026-10-29: NEXT = chained plane (ADR 0005, Proposed, all asks decided)
 
 The single-board PP-48 is frozen at tag pp48-rev1 (b607eca: N = 2,
