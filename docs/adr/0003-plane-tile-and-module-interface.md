@@ -7,7 +7,9 @@ columns at 25 mm, front end under the module, rotating channel)
 **Updated**: 2026-10-26 (review asks answered: names, LM5069-1, new
 module project, INT per column; decision 14 isolated aux added);
 2026-10-27 (decisions 6 and 7: aux contacts are a 1.27 mm header and
-socket, not pads and pogos; standoffs 7.0 mm)
+socket, not pads and pogos; standoffs 7.0 mm); 2026-10-29 (decision
+14: own LM5017 Fly-Buck, functional isolation, replaces the interim
+module)
 
 Related: docs/plane-requirements.md (R1-R22, what this must meet),
 docs/pm-interface.md (module mechanics and aux contacts, generated
@@ -152,8 +154,8 @@ rest of the plane rested on assumptions that no longer hold:
     - the I2C link and EXP_INT, through the ISO1640-class isolator on
       the tile (as ADR 0001);
     - the 12 V aux for the controller, from an isolated 48-60 V ->
-      12 V supply (~12 W, flyback or an off-the-shelf module, 1.5 kV
-      class functional isolation), replacing the non-isolated LM5164
+      12 V supply (~2 W, Fly-Buck, functional isolation; values
+      below), replacing the non-isolated LM5164
       aux buck of ADR 0001. With the LM5164 the aux return tied the
       controller's GND to the bus GND and the I2C isolator isolated
       nothing.
@@ -164,14 +166,45 @@ rest of the plane rested on assumptions that no longer hold:
     Confirmed 2026-10-28 (user): the isolated 12 V aux stays and the
     controller is adapted to a 12 V input (it is built for 19 V today);
     see the controller revisit in docs/handoff.md.
-    Implementation (user 2026-10-29, INTERIM): an off-the-shelf 6 W
-    isolated module, URB4812YMD-6WR3 class (18-75 V in, 12 V 0.5 A,
-    1.5 kV DC I/O, 25.4 x 25.4 x 11.7 mm DIP, pins 1 GND, 2 Vin, 3 +Vo,
-    5 0V; LCSC C5369743, a YLPTEC part with the Mornsun pin-out), with
-    Cin 22 uF / 100 V + 2.2 uF and Cout 10 uF per the Mornsun datasheet.
-    It stands in for the own Fly-Buck the user chose (LM5161 + coupled
-    inductor, ~5 W; the controller draws ~0.7 W idle): REVISIT when a
-    coupled inductor with >= 1.5 kV isolation is found at LCSC.
+    Implementation (2026-10-29, replaces the interim URB4812YMD-6WR3
+    module U2): own Fly-Buck on the plane core, secondary on a ground
+    island (CTRL_GND) with no copper to the bus world except through
+    the coupled inductor and the link isolator.
+    - Isolation: functional only. The working voltage across the
+      barrier is ~0 V (both sides near earth, bus <= 60 V SELV), so
+      >= 500 Vrms hi-pot (the inductor's rating) and >= 1 mm copper
+      gap on every layer around the island are enough; the 1.5 kV of
+      the module is not needed.
+    - Load: rev C measured ~0.7 W; sized for ~2 W (12 V, 170 mA)
+      because each OR-ed 12 V feed on the controller must carry the
+      radio TX peaks alone.
+    - Parts (LCSC 2026-10-29): LM5017MRX/NOPB C34355 (100 V, 600 mA,
+      COT synchronous, SOIC-8-EP, TI names it a Fly-Buck regulator;
+      LM5161 C468246, 1 A HTSSOP-14, is the bigger alternative);
+      coupled inductor Bourns SRF0703-470M C3273458 (dual winding
+      1:1, 47 uH, Isat 1.14 A, ~0.68 Ohm per winding, hi-pot 500 Vrms,
+      7.6 x 7.6 mm). SRF0703-101M C5760020 (100 uH, Isat 0.79 A,
+      ~1.4 Ohm) halves the ripple but saturates below the LM5017's
+      worst-case current limit (1.3 A) and doubles the DCR drop.
+    - Operating range 30-75 V (bus 48-60 V, tile UVLO ~38 V, OVLO
+      ~66-68 V); survives 100 V (TVS clamp ahead of it).
+    - Values (LM5017 datasheet 8.2.2, K = 9e-11):
+      | item | value | why |
+      |---|---|---|
+      | VOUT1 (primary) | 12.7 V: RFB2 18.7k / RFB1 2.00k | D <= 0.42 at 30 V (TI: D < 0.5) |
+      | VOUT2 (island) | ~12.0 V at 170 mA | 1:1, minus Schottky ~0.45 V and DCR |
+      | RON | 280k, fsw ~500 kHz | tON ~350 ns at 75 V (> 100 ns min) |
+      | ripple dIL1 | 0.45 A at 75 V, 0.42 A at 60 V | 47 uH |
+      | peak HS current | ~0.41 A (0.18 A + dI/2) | < 0.7 A min current limit |
+      | Type III ripple | Rr 200k, Cr 1 nF, Cac 100 nF | RrCr <= (30 V - VOUT1) tON / 50 mV |
+      | COUT1 / COUT2 | 4.7 uF 25 V / 2 x 10 uF 25 V X7R | dVOUT2 ~10 mV |
+      | D1 (secondary) | 100 V 1 A Schottky | VR = VIN max (1:1) |
+      | D2 (VCC) | VOUT1 -> VCC, 100 V signal diode | VOUT1 > 8.55 V + VF |
+      | UVLO | RUV2 100k / RUV1 4.22k: on 30.3 V, 2 V hyst | under the tile UVLO |
+      | preload | 4.7k on VOUT2 + 15 V TVS on the island | VOUT2 rises unloaded (controller unplugged) |
+      | CIN | 2.2 uF 100 V 1210 + 100 nF | |
+    - Check on the bench: VOUT2 over load (0-170 mA) and line, the
+      unloaded VOUT2 with the preload, and hi-pot island-to-bus.
 
 ---
 

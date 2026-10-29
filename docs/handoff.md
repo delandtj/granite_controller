@@ -225,13 +225,10 @@ the controller is also built for a 19 V input: adapt it to the plane's
 isolated 12 V aux (ADR 0003 decision 14, kept). Revisit what the
 controller keeps (ESP32, Ethernet, probes, link master to the planes).
 
-Open, revisit (user 2026-10-29): the isolated 12 V aux is an INTERIM
-off-the-shelf module (U2 URB4812YMD-6WR3 class, LCSC C5369743 YLPTEC,
-44 in stock in a search snapshot, 6 W, 1 x 1 inch DIP; footprint
-pp48:Converter_DCDC_1x1in_THT drawn from the Mornsun datasheet, check
-it against the YLPTEC datasheet). The user's choice is an own Fly-Buck
-(LM5161 C468246 + coupled inductor >= 1.5 kV isolation); swap back
-when such an inductor is found at LCSC. Also open on that sheet: C11
+Open (2026-10-29): the isolated 12 V aux is now an own Fly-Buck, LM5017
+C34355 + Bourns SRF0703-470M C3273458, functional isolation, values in
+ADR 0003 decision 14. The Supplies sheet still draws the INTERIM module
+U2 (URB4812YMD-6WR3 class, C5369743): redraw it to the Fly-Buck. C11
 22 uF / 100 V electrolytic (CP_Elec_10x10) and C13 10 uF / 50 V 1210
 have no LCSC code yet. J4 (JST PH 2, pin 1 CTRL_12V, pin 2 CTRL_GND)
 is the controller's 12 V input: match it in the controller revisit.
