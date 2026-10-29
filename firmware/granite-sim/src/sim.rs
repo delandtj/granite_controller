@@ -16,6 +16,7 @@ use granite_core::rules::{RuleAction, RuleEngine};
 use granite_core::{NODE_COUNT, NodeId};
 
 use crate::fakes::{FakeSensors, FakeSwitches};
+use crate::planes::FakePlaneLink;
 use crate::platform::{SimIdentity, SimNet, SimOta, SimPlatform, SimRng, SimStore};
 use crate::scenario::Scenario;
 
@@ -300,6 +301,11 @@ pub struct Sim {
     pub rng: SimRng,
     /// The core over the fake board.
     pub core: SimCore,
+    /// The plane link and the planes on it. Nothing in granite-core
+    /// reads it yet: the plane client is the next step (ADR 0004
+    /// decision 5). The planes still run, because a plane is a separate
+    /// MCU and does not wait to be asked.
+    pub planes: FakePlaneLink,
     /// The scenario, kept for a reset.
     scenario: Scenario,
     /// Set when the dispatcher asked for a reboot.
@@ -322,6 +328,7 @@ impl Sim {
             ota: SimOta::default(),
             rng: SimRng,
             core: SimCore::new(&scenario, &config),
+            planes: FakePlaneLink::from_scenario(&scenario),
             config,
             scenario,
             reboot_requested: false,
@@ -346,6 +353,9 @@ impl Sim {
         self.now_ms = self.started.elapsed().as_millis() as u64;
         self.platform.now_ms = self.now_ms;
         self.net.now_ms = self.now_ms;
+        // The planes first: they run at 20 Hz on their own clock, and
+        // the controller sees whatever they have got to by now.
+        self.planes.tick(self.now_ms);
         self.core.tick(self.now_ms);
         self.observed = self.core.observed.clone();
         self.drain_events();
@@ -453,6 +463,11 @@ impl Sim {
     }
 
     /// Restart: the configuration survives, node power is untouched.
+    ///
+    /// The planes are not rebuilt either. ADR 0004 ("the controller
+    /// reboots, does any node change state?") answers no: the planes
+    /// hold their own state and sequences, and the controller
+    /// rediscovers them.
     fn reboot(&mut self) {
         let config = self.config.clone();
         self.auth.close_all();

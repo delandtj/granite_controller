@@ -1,0 +1,119 @@
+# Two planes on the link (controller ADR 0004): a full frame of eight
+# nodes on the plane at 0x30, its four unit boards populated, plus a
+# second plane at 0x31 with a single unit, which is what a half-filled
+# frame or a bench board looks like.
+#
+# Slot 0 is a hung host (it ignores its PWR button, so `off` has to
+# escalate), slot 3 sleeps with a blinking LED, slot 5 has no module,
+# and the faults below arrive while the simulator runs: a short burst of
+# dropped transactions, a corrupted answer, a unit whose chain cable
+# comes out and goes back in, a power limit trip and, on the second
+# plane, a power loss that makes it flag "intended state lost".
+#
+# The rev C node section is left at its defaults; nothing joins the two
+# models yet (the plane client is the next step).
+device_id = "granite-510003"
+mac = "02:00:00:51:00:03"
+
+[hardware]
+vin_mv = 12000
+board_temp_c = 34.0
+
+[[probes]]
+rom = "28ff000000000001"
+name = "inlet"
+temp_c = 42.0
+
+[[plane]]
+address = 0x30
+units = [0, 1, 2, 3]
+# A short blink window, so a wait on a host LED is a second rather than
+# five; a real plane ships with 200 / 4000.
+blink_window_ms = [100, 500]
+
+[[plane.slot]]
+slot = 0
+host_on = true
+load_ma = 1800
+respond = "ignores_hold"
+
+[[plane.slot]]
+slot = 1
+host_on = true
+load_ma = 1200
+
+[[plane.slot]]
+slot = 2
+host_on = true
+load_ma = 900
+
+[[plane.slot]]
+slot = 3
+host_on = true
+load_ma = 400
+# A sleeping host. The period has to sit inside the blink window above,
+# which is shortened here as well, so this is a fast version of the
+# 1-2 s breathing LED a real board has.
+blink_period_ms = 300
+
+[[plane.slot]]
+slot = 4
+host_on = true
+load_ma = 1100
+
+[[plane.slot]]
+slot = 5
+module = false
+
+[[plane.slot]]
+slot = 6
+host_on = true
+load_ma = 1500
+
+[[plane.slot]]
+slot = 7
+load_ma = 1000
+
+[[plane.fault]]
+at_s = 20
+kind = "drop_transactions"
+count = 3
+
+[[plane.fault]]
+at_s = 30
+kind = "corrupt_answer"
+count = 1
+
+[[plane.fault]]
+at_s = 45
+kind = "unit_unplug"
+unit = 1
+
+[[plane.fault]]
+at_s = 60
+kind = "unit_replug"
+unit = 1
+
+[[plane.fault]]
+at_s = 75
+kind = "power_limit_trip"
+slot = 6
+
+[[plane]]
+address = 0x31
+units = [0]
+blink_window_ms = [100, 500]
+
+[[plane.slot]]
+slot = 0
+host_on = true
+load_ma = 1300
+
+[[plane.slot]]
+slot = 1
+host_on = true
+load_ma = 700
+
+[[plane.fault]]
+at_s = 90
+kind = "power_loss"

@@ -82,6 +82,57 @@ node broken makes the whole U15 read fail instead, and then every node is
 `unknown` and the state-dependent actions are refused unless the command
 carries `"force": true`.
 
+## Planes
+
+A `[[plane]]` section puts a simulated plane on the link
+(controller ADR 0004 architecture item 3). Each one is a real
+`plane-logic` `Plane` over plane-logic's own fake devices, and the fake
+link in front of them (`src/planes.rs`) implements
+`granite_core::hal::PlaneLink`: it hands the request bytes to
+`Plane::handle_frame` and gives the answer back. Framing, CRC and
+records stay in `granite-proto`; an address with no plane NAKs, and
+`int_asserted()` is the wired OR of every plane's `event_pending()`.
+
+Every plane runs at its own 20 Hz from the simulator's main loop, so a
+sequence finishes and an event shows up on EXP_INT with nobody polling.
+`scenarios/two-planes.toml` is a full frame on the plane at 0x30 (four
+unit boards, eight slots, one of them empty, one sleeping host, one that
+ignores its PWR button) plus a single-unit plane at 0x31.
+
+```toml
+[[plane]]
+address = 0x30
+units = [0, 1, 2, 3]
+blink_window_ms = [100, 500]   # shortens every wait on a host LED
+
+[[plane.slot]]
+slot = 0
+module = true
+module_id = 0x0400
+load_ma = 1200
+host_on = true
+respond = "normal"             # normal | ignores_short_press | ignores_hold
+blink_period_ms = 0            # non-zero is a sleeping host
+
+[[plane.fault]]
+at_s = 45
+kind = "unit_unplug"
+unit = 1
+```
+
+Fault kinds, with `slot` / `unit` / `count` / `value` / `on` as each one
+needs: `drop_transactions` (NAK the next `count`), `corrupt_answer`
+(flip a byte, so the controller's CRC check rejects it), `watchdog` and
+`power_loss` (a plane reboot that keeps or loses the intended state),
+`unit_unplug` / `unit_replug` (the chain cable), `unit_hot_swap_latch`,
+`ov_latch`, `pgd_loss`, `power_limit_trip`, `ignore_pwr` and `load`.
+The same knobs are methods on `FakePlane`, which is how
+`tests/plane_link.rs` drives them.
+
+Nothing in `granite-core` reads the link yet: the plane client is the
+next step (ADR 0004 decision 5), and `tests/plane_link.rs` is a
+hand-written stand-in for it.
+
 ## What is not simulated
 
 - Pull OTA (`{"url":..,"sha256":..}`) is logged and ignored; pushed
@@ -90,3 +141,7 @@ carries `"force": true`.
   through the `Command`/`Reply` JSON, which is the same code path.
 - Modbus TCP: the map and the command translation are in the core and
   unit tested there; the simulator does not open port 502.
+- Plane link timing: a transaction is instant and never stretches the
+  clock, so the ~20 ms per plane per second of ADR 0003 decision 5 is
+  not something the simulator can show. Dropped and corrupted
+  transactions are injected, not earned.

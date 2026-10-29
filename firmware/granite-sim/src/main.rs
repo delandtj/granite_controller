@@ -144,6 +144,20 @@ fn serve(
         println!("mac      {}", sim.identity.mac);
         println!("cert     sha256 {}", granite_core::api::Identity::cert_sha256(&sim.identity));
         println!("recovery {} (shown once on the page)", sim.identity.recovery_token);
+        let planes: Vec<String> = sim
+            .planes
+            .planes()
+            .map(|plane| {
+                let units = plane.sim.plane.units_present().bits().count_ones();
+                let plural = if units == 1 { "unit" } else { "units" };
+                format!("0x{:02x} ({units} {plural})", plane.address())
+            })
+            .collect();
+        if planes.is_empty() {
+            println!("planes   none on the link");
+        } else {
+            println!("planes   {}", planes.join(", "));
+        }
         if let Some(path) = &scenario_path {
             println!("scenario {}", path.display());
         }

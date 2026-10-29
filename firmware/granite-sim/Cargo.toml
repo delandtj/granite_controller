@@ -12,7 +12,9 @@ axum-server = { version = "0.8.0", features = ["tls-rustls"] }
 base64 = "0.23.1"
 clap = { version = "4.6.7", features = ["derive"] }
 granite-core = { version = "0.1.0", path = "../granite-core" }
+granite-proto = { version = "0.1.0", path = "../granite-proto" }
 p256 = { version = "0.14.0", features = ["ecdsa", "pem", "pkcs8"] }
+plane-logic = { version = "0.1.0", path = "../plane-logic", features = ["sim"] }
 rand = "0.10.3"
 rcgen = "0.14.10"
 reqwest = { version = "0.13.5", default-features = false, features = ["rustls", "json", "blocking", "charset", "http2"] }
