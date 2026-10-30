@@ -47,10 +47,15 @@ STRIP = {
     # B: hot-swap controller and monitor behind the shunts, dividers above them (VIN pads of R233 /
     # R235 at u 1.2 / 3.0, under the VIN column)
     'C202': (7.6, 27.0, 90, B),
-    'U208': (4.0, 44.0, 0, B), 'C216': (4.0, 41.0, 0, B),
-    'U207': (4.0, 50.0, 0, B), 'C203': (4.0, 53.0, 0, B),
+    # LM5069 U207 right under the UVLO / OVLO dividers (their outputs drop straight to its left pins), its
+    # TIMER cap and PWR / PGD resistors above its right pins; INA238 U208 below it, I2C / +3V3 pins facing
+    # slot B (free B space between the slot and the strip), Kelvin taps by R201 / R202's pads
+    'U207': (4.0, 44.0, 0, B), 'C203': (6.0, 41.0, 0, B),
+    # C216 under U208's +3V3 strap pin 1 (tied to VS pin 6 under the body): U208's right side stays free for
+    # EXP_RSTN / PRESS_EN, which climb from the band ladder past it to J302's top pins
+    'U208': (4.0, 50.0, 0, B), 'C216': (1.6, 53.0, 0, B),
     'R233': (1.1, 34.5, 90, B), 'R235': (3.2, 34.5, 90, B), 'R234': (5.1, 34.5, 90, B), 'R236': (6.6, 34.5, 90, B),
-    'R237': (1.2, 38.5, 90, B), 'R238': (3.0, 38.5, 90, B),
+    'R238': (4.6, 38.5, 90, B), 'R237': (6.4, 38.5, 90, B),
     'Q204': (2.4, 30.2, 0, B), 'R214': (5.2, 30.4, 90, B),     # U_OFF: on the slot B side, by the UVLO divider
     'C214': (2.6, 64.0, 0, B), 'C215': (7.4, 64.0, 0, B),
     'R210': (7.0, 71.0, 180, B), 'R211': (12.8, 71.0, 0, B),
@@ -59,6 +64,9 @@ HOLES = {'H1': (LEFT + 4.0, Y0 + 4.0), 'H2': (LEFT + 4.0, Y0 + 68.0)}   # left m
 # press deadline (docs/press-deadline-line.md): LED return FET Q10 and PRESS_EN pull-down R31 on F in the
 # margin, above J301's PRESS_EN pin (13, v 37)
 MARGIN = {'Q10': (LEFT + 4.5, Y0 + 30.0, 0, F), 'R31': (LEFT + 4.5, Y0 + 27.2, 0, F)}
+# slot B's LED resistors (rev1 COL R21 / R22 + 50) sit right under the expander's bottom row in slot B: down
+# 1.8 mm on B, so U_OFF (pin 12) gets its escape via there (tools/route_unit.py escapes())
+SLOT_B = {'R71': (X0 + rev1.PITCH + 11.4, Y0 + 43.4, 90, B), 'R72': (X0 + rev1.PITCH + 12.8, Y0 + 43.4, 90, B)}
 SOLID = [('J201', '1'), ('J201', '2')]
 
 
@@ -95,7 +103,7 @@ def main(src, dst):
         put(board, ref, SX + u, Y0 + v, rot, side)
     for ref, (x, y) in HOLES.items():
         put(board, ref, x, y, 0, F)
-    for ref, (x, y, rot, side) in MARGIN.items():
+    for ref, (x, y, rot, side) in list(MARGIN.items()) + list(SLOT_B.items()):
         put(board, ref, x, y, rot, side)
     n += len(STRIP) + 4
     for ref, num in SOLID:

@@ -171,14 +171,15 @@ def column(k):
     k.track('VBUS', [(5.5, 15.15), (5.5, 17.6), (9.54, 17.6), (9.54, 16.9)], 0.2, F)
     k.track('SENSE', [(5.0, 15.15), (5.0, 18.1), (15.46, 18.1), (15.46, 16.9)], 0.2, F)
     # ---- OV latch U3: OVK (pin 7) and CLRN (pin 6) sit between the +3V3 and LQ pins; escape
-    # inward under the body to vias (B behind U3 is kept free), the router takes them from there
+    # inward under the body to pad vias (B behind U3 is kept free; plain vias with copper on one side
+    # only get stripped by krt-route), the router takes them from there
     k.track('OVK', [(19.4, 33.25), (18.4, 33.25), (18.1, 32.95)], 0.2, F)
-    k.via('OVK', (18.1, 32.95))
+    k.pad_via('OVK', (18.1, 32.95), 'XV%d%s1' % (k.unit, k.slot))
     k.track('CLRN', [(19.4, 33.75), (18.4, 33.75), (18.1, 34.05)], 0.2, F)
-    k.via('CLRN', (18.1, 34.05))
+    k.pad_via('CLRN', (18.1, 34.05), 'XV%d%s2' % (k.unit, k.slot))
     # ---- arm FF U10: PGD (pin 6) between ARMS_N and ARM, the same escape inward to a via
     k.track('PGD', [(4.2, 25.85), (3.2, 25.85), (2.9, 26.15)], 0.2, F)
-    k.via('PGD', (2.9, 26.15))
+    k.pad_via('PGD', (2.9, 26.15), 'XV%d%s3' % (k.unit, k.slot))
     # ---- aux socket J3: GND pins 5 and 6 joined under the body (pad 6 can end up boxed in)
     k.track('GND', [(20.35, 41.425), (20.35, 45.375)], 0.3, F)
     # ---- node

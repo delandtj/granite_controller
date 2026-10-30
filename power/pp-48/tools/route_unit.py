@@ -150,6 +150,58 @@ def band(k):
     rh.rule_area(k.b, 'band', (IN2,), pts, keep_tracks=True, no_vias=True)
 
 
+def escapes(k):
+    """U5's boxed-in pins out to vias (krt-route takes them on from there): top row SDA (30) / SCL (29)
+    up between the supply escape vias, /RESET (28) straight up into the EXP_RSTN row's tap via; U_PGD
+    (24, top right corner) right and up, B_DISARM (23) and B_OFF (22) right under it to staggered vias; U_OFF (12, bottom row) down to a via where slot B's LED
+    resistors R71 / R72 used to sit (tools/place_unit.py moves them down), B_PWRD (13) and B_RUNOFF (16) down to vias"""
+    F = pcbnew.F_Cu
+    pin = lambda n: pad_at(k.b, 'U5', n)
+    (x, y) = pin('30')
+    k.track('/SEG_SDA', [(x, y), (x, y - 1.16), (x - 0.5, y - 1.66), (x - 0.5, y - 1.96)], 0.2, F)
+    k.pad_via('/SEG_SDA', (x - 0.5, y - 1.96), 'EV30')
+    (x, y) = pin('29')
+    k.track('/SEG_SCL', [(x, y), (x, y - 1.61), (x - 0.15, y - 1.76)], 0.2, F)
+    k.pad_via('/SEG_SCL', (x - 0.15, y - 1.76), 'EV29')
+    (x, y) = pin('28')                          # straight up into the EXP_RSTN row's tap (band())
+    k.track('/EXP_RSTN', [(x, y), (x, RST_TAP[1] + 0.5), (x - 0.5, RST_TAP[1]), RST_TAP], 0.2, F)
+    # pins 24 / 23 / 22 (U_PGD, B_DISARM, B_OFF) all leave upward: staggered vias up-left of each other, left of R62
+    (x, y) = pin('24')
+    k.track('/U_PGD', [(x, y), (x + 0.36, y), (x + 0.76, y - 0.4), (x + 0.76, y - 0.95)], 0.2, F)
+    k.pad_via('/U_PGD', (x + 0.76, y - 0.95), 'EV24')
+    (x, y) = pin('23')
+    k.track('/Unit/B_DISARM', [(x, y), (x + 1.06, y), (x + 1.36, y - 0.3), (x + 1.36, y - 0.85)], 0.2, F)
+    k.pad_via('/Unit/B_DISARM', (x + 1.36, y - 0.85), 'EV23')
+    (x, y) = pin('22')
+    k.track('/Unit/B_OFF', [(x, y), (x + 1.76, y), (x + 2.16, y - 0.4), (x + 2.16, y - 0.65)], 0.2, F)
+    k.pad_via('/Unit/B_OFF', (x + 2.16, y - 0.65), 'EV22')
+    (x, y) = pin('12')
+    k.track('/U_OFF', [(x, y), (x, y + 1.36)], 0.2, F)
+    k.pad_via('/U_OFF', (x, y + 1.36), 'EV12')
+    # bottom row: B_PWRD (13) down past EV12 to a via between R71 / R72's top pads (B goes on down between
+    # them to R69), B_RUNOFF (16) down to a via under the pin
+    (x, y) = pin('13')
+    k.track('/Unit/B_PWRD', [(x, y), (x, y + 2.0)], 0.2, F)
+    k.pad_via('/Unit/B_PWRD', (x, y + 2.0), 'EV13')
+    (x, y) = pin('16')
+    k.track('/Unit/B_RUNOFF', [(x, y), (x, y + 1.0)], 0.2, F)
+    k.pad_via('/Unit/B_RUNOFF', (x, y + 1.0), 'EV16')
+    # U_OFF into the strip on In2: EXP_RSTN / PRESS_EN climb the strip's left edge from the band ladder and
+    # cross its top to J302's top pins, which closes a loop around Q204 on F / B. Short hop from slot B's top
+    # right corner under the strip edge to Q204 pin 1 (along the VBUS current from strip to slots, so the slit
+    # in the In2 plane is minor); krt-route joins EV12 to UV1 inside slot B
+    q = pad_at(k.b, 'Q204', '1')
+    a, z = (148.8, 130.8), (q[0], q[1] + 1.2)
+    k.pad_via('/U_OFF', a, 'UV1')
+    k.via('/U_OFF', z)
+    k.track('/U_OFF', [a, z], 0.2, pcbnew.In2_Cu)
+    k.track('/U_OFF', [z, q], 0.2, pcbnew.B_Cu)
+    m = lambda t: (a[0] + (z[0] - a[0]) * t, a[1] + (z[1] - a[1]) * t)   # no vias on the hop (between its end vias)
+    (x0, y0), (x1, y1) = m(0.25), m(0.75)
+    rh.rule_area(k.b, 'band uoff', (pcbnew.In2_Cu,), [(x0, y0 - 0.5), (x1, y1 - 0.5), (x1, y1 + 0.5), (x0, y0 + 0.5)],
+                 keep_tracks=True, no_vias=True)
+
+
 def strip(k):
     """strip power path, Kelvin and gate escapes (absolute coordinates; the right-hand parts follow
     J302's pin column JX and the board edge RIGHT)"""
@@ -191,19 +243,30 @@ def strip(k):
     edges = [150.3] + [x for g in gates for x in (g - 0.6, g + 0.6)] + [RIGHT - 0.3]
     for j in range(0, len(edges), 2):
         rh_area(k.b, 'pour vbus %d' % j, [(edges[j], 168.0), (edges[j + 1], 168.0), (edges[j + 1], BOTTOM - 0.3), (edges[j], BOTTOM - 0.3)])
-    # ---- Kelvin: U207 (B) SENSE pin 1 / VIN pin 2 to R202's pads, U208 (B) IN- pin 9 / IN+ pin 10 to R201's
+    # ---- Kelvin: U207 (B) SENSE pin 1 / VIN pin 2, U208 (B, below it) IN- pin 9 / IN+ pin 10, by vias into
+    # the F pours next to the shunt pads (VIN column on the left, USENSE pour from R201 / R202's right pads)
     x1, y1 = pad_at(k.b, 'U207', '1')
     x2, y2 = pad_at(k.b, 'U207', '2')
     k.track('VIN', [(x2 - 0.75, y2), (150.6, y2), (150.6, y2 - 0.2)], 0.2, B)
     k.via('VIN', (150.6, y2 - 0.2))
-    k.track('Input/USENSE', [(x1 - 0.75, y1), (150.9, y1 + 0.25), (150.9, 154.2), (156.0, 154.2)], 0.2, B)
-    k.via('Input/USENSE', (156.0, 154.2))
+    k.track('Input/USENSE', [(x1 - 0.75, y1), (x1 - 0.75, y1 + 1.2), (155.9, y1 + 1.2)], 0.2, B)   # under U207
+    k.via('Input/USENSE', (155.9, y1 + 1.2))
+    x8, y8 = pad_at(k.b, 'U208', '8')
     x9, y9 = pad_at(k.b, 'U208', '9')
     x10, y10 = pad_at(k.b, 'U208', '10')
-    k.track('Input/USENSE', [(x9 + 0.72, y9), (157.9, y9), (157.9, 145.9)], 0.2, B)
-    k.via('Input/USENSE', (157.9, 145.9))
-    k.track('VIN', [(x10 + 0.72, y10), (157.3, y10 + 0.4), (157.3, 146.0), (151.5, 146.0)], 0.2, B)
-    k.via('VIN', (151.5, 146.0))
+    k.track('Input/USENSE', [(x9, y9), (x9 + 0.75, y9), (x9 + 1.35, y9 + 0.6)], 0.2, B)
+    k.via('Input/USENSE', (x9 + 1.35, y9 + 0.6))
+    k.track('VIN', [(x10, y10), (x10, y10 + 1.3), (153.5, y10 + 1.3)], 0.2, B)               # under U208
+    k.via('VIN', (153.5, y10 + 1.3))
+    # U208 VBUS (pin 8, boxed in by its neighbours) to a via just right of R202's USENSE pad (In2 plane)
+    k.track('VBUS', [(x8, y8), (x8 + 2.1, y8)], 0.2, B)
+    k.via('VBUS', (x8 + 2.3, y8))
+    # U208 VS (pin 6) to the A1 strap (pin 1, +3V3 for address 0x44) under the body, decoupler C216 under pin 1
+    x6, y6 = pad_at(k.b, 'U208', '6')
+    x1, y1 = pad_at(k.b, 'U208', '1')
+    k.track('+3V3', [(x6, y6), (x6 - 0.95, y6), (x1 + 0.95, y1), (x1, y1)], 0.2, B)
+    cx, cy = pad_at(k.b, 'C216', '1')
+    k.track('+3V3', [(x1, y1), (cx, y1 + 0.75), (cx, cy)], 0.2, B)
     # dividers: VIN pads (B) by vias into the VIN column
     for r in ('R233', 'R235'):
         x, y = pad_at(k.b, r, '1')
@@ -269,6 +332,7 @@ def main(src, dst):
         rh.column(Unit(board, g, c, 2))
     k = Abs(board, g)
     band(k)
+    escapes(k)
     strip(k)
     gnd_pours(board, g)
     board.Save(dst)
