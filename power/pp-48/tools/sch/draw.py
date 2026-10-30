@@ -77,7 +77,6 @@ R2512 = "Resistor_SMD:R_2512_6332Metric"
 C0402 = "Capacitor_SMD:C_0402_1005Metric"; C0603 = "Capacitor_SMD:C_0603_1608Metric"
 C0805 = "Capacitor_SMD:C_0805_2012Metric"; C1210 = "Capacitor_SMD:C_1210_3225Metric"
 LED0603 = "LED_SMD:LED_0603_1608Metric"
-SJ = "Jumper:SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm"
 
 BASIC = {   # JLC basic parts, by (value, footprint); verify in the JLC preview before ordering
     ("10k", R0402): "C25744", ("100k", R0402): "C25741", ("47k", R0402): "C25792", ("220", R0402): "C25091",

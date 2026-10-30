@@ -13,7 +13,7 @@ MUX_RST, LED_RUN, EXP_RSTN, INT_OUT and the address straps. The sheet
 draws a port (sheet nets) or a label (straps, LED) at each signal pin and
 the strap, LED and pull-up circuits beside U3; SWD and NRST are wired.
 """
-from sch.draw import Block, R0402, C0402, C0603, LED0603, SJ
+from sch.draw import Block, R0402, C0402, C0603, LED0603
 
 G = 1.27
 
@@ -55,7 +55,7 @@ CORE_PINS = {
     "26": "LED_RUN",                 # PB14
     "38": "EXP_RSTN",                # PD0 open drain: the units' TCA6424A /RESET (R30 pull-ups on the units)
     "40": "INT_OUT",                 # PD2: EXP_INT to the controller through the ISO7721 U5
-    "37": "ADR0", "39": "ADR1", "28": "ADR2",   # PA15 / PD1 / PA8 straps (JP1-3 to GND, R20-22 up)
+    "37": "ADR0", "39": "ADR1", "28": "ADR2",   # PA15 / PD1 / PA8 straps (DIP switch SW1 to GND, R20-22 up)
 }
 
 # what the firmware needs per pin (written to firmware/plane-core-pins.toml by gensch.py core):
@@ -71,7 +71,7 @@ PIN_USE = {
     "26": ("PB14", "output push-pull", "heartbeat LED, high = on"),
     "38": ("PD0", "output open-drain", "low = reset every unit's TCA6424A (bused, pull-ups on the units)"),
     "40": ("PD2", "output push-pull", "high = assert EXP_INT to the controller (ISO7721 U5)"),
-    "37": ("PA15", "input", "address strap ADR0: pulled up, closed jumper = 0; slave address 0x30 + ADR[2:0]"),
+    "37": ("PA15", "input", "address strap ADR0: pulled up, DIP switch SW1 ON = 0; slave address 0x30 + ADR[2:0]"),
     "39": ("PD1", "input", "address strap ADR1"),
     "28": ("PA8", "input", "address strap ADR2"),
     "35": ("PA13", "SWDIO", "debug (fixed)"),
@@ -201,9 +201,12 @@ def block(N=2, tile=True):
         xa = XL - (4 + 10 * (2 - i)) * G
         b.sym("R%d" % (20 + i), "Device:R", "100k", R0402, {"1": "+3V3", "2": net}, at=(xa - 6 * G, Y + 6 * G),
               desc="address strap pull-up")
-        b.sym("JP%d" % (1 + i), "Jumper:SolderJumper_2_Open", "ADR%d" % i, SJ, {"1": net, "2": "GND"},
-              at=(xa, Y + 16 * G), rot=270, desc="close = 0; plane address 0x30 + ADR[2:0]")
-        b.wire(net, [("R%d" % (20 + i), "2"), (xa - 6 * G, Y + 11 * G), (xa, Y + 11 * G), ("JP%d" % (1 + i), "1")])
+        b.wire(net, [("R%d" % (20 + i), "2"), (xa - 6 * G, Y + 11 * G), (xa, Y + 11 * G)])
         b.tie(net, (xa, Y + 11 * G), 0)
+        b.tie(net, ("SW1", str(1 + i)), 180)
+    b.sym("SW1", "Switch:SW_DIP_x03", "ADR", "Button_Switch_SMD:SW_DIP_SPSTx03_Slide_KingTek_DSHP03TS_W7.62mm_P1.27mm",
+          {"1": "ADR0", "2": "ADR1", "3": "ADR2", "4": "GND", "5": "GND", "6": "GND"}, at=(XL - 14 * G, Y + 19 * G),
+          fields={"LCSC": "C50844", "MPN": "KingTek DSHP03TSGET"},
+          desc="address straps, ON = 0; plane address 0x30 + ADR[2:0]")
 
     return b.finish()

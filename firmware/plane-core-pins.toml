@@ -55,7 +55,7 @@ port = "PA15"
 pin = 37
 net = "ADR0"
 mode = "input"
-use = "address strap ADR0: pulled up, closed jumper = 0; slave address 0x30 + ADR[2:0]"
+use = "address strap ADR0: pulled up, DIP switch SW1 ON = 0; slave address 0x30 + ADR[2:0]"
 
 [[pin]]
 port = "PB8"

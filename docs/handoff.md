@@ -62,6 +62,12 @@ krt-route's In2 plane. Core MCU pins reassigned for the fewest crossings
 copy is firmware/plane-core-pins.toml, written by gensch.py core (ADR 0002
 table updated; plane-logic comments still say PC6 / PC7). NEXT: silk,
 connlabels, jlcfab for both boards; user review.
+Core address straps (2026-10-30): the solder jumpers JP1-3 became a
+3-way SMD DIP switch SW1 (KingTek DSHP03TSGET, C50844, 1.27 mm pitch) on F
+right of U3, ON = 0, address 0x30 + ADR[2:0]; swapped on the routed board
+(ADR0-2, +3V3, SWDIO rerouted with krt-reroute --keep, one mazefix GND
+hop), place_core.py (core.py table) has it for a rebuild. Firmware ADR
+0002's pin table still says "closed = 0": same polarity, the switch's ON.
 
 Unit routing (tools/route_unit.sh <placed board>, in power/pp-48-unit):
 route_unit.py hand copper (rev1 slot copper via route_hand.column, In2
