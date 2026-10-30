@@ -512,8 +512,8 @@
         "schematic_color": "rgba(0, 0, 0, 0.000)",
         "track_width": 0.2,
         "tuning_profile": "",
-        "via_diameter": 0.6,
-        "via_drill": 0.3,
+        "via_diameter": 0.5,
+        "via_drill": 0.2,
         "wire_width": 6
       },
       {
@@ -529,8 +529,8 @@
         "schematic_color": "rgb(255, 0, 234)",
         "track_width": 0.16,
         "tuning_profile": "",
-        "via_diameter": 0.6,
-        "via_drill": 0.3
+        "via_diameter": 0.5,
+        "via_drill": 0.2
       },
       {
         "clearance": 0.2,
@@ -555,8 +555,8 @@
         "schematic_color": "rgb(255, 242, 0)",
         "track_width": 0.2,
         "tuning_profile": "",
-        "via_diameter": 0.6,
-        "via_drill": 0.3,
+        "via_diameter": 0.5,
+        "via_drill": 0.2,
         "wire_width": 6
       },
       {
@@ -576,11 +576,11 @@
         "clearance": 0.2,
         "microvia_diameter": 0.3,
         "microvia_drill": 0.1,
-        "name": "PWR_19V",
+        "name": "PWR_12V",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 5,
         "schematic_color": "rgb(168, 34, 69)",
-        "track_width": 0.4,
+        "track_width": 0.5,
         "tuning_profile": "",
         "via_diameter": 0.6,
         "via_drill": 0.3
@@ -625,19 +625,6 @@
         "via_drill": 0.3
       },
       {
-        "clearance": 0.15,
-        "microvia_diameter": 0.3,
-        "microvia_drill": 0.1,
-        "name": "PWR_DRV_BANK_0",
-        "pcb_color": "rgba(0, 0, 0, 0.000)",
-        "priority": 11,
-        "schematic_color": "rgb(255, 124, 193)",
-        "track_width": 0.2,
-        "tuning_profile": "",
-        "via_diameter": 0.6,
-        "via_drill": 0.3
-      },
-      {
         "clearance": 0.2,
         "microvia_diameter": 0.3,
         "microvia_drill": 0.1,
@@ -654,27 +641,14 @@
         "clearance": 0.15,
         "microvia_diameter": 0.3,
         "microvia_drill": 0.1,
-        "name": "RST_DRV_BANK_0",
-        "pcb_color": "rgba(0, 0, 0, 0.000)",
-        "priority": 9,
-        "schematic_color": "rgb(170, 220, 255)",
-        "track_width": 0.2,
-        "tuning_profile": "",
-        "via_diameter": 0.6,
-        "via_drill": 0.3
-      },
-      {
-        "clearance": 0.15,
-        "microvia_diameter": 0.3,
-        "microvia_drill": 0.1,
         "name": "TEMP_DATA",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 0,
         "schematic_color": "rgb(22, 153, 255)",
         "track_width": 0.2,
         "tuning_profile": "",
-        "via_diameter": 0.6,
-        "via_drill": 0.3
+        "via_diameter": 0.5,
+        "via_drill": 0.2
       },
       {
         "clearance": 0.2,
@@ -689,8 +663,8 @@
         "schematic_color": "rgb(236, 6, 255)",
         "track_width": 0.25,
         "tuning_profile": "",
-        "via_diameter": 0.6,
-        "via_drill": 0.3
+        "via_diameter": 0.5,
+        "via_drill": 0.2
       }
     ],
     "meta": {
@@ -728,18 +702,6 @@
         "pattern": "*/HDR_3V3"
       },
       {
-        "netclass": "PWR_5V",
-        "pattern": "*/HDR_5V"
-      },
-      {
-        "netclass": "PWR_DRV_BANK_0",
-        "pattern": "/Relay channels/PWR_DRV*"
-      },
-      {
-        "netclass": "RST_DRV_BANK_0",
-        "pattern": "/Relay channels/RST_DRV*"
-      },
-      {
         "netclass": "ETH_Lines",
         "pattern": "/Ethernet/ETH_(RX|TX)(\\+|-|P|N|P_T|N_T)"
       },
@@ -756,16 +718,24 @@
         "pattern": "I2C_*"
       },
       {
-        "netclass": "PWR_19V",
-        "pattern": "*/VIN_*"
-      },
-      {
         "netclass": "USB",
         "pattern": "*/C6_USB_*"
       },
       {
         "netclass": "PWR_3V3",
         "pattern": "*/+3V3A"
+      },
+      {
+        "netclass": "PWR_12V",
+        "pattern": "*/VIN_12V"
+      },
+      {
+        "netclass": "PWR_12V",
+        "pattern": "*/12V_IN_*"
+      },
+      {
+        "netclass": "PWR_3V3",
+        "pattern": "*/LINK?_3V3"
       }
     ]
   },

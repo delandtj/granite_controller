@@ -1,13 +1,14 @@
-# pcbkit settings for granite_controller (4L JLC, 199 x 50 mm, ESP32-C6 +
-# W5500, 8 node connectors). Board tools: ~/Electronics/pcbkit.
+# pcbkit settings for the granite controller rev D (4L JLC, 100 x 50 mm,
+# ESP32-C6 + W5500, plane link, two 12 V inputs). Board tools: ~/Electronics/pcbkit.
 
 [project]
 name = "granite-controller"
 libs = { granite = "footprints/granite.pretty" }
 
 [outline]
-# board as built: 199 x 50 mm at (25, 28.6) on the sheet
-length = 199.0
+# rev D: 100 x 50 mm at (25, 28.6) on the sheet (rev C's origin, so the
+# blocks kept from rev C keep their coordinates)
+length = 100.0
 height = 50.0
 origin = [25.0, 28.6]
 
@@ -27,20 +28,12 @@ PWR_3V3              = [0.4,  0.2,  0.6, 0.3]
 PWR_5V               = [0.5,  0.2,  0.6, 0.3]
 PWR_BUCK_5V          = [0.5,  0.2,  0.6, 0.3]
 PWR_VBUS             = [0.5,  0.2,  0.6, 0.3]
-PWR_19V              = [0.4,  0.2,  0.6, 0.3]
+PWR_12V              = [0.5,  0.2,  0.6, 0.3]
 MAGJACK_TRANSFORMERS = [0.3,  0.2,  0.6, 0.3]
 ETH_Lines            = [0.16, 0.2,  0.5, 0.2, 0.16, 0.15]
 USB                  = [0.25, 0.2,  0.5, 0.2, 0.25, 0.15]
-RMII                 = [0.2,  0.15, 0.5, 0.2]
-ETH_CTL              = [0.2,  0.15, 0.5, 0.2]
-SWD                  = [0.2,  0.15, 0.5, 0.2]
-RST                  = [0.2,  0.15, 0.5, 0.2]
 IC2_1                = [0.2,  0.15, 0.5, 0.2]
 TEMP_DATA            = [0.2,  0.15, 0.5, 0.2]
-PWR_DRV_BANK_0       = [0.2,  0.15, 0.5, 0.2]
-PWR_DRV_BANK_1       = [0.2,  0.15, 0.5, 0.2]
-RST_DRV_BANK_0       = [0.2,  0.15, 0.5, 0.2]
-RST_DRV_BANK_1       = [0.2,  0.15, 0.5, 0.2]
 
 [gndpour]
 short_edge_inset = 1.0     # JLC rails with mouse bites on the short edges
@@ -50,39 +43,35 @@ right_overhang = 7.0       # WROOM antenna overhang
 
 [connlabels]
 # placement is greedy in table order: keep this order
-names = { J1 = "ETHERNET", J2 = "USB", J3 = "19V IN", J8 = "EXPANSION", J9 = "I2C", J10 = "DRY IN", J4 = "1-WIRE", J5 = "1-WIRE", J6 = "1-WIRE", J7 = "1-WIRE", J11 = "NODE 1", J12 = "NODE 2", J13 = "NODE 3", J14 = "NODE 4", J15 = "NODE 5", J16 = "NODE 6", J17 = "NODE 7", J18 = "NODE 8" }
+names = { J1 = "ETHERNET", J2 = "USB", J11 = "12V IN A", J12 = "12V IN B", J13 = "PLANE A", J14 = "PLANE B", J9 = "I2C", J10 = "DRY IN", J4 = "1-WIRE", J5 = "1-WIRE", J6 = "1-WIRE", J7 = "1-WIRE" }
 
 [connlabels.legends]
-J3 = ["+", "-"]
+J11 = ["+", "-"]
+J12 = ["+", "-"]
+J13 = ["3V", "G", "CL", "DA", "IN"]
+J14 = ["3V", "G", "CL", "DA", "IN"]
 J9 = ["G", "3V", "DA", "CL"]
 J10 = ["1", "2", "3", "4", "G"]
 J4 = ["3V", "DQ", "G"]
 J5 = ["3V", "DQ", "G"]
 J6 = ["3V", "DQ", "G"]
 J7 = ["3V", "DQ", "G"]
-J11 = ["PW", "RS", "CM", "L+", "L-"]
-J12 = ["PW", "RS", "CM", "L+", "L-"]
-J13 = ["PW", "RS", "CM", "L+", "L-"]
-J14 = ["PW", "RS", "CM", "L+", "L-"]
-J15 = ["PW", "RS", "CM", "L+", "L-"]
-J16 = ["PW", "RS", "CM", "L+", "L-"]
-J17 = ["PW", "RS", "CM", "L+", "L-"]
-J18 = ["PW", "RS", "CM", "L+", "L-"]
 
 [viaout]
 keep = [["U1", "29"]]      # ESP32 thermal-pad vias stay in the pad
 
 [krt]
-work = "~/.cache/granite-pcb/route"
-rework = "~/.cache/granite-pcb/reroute"
+work = "~/.cache/pcbkit/granite-controller-revd/route"
+rework = "~/.cache/pcbkit/granite-controller-revd/reroute"
+keep_groups = ["hand"]             # copper carried over from rev C (tools/place.py)
 clearance = 0.2
 via = [0.5, 0.2]
 track_width = 0.2
 same_net_pad_clearance = 0.15     # no vias in SMD pads
 signal_layers = ["F.Cu", "B.Cu"]  # In1/In2 stay solid planes
 route_extra = ["--ordering", "mps"]
-power_nets = ["GND", "+3V3", "+5V", "*BUCK_5V", "*VIN_19V", "*VIN_RAW", "VBUS", "*SW_5V", "*SW_3V3"]
-power_widths = [0.4, 0.4, 0.5, 0.5, 0.4, 0.4, 0.5, 0.5, 0.5]
+power_nets = ["GND", "+3V3", "+5V", "*BUCK_5V", "*VIN_12V", "*12V_IN_*", "VBUS", "*SW_5V", "*SW_3V3", "*LINK?_3V3"]
+power_widths = [0.4, 0.4, 0.5, 0.5, 0.4, 0.5, 0.5, 0.5, 0.5, 0.4]
 planes = { nets = ["GND", "+3V3"], layers = ["In1.Cu", "In2.Cu"], via = [0.6, 0.3] }
 ground = { net = "GND", width = 0.4 }
 
