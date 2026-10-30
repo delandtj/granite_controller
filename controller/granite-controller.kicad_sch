@@ -1,0 +1,273 @@
+(kicad_sch
+	(version 20260306)
+	(generator "eeschema")
+	(generator_version "10.0")
+	(uuid "bd3d1081-8fd5-561e-93ea-9d28b3145149")
+	(paper "A4")
+	(title_block
+		(title "Granite Controller - MCU and USB")
+		(date "2026-07-09")
+		(rev "C")
+		(comment 1 "PoE-powered reset/power controller for 2x7 Strix Halo motherboards")
+		(comment 2 "STM32H563 + LAN8742A + 802.3af PD, 28x photoMOS channels")
+	)
+	(lib_symbols)
+	(text "Granite Controller: PoE-powered reset/power controller for 8 Strix Halo motherboards, immersion-cooled."
+		(exclude_from_sim no)
+		(at 31.75 22.86 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "045eacc2-e355-46bf-a599-8c5d82e8fc12")
+	)
+	(text "One RJ45 = power + control. ESP32-C6 + W5500 Ethernet. 16 floating photoMOS contact channels via MCP23017. Spec: docs/controller.md"
+		(exclude_from_sim no)
+		(at 31.75 27.94 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "f72dcc57-4114-477a-8dc1-9b9425c652d4")
+	)
+	(sheet
+		(at 31.75 45.72)
+		(size 54.61 17.78)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "827be8ef-6a37-5395-8e48-6b8c9aee3791")
+		(property "Sheetname" "Power"
+			(at 31.75 45.0084 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "schematic/power.kicad_sch"
+			(at 31.75 64.0884 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "granite-controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149"
+					(page "2")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 107.95 45.72)
+		(size 54.61 17.78)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "2ef8dae6-4cdd-56d2-b0d9-eaa0087a445f")
+		(property "Sheetname" "Ethernet"
+			(at 107.95 45.0084 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "schematic/ethernet.kicad_sch"
+			(at 107.95 64.0884 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "granite-controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149"
+					(page "3")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 184.15 45.72)
+		(size 54.61 17.78)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "0e1bb3cd-6ff3-5424-825a-684fab3f6ce8")
+		(property "Sheetname" "MCU"
+			(at 184.15 45.0084 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "schematic/mcu.kicad_sch"
+			(at 184.15 64.0884 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "granite-controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149"
+					(page "4")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 31.75 81.28)
+		(size 54.61 17.78)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "523e2405-760a-59f0-a9bd-26a6a2afbbb8")
+		(property "Sheetname" "Relay channels"
+			(at 31.75 80.5684 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "schematic/relays.kicad_sch"
+			(at 31.75 99.6484 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "granite-controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149"
+					(page "5")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 107.95 81.28)
+		(size 54.61 17.78)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "b0a29a8c-351d-55c9-a76a-359903750a26")
+		(property "Sheetname" "Expansion header"
+			(at 107.95 80.5684 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "schematic/expansion.kicad_sch"
+			(at 107.95 99.6484 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "granite-controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149"
+					(page "6")
+				)
+			)
+		)
+	)
+	(sheet_instances
+		(path "/"
+			(page "1")
+		)
+	)
+	(embedded_fonts no)
+)
