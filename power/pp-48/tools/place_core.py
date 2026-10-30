@@ -56,6 +56,8 @@ MOVED = {
     'R302': (39.6, 59.4, 90, F), 'R303': (39.6, 62.6, 90, F),
     # crystal turned so OSC_IN (pad 1) faces U3's OSC_IN pin and OSC_OUT runs round the bottom: no crossing
     'Y1': (3.0, 33.0, 270, B),
+    # ARM 10-pin SWD header beside the Tag-Connect J5: right of U3, below the address switch SW1
+    'J6': (25.0, 39.5, 0, F),
     'H1': (4.0, 4.0, 0, F), 'H2': (4.0, 68.0, 0, F), 'H3': (52.0, 4.0, 0, F), 'H4': (52.0, 68.0, 0, F),
 }
 # 12 V aux Fly-Buck (the module's place, top right); see the docstring

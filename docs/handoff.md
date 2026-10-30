@@ -68,6 +68,11 @@ right of U3, ON = 0, address 0x30 + ADR[2:0]; swapped on the routed board
 (ADR0-2, +3V3, SWDIO rerouted with krt-reroute --keep, one mazefix GND
 hop), place_core.py (core.py table) has it for a rebuild. Firmware ADR
 0002's pin table still says "closed = 0": same polarity, the switch's ON.
+SWD (2026-10-30): J6 ARM Cortex 10-pin header (Samtec FTSH-105-01-L-DV-K,
+C5155080, keyed shroud; KiCad PinHeader_2x05_P1.27mm_Vertical_SMD) on F
+right of U3 below SW1, for stock probe ribbons; the Tag-Connect pads J5
+stay (no part). J6 drawn as Conn_02x05 (the ARM SWD symbols are
+probe-side outputs: two on one net fail ERC).
 
 Unit routing (tools/route_unit.sh <placed board>, in power/pp-48-unit):
 route_unit.py hand copper (rev1 slot copper via route_hand.column, In2

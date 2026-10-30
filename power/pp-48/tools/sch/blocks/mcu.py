@@ -156,6 +156,19 @@ def block(N=2, tile=True):
     j = b.syms["J5"]
     b.wire("+3V3", [(j.pin_xy("1")[0] - 2 * G, j.pin_xy("1")[1] - 2 * G), ("J5", "1")])
     b.wire("GND", [(j.pin_xy("5")[0] + 2 * G, j.pin_xy("5")[1] + 2 * G), ("J5", "5")])
+    # the same SWD on the ARM 10-pin Cortex header (1.27 mm, keyed shroud): stock probe ribbons
+    b.sym("J6", "Connector_Generic:Conn_02x05_Odd_Even", "SWD", "Connector_PinHeader_1.27mm:PinHeader_2x05_P1.27mm_Vertical_SMD",
+          {"1": "+3V3", "2": "SWDIO", "3": "GND", "4": "SWCLK", "5": "GND", "6": "NC", "7": "NC", "8": "NC", "9": "GND",
+           "10": "NRST"}, at=(xj - 29 * G, yj + 4 * G),
+          fields={"LCSC": "C5155080", "MPN": "Samtec FTSH-105-01-L-DV-K"}, desc="bench programming, ARM Cortex 10-pin")
+    j6 = b.syms["J6"]                               # GND: 3 / 5 joined, 9 from below (clear of 7)
+    xg = j6.pin_xy("5")[0] - 2 * G
+    b.wire("GND", [("J6", "3"), ("J6", "5")])
+    b.wire("GND", [(xg, j6.pin_xy("9")[1] + 3 * G), (xg, j6.pin_xy("9")[1]), ("J6", "9")])
+    for num, net in (("2", "SWDIO"), ("4", "SWCLK"), ("10", "NRST")):   # 6 SWO, 7 key, 8 TDI open
+        b.tie(net, ("J6", num), 0)
+    for num, net in (("2", "SWDIO"), ("4", "SWCLK"), ("3", "NRST")):
+        b.tie(net, ("J5", num), 90)
     b.sym("C21", "Device:C", "100n", C0402, {"1": "NRST", "2": "GND"}, at=(X - 40 * G, pin("10")[1] + 5 * G), desc="NRST")
     xn = xw - 4 * G
     yjt = j.pin_xy("3")[1]
