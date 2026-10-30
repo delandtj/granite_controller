@@ -22,16 +22,20 @@ firmware exists for it yet. Everything it touches:
 
 | Core pin | Net | Use |
 |---|---|---|
-| PB6 / PB7 | SCL1 / SDA1 | I2C slave to the controller, through the ISO1640 |
-| PA8 | INT_OUT | high = assert EXP_INT (ISO7721, open drain on the controller side) |
-| PB10 / PB11 | SCL2 / SDA2 | I2C master: TCA9548A 0x70, then one unit segment per channel |
-| PB12 | MUX_RST | high = mux reset, all channels off (Q6 inverts; 100k pull-down: MCU in reset = mux running) |
-| PC13-PC15 | ADR0-2 | straps, pulled up, closed = 0; slave address 0x30 + ADR[2:0] |
-| PB0 | VIN_SNS | core 48 V input, 220k / 10k divider |
-| PB8 | LED_RUN | heartbeat LED |
-| PC6 | PRESS_TRIG | edge retriggers U301 74LVC1G123 (~1 s): PRESS_EN to every unit, photoMOS LEDs dark without it |
-| PC7 | EXP_RSTN | open drain, every unit's TCA6424A /RESET (bused) |
+| PB8 / PB9 | SCL1 / SDA1 | I2C1 (AF6) slave to the controller, through the ISO1640 |
+| PD2 | INT_OUT | high = assert EXP_INT (ISO7721, open drain on the controller side) |
+| PA11 / PA12 | SCL2 / SDA2 | I2C2 (AF6) master: TCA9548A 0x70, then one unit segment per channel |
+| PB13 | MUX_RST | high = mux reset, all channels off (Q6 inverts; 100k pull-down: MCU in reset = mux running) |
+| PA15 / PD1 / PA8 | ADR0-2 | straps, pulled up, closed = 0; slave address 0x30 + ADR[2:0] |
+| PB11 | VIN_SNS | ADC_IN15, core 48 V input, 220k / 10k divider |
+| PB14 | LED_RUN | heartbeat LED |
+| PB12 | PRESS_TRIG | edge retriggers U301 74LVC1G123 (~1 s): PRESS_EN to every unit, photoMOS LEDs dark without it |
+| PD0 | EXP_RSTN | open drain, every unit's TCA6424A /RESET (bused) |
 | PA13 / PA14, NRST | SWD | bench flashing and debug |
+
+The pins were reassigned on 2026-10-30 for the fewest crossings on the
+core board (power/pp-48/tools/sch/blocks/mcu.py CORE_PINS); before that
+I2C1 was PB6 / PB7, I2C2 PB10 / PB11, PRESS_TRIG PC6, EXP_RSTN PC7.
 
 Per unit, on mux channel k (unit k + 1), every unit with the same
 addresses:
@@ -434,8 +438,8 @@ proposed); the state after a unit glitch stays open.
 - [x] Image integrity: controller-verified, CRC-32 on the plane.
 - [x] Press deadline line in the chain: in the hardware (377e93a,
   docs/press-deadline-line.md options B + A, 14-pin chain). Firmware:
-  - PRESS_EN is high for ~1 s after the last edge on PC6 (retriggerable
-    74LVC1G123). The press task toggles PC6 every ~200 ms while a
+  - PRESS_EN is high for ~1 s after the last edge on PB12 (retriggerable
+    74LVC1G123). The press task toggles PB12 every ~200 ms while a
     press runs, from software in the same task that owns the press
     deadline. Never from a timer peripheral or DMA: those keep running
     in a hung firmware and would defeat the deadline.
@@ -443,7 +447,7 @@ proposed); the state after a unit glitch stays open.
     ends within ~1 s of the firmware stopping, whatever the expander
     holds.
   - Capability bit "press deadline hardware" set in INFO.
-  - EXP_RSTN (PC7, open drain) is the CTRL 0x4D recovery action:
+  - EXP_RSTN (PD0, open drain) is the CTRL 0x4D recovery action:
     every unit's expander resets (all slots ON), then the plane
     restores the intended state (decision 3).
 

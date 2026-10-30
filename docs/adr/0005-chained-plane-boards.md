@@ -102,9 +102,9 @@ a column edge.
    one 2N7002 (Q10) whose gate is PRESS_EN (100k pull-down R31): no
    PRESS_EN, no press, whatever the expander drives. The core drives
    PRESS_EN from a 74LVC1G123 retriggerable monostable (U301, R301 100k
-   x C301 10u ~1 s) clocked by PC6 (PRESS_TRIG, TIM3_CH1, 100k
-   pull-down): a hung, stuck or reset MCU ends every press within ~1 s.
-   EXP_RSTN (option A, recovery): PC7 open drain to every unit's
+   x C301 10u ~1 s) clocked by PB12 (PRESS_TRIG, a GPIO the
+   firmware toggles, 100k pull-down): a hung, stuck or reset MCU ends every press within ~1 s.
+   EXP_RSTN (option A, recovery): PD0 open drain to every unit's
    TCA6424A /RESET (R30 pull-ups).
 
 5. **3V3 for the units' logic comes from the core** (user 2026-10-29) through the chain

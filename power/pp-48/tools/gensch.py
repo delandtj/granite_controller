@@ -146,3 +146,8 @@ for name, wmm, hmm in PAPERS:
         break
 root.write(OUT)
 print("wrote", OUT, "paper", root.paper)
+if KIND == "core":                       # the MCU pin map for the firmware (same table as the MCU sheet)
+    pins = os.path.join(PROJ_DIR, "..", "..", "firmware", "plane-core-pins.toml")
+    with open(pins, "w") as f:
+        f.write(mcu.pins_toml(mcu.mcu_nets(8, tile=False)))
+    print("wrote", os.path.normpath(pins))

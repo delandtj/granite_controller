@@ -68,6 +68,10 @@ One chain pin, PRESS_EN, high only while the core MCU keeps it alive.
 - Free core pins since the tile moved out: PC6, PC7 (were TILE_OFF /
   TILE_PGD), PB13 (TILE_AL). A timer channel on one of them can produce
   the toggle in hardware.
+- As built (2026-10-30): PRESS_TRIG on PB12, a plain GPIO the press task
+  toggles (firmware ADR 0002); a timer would keep toggling through a
+  firmware hang. The core pins were reassigned for the fewest crossings
+  (tools/sch/blocks/mcu.py CORE_PINS).
 
 ## Chain pin
 

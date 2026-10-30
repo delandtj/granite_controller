@@ -786,7 +786,7 @@
 	)
 	(sheet
 		(at 215.9 38.1)
-		(size 50.8 17.78)
+		(size 50.8 22.86)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
@@ -812,7 +812,7 @@
 			)
 		)
 		(property "Sheetfile" "sheets/mcu.kicad_sch"
-			(at 215.9 56.4684 0)
+			(at 215.9 61.5484 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -822,28 +822,8 @@
 				(justify left top)
 			)
 		)
-		(pin "VIN_SNS" input
-			(at 215.9 40.64 180)
-			(uuid "7ca44656-0cd8-502c-8e47-6cf77a9e62df")
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(pin "PRESS_TRIG" output
-			(at 215.9 43.18 180)
-			(uuid "edad056a-c5c1-57e8-aebc-c846b6400769")
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
 		(pin "EXP_RSTN" output
-			(at 215.9 45.72 180)
+			(at 215.9 40.64 180)
 			(uuid "043946cc-6dfd-5926-9ad9-85848f420865")
 			(effects
 				(font
@@ -852,9 +832,9 @@
 				(justify left)
 			)
 		)
-		(pin "MUX_RST" output
-			(at 215.9 48.26 180)
-			(uuid "fe5e0324-49df-5b5b-b1f0-2b799274ce10")
+		(pin "INT_OUT" output
+			(at 215.9 43.18 180)
+			(uuid "d3fd1636-89f0-5a72-8d15-a554f965c94d")
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -862,38 +842,8 @@
 				(justify left)
 			)
 		)
-		(pin "INT_OUT" output
-			(at 266.7 40.64 0)
-			(uuid "d3fd1636-89f0-5a72-8d15-a554f965c94d")
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-			)
-		)
-		(pin "SCL1" bidirectional
-			(at 266.7 43.18 0)
-			(uuid "20ad80fd-ae08-5ef6-a4e2-c690a0cbb763")
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-			)
-		)
-		(pin "SDA1" bidirectional
-			(at 266.7 45.72 0)
-			(uuid "72ff67d8-b96b-56b3-859c-16f4a6be13ea")
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-			)
-		)
 		(pin "SCL2" bidirectional
-			(at 266.7 48.26 0)
+			(at 266.7 40.64 0)
 			(uuid "a421de63-69c1-573b-aece-cfe4de455eff")
 			(effects
 				(font
@@ -903,8 +853,58 @@
 			)
 		)
 		(pin "SDA2" bidirectional
-			(at 266.7 50.8 0)
+			(at 266.7 43.18 0)
 			(uuid "8a141c58-27ba-536a-9b91-aeb35f994512")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(pin "SCL1" bidirectional
+			(at 266.7 45.72 0)
+			(uuid "20ad80fd-ae08-5ef6-a4e2-c690a0cbb763")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(pin "SDA1" bidirectional
+			(at 266.7 48.26 0)
+			(uuid "72ff67d8-b96b-56b3-859c-16f4a6be13ea")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(pin "VIN_SNS" input
+			(at 266.7 50.8 0)
+			(uuid "7ca44656-0cd8-502c-8e47-6cf77a9e62df")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(pin "PRESS_TRIG" output
+			(at 266.7 53.34 0)
+			(uuid "edad056a-c5c1-57e8-aebc-c846b6400769")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(pin "MUX_RST" output
+			(at 266.7 55.88 0)
+			(uuid "fe5e0324-49df-5b5b-b1f0-2b799274ce10")
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -928,9 +928,9 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "8bb31f25-6bfa-5f4a-b562-e64e362b6d10")
+		(uuid "cdd9ac87-1349-5898-82f8-5ef3574f28c5")
 	)
-	(label "VIN_SNS"
+	(label "EXP_RSTN"
 		(at 208.28 40.64 180)
 		(effects
 			(font
@@ -938,7 +938,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "0b73467c-788c-589d-9c78-e357dbb41543")
+		(uuid "cbcdf2ef-c50e-523a-9ab2-e91b1a435dc6")
 	)
 	(wire
 		(pts
@@ -948,9 +948,9 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "4482c4f4-0564-5cdc-98fb-d1c8cc917199")
+		(uuid "c05e3627-5288-5030-b059-1e71f95ec437")
 	)
-	(label "PRESS_TRIG"
+	(label "INT_OUT"
 		(at 208.28 43.18 180)
 		(effects
 			(font
@@ -958,47 +958,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "1344a022-ab44-5eee-81e6-0ea117f51703")
-	)
-	(wire
-		(pts
-			(xy 215.9 45.72) (xy 208.28 45.72)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "6a3c47a7-8411-55fe-bc70-c3c7ddb2aa43")
-	)
-	(label "EXP_RSTN"
-		(at 208.28 45.72 180)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "0ace5935-9624-58d1-a974-a7f15f1d1f51")
-	)
-	(wire
-		(pts
-			(xy 215.9 48.26) (xy 208.28 48.26)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "ccd34e08-46a7-5d71-af03-6bae1bf0ca35")
-	)
-	(label "MUX_RST"
-		(at 208.28 48.26 180)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "e8fa26c3-e59b-53a3-8fe3-d9eee11ef163")
+		(uuid "3d8a927b-6ca2-56ef-8212-0d5755df04a1")
 	)
 	(wire
 		(pts
@@ -1008,9 +968,9 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "8774ab61-1e25-58d3-809a-8069b2cb8aa1")
+		(uuid "2b1216f7-573f-5dd4-a5be-486a5431a93a")
 	)
-	(label "INT_OUT"
+	(label "SCL2"
 		(at 274.32 40.64 0)
 		(effects
 			(font
@@ -1018,7 +978,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "445f487d-94df-55e3-a30e-3851944867f6")
+		(uuid "71636a76-3d34-53a6-aeb9-4a8cb374e094")
 	)
 	(wire
 		(pts
@@ -1028,9 +988,9 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "ee33c9fb-d552-57ec-b248-4553b46701ce")
+		(uuid "9d65d32f-8599-58c4-943d-efcfe3a809d5")
 	)
-	(label "SCL1"
+	(label "SDA2"
 		(at 274.32 43.18 0)
 		(effects
 			(font
@@ -1038,7 +998,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "f1ce547e-bff8-58d3-87cf-bea71e2ceec7")
+		(uuid "0a7e5113-4425-589c-b1d0-056f990c3c63")
 	)
 	(wire
 		(pts
@@ -1048,9 +1008,9 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "da2ec255-3e47-5811-a883-63fbe39005d8")
+		(uuid "3e955752-c1ee-53d5-b14b-bce90bfc64f1")
 	)
-	(label "SDA1"
+	(label "SCL1"
 		(at 274.32 45.72 0)
 		(effects
 			(font
@@ -1058,7 +1018,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "b6de9878-6f44-50a4-9d40-0dbe63c431c6")
+		(uuid "db97f328-c3cf-5f68-baee-5aca9b4e6854")
 	)
 	(wire
 		(pts
@@ -1068,9 +1028,9 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "149fb8e4-de28-5aa3-b973-4fcc8fdd8a85")
+		(uuid "e7a4f7cf-c5f7-5faf-972d-594f6fe13e72")
 	)
-	(label "SCL2"
+	(label "SDA1"
 		(at 274.32 48.26 0)
 		(effects
 			(font
@@ -1078,7 +1038,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "fe0cf9fe-2176-5279-9d08-384681ab1ee0")
+		(uuid "b2ef1dfd-bb59-5c0d-8c75-21759bcb190c")
 	)
 	(wire
 		(pts
@@ -1088,9 +1048,9 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "b9b5d196-254e-5f08-a19a-85697fc7c789")
+		(uuid "271c146c-d696-5e13-a600-7335b646ca46")
 	)
-	(label "SDA2"
+	(label "VIN_SNS"
 		(at 274.32 50.8 0)
 		(effects
 			(font
@@ -1098,7 +1058,47 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "0719b8f7-ead9-57b8-8624-0d039f1e3040")
+		(uuid "5b73d4a8-e0cc-510e-8ba2-d6db57d9c639")
+	)
+	(wire
+		(pts
+			(xy 266.7 53.34) (xy 274.32 53.34)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6a6d29de-1f89-5646-9e31-37199e073da0")
+	)
+	(label "PRESS_TRIG"
+		(at 274.32 53.34 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "b89d1388-b36f-59e0-b5e7-74431cb26adb")
+	)
+	(wire
+		(pts
+			(xy 266.7 55.88) (xy 274.32 55.88)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "df155682-a095-5acc-b7d8-232e97b49a49")
+	)
+	(label "MUX_RST"
+		(at 274.32 55.88 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "c3cfa3f1-5ddc-5dd8-b211-5a60cc429aa3")
 	)
 	(sheet
 		(at 304.8 38.1)

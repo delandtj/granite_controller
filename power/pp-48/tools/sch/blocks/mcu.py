@@ -4,13 +4,14 @@ plane address straps, I2C2 pull-ups.
 Copied from power/pp-48-2s (same pins for the crystal, SWD, straps, LED and
 the two I2C ports) and cut down for ADR 0004: the columns are reached
 through the TCA9548A (Mux sheet), so the per-slot OFF / LCLR / ID / TEMP
-pins are gone. I2C1 (PB6 / PB7) is the slave link to the controller,
-I2C2 (PB10 / PB11) the master for the mux and the plane front end (tile
-INA238). GPIO: TILE_OFF (tile hot-swap off), TILE_PGD, TILE_AL (tile
-INA238 ALERT), MUX_RST; TILE2_* for the end cap's second group (N = 6 / 8,
-NC otherwise). ADC: VIN_SNS (bus ahead of the tile hot-swap).
-block(tile=False) is the chained core (docs/adr/0005): no TILE_* pins, the
-unit hot-swaps are read and reset over each unit's expander.
+pins are gone. block(tile=False) is the chained core (docs/adr/0005): no
+TILE_* pins, the unit hot-swaps are read and reset over each unit's
+expander; its pins (CORE_PINS) are picked for the fewest ratsnest crossings
+on the core board: I2C1 (PB8 / PB9) the slave link to the controller, I2C2
+(PA11 / PA12) the master for the mux, ADC VIN_SNS (PB11), GPIO PRESS_TRIG,
+MUX_RST, LED_RUN, EXP_RSTN, INT_OUT and the address straps. The sheet
+draws a port (sheet nets) or a label (straps, LED) at each signal pin and
+the strap, LED and pull-up circuits beside U3; SWD and NRST are wired.
 """
 from sch.draw import Block, R0402, C0402, C0603, LED0603, SJ
 
@@ -35,10 +36,70 @@ def mcu_nets(N, tile=True):
     if N <= 4 or not tile:           # one hot-swap group, in the core
         nets["38"] = nets["39"] = "NC"
     if not tile:                     # chained plane (ADR 0005): the hot-swaps are in the units, on their expanders
-        nets["25"] = "NC"
-        nets["30"] = "PRESS_TRIG"    # PC6 TIM3_CH1: edges retrigger the press deadline (docs/press-deadline-line.md)
-        nets["31"] = "EXP_RSTN"      # PC7 open drain: the units' TCA6424A /RESET (R30 pull-ups on the units)
+        # pins picked for the fewest ratsnest crossings on the core board (tools/place_core.py placement):
+        # each function on the side of U3 that faces its parts
+        for k in list(nets):
+            if nets[k] not in ("+3V3", "GND", "OSC_IN", "OSC_OUT", "NRST", "SWDIO", "SWCLK"):
+                nets[k] = "NC"
+        nets.update(CORE_PINS)
     return nets
+
+
+# chained core (block(tile=False)): pin -> net
+CORE_PINS = {
+    "47": "SCL1", "48": "SDA1",      # PB8 / PB9 I2C1 AF6: slave link, up to the ISO1640 U4
+    "33": "SCL2", "34": "SDA2",      # PA11 / PA12 I2C2 AF6: master, mux U6 and the units
+    "23": "VIN_SNS",                 # PB11 ADC_IN15
+    "24": "PRESS_TRIG",              # PB12: edges retrigger the press deadline (docs/press-deadline-line.md)
+    "25": "MUX_RST",                 # PB13
+    "26": "LED_RUN",                 # PB14
+    "38": "EXP_RSTN",                # PD0 open drain: the units' TCA6424A /RESET (R30 pull-ups on the units)
+    "40": "INT_OUT",                 # PD2: EXP_INT to the controller through the ISO7721 U5
+    "37": "ADR0", "39": "ADR1", "28": "ADR2",   # PA15 / PD1 / PA8 straps (JP1-3 to GND, R20-22 up)
+}
+
+# what the firmware needs per pin (written to firmware/plane-core-pins.toml by gensch.py core):
+# pin -> (port, mode, use); the fixed pins too
+PIN_USE = {
+    "47": ("PB8", "I2C1_SCL AF6", "I2C slave to the controller through the ISO1640 U4"),
+    "48": ("PB9", "I2C1_SDA AF6", "I2C slave to the controller through the ISO1640 U4"),
+    "33": ("PA11", "I2C2_SCL AF6", "I2C master: TCA9548A 0x70, then one unit segment per channel"),
+    "34": ("PA12", "I2C2_SDA AF6", "I2C master: TCA9548A 0x70, then one unit segment per channel"),
+    "23": ("PB11", "ADC_IN15", "core 48 V input, 220k / 10k divider"),
+    "24": ("PB12", "output push-pull", "toggle to retrigger the press deadline U301 (~1 s); never toggle when no press runs"),
+    "25": ("PB13", "output push-pull", "high = mux reset, all channels off (Q6 inverts; 100k pull-down)"),
+    "26": ("PB14", "output push-pull", "heartbeat LED, high = on"),
+    "38": ("PD0", "output open-drain", "low = reset every unit's TCA6424A (bused, pull-ups on the units)"),
+    "40": ("PD2", "output push-pull", "high = assert EXP_INT to the controller (ISO7721 U5)"),
+    "37": ("PA15", "input", "address strap ADR0: pulled up, closed jumper = 0; slave address 0x30 + ADR[2:0]"),
+    "39": ("PD1", "input", "address strap ADR1"),
+    "28": ("PA8", "input", "address strap ADR2"),
+    "35": ("PA13", "SWDIO", "debug (fixed)"),
+    "36": ("PA14", "SWCLK", "debug (fixed)"),
+    "8": ("PF0", "OSC_IN", "8 MHz HSE crystal (fixed)"),
+    "9": ("PF1", "OSC_OUT", "8 MHz HSE crystal (fixed)"),
+    "10": ("NRST", "NRST", "reset, SWD header (fixed)"),
+}
+
+
+def pins_toml(nets):
+    """the core's pin designations for the firmware, from the drawn pin map"""
+    missing = [n for n, net in nets.items() if net not in ("NC", "+3V3", "GND") and n not in PIN_USE]
+    wrong = [n for n in PIN_USE if nets.get(n, "NC") == "NC"]
+    if missing or wrong:
+        raise SystemExit("mcu PIN_USE out of step with the pin map: missing %s, not connected %s" % (missing, wrong))
+    out = ["# STM32G070CBT6 (LQFP-48) pin designations of the PP-48 core board.",
+           "# GENERATED by power/pp-48/tools/gensch.py core from tools/sch/blocks/mcu.py",
+           "# (CORE_PINS / PIN_USE): do not edit here, change the generator and regenerate.",
+           "# The schematic (power/pp-48-core/sheets/mcu.kicad_sch) and the board follow the same table.",
+           "", '[mcu]', 'part = "STM32G070CBT6"', 'package = "LQFP-48"', 'hse_hz = 8000000', ""]
+    for num in sorted(PIN_USE, key=lambda n: (PIN_USE[n][0][:2], int(PIN_USE[n][0][2:]) if PIN_USE[n][0][2:].isdigit() else 0)):
+        port, mode, use = PIN_USE[num]
+        out += ['[[pin]]', 'port = "%s"' % port, 'pin = %s' % num, 'net = "%s"' % nets[num],
+                'mode = "%s"' % mode, 'use = "%s"' % use, ""]
+    unused = sorted((n for n, net in nets.items() if net == "NC"), key=int)
+    out += ["# not connected (pins 29 / 32 are not bonded on the G070)", "[unused]", "pins = [%s]" % ", ".join(unused), ""]
+    return "\n".join(out)
 
 
 SHAPES = {"VIN_SNS": "input", "TILE_PGD": "input", "TILE2_PGD": "input", "TILE_AL": "input",
@@ -57,7 +118,7 @@ def block(N=2, tile=True):
     nets = mcu_nets(N, tile)
     u = b.sym("U3", "MCU_ST_STM32G0:STM32G070CBTx", "STM32G070CBT6", "Package_QFP:LQFP-48_7x7mm_P0.5mm", nets,
               at=(X, Y), fields={"LCSC": "C529338"},
-              desc="plane MCU: I2C1 slave to the controller (PB6/PB7), I2C2 master to the mux and front end (PB10/PB11), SWD on PA13/PA14")
+              desc="plane MCU: I2C1 slave to the controller (PB8/PB9), I2C2 master to the mux and the units (PA11/PA12), SWD on PA13/PA14")
     pin = lambda n: u.pin_xy(n)
     XR, XL = X + 22 * G, X - 22 * G    # right / left pin ends
 
@@ -101,81 +162,48 @@ def block(N=2, tile=True):
     b.wire("NRST", [("U3", "10"), (xn, pin("10")[1]), (xn, yjt - 6 * G), (j.pin_xy("3")[0], yjt - 6 * G), ("J5", "3")])
     b.wire("NRST", [(X - 40 * G, pin("10")[1]), ("C21", "1")])
 
-    # ---------------------------------------------------------- right-hand pins
-    right = sorted([(u.pin_xy(p["num"])[1], p["num"]) for p in u.pins if u.pin_out(p["num"]) == (1, 0)])
-    top, bot = [], []
-    for y, num in right:
-        net = nets[num]
-        if net == "NC" or net in RIGHT_PORTS or net == "LED_RUN": continue
-        (top if y < Y + 12 * G else bot).append((y, num, net))
-
-    # fan-out over the top: innermost = topmost pin; labels face left above U3
-    x = XR
-    row = Y - 40 * G
-    yint = pin("28")[1]
-    yswd = j.pin_xy("2")[1] - 2 * G        # SWD rows clear J5's pin tops
+    # ---------------------------------------------------------- SWD fan-out (right-hand pins, over the top to J5)
+    inv = {net: num for num, net in nets.items()}
+    x = XR + 10 * G                                   # outside the labels at the right-hand pins
+    yswd = j.pin_xy("2")[1] - 2 * G                   # SWD rows clear J5's pin tops
     jx = {"SWDIO": j.pin_xy("2")[0], "SWCLK": j.pin_xy("4")[0]}
-    for k, (y, num, net) in enumerate(top):
+    for net in ("SWDIO", "SWCLK"):                    # SWDIO is the lower pin: outer column, lower row
+        num = inv[net]
         x += 2 * G
-        if y > yint: x = max(x, XR + 10 * G)          # clear the INT_OUT label
-        if y > Y - G: x = max(x, XR + 14 * G)         # clear U3's value text
-        row -= 2 * G
-        if net in jx:
-            row = min(row, yswd)
-            yswd = row - 2 * G
-            b.wire(net, [("U3", num), (x, y), (x, row), (jx[net], row), ("J5", "2" if net == "SWDIO" else "4")])
-        else:
-            b.wire(net, [("U3", num), (x, y), (x, row), (x - 2 * G, row)])
-            b.port(net, shape(net), side="left", pos=(x - 2 * G, row))
-    xmax = x
+        b.wire(net, [("U3", num), (x, pin(num)[1]), (x, yswd), (jx[net], yswd), ("J5", "2" if net == "SWDIO" else "4")])
+        yswd -= 2 * G
 
-    # fan-out under the bottom: innermost = lowest pin
-    x = XR
-    row = Y + 39 * G
-    for y, num, net in sorted(bot, reverse=True):
-        x += 2 * G
-        row += 2 * G
-        b.wire(net, [("U3", num), (x, y), (x, row), (x - 2 * G, row)])
-        b.port(net, shape(net), side="left", pos=(x - 2 * G, row))
+    # ---------------------------------------------------------- signal pins: ports for the sheet's nets, labels for
+    # the local ones (straps, LED), on whichever side the pin is
+    for num, net in sorted(nets.items(), key=lambda kv: int(kv[0])):
+        if net in RIGHT_PORTS or net in SHAPES:
+            b.port(net, shape(net), side="right" if u.pin_out(num) == (1, 0) else "left", pos=("U3", num))
+        elif net.startswith("ADR") or net == "LED_RUN":
+            b.tie(net, ("U3", num), 0 if u.pin_out(num) == (1, 0) else 180)
 
-    # left-hand signal pins: labels at the pins
-    for p in u.pins:
-        num, net = p["num"], nets[p["num"]]
-        if u.pin_out(num) == (-1, 0) and net in SHAPES:
-            b.port(net, shape(net), side="left", pos=("U3", num))
-
-    # ---------------------------------------------------------- run LED (right)
-    yl = pin("47")[1]
+    # ---------------------------------------------------------- run LED (right, below the pins)
+    yl = Y + 40 * G
     b.sym("R19", "Device:R", "1k", R0402, {"1": "LED_RUN", "2": "LEDRUN_A"}, at=(XR + 11 * G, yl), rot=90,
           desc="firmware heartbeat LED")
     b.sym("D4", "Device:LED", "GREEN RUN", LED0603, {"1": "GND", "2": "LEDRUN_A"}, at=(XR + 27 * G, yl), rot=180,
           fields={"LCSC": "C2297"})
     b.wire("GND", [(XR + 33 * G, yl), ("D4", "1")])     # GND clear of the LED arrows
-    xled = XR + 33 * G
+    b.tie("LED_RUN", ("R19", "1"), 180)
 
-    # ---------------------------------------------------------- bus ports and pull-ups (right)
-    for net in ("INT_OUT", "SCL1", "SDA1"):
-        b.port(net, shape(net), side="right", pos=("U3", {"INT_OUT": "28", "SCL1": "45", "SDA1": "46"}[net]))
-    xp = max(xmax, xled) + 5 * G
-    for ref, val, net, num, desc in (("R24", "2.2k", "SCL2", "22", ""),
-                                     ("R23", "2.2k", "SDA2", "23", "I2C2 pull-up (mux upstream, tile INA238)")):
-        y = pin(num)[1]
-        b.sym(ref, "Device:R", val, R0402, {"1": "+3V3", "2": net}, at=(xp, y - 6 * G), desc=desc)
-        b.wire(net, [("U3", num), (xp + (4 + len(net)) * G, y)])
-        b.wire(net, [(xp, y), (ref, "2")])
-        b.port(net, shape(net), side="right", pos=(xp + (4 + len(net)) * G, y))
-        xp += (14 + len(net)) * G
+    # ---------------------------------------------------------- I2C2 pull-ups (right, beside the SWD fan-out)
+    for k, (ref, net, desc) in enumerate((("R24", "SCL2", ""), ("R23", "SDA2", "I2C2 pull-up (mux upstream, units)"))):
+        b.sym(ref, "Device:R", "2.2k", R0402, {"1": "+3V3", "2": net}, at=(XR + (22 + 10 * k) * G, Y - 14 * G), desc=desc)
+        b.tie(net, (ref, "2"), 270)
 
     # ---------------------------------------------------------- address straps (below left)
-    for i, num in enumerate(("1", "2", "3")):
-        net = nets[num]
+    for i in range(3):
+        net = "ADR%d" % i
         xa = XL - (4 + 10 * (2 - i)) * G
-        ya = pin(num)[1]
         b.sym("R%d" % (20 + i), "Device:R", "100k", R0402, {"1": "+3V3", "2": net}, at=(xa - 6 * G, Y + 6 * G),
               desc="address strap pull-up")
         b.sym("JP%d" % (1 + i), "Jumper:SolderJumper_2_Open", "ADR%d" % i, SJ, {"1": net, "2": "GND"},
               at=(xa, Y + 16 * G), rot=270, desc="close = 0; plane address 0x30 + ADR[2:0]")
-        b.wire(net, [("U3", num), (xa, ya), ("JP%d" % (1 + i), "1")])
-        b.wire(net, [("R%d" % (20 + i), "2"), (xa - 6 * G, Y + 11 * G), (xa, Y + 11 * G)])
+        b.wire(net, [("R%d" % (20 + i), "2"), (xa - 6 * G, Y + 11 * G), (xa, Y + 11 * G), ("JP%d" % (1 + i), "1")])
+        b.tie(net, (xa, Y + 11 * G), 0)
 
     return b.finish()
