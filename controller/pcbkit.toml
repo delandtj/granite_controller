@@ -1,4 +1,4 @@
-# pcbkit settings for the granite controller rev D (4L JLC, 100 x 50 mm,
+# pcbkit settings for the granite controller rev D (4L JLC, 105 x 50 mm,
 # ESP32-C6 + W5500, plane link, two 12 V inputs). Board tools: ~/Electronics/pcbkit.
 
 [project]
@@ -6,9 +6,9 @@ name = "granite-controller"
 libs = { granite = "footprints/granite.pretty" }
 
 [outline]
-# rev D: 100 x 50 mm at (25, 28.6) on the sheet (rev C's origin, so the
+# rev D: 105 x 50 mm at (25, 28.6) on the sheet (rev C's origin, so the
 # blocks kept from rev C keep their coordinates)
-length = 100.0
+length = 105.0
 height = 50.0
 origin = [25.0, 28.6]
 

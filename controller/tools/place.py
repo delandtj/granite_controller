@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rev D placement: 100 x 50 mm board, blocks carried over from rev C.
+"""Rev D placement: 105 x 50 mm board, blocks carried over from rev C.
 
 Usage: place.py <revc.kicad_pcb> <in.kicad_pcb> <out.kicad_pcb>
 
@@ -12,8 +12,8 @@ Blocks copied from rev C with their routing, shifted by (dx, dy):
   ETH  J1 / U3 / Y2 / magnetics and pairs (all /Ethernet/ but the W5500
        strap pull-ups R16-R18)                      dx -24
   BUCK U8 loop + U2 3V3 buck + D2 / D9               dx +31, dy -19
-  MCU  U1 with C12-C14, C51, R34 / R35               dx -12
-  USB  J2, U4, R24                                   dx 0
+  MCU  U1 with C12-C14, C51, R34 / R35               dx -7
+  USB  J2, U4, R24                                   dx +5
 Copper is copied only where both ends lie inside the block's rev C region
 and the net is one of the block's pads (mapped to the rev D net through
 the pads); open ends are pruned back to the pads. The copied copper goes
@@ -39,9 +39,9 @@ BLOCKS = [
     ("BUCK", ["U8", "L3", "C40", "C41", "C42", "C43", "C44", "C45", "R37", "R38",
               "U2", "L1", "C3", "C4", "R1", "R2", "D2", "D9"], None, 31.0, -19.0,
      (25.5, 54.6, 56.0, 76.0)),
-    ("MCU", ["U1", "C12", "C13", "C14", "C51", "R34", "R35"], None, -12.0, 0.0,
+    ("MCU", ["U1", "C12", "C13", "C14", "C51", "R34", "R35"], None, -7.0, 0.0,
      (104.0, 58.0, 129.9, 79.0)),
-    ("USB", ["J2", "U4", "R24"], None, 0.0, 0.0,
+    ("USB", ["J2", "U4", "R24"], None, 5.0, 0.0,
      (93.0, 28.0, 117.0, 48.5)),
 ]
 
@@ -57,39 +57,40 @@ PLANE_NETS = {"GND", "+3V3"}
 # rest: ref -> (rot, courtyard centre x, y)
 CON_T = 28.65 + 2.8          # PH row along the top edge (courtyard 5.59 deep)
 CON_B = 78.55 - 2.8          # along the bottom edge
-CON_R = 124.95 - 2.8         # along the right edge (rot 90)
+CON_R = 129.95 - 2.8         # along the right edge (rot 90)
 PLACE = {
     # probes on the top edge between the magjack and USB-C
-    "J4": (0, 59.8, CON_T), "J5": (0, 69.5, CON_T), "J6": (0, 79.2, CON_T), "J7": (0, 88.9, CON_T),
-    "R30": (0, 86.0, 35.6), "D5": (0, 88.6, 35.6),
+    "J4": (0, 60.0, CON_T), "J5": (0, 70.0, CON_T), "J6": (0, 80.0, CON_T), "J7": (0, 90.0, CON_T),
+    "R30": (0, 92.0, 35.6), "D5": (0, 94.6, 35.6),
     # 12 V inputs and plane link on the bottom edge, link next to U1's I2C pins
     "J11": (0, 54.8, CON_B), "J12": (0, 61.9, CON_B), "J14": (0, 72.0, CON_B), "J13": (0, 85.1, CON_B),
     # OR-ing diodes and TVS under the buck, VIN_SENSE divider beside them
     "D10": (0, 61.0, 56.8), "D11": (0, 68.6, 56.8), "D12": (0, 76.2, 56.8),
     "R63": (90, 81.0, 56.8), "R64": (90, 82.4, 56.8),
     # +5V bulk, VBUS OR diode, VBUS parts
-    "C2": (90, 87.4, 45.0), "D3": (90, 92.0, 44.0), "C52": (90, 92.0, 38.9), "R65": (90, 90.3, 38.9),
-    # test pads, W5500 strap pull-ups
-    "TP1": (0, 86.5, 51.5), "TP2": (0, 89.5, 51.5), "TP3": (0, 86.5, 54.5), "TP4": (0, 89.5, 54.5),
-    "R16": (90, 87.5, 57.0), "R17": (90, 89.0, 57.0), "R18": (90, 90.5, 57.0),
+    "C2": (90, 87.4, 45.0), "D3": (90, 93.5, 44.6), "C52": (90, 97.0, 39.6), "R65": (90, 95.3, 39.6),
+    # test pads; W5500 strap pull-ups on the SPI lines (R17 / R18 as rev C)
+    "TP1": (0, 90.0, 52.0), "TP2": (0, 93.0, 52.0), "TP3": (0, 90.0, 55.0), "TP4": (0, 93.0, 55.0),
+    "R16": (0, 90.8, 60.6), "R17": (270, 59.0, 69.49), "R18": (270, 56.0, 67.71),
+    "R36": (0, 96.5, 56.8),
     # above U1: TMP1075, local I2C pull-ups, LED, CC1
-    "U5": (0, 98.8, 53.5), "C15": (90, 103.6, 53.5), "R13": (90, 105.0, 53.5), "R14": (90, 106.4, 53.5),
-    "D4": (0, 98.0, 47.5), "R8": (0, 98.0, 49.3), "R25": (0, 109.0, 42.6),
-    "R27": (0, 114.6, 65.7), "R7": (0, 114.6, 70.3),
+    "U5": (0, 103.8, 53.5), "C15": (90, 108.6, 53.5), "R13": (90, 110.0, 53.5), "R14": (90, 111.4, 53.5),
+    "D4": (0, 103.0, 47.5), "R8": (0, 103.0, 49.3), "R25": (0, 114.0, 42.6),
+    "R27": (0, 120.0, 65.7), "R7": (0, 119.6, 73.15),
     # J9 (Qwiic) and J10 (dry contacts) on the right edge with their protection
     "J9": (90, CON_R, 44.0), "J10": (90, CON_R, 62.5),
-    "U6": (0, 117.8, 44.0), "RN1": (90, 115.2, 44.0), "F1": (90, 117.8, 40.3), "D6": (90, 117.8, 48.4),
-    "U18": (0, 117.6, 58.0),
-    "R59": (90, 109.0, 50.0), "R60": (90, 110.5, 50.0), "R61": (90, 112.0, 50.0), "R62": (90, 113.5, 50.0),
-    "R55": (90, 109.0, 52.4), "R56": (90, 110.5, 52.4), "R57": (90, 112.0, 52.4), "R58": (90, 113.5, 52.4),
-    "C47": (90, 109.0, 54.8), "C48": (90, 110.5, 54.8), "C49": (90, 112.0, 54.8), "C50": (90, 113.5, 54.8),
-    # plane link: ESD + 33R at the connectors, load switches and pull-ups above them
-    "R36": (90, 90.5, 66.0),
-    "U19": (90, 85.0, 67.6), "R69": (90, 81.0, 67.5), "R70": (90, 82.4, 67.5),
-    "U20": (90, 72.0, 67.6), "R72": (90, 68.0, 67.5), "R73": (90, 69.4, 67.5),
-    "U21": (0, 85.0, 62.5), "R71": (90, 88.3, 62.5), "C53": (90, 81.6, 62.5), "C54": (90, 89.8, 62.5),
-    "U22": (0, 72.0, 62.5), "R74": (90, 75.3, 62.5), "C55": (90, 68.6, 62.5), "C56": (90, 76.8, 62.5),
-    "R66": (90, 78.6, 62.5), "R67": (90, 80.0, 62.5), "R68": (90, 79.3, 65.5),
+    "U6": (0, 122.8, 44.0), "RN1": (90, 120.2, 44.0), "F1": (90, 122.8, 40.3), "D6": (90, 122.8, 48.4),
+    "U18": (0, 122.6, 58.0),
+    "R59": (90, 114.0, 50.0), "R60": (90, 115.5, 50.0), "R61": (90, 117.0, 50.0), "R62": (90, 118.5, 50.0),
+    "R55": (90, 114.0, 52.4), "R56": (90, 115.5, 52.4), "R57": (90, 117.0, 52.4), "R58": (90, 118.5, 52.4),
+    "C47": (90, 114.0, 54.8), "C48": (90, 115.5, 54.8), "C49": (90, 117.0, 54.8), "C50": (90, 118.5, 54.8),
+    # plane link A (J13) / B (J14): load switch row, then ESD + 33R row, pull-ups
+    # beside the plane I2C escapes; SPI bus and RST line run below (route_hand.py)
+    "U21": (0, 83.0, 61.5), "R71": (90, 86.4, 61.5), "C53": (90, 79.6, 61.5), "C54": (90, 88.0, 61.6),
+    "U19": (90, 85.0, 65.8), "R69": (90, 88.0, 65.6), "R70": (90, 89.4, 65.6),
+    "U22": (0, 70.0, 61.5), "R74": (90, 73.4, 61.5), "C55": (90, 66.6, 61.5), "C56": (90, 75.0, 61.6),
+    "U20": (90, 72.0, 65.8), "R72": (90, 75.0, 65.6), "R73": (90, 76.4, 65.6),
+    "R66": (0, 91.0, 63.3), "R67": (0, 91.0, 64.6), "R68": (0, 91.0, 65.9),
 }
 
 def main(argv):
@@ -201,7 +202,7 @@ def rule_areas(src, dst, df):
     body = [z for z in zs if z.GetZoneName() == "U1 body: no F.Cu tracks"][0]
     h1 = [z for z in zs if z.GetZoneName().startswith("H1 ")][0]
     hx = src.FindFootprintByReference("H1").GetPosition()
-    todo = [(body, MM(-12.0), 0, body.GetZoneName())]
+    todo = [(body, MM(BLOCKS[2][3]), 0, body.GetZoneName())]   # moved with U1
     for h in ("H1", "H2", "H3", "H4"):
         p = df[h].GetPosition()
         todo.append((h1, p.x - hx.x, p.y - hx.y, h + " screw head keep-out"))
