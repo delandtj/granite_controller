@@ -11,6 +11,12 @@
 //! there fails here, before any write: the plane client itself finishes
 //! such a job at once, so the reply is a refusal rather than an ack.
 //!
+//! Target `all` works with every node verb and becomes one plane job per
+//! present node, each with that node's own settings - the same thing as
+//! sending the verb to each node in turn. The ack goes out when the last
+//! of those jobs has reported ([`crate::jobs`]), and `on_all` keeps its
+//! own meaning: one staggered group command per plane.
+//!
 //! Everything the dispatcher cannot do itself (probe scan, OTA, reboot,
 //! persisting a config section) still comes back as a [`SideEffect`] for
 //! the firmware to carry out.
@@ -21,8 +27,8 @@ use alloc::vec::Vec;
 use serde_json::Value;
 
 use crate::config::{Config, Section};
-use crate::jobs::JobLog;
-use crate::msg::{Command, CommandKind, PROTOCOL_VERSION, Reply, TargetKind};
+use crate::jobs::{JobLog, SubmittedJob};
+use crate::msg::{Args, Command, CommandKind, PROTOCOL_VERSION, Reply, TargetKind};
 use crate::observed::Observed;
 use crate::plane::{
     Command as PlaneJob, JobId, NodeCommand, NodeOptions, PlaneClient, PlaneCommand,
@@ -58,10 +64,19 @@ pub enum SideEffect {
 pub struct Dispatched {
     /// The ack to publish or return.
     pub reply: Reply,
-    /// The plane job it became, if it became one.
-    pub job: Option<JobId>,
+    /// The plane jobs it became, in order: one for a single node, one
+    /// per present node for a node verb on `all`, none for a command
+    /// the dispatcher answered itself.
+    pub jobs: Vec<JobId>,
     /// What the firmware still has to do.
     pub effects: Vec<SideEffect>,
+}
+
+impl Dispatched {
+    /// The job id the acks carry: the first of the group.
+    pub fn job(&self) -> Option<JobId> {
+        self.jobs.first().copied()
+    }
 }
 
 /// What the dispatcher is allowed to touch.
@@ -179,36 +194,47 @@ pub fn dispatch(cmd: &Command, ctx: &mut DispatchCtx<'_>) -> Dispatched {
 fn done(reply: Reply, effects: Vec<SideEffect>) -> Dispatched {
     Dispatched {
         reply,
-        job: None,
+        jobs: Vec::new(),
         effects,
     }
 }
 
-/// Check the target, submit the plane job, answer `accepted`.
+/// Check the target, submit the plane jobs, answer `accepted`.
 fn submit(cmd: &Command, ctx: &mut DispatchCtx<'_>) -> Dispatched {
-    let job = match plane_job(cmd, ctx) {
-        Ok(job) => job,
+    let plane_jobs = match plane_jobs(cmd, ctx) {
+        Ok(jobs) => jobs,
         Err(e) => return done(Reply::err(&cmd.id, e), Vec::new()),
     };
-    let nodes = job.nodes();
-    let id = ctx.plane.submit(ctx.now_ms, job);
+    let mut submitted: Vec<SubmittedJob> = Vec::new();
+    for job in plane_jobs {
+        let nodes = job.nodes();
+        let id = ctx.plane.submit(ctx.now_ms, job);
+        submitted.push(SubmittedJob::new(id, nodes));
+    }
     ctx.jobs
-        .note(id, &cmd.id, cmd.action, cmd.target, &nodes, ctx.now_ms);
+        .note(&cmd.id, cmd.action, cmd.target, &submitted, ctx.now_ms);
+    let jobs: Vec<JobId> = submitted.iter().map(|s| s.job).collect();
+    let first = jobs.first().copied().unwrap_or_default();
     Dispatched {
-        reply: Reply::accepted(&cmd.id).with_job(id),
-        job: Some(id),
+        reply: Reply::accepted(&cmd.id).with_job(first),
+        jobs,
         effects: Vec::new(),
     }
 }
 
-/// The plane command a verb and a target become, or why they cannot.
+/// The plane commands a verb and a target become, or why they cannot.
+///
+/// A node verb on one node is one command; on `all` it is one command
+/// per present node, exactly what the same verb sent to each node would
+/// be (ADR 0004 decision 4). `on_all` stays one command over the set:
+/// the stagger is a plane-level sequence.
 ///
 /// The presence check is the snapshot's: a node whose plane does not
 /// answer, or whose slot holds no module, is refused here and nothing is
 /// written (ADR 0004 decision 6, "commands to an absent node or plane
 /// fail at once"). A node the controller has not read yet is let
 /// through: the plane has the last word on presence.
-fn plane_job(cmd: &Command, ctx: &DispatchCtx<'_>) -> Result<PlaneJob, String> {
+fn plane_jobs(cmd: &Command, ctx: &DispatchCtx<'_>) -> Result<Vec<PlaneJob>, String> {
     if !cmd.target.is_valid() {
         return Err(alloc::format!("{} is not a target", cmd.target));
     }
@@ -219,7 +245,9 @@ fn plane_job(cmd: &Command, ctx: &DispatchCtx<'_>) -> Result<PlaneJob, String> {
                 .plane()
                 .ok_or_else(|| String::from("this action needs a plane target"))?;
             let address = plane_address(plane, ctx)?;
-            Ok(PlaneJob::Plane(PlaneCommand::Reboot { address }))
+            Ok(alloc::vec![PlaneJob::Plane(PlaneCommand::Reboot {
+                address
+            })])
         }
         TargetKind::Unit => {
             let (plane, unit) = cmd
@@ -232,9 +260,12 @@ fn plane_job(cmd: &Command, ctx: &DispatchCtx<'_>) -> Result<PlaneJob, String> {
                     "unit {unit} of plane {plane} is not present"
                 ));
             }
-            Ok(PlaneJob::Plane(PlaneCommand::UnitReset { address, unit }))
+            Ok(alloc::vec![PlaneJob::Plane(PlaneCommand::UnitReset {
+                address,
+                unit
+            })])
         }
-        TargetKind::Node => node_job(cmd, ctx),
+        TargetKind::Node => node_jobs(cmd, ctx),
     }
 }
 
@@ -247,7 +278,7 @@ fn plane_address(plane: u8, ctx: &DispatchCtx<'_>) -> Result<u8, String> {
 }
 
 /// A node verb over one node or over every present node.
-fn node_job(cmd: &Command, ctx: &DispatchCtx<'_>) -> Result<PlaneJob, String> {
+fn node_jobs(cmd: &Command, ctx: &DispatchCtx<'_>) -> Result<Vec<PlaneJob>, String> {
     // `on_all` is a group by definition and ignores a node target, the
     // way rev C did.
     if cmd.action == CommandKind::OnAll {
@@ -256,20 +287,46 @@ fn node_job(cmd: &Command, ctx: &DispatchCtx<'_>) -> Result<PlaneJob, String> {
             return Err(String::from("no node is present"));
         }
         let opts = group_options(&nodes, cmd, ctx);
-        return Ok(PlaneJob::Node(NodeCommand::on_all(nodes).with_opts(opts)));
+        return Ok(alloc::vec![PlaneJob::Node(
+            NodeCommand::on_all(nodes).with_opts(opts)
+        )]);
+    }
+    // `all` is every present node, one job each: a node verb means the
+    // same thing for a set as for one node, and the plane runs the
+    // sequences side by side on their own slots.
+    if cmd.target == Target::All {
+        let nodes = ctx.observed.present_nodes();
+        if nodes.is_empty() {
+            return Err(String::from("no node is present"));
+        }
+        let mut jobs = Vec::new();
+        for node in nodes {
+            jobs.push(PlaneJob::Node(node_verb(cmd.action, node, &cmd.args, ctx)?));
+        }
+        return Ok(jobs);
     }
     let Target::Node(node) = cmd.target else {
-        // Every other verb acts on one node. `all` over a verb that is
-        // not `on_all` would be several jobs with one ack, which the
-        // job model has no room for.
+        // What is left is a plane or unit target under a node verb.
         return Err(alloc::format!(
             "{} needs a single node target",
             cmd.action.as_str()
         ));
     };
     check_present(node, ctx)?;
-    let opts = cmd.args.apply_to(node_options(node, ctx));
-    let verb = match cmd.action {
+    Ok(alloc::vec![PlaneJob::Node(node_verb(
+        cmd.action, node, &cmd.args, ctx
+    )?)])
+}
+
+/// One node verb on one node, with that node's own timings.
+fn node_verb(
+    action: CommandKind,
+    node: NodeId,
+    args: &Args,
+    ctx: &DispatchCtx<'_>,
+) -> Result<NodeCommand, String> {
+    let opts = args.apply_to(node_options(node, ctx));
+    let verb = match action {
         CommandKind::On => NodeCommand::on(node),
         CommandKind::Off => NodeCommand::off(node),
         CommandKind::ForceOff => NodeCommand::force_off(node),
@@ -277,15 +334,15 @@ fn node_job(cmd: &Command, ctx: &DispatchCtx<'_>) -> Result<PlaneJob, String> {
         CommandKind::Reset => NodeCommand::Reset { node },
         CommandKind::Press => NodeCommand::Press {
             node,
-            switch: cmd.args.press_switch(),
-            ms: cmd.args.press_ms(),
+            switch: args.press_switch(),
+            ms: args.press_ms(),
         },
         CommandKind::PowerOn => NodeCommand::PowerOn { node },
         CommandKind::PowerOff => NodeCommand::PowerOff { node },
         CommandKind::ClearLatch => NodeCommand::ClearLatch { node },
         other => return Err(alloc::format!("{} is not a node action", other.as_str())),
     };
-    Ok(PlaneJob::Node(verb.with_opts(opts)))
+    Ok(verb.with_opts(opts))
 }
 
 /// A node the controller knows is not there is refused at once.

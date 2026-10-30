@@ -4,7 +4,7 @@
 use granite_core::Target;
 use granite_core::config::{NodesCfg, Section};
 use granite_core::hal::{BootReason, Switch};
-use granite_core::jobs::JobLog;
+use granite_core::jobs::{JobLog, SubmittedJob};
 use granite_core::msg::{
     Args, Command, CommandKind, Event, EventKind, LWT_PAYLOAD, PROTOCOL_VERSION, Reply, State,
     Status, Topics, event_from_client, event_from_rule,
@@ -442,7 +442,13 @@ fn plane_client_events_become_published_events() {
 #[test]
 fn a_finished_job_becomes_an_ack_and_an_event() {
     let mut log = JobLog::new();
-    log.note(5, "c-7", CommandKind::ForceOff, Target::Node(2), &[2], 100);
+    log.note(
+        "c-7",
+        CommandKind::ForceOff,
+        Target::Node(2),
+        &[SubmittedJob::new(5, vec![2])],
+        100,
+    );
     let finished = FinishedJob {
         id: 5,
         command: PlaneJob::Node(NodeCommand::force_off(2)),
@@ -452,12 +458,14 @@ fn a_finished_job_becomes_an_ack_and_an_event() {
         finished_ms: 900,
     };
     let done = log.finish(&finished, 900);
+    let reply = done.reply.expect("the command is finished");
+    let event = done.event.expect("and it has an event");
     assert_eq!(
-        serde_json::from_str::<Value>(&done.reply.to_json().unwrap()).unwrap(),
+        serde_json::from_str::<Value>(&reply.to_json().unwrap()).unwrap(),
         json!({"v":1,"id":"c-7","ok":true,"result":"done","error":null,"job":5})
     );
     assert_eq!(
-        serde_json::from_str::<Value>(&Event::new(900, done.event).to_json().unwrap()).unwrap(),
+        serde_json::from_str::<Value>(&Event::new(900, event).to_json().unwrap()).unwrap(),
         json!({"v":1,"ts":900,"kind":"action_done","id":"c-7","node":2,
                "action":"force_off","result":"done"})
     );

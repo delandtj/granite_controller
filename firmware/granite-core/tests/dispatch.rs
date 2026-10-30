@@ -9,7 +9,7 @@
 //! granite-sim against the fake planes.
 
 use granite_core::config::Config;
-use granite_core::dispatch::{DispatchCtx, SideEffect, dispatch};
+use granite_core::dispatch::{DispatchCtx, Dispatched, SideEffect, dispatch};
 use granite_core::jobs::JobLog;
 use granite_core::modbus_map::{cmd_word, command_from_coil, command_from_holding};
 use granite_core::msg::{Args, Command, CommandKind, Reply};
@@ -79,6 +79,11 @@ impl Harness {
     }
 
     fn run(&mut self, cmd: &Command) -> (Reply, Vec<SideEffect>) {
+        let out = self.dispatched(cmd);
+        (out.reply, out.effects)
+    }
+
+    fn dispatched(&mut self, cmd: &Command) -> Dispatched {
         let mut ctx = DispatchCtx {
             now_ms: self.now_ms,
             device_id: "granite-test",
@@ -89,8 +94,7 @@ impl Harness {
             config: &mut self.config,
             verify_sig: None,
         };
-        let out = dispatch(cmd, &mut ctx);
-        (out.reply, out.effects)
+        dispatch(cmd, &mut ctx)
     }
 
     fn verb(&mut self, action: CommandKind, target: Target) -> Reply {
@@ -143,6 +147,11 @@ fn the_plane_and_unit_verbs_need_their_own_targets() {
     assert!(!wrong.ok);
     assert!(wrong.error.unwrap().contains("single node target"));
 
+    // And `all` under a board verb names no board.
+    let board = h.verb(CommandKind::UnitReset, Target::All);
+    assert!(!board.ok);
+    assert!(board.error.unwrap().contains("needs a unit target"));
+
     // And a plane verb for a plane that does not answer.
     let gone = h.verb(CommandKind::PlaneReboot, Target::Plane(3));
     assert!(!gone.ok);
@@ -183,9 +192,93 @@ fn a_job_is_remembered_so_the_ack_finds_its_command() {
     let finished = h.plane.drain_jobs();
     assert_eq!(finished.len(), 1, "the job ended without a plane");
     let done = h.jobs.finish(&finished[0], h.now_ms + 10);
-    assert_eq!(done.reply.id, "c-1");
-    assert!(!done.reply.ok, "an absent plane is not a success");
+    let ack = done.reply.expect("the command is finished");
+    assert_eq!(ack.id, "c-1");
+    assert!(!ack.ok, "an absent plane is not a success");
     assert!(h.jobs.last(2).and_then(|l| l.result.clone()).is_some());
+}
+
+/// Bug: only `on_all` accepted target `all`, so the default rules 1 and
+/// 2 (`force_off` on `all`) switched nothing off. Every node verb now
+/// fans out over every present node, one plane job each.
+#[test]
+fn all_fans_a_node_verb_out_over_every_present_node() {
+    let mut h = Harness::new();
+    h.add_plane(1);
+    h.add_node(9, true);
+    h.add_node(10, false); // present=false: not in the set
+    let present = vec![1, 2, 9];
+
+    for action in [
+        CommandKind::On,
+        CommandKind::Off,
+        CommandKind::ForceOff,
+        CommandKind::Reset,
+        CommandKind::Cycle,
+        CommandKind::Press,
+        CommandKind::PowerOn,
+        CommandKind::PowerOff,
+        CommandKind::ClearLatch,
+    ] {
+        let out = h.dispatched(&Command::new("c-all", action).with_target(Target::All));
+        assert!(out.reply.ok, "{action} on all: {:?}", out.reply.error);
+        assert_eq!(out.reply.result.as_deref(), Some("accepted"), "{action}");
+        assert_eq!(
+            out.jobs.len(),
+            present.len(),
+            "{action} is one job per present node"
+        );
+        assert_eq!(out.reply.job, out.jobs.first().copied());
+        // One log entry for the whole command, over all three nodes.
+        let entry = h
+            .jobs
+            .pending(out.jobs[2])
+            .expect("every job finds the command");
+        assert_eq!(entry.command_id, "c-all");
+        assert_eq!(entry.target, Target::All);
+        assert_eq!(entry.nodes, present);
+        h.plane.drain_jobs();
+    }
+
+    // on_all stays one group job.
+    let group = h.dispatched(&Command::new("c-group", CommandKind::OnAll).with_target(Target::All));
+    assert_eq!(group.jobs.len(), 1, "on_all is one staggered group");
+}
+
+/// The group is acked once, when its last job has reported.
+#[test]
+fn a_fan_out_is_acked_once() {
+    let mut h = Harness::new();
+    let out = h.dispatched(&Command::new("c-all", CommandKind::ForceOff).with_target(Target::All));
+    assert_eq!(out.jobs.len(), 2);
+
+    let finished = h.plane.drain_jobs();
+    assert_eq!(finished.len(), 2, "no plane answers: both end at once");
+    let first = h.jobs.finish(&finished[0], h.now_ms + 10);
+    assert!(
+        first.reply.is_none(),
+        "the ack waits for the rest of the group"
+    );
+    let last = h.jobs.finish(&finished[1], h.now_ms + 20);
+    let ack = last.reply.expect("the group is finished");
+    assert_eq!(ack.id, "c-all");
+    assert_eq!(ack.job, out.reply.job);
+    assert!(!ack.ok);
+    assert_eq!(ack.error.as_deref(), Some("2 of 2 failed: absent"));
+    // Both nodes carry their own result.
+    for node in [1, 2] {
+        assert!(h.jobs.last(node).and_then(|l| l.result.clone()).is_some());
+    }
+}
+
+/// With no plane at all there is nothing to fan out to.
+#[test]
+fn all_with_no_present_node_is_refused() {
+    let mut h = Harness::new();
+    h.observed.nodes.clear();
+    let reply = h.verb(CommandKind::ForceOff, Target::All);
+    assert!(!reply.ok);
+    assert_eq!(reply.error.as_deref(), Some("no node is present"));
 }
 
 #[test]

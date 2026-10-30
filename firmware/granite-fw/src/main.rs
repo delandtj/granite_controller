@@ -547,7 +547,7 @@ fn dispatcher<L: PlaneLink>(
                 let out = dispatch(&cmd, &mut ctx);
 
                 let _ = reply.send(out.reply.clone());
-                if let Some(job) = out.job {
+                if let Some(job) = out.job() {
                     events.push(Event::new(
                         now,
                         EventKind::Accepted {
@@ -619,18 +619,21 @@ fn dispatcher<L: PlaneLink>(
         }
         // The jobs they finished: the ack of ADR 0004 decision 6, on the
         // command's own id, plus the event the waiting transports watch
-        // for.
+        // for. A command that fanned out over `all` reports once, when
+        // the last of its jobs is in.
         for finished in plane.drain_jobs() {
             let done = jobs.finish(&finished, now);
-            if !done.outcome.is_ok() {
+            if !finished.outcome.is_ok() {
                 log::warn!(
                     "job {} ({}) ended as {}",
                     finished.id,
                     finished.command.verb(),
-                    done.outcome
+                    finished.outcome
                 );
             }
-            events.push(Event::new(now, done.event));
+            if let Some(event) = done.event {
+                events.push(Event::new(now, event));
+            }
         }
         // The intended-OFF set is persisted, so it survives a reboot of
         // the controller as well as of a plane.
@@ -748,7 +751,7 @@ fn dispatcher<L: PlaneLink>(
                     verify_sig: None,
                 };
                 let out = dispatch(&cmd, &mut ctx);
-                match out.job {
+                match out.job() {
                     Some(job) => log::info!("boot policy {policy} on node {node}: job {job}"),
                     None => log::warn!(
                         "boot policy {policy} on node {node} refused: {}",

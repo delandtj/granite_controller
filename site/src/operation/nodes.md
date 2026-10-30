@@ -56,16 +56,16 @@ fault that kills a node, so a person decides.
 
 | Verb | Target | What happens | Typical duration |
 |---|---|---|---|
-| `on` | node | If the host LED is already steady: done, nothing changes. Otherwise rail on if it is off, wait up to 15 s for the LED, press PWR once if it stayed dark, and wait again. | up to about 30 s |
-| `off` | node | If the host is already dark: done, the rail stays up. Otherwise a short PWR press (the OS sees an ACPI power button and shuts down), then wait `t_soft_off_s` (default 120 s) for the LED to go dark, then **escalate** per the node's `escalation`. | up to `t_soft_off_s` + 6 s |
-| `force_off` | node | No short press: hold PWR 5 s at once, then cut the rail if the LED is still on (with the default escalation). | about 6 s |
-| `reset` | node | A 300 ms press on RST. | 0.3 s |
-| `cycle` | node | Rail off, wait 5 s, rail on, then a PWR press if the host stays dark after the LED wait. | about 5 s + up to 15 s |
-| `press` | node | Raw press of PWR (default) or RST, 50..10000 ms (default 300). Ignores the LED. For motherboards that need something unusual. | as given |
-| `on_all` | all | Staggered start of every present node, see below. | 2 s per slot, then the `on` waits |
-| `power_on` | node | The rail only: enable the slot. No button. | under a second |
-| `power_off` | node | The rail only: disable the slot. No button; the host loses power at once. | under a second |
-| `clear_latch` | node | Clear the slot's overvoltage latch. | under a second |
+| `on` | node, `all` | If the host LED is already steady: done, nothing changes. Otherwise rail on if it is off, wait up to 15 s for the LED, press PWR once if it stayed dark, and wait again. | up to about 30 s |
+| `off` | node, `all` | If the host is already dark: done, the rail stays up. Otherwise a short PWR press (the OS sees an ACPI power button and shuts down), then wait `t_soft_off_s` (default 120 s) for the LED to go dark, then **escalate** per the node's `escalation`. | up to `t_soft_off_s` + 6 s |
+| `force_off` | node, `all` | No short press: hold PWR 5 s at once, then cut the rail if the LED is still on (with the default escalation). | about 6 s |
+| `reset` | node, `all` | A 300 ms press on RST. | 0.3 s |
+| `cycle` | node, `all` | Rail off, wait 5 s, rail on, then a PWR press if the host stays dark after the LED wait. | about 5 s + up to 15 s |
+| `press` | node, `all` | Raw press of PWR (default) or RST, 50..10000 ms (default 300). Ignores the LED. For motherboards that need something unusual. | as given |
+| `on_all` | all | Staggered start of the present nodes that are off, see below. | 2 s per slot, then the `on` waits |
+| `power_on` | node, `all` | The rail only: enable the slot. No button. | under a second |
+| `power_off` | node, `all` | The rail only: disable the slot. No button; the host loses power at once. | under a second |
+| `clear_latch` | node, `all` | Clear the slot's overvoltage latch. | under a second |
 | `unit_reset` | `planeN.unitU` | Re-arm a unit board's own hot-swap after it latched off (a 100 ms pulse). Never done by `on`. | under a second |
 | `plane_reboot` | `planeN` | Reboot the plane. The slots keep their state: the plane saves it first and restores it on the way up. | a few seconds |
 
@@ -107,13 +107,21 @@ node, which leaves running nodes alone.
 | Target | Spelling | Used by |
 |---|---|---|
 | One node | `1`..`64` | every node verb |
-| Every present node | `all` | `on_all` only |
+| Every present node | `all` | every node verb |
 | One plane | `plane0`..`plane7` | `plane_reboot` |
 | One unit board | `plane0.unit0`..`plane7.unit3` | `unit_reset` |
 
-`all` with any verb other than `on_all` is refused with
-`<verb> needs a single node target`; so is a node verb sent to a plane.
-To act on several nodes, send one command per node.
+A node verb on `all` is **one job per present node**, each with that
+node's own settings and running on its own slot, exactly as if you had
+sent the verb to each node in turn. It is accepted once (with the first
+job id of the group) and acked once, when the last of those jobs has
+reported; a group whose jobs did not all reach their goal is acked with
+`<n> of <m> failed: <outcome>`, and each node's own result is in its
+`last_job`. `all` with no present node at all is refused with
+`no node is present`.
+
+A node verb sent to a `planeN` or `planeN.unitU` target is refused with
+`<verb> needs a single node target`.
 
 ## Commands complete later
 
@@ -154,9 +162,9 @@ before anything is written to a plane, with `ok: false` and a reason:
 | `node N is not present` | The plane answers, but the slot holds no module. |
 | `unit U of plane P is not present` | `unit_reset` on a unit board that is not on the chain. |
 | `plane P is not present` | `plane_reboot` or `unit_reset` on a plane that does not answer. |
-| `<verb> needs a single node target` | `all` or a plane target with a node verb. |
+| `<verb> needs a single node target` | A plane or unit target with a node verb. |
 | `this action needs a plane target`, `this action needs a unit target` | `plane_reboot` or `unit_reset` with the wrong target. |
-| `no node is present` | `on_all` with no plane answering. |
+| `no node is present` | `on_all`, or a node verb on `all`, with no present node to act on. |
 
 A node on a plane that answers but has not reported its slots yet is
 let through; the plane has the last word on presence.

@@ -82,16 +82,18 @@ return the same reply object MQTT publishes as an ack:
 ```json
 {"v":1,"id":"api-9","ok":true,"result":"accepted","error":null,"job":1}
 {"v":1,"id":"api-7","ok":false,"result":null,"error":"node 40 is on plane 4 which is not present"}
-{"v":1,"id":"api-4","ok":false,"result":null,"error":"force_off needs a single node target"}
+{"v":1,"id":"api-4","ok":false,"result":null,"error":"plane_reboot needs a plane target"}
 ```
 
 `result` is `accepted` for anything queued (every plane verb, OTA,
 reboot), with `job` set for a plane verb; `ok`, `staged` or `saved` for
-configuration. A refusal has `ok: false` and the reason in `error`. The
-outcome of a plane job is not in the HTTP reply: read
-`nodes[i].last_job` in `/api/v1/state`, or the MQTT `event` and `ack`
-topics. See [Controlling nodes](../operation/nodes.md) for the
-outcomes and the reasons.
+configuration. A node verb on target `all` becomes one job per present
+node, and `job` is the first of the group. A refusal has `ok: false`
+and the reason in `error`. The outcome of a plane job is not in the
+HTTP reply: read `nodes[i].last_job` in `/api/v1/state`, or the MQTT
+`event` and `ack` topics. See
+[Controlling nodes](../operation/nodes.md) for the outcomes and the
+reasons.
 
 ### `?wait=1` on a node action
 
@@ -105,8 +107,9 @@ is meant for scripts that would otherwise poll `/api/v1/state`.
 Two limits:
 
 - The wait is capped at 30 seconds. A longer job - a soft `off` that
-  waits the node's `t_soft_off_s` for its host - keeps running and the
-  reply falls back to `accepted`, so `?wait=1` never replaces reading
+  waits the node's `t_soft_off_s` for its host, or a verb on `all` that
+  waits for every node of the group - keeps running and the reply falls
+  back to `accepted`, so `?wait=1` never replaces reading
   `nodes[i].last_job`.
 - The controller runs one HTTP server task, so a waiting request
   answers nothing else while it waits: the setup page stalls for as

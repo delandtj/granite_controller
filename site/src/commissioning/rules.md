@@ -17,19 +17,13 @@ Three rules come with the default configuration, all **disabled**:
 | 2 | leak float closed | dry contact 1 closed | 2 s | `force_off` on `all` | manual |
 | 3 | bus voltage low | VIN < 15.000 V | 5 s | event only | auto, hysteresis 0.5 V |
 
-Do not enable them as shipped:
+Rules 1 and 2 target `all`, which is every present node: when one of
+them fires, the controller submits one `force_off` per node and acks
+the group once (see [Controlling nodes](../operation/nodes.md)).
 
-- Rules 1 and 2 target `all`, and the current firmware accepts `all`
-  only for `on_all`. When they fire they publish `rule_fired` and then
-  an `action_failed` event (`force_off needs a single node target`),
-  and no node is switched off. Until that is fixed, give each node its
-  own rule with a numeric `target` (16 rules is the limit).
-- Rule 3 still carries the 15 V threshold of the 19 V rev C supply.
-  The rev D controller runs on 12 V from the planes, so it would fire
-  at once. Set the threshold to something like `10500` first, or watch
-  a plane's bus instead with `plane_bus_volts`.
-
-Rule 2 assumes your leak float is on dry input 1.
+Check them against your frame before you enable them: rule 2 assumes
+your leak float is on dry input 1, and rule 1 trips when **no** probe
+answers, so it needs a probe that is actually cabled and configured.
 
 ## Anatomy of a rule
 
@@ -48,7 +42,7 @@ Rule 2 assumes your leak float is on dry input 1.
 | `hold_s` | seconds | The condition must be true continuously this long. |
 | `action` | `act` with a `kind`, or `event` | `act` sends a verb; `event` only publishes `rule_fired`. |
 | `kind` | any verb of [Controlling nodes](../operation/nodes.md) | `on`, `off`, `force_off`, `reset`, `cycle`, `press`, `on_all`, `power_on`, `power_off`, `clear_latch`, `unit_reset`, `plane_reboot`. |
-| `target` | `1`..`64`, `all`, `planeN`, `planeN.unitU` | What the verb acts on, with the same rules as any command: a node id for the node verbs, `all` only for `on_all`, `planeN` for `plane_reboot`, `planeN.unitU` for `unit_reset`. |
+| `target` | `1`..`64`, `all`, `planeN`, `planeN.unitU` | What the verb acts on, with the same rules as any command: a node id or `all` for the node verbs, `planeN` for `plane_reboot`, `planeN.unitU` for `unit_reset`. |
 | `rearm` | `auto` (default) or `manual` | `manual` stays fired until acknowledged. |
 | `missing` | `ignore` (default) or `trip` | What a source with no value means: `ignore` waits for a value, `trip` counts it as the condition being true (hold included). Not for `changed`. |
 

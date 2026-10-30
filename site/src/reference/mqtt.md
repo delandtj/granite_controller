@@ -91,16 +91,16 @@ targets outside those forms, are rejected.
 
 | `action` | `target` | `args` | Notes |
 |---|---|---|---|
-| `on` | node | `hard` | Rail on if needed, PWR if the host stays dark |
-| `off` | node | `no_escalate` | Soft off, escalating per the node's `escalation` unless `no_escalate` |
-| `force_off` | node | `no_escalate` | Hold PWR 5 s, then cut the rail if the host is still lit |
-| `reset` | node | | 300 ms RST press |
-| `cycle` | node | `hard` | Rail off 5 s, on, PWR if the host stays dark; `hard` skips the LED wait |
-| `press` | node | `switch` (`pwr` default, or `rst`), `duration_ms` (50..10000, default 300) | Raw press, ignores the LED |
-| `on_all` | `all` (any target is ignored) | `hard` | Every present node: rails off, back one by one 2 s apart, then `on` |
-| `power_on` | node | | Rail only |
-| `power_off` | node | | Rail only |
-| `clear_latch` | node | | Clear the slot's overvoltage latch |
+| `on` | node, `all` | `hard` | Rail on if needed, PWR if the host stays dark |
+| `off` | node, `all` | `no_escalate` | Soft off, escalating per the node's `escalation` unless `no_escalate` |
+| `force_off` | node, `all` | `no_escalate` | Hold PWR 5 s, then cut the rail if the host is still lit |
+| `reset` | node, `all` | | 300 ms RST press |
+| `cycle` | node, `all` | `hard` | Rail off 5 s, on, PWR if the host stays dark; `hard` skips the LED wait |
+| `press` | node, `all` | `switch` (`pwr` default, or `rst`), `duration_ms` (50..10000, default 300) | Raw press, ignores the LED |
+| `on_all` | `all` (any target is ignored) | `hard` | Staggered start of the present nodes that are off, 2 s apart |
+| `power_on` | node, `all` | | Rail only |
+| `power_off` | node, `all` | | Rail only |
+| `clear_latch` | node, `all` | | Clear the slot's overvoltage latch |
 | `unit_reset` | `planeN.unitU` | | Re-arm the unit board's hot-swap |
 | `plane_reboot` | `planeN` | | Reboot the plane; slots keep their state |
 | `rule_ack` | `all` | `rule` | Re-arm a manual rule |
@@ -111,11 +111,15 @@ targets outside those forms, are rejected.
 | `reboot` | `all` | | |
 | `factory_reset` | `all` | `confirm` = the device id | |
 
-Every node verb except `on_all` needs a single node id: `all` with
-`off`, `force_off` or any other node verb is refused with
-`<verb> needs a single node target`. `args.force` is accepted from
-older clients and ignored. What the verbs do, and how they fail, is in
-[Controlling nodes](../operation/nodes.md).
+Every node verb takes a node id or `all`. With `all` the controller
+submits one plane job per present node, each with that node's own
+settings, and acks the command once, when the last of those jobs has
+reported; the ack carries the first job id of the group and an error
+like `2 of 8 failed: failed` when some of them did not reach their
+goal. A node verb sent to a `planeN` or `planeN.unitU` target is
+refused with `<verb> needs a single node target`. `args.force` is
+accepted from older clients and ignored. What the verbs do, and how
+they fail, is in [Controlling nodes](../operation/nodes.md).
 
 Examples:
 

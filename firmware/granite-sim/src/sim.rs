@@ -143,9 +143,15 @@ impl SimCore {
             }
         }
         for finished in self.plane.drain_jobs() {
+            // A command that fanned out over `all` is acked once, when
+            // the last of its jobs has reported.
             let done = self.jobs.finish(&finished, now_ms);
-            self.events.push(done.event);
-            self.acks.push(done.reply);
+            if let Some(event) = done.event {
+                self.events.push(event);
+            }
+            if let Some(reply) = done.reply {
+                self.acks.push(reply);
+            }
         }
 
         // 4. The snapshot every reader works from.
@@ -289,7 +295,7 @@ impl Dispatcher for SimCore {
             verify_sig: None,
         };
         let out = dispatch(cmd, &mut ctx);
-        if let Some(job) = out.job {
+        if let Some(job) = out.job() {
             self.events.push(EventKind::Accepted {
                 id: cmd.id.clone(),
                 action: cmd.action,

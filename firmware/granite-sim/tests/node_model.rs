@@ -265,6 +265,44 @@ fn an_absent_node_fails_at_once() {
     assert!(reply.ok, "{:?}", reply.error);
 }
 
+/// Bug: `all` was refused by every verb but `on_all`, so the shipped
+/// safety rules switched nothing off. A node verb on `all` is now one
+/// plane job per present node, acked once.
+#[test]
+fn a_node_verb_on_all_reaches_every_present_node() {
+    let mut rig = Rig::new();
+    assert_eq!(rig.core.observed.present_nodes(), vec![1, 2, 3, 4]);
+
+    let reply = rig.verb("c-all", CommandKind::PowerOff, Target::All);
+    assert!(reply.ok, "{:?}", reply.error);
+    assert_eq!(reply.result.as_deref(), Some("accepted"));
+    let ack = rig.ack("c-all", 30_000);
+    assert!(ack.ok, "{:?}", ack.error);
+    assert_eq!(ack.job, reply.job, "one ack, on the group's first job");
+    assert!(
+        rig.run_until(10_000, |core| {
+            (1..=4).all(|node| core.observed.node_power(node) == PowerState::Off)
+        }),
+        "not every node went off: {:?}",
+        (1..=4).map(|n| rig.power(n)).collect::<Vec<_>>()
+    );
+    // Every node carries its own job result.
+    for node in 1..=4 {
+        let last = rig
+            .core
+            .observed
+            .node(node)
+            .and_then(|n| n.last_job.clone())
+            .expect("a last job");
+        assert_eq!(last.id, "c-all");
+        assert_eq!(last.verb, "power_off");
+        assert_eq!(last.result.as_deref(), Some("done"), "node {node}");
+    }
+    // And exactly one ack went out for the command.
+    let acks = rig.core.acks.iter().filter(|r| r.id == "c-all").count();
+    assert_eq!(acks, 1, "a group is acked once");
+}
+
 #[test]
 fn force_off_ends_with_the_node_off_even_when_the_host_ignores_it() {
     let mut scenario = scenario();
