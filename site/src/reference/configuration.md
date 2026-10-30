@@ -79,7 +79,7 @@ NodeSettings:
 |---|---|---|---|
 | `node` | 1..64 | | The key. An entry outside 1..64 is dropped. |
 | `name` | string | `node<N>` | Empty (or left out) means the default. |
-| `boot_policy` | `leave`, `on`, `off` | `leave` | Sent once per controller start. |
+| `boot_policy` | `leave`, `on`, `off` | `leave` | Sent once per **plane** boot, never because the controller itself restarted. |
 | `led_sense` | bool | `true` | `false`: `on`, `cycle` and `on_all` do not wait for the host LED. |
 | `t_soft_off_s` | seconds | 120 | How long `off` waits for the host before it escalates. `0` means 120; above 3600 is clamped to 3600. |
 | `escalation` | `none`, `hold`, `hold_then_cut` | `hold_then_cut` | How far `off` and `force_off` go when the host stays lit. |

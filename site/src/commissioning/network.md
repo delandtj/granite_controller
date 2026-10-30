@@ -52,10 +52,9 @@ edit.
 
 A revert reboot restarts the controller only. The planes run their
 slots on their own and keep every node as it was while the controller
-is away. The one thing a controller boot does to nodes is its boot
-policy: a node set to `on` or `off` gets that command about three
-seconds after every controller boot, and a node on the default `leave`
-is not touched (see [Nodes and boot policy](nodes.md)).
+is away, and the restart itself commands no node: the boot policies
+belong to a plane boot, not to a controller boot (see
+[Nodes and boot policy](nodes.md)).
 
 - Wrong address or gateway: you lose the session, wait out the window,
   the controller reboots into the old configuration and answers again at the

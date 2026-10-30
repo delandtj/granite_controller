@@ -6,6 +6,7 @@
 use std::time::Instant;
 
 use granite_core::api::{ApiCtx, ApiRequest, ApiResponse, AuthState, Dispatcher};
+use granite_core::boot::BootPolicyWatch;
 use granite_core::config::{Config, Secrets, Section};
 use granite_core::dispatch::{DispatchCtx, SideEffect, dispatch};
 use granite_core::jobs::JobLog;
@@ -30,10 +31,10 @@ use crate::scenario::Scenario;
 /// the planes' own 20 Hz cycle.
 pub const TICK_MS: u64 = 50;
 
-/// How long the boot policies wait after start before they are applied
-/// \[ms\]: long enough for discovery and the first SUMMARY of every
-/// plane.
-pub const BOOT_POLICY_AFTER_MS: u64 = 3_000;
+/// How long a plane boot waits before its nodes' policies are applied
+/// \[ms\]: long enough for that plane's slot reports. granite-core
+/// decides when a boot policy runs ([`granite_core::boot`]).
+pub const BOOT_POLICY_AFTER_MS: u64 = granite_core::boot::BOOT_POLICY_SETTLE_MS;
 
 /// The part of the simulator the core owns: the plane client over the
 /// fake plane link, the job log, the rule engine and the snapshot they
@@ -66,8 +67,9 @@ pub struct SimCore {
     pub acks: Vec<Reply>,
     /// Monotonic now.
     pub now_ms: u64,
-    /// True once the boot policies have been applied.
-    boot_policy_done: bool,
+    /// Which planes have booted, so the policies run on a plane boot
+    /// and never on the controller's own start.
+    boot: BootPolicyWatch,
     /// The last state of each node, so a change can be published.
     last_states: Vec<(NodeId, String, String)>,
 }
@@ -91,7 +93,7 @@ impl SimCore {
             events: Vec::new(),
             acks: Vec::new(),
             now_ms: 0,
-            boot_policy_done: false,
+            boot: BootPolicyWatch::new(),
             last_states: Vec::new(),
         };
         core.plane.set_policy(config.nodes.plane_update);
@@ -160,10 +162,11 @@ impl SimCore {
         self.read_sensors(now_ms);
         self.note_state_changes();
 
-        // 5. Boot policies, once, after discovery has had its chance.
-        if !self.boot_policy_done && now_ms >= BOOT_POLICY_AFTER_MS {
-            self.boot_policy_done = true;
-            self.apply_boot_policies();
+        // 5. Boot policies: on a plane boot, never on this start
+        //    (ADR 0004, "What an Expert Would Ask").
+        let policies = self.boot.due(now_ms, &self.observed, &self.config.nodes);
+        if !policies.is_empty() {
+            self.apply_boot_policies(&policies);
         }
 
         // 6. Rules, once a second.
@@ -243,10 +246,10 @@ impl SimCore {
         self.last_states = now;
     }
 
-    /// The boot policies of ADR 0004 decision 2, once per controller
-    /// start: a node whose policy is not `leave` is commanded.
-    fn apply_boot_policies(&mut self) {
-        for (node, policy) in self.config.nodes.boot_policies() {
+    /// The boot policies of ADR 0004 decision 2 for the nodes of a
+    /// plane that has just booted.
+    fn apply_boot_policies(&mut self, policies: &[(NodeId, BootPolicy)]) {
+        for (node, policy) in policies.iter().copied() {
             let action = match policy {
                 BootPolicy::Leave => continue,
                 BootPolicy::On => CommandKind::On,

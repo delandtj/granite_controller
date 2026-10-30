@@ -20,6 +20,11 @@ use serde::{Deserialize, Serialize};
 use crate::NodeId;
 
 /// What to do with a node once per plane boot.
+///
+/// [`crate::boot::BootPolicyWatch`] decides when that is: a plane whose
+/// boot count moved, or one that came up saying it lost its intended
+/// state. A controller that restarts on its own runs nothing (ADR 0004,
+/// "What an Expert Would Ask").
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum BootPolicy {

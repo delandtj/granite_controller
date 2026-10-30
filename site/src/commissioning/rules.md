@@ -167,7 +167,7 @@ must always run (be careful: this fights a deliberate shutdown):
 
 Without any enabled rule, the controller changes node power only
 through the boot policies of [Nodes and boot policy](nodes.md) (once
-per controller start, `leave` by default) and by re-applying OFF to the
+per plane boot, `leave` by default) and by re-applying OFF to the
 nodes it had switched off when a plane reports a power loss
 ([Controlling nodes](../operation/nodes.md)). The planes keep running
 their nodes whatever the controller does.

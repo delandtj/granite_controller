@@ -41,11 +41,12 @@ Making the `.bin` from a build is in
 
 ## Controller: what the reboot does to the nodes
 
-Nothing by itself. The planes run their slots on their own and keep
-every node as it is while the controller restarts. The only node
-commands a controller boot sends are the boot policies: a node set to
-`on` or `off` gets that command about three seconds after every
-controller boot, a node on the default `leave` is not touched. See
+Nothing. The planes run their slots on their own and keep every node as
+it is while the controller restarts, and the controller sends no node
+command because of its own reboot: the boot policies belong to a
+**plane** boot, not to a controller boot (that is also why a plane
+firmware update, which does reboot the plane, runs them). An enabled
+rule can still act. See
 [Nodes and boot policy](../commissioning/nodes.md).
 
 ## Controller: probation

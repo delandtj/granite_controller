@@ -111,10 +111,10 @@ curl -sk -H "Authorization: Bearer $T" -X PUT -d '{
 
 ## Boot policy
 
-The policies run once per **controller** start, three seconds after
-the dispatcher comes up, which is long enough for discovery and a slot
-report from every plane. Each node whose policy is not `leave` gets one
-command with the id `boot-<node>`:
+The policies run once per **plane** boot, three seconds after the
+controller sees it, which is long enough for that plane's slot reports.
+Each node of that plane whose policy is not `leave` gets one command
+with the id `boot-<node>`:
 
 | Policy | Command | Effect |
 |---|---|---|
@@ -122,17 +122,28 @@ command with the id `boot-<node>`:
 | `on` | `on` | Rail on if it is off, then a PWR press if the host stays dark. A running node is left alone. |
 | `off` | `off` | Soft shutdown of the host, escalating per the node's setting. `off` means "shut the host down": a node whose host is already dark keeps its rail up. |
 
-A node whose plane is not there yet is refused like any absent node,
-and the log says so; it does not get a second try. A plane that
-reboots later on its own does not run the policies again: the plane
-keeps its slots as they were (see [Controlling nodes](../operation/nodes.md)).
+What counts as a plane boot:
 
-Boot policy `on` is the one that brings a frame back after a site power
-loss without anyone logging in. Keep in mind that it runs after every
-controller start, including a firmware update or a reboot from the
-API, and presses PWR on any node whose host is dark at that moment.
-Boot policy `off` shuts the host down on every controller start and is
-rarely what you want.
+| Event | Policies run? |
+|---|---|
+| A plane the controller is watching reboots (watchdog, `plane_reboot`, a plane firmware update): its boot count moves | yes, for the nodes of that plane |
+| A plane loses its own power and comes back reporting `intended_state_lost` | yes |
+| The frame is powered up cold, controller and planes together | yes: the planes report the lost state and have just booted |
+| **The controller alone restarts** (firmware update, API `reboot`, crash, watchdog) while the planes keep running | **no** |
+| A plane is unplugged and plugged back in with the same boot count and no power loss | no |
+
+That is ADR 0004's rule: the planes hold their own state, so a
+controller restart moves nothing. A plane found with its power-loss
+flag already up but an uptime of more than a minute is not treated as a
+fresh boot either - that flag stays up until the plane is reset, and
+the policies must not run again on every controller restart.
+
+A node whose plane is not there is refused like any absent node, and
+the log says so; it gets another chance when that plane boots.
+
+Boot policy `on` is what brings a frame back after a site power loss
+without anyone logging in. Boot policy `off` shuts a host down every
+time its plane boots, which is rarely what you want.
 
 ## Plane firmware updates
 

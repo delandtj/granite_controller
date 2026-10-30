@@ -33,8 +33,9 @@ addresses live on the planes' DIP switches and nowhere else.
   without any firmware.
 - **Nothing moves a node on its own.** A controller reboot, a crash or
   a firmware update never changes node power: OFF is held by the plane,
-  not the controller. The only exceptions are a rule you enabled and
-  the per-node boot policy.
+  not the controller, and no boot policy runs for a controller restart.
+  The only exceptions are a rule you enabled and the per-node boot
+  policy on a *plane* boot.
 - **Presses end on their own.** A plane can press a node's button only
   while its core keeps the press enable line alive; a core that hangs
   or resets releases every button within about a second.

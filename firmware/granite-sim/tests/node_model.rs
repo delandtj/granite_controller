@@ -438,8 +438,10 @@ fn a_long_soft_off_is_not_timed_out() {
     assert_eq!(rig.host(1), HostState::Off, "the host was shut down");
 }
 
+/// A plane that comes up having lost its intended state (a cold frame)
+/// is a plane boot, so the policies run.
 #[test]
-fn a_boot_policy_is_applied_once_per_controller_start() {
+fn a_boot_policy_is_applied_on_a_plane_boot() {
     let mut config = Config::default();
     config.nodes.nodes.push(NodeSettings {
         node: 2,
@@ -456,6 +458,69 @@ fn a_boot_policy_is_applied_once_per_controller_start() {
     // And nothing happened to the nodes that said `leave`.
     assert_eq!(rig.host(1), HostState::Off);
     assert_eq!(rig.power(1), PowerState::On);
+}
+
+/// Bug: the boot policies ran once per controller start, so a firmware
+/// update or an API `reboot` pressed PWR on every dark node and shut
+/// down every node whose policy was `off`. ADR 0004 ("the controller
+/// reboots: does any node change state? No") wants them on a plane boot
+/// only.
+#[test]
+fn a_controller_restart_runs_no_boot_policy() {
+    let mut config = Config::default();
+    // Node 2 wants to come up, node 3 wants to be shut down.
+    config.nodes.nodes.push(NodeSettings {
+        node: 2,
+        boot_policy: BootPolicy::On,
+        ..NodeSettings::for_node(2)
+    });
+    config.nodes.nodes.push(NodeSettings {
+        node: 3,
+        boot_policy: BootPolicy::Off,
+        ..NodeSettings::for_node(3)
+    });
+    let mut scenario = scenario();
+    // Node 3's host is already running when the frame starts.
+    scenario.planes[0].slots[2].host_on = true;
+    let mut rig = Rig::with_scenario(scenario.clone(), config.clone());
+
+    // The frame came up cold, so that *is* a plane boot: node 2 is
+    // started and node 3 is shut down.
+    assert!(
+        rig.run_until(90_000, |core| {
+            core.observed.node_host(2) == HostState::On
+                && core.observed.node_host(3) == HostState::Off
+        }),
+        "the plane boot never ran the policies: {:?} {:?}",
+        rig.host(2),
+        rig.host(3)
+    );
+    // Bring node 3 back by hand, the way an operator would.
+    let reply = rig.verb("c-on3", CommandKind::On, Target::Node(3));
+    assert!(reply.ok, "{:?}", reply.error);
+    rig.ack("c-on3", 60_000);
+    assert_eq!(rig.host(3), HostState::On);
+    // Let the plane get past "it just booted".
+    rig.run(90_000);
+
+    // Now restart the controller alone: the planes keep running.
+    let planes = std::mem::replace(&mut rig.core.planes, granite_sim::FakePlaneLink::new());
+    let mut core = SimCore::new(&scenario, &config);
+    core.planes = planes;
+    rig.core = core;
+    rig.run(30_000);
+
+    assert_eq!(
+        rig.host(3),
+        HostState::On,
+        "a controller restart shut down a node whose policy says off"
+    );
+    assert_eq!(rig.host(2), HostState::On, "and node 2 kept running");
+    // No boot command was even submitted.
+    assert!(
+        rig.core.jobs.last(3).is_none(),
+        "the restart submitted a job for node 3"
+    );
 }
 
 #[test]

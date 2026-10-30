@@ -185,17 +185,19 @@ register 9 reads 3 (refused) or 5 (absent).
 **The controller reboots** (power cut, crash, update, `reboot`). The
 planes keep their state and finish any sequence they are running; no
 rail and no button changes. The controller rediscovers the planes and
-reads their state. The only commands it sends on its own after a start
-are the boot policies of nodes that have one other than `leave`
-([Nodes and boot policy](../commissioning/nodes.md)) and the actions of
-enabled rules. Jobs that were pending when it went down are not
-reported: their outcome is in the node's state, not in an ack.
+reads their state. It sends **no** command of its own because of its
+own restart: the boot policies belong to a plane boot, not to this one
+([Nodes and boot policy](../commissioning/nodes.md)). What can still
+act is an enabled rule, and the OFF re-apply below if a plane reports a
+power loss. Jobs that were pending when it went down are not reported:
+their outcome is in the node's state, not in an ack.
 
 **A plane reboots** (watchdog, `plane_reboot`, a firmware update). The
 plane restores every slot it had switched off from its backup
 registers, so an OFF slot never comes on. The controller sees the boot
 count change, raises a `plane_rebooted` event and shows the nodes the
-plane reports. Boot policies are not run.
+plane reports. The boot policies of **that plane's** nodes run three
+seconds later: `leave` by default, so by default nothing moves.
 
 **A plane loses power.** Its backup registers are gone, the hardware
 defaults bring every slot up, and the plane flags `intended_state_lost`.
@@ -207,7 +209,10 @@ itself enabled again is commanded off, once per slot report, and an
 `intended_off_reapplied` event lists them. A node is taken out of that
 set by any verb that wants its rail up (`on`, `on_all`, `power_on`,
 `cycle`, `clear_latch`), so the controller never fights an operator
-who powered a node on.
+who powered a node on. A power loss is also a plane boot, so the boot
+policies of that plane's nodes run as well - that is how a frame comes
+back by itself after the site power returns, even when the controller
+lost its own power with it.
 
 **A unit board loses its 3V3** (chain cable). Its slots come up on
 the hardware default while it is gone; when it is back the plane
@@ -226,8 +231,9 @@ node without its plane.
   boot. A plane that crashes mid-press holds the button for well under
   a second, far short of the 4 s a motherboard needs for a forced off.
 - A controller reboot, crash or update never presses anything and
-  never moves a rail. Only the boot policies and the rules you enabled
-  do.
+  never moves a rail: no boot policy runs for it. What can move a node
+  on its own is a plane boot (through the boot policies) and a rule you
+  enabled.
 - Neither the overvoltage latch nor a unit's hot-swap latch is cleared
   automatically.
 

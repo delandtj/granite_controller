@@ -32,7 +32,7 @@ commands:
 | `fleet-key` | `fleet-key sha256 <fingerprint>` or `fleet-key none configured` |
 | `factory-reset CONFIRM` | Erases config and secrets, keeps the `factory` namespace (recovery token, fleet key, device key and certificate), reboots. Without the literal `CONFIRM` it refuses. |
 | `ota-mark-valid` | Ends probation of the running image |
-| `reboot` | Planned reboot of the controller; the planes keep their nodes as they are (only the boot policies run again, see [Nodes and boot policy](../commissioning/nodes.md)) |
+| `reboot` | Planned reboot of the controller; the planes keep their nodes as they are, and no boot policy runs - those belong to a plane boot (see [Nodes and boot policy](../commissioning/nodes.md)) |
 | `log [n]` | Last `n` lines of the 16 KB log ring, then `-- N lines kept` |
 
 `?` is an alias for `help`. Lines are limited to 512 characters;

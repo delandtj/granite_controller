@@ -11,6 +11,8 @@
 //!   implement. No ESP-IDF, embedded-hal or vendor types leak in here.
 //! - [`node`]: per-node settings: name, boot policy, LED sense, the
 //!   soft-off window and the escalation ladder.
+//! - [`boot`]: when those boot policies run - on a plane boot, never on
+//!   the controller's own (ADR 0004, "What an Expert Would Ask").
 //! - [`plane`]: the controller's side of the plane link (ADR 0004
 //!   decision 5): discovery, the poll schedule, the plane / unit / node
 //!   models, the command jobs, the events, the config push and the
@@ -39,6 +41,7 @@
 extern crate alloc;
 
 pub mod api;
+pub mod boot;
 pub mod config;
 pub mod dispatch;
 pub mod hal;

@@ -34,6 +34,7 @@ use std::time::Duration;
 use esp_idf_svc::eventloop::EspSystemEventLoop;
 use esp_idf_svc::hal::gpio::PinDriver;
 use esp_idf_svc::hal::peripherals::Peripherals;
+use granite_core::boot::BootPolicyWatch;
 use granite_core::config::Section;
 use granite_core::dispatch::{DispatchCtx, SideEffect, dispatch};
 use granite_core::hal::{
@@ -64,12 +65,6 @@ const SENSE_TICK: Duration = Duration::from_secs(1);
 /// How often the config watcher looks for a `sec.modbus` change and
 /// refreshes the broker state the status page reads.
 const CONFIG_WATCH: Duration = Duration::from_secs(5);
-
-/// How long the dispatcher waits after start before it applies the boot
-/// policies \[ms\]: long enough for the plane client to find its planes
-/// and read a first SUMMARY of each (ADR 0004 decision 5 scans at boot
-/// and polls at 1 Hz).
-const BOOT_POLICY_AFTER_MS: u64 = 3_000;
 
 /// The parts of the `nodes` section the sense thread works from.
 ///
@@ -510,10 +505,9 @@ fn dispatcher<L: PlaneLink>(
     // Set when this thread changed `cfg` and the shared copy has not
     // caught up yet.
     let mut push_pending = false;
-    // Boot policy (ADR 0004 decision 2): once, after discovery has had
-    // its chance.
-    let boot_ms = platform::now_ms();
-    let mut boot_policy_done = false;
+    // Boot policy (ADR 0004 decision 2): once per *plane* boot, never
+    // because this controller started (granite_core::boot).
+    let mut boot_policies = BootPolicyWatch::new();
     // The node states the last snapshot carried, so a change can be
     // published (ADR 0004 decision 7).
     let mut last_states: Vec<(NodeId, String, String)> = Vec::new();
@@ -700,20 +694,16 @@ fn dispatcher<L: PlaneLink>(
                 }
             }
             last_states = now_states;
-        }
 
-        // The boot policy, once (ADR 0004 decision 2): a node whose
-        // policy is not `leave` is commanded, after discovery has had
-        // time to find the planes and read a slot report of each. A node
-        // whose plane is not there is refused like any other absent
-        // node, which the log says.
-        if !boot_policy_done && now >= boot_ms + BOOT_POLICY_AFTER_MS {
-            boot_policy_done = true;
-            let policies = cfg.nodes.boot_policies();
-            if policies.is_empty() {
-                log::info!("boot policy: every node says leave");
-            }
-            for (node, policy) in policies {
+            // The boot policies (ADR 0004 decision 2), from the same
+            // snapshot. granite_core::boot decides when they run: on a
+            // plane boot - its boot count moved, or it came up saying
+            // it lost its intended state - and never because this
+            // controller restarted ("the controller reboots: does any
+            // node change state? No"). A node whose plane is not there
+            // is refused like any other absent node, which the log
+            // says.
+            for (node, policy) in boot_policies.due(now, &snapshot, &cfg.nodes) {
                 let action = match policy {
                     BootPolicy::Leave => continue,
                     BootPolicy::On => granite_core::msg::CommandKind::On,
@@ -721,11 +711,6 @@ fn dispatcher<L: PlaneLink>(
                 };
                 let cmd = Command::new(format!("boot-{node}"), action)
                     .with_target(Target::Node(node));
-                let snapshot = platform
-                    .observed
-                    .read()
-                    .map(|o| o.clone())
-                    .unwrap_or_else(|_| Observed::new());
                 let device_id = platform.identity.device_id.clone();
                 let mut ctx = DispatchCtx {
                     now_ms: now,
