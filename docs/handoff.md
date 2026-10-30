@@ -52,7 +52,16 @@ setrules). Unit now 78.5 x 72 (strip 19.5 mm: two FETs side by side
 under J302 plus hole H4). Strip power path re-placed top-down (XT60 ->
 C201 -> D201 -> shunts R201 / R202 stacked -> USENSE column -> Q202 / Q203
 tabs up -> VBUS along the bottom and up the column right of J302, via
-field). Core: placed (Fly-Buck included), DRC clean except unconnected, NOT routed yet.
+field). Core: ROUTED 2026-10-30 (tools/route_core.sh <placed board>, in
+power/pp-48-core): DRC 0 unconnected, parity clean, only the 2 PTH-in-courtyard
+items of L2's pocket vias plus silk; tools/isocheck.py: no controller-island
+copper within 1 mm of the bus world on any layer. route_core.py draws the
+island / pocket / EXT pours, the bands and the Fly-Buck SW track; VIN is
+krt-route's In2 plane. Core MCU pins reassigned for the fewest crossings
+(sch/blocks/mcu.py CORE_PINS; ratsnest crossings 38 -> 13); the firmware's
+copy is firmware/plane-core-pins.toml, written by gensch.py core (ADR 0002
+table updated; plane-logic comments still say PC6 / PC7). NEXT: silk,
+connlabels, jlcfab for both boards; user review.
 
 Unit routing (tools/route_unit.sh <placed board>, in power/pp-48-unit):
 route_unit.py hand copper (rev1 slot copper via route_hand.column, In2

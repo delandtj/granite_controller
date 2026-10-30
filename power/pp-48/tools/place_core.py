@@ -55,6 +55,8 @@ MOVED = {
     # press deadline (docs/press-deadline-line.md): monostable U301 and its RC, bottom right by J301's PRESS_EN pin
     'U301': (43.0, 60.0, 0, F), 'C302': (43.0, 57.2, 0, F), 'R301': (46.6, 60.0, 90, F), 'C301': (43.0, 63.6, 0, F),
     'R302': (39.6, 59.4, 90, F), 'R303': (39.6, 62.6, 90, F),
+    # crystal turned so OSC_IN (pad 1) faces U3's OSC_IN pin and OSC_OUT runs round the bottom: no crossing
+    'Y1': (3.0, 33.0, 270, B),
     'H1': (4.0, 4.0, 0, F), 'H2': (4.0, 68.0, 0, F), 'H3': (52.0, 4.0, 0, F), 'H4': (52.0, 68.0, 0, F),
 }
 # 12 V aux Fly-Buck (the module's place, top right); see the docstring
@@ -72,7 +74,7 @@ FLY = {
     'D2': (41.0, 9.6, 0, F), 'C29': (29.5, 16.1, 270, F),
 }
 ENCLAVE = [(33.5, 13.2), (34.9, 13.2)]     # L2 pad 2 (CTRL_GND) vias to In1 / B (island there: u 28-35.5, v 7.5-14)
-SOLID = [('J1', '1'), ('J1', '2'), ('R4', '2'), ('U6', '21')]
+SOLID = [('J1', '1'), ('J1', '2'), ('R4', '2'), ('U6', '21'), ('C20', '2'), ('R5', '2')]   # small GND pads: starved spokes
 
 
 def main(src, dst):

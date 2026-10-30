@@ -1,11 +1,11 @@
 # pcbkit settings for the PP-48 CORE board (docs/adr/0005-chained-plane-boards.md).
-# 4L JLC 1.6 mm: F parts and pours, In1 GND, In2 the SDA/SCL channel + VIN, B parts and pours.
+# 4L JLC 1.6 mm: F parts and pours, In1 GND, In2 the VIN plane, B parts and pours.
 #
 # 56 x 72 mm: the rev1 core (x 52-100) without the tile input plus an 8 mm right margin (x 100-108) for
 # the chain OUT header
 # J301 on B (same height as the units' headers) and the right-hand holes; XT30 at the bottom edge.
 # Board flow (tools in ../pp-48/tools): gensch.py core -> netlist -> mkboard -> outline -> setrules ->
-# place_core.py; routing to follow.
+# place_core.py -> route_core.sh.
 
 [project]
 name = "pp-48-core"
@@ -41,16 +41,13 @@ via = [0.5, 0.2]
 track_width = 0.2
 same_net_pad_clearance = 0.15
 signal_layers = ["F.Cu", "B.Cu"]
-# tools/route_hand.py copper (power pours, shunt vias, Kelvin, In2 channel, taps, core power path,
-# CTRL_GND pours and the isolation band)
+# tools/route_core.py copper (CTRL_GND island pours, L2's CTRL_GND pocket and its vias, isolation bands, GND
+# pours)
 keep_groups = ["hand"]
-# OUT's 7 A path is the hand pours; the router only adds the sense taps (U1 OUT, INA238 VBUS)
-# core: VIN small pads (U1, U2, C11, dividers; the tile path is hand copper), the controller's 12 V / 3V3
-# (+3V3* also matches the per-unit +3V3_Cn of tools/netsplit.py)
-power_nets = ["+3V3*", "VIN", "CTRL_12V", "CTRL_3V3"]
-power_widths = [0.3, 0.4, 0.4, 0.3]
-# GND: F / In1 / B pours drawn by tools/route_hand.py (kept group): KRT then skips GND (no GND
-# tracks; a plane-tapped GND took 640 stubs and cost signal routes); tools/gndstitch.py ties F / B
-# islands to In1 after the copy
+# the 3V3 buck's and the Fly-Buck's switch / output loops wider, the rails at power width
+power_nets = ["+3V3", "CTRL_12V", "CTRL_3V3", "*SW1", "*SW2", "*VOUT1", "*SEC2"]
+power_widths = [0.4, 0.4, 0.3, 0.5, 0.4, 0.4, 0.4]
+# VIN: In2 plane (krt-route's plane pass; no fill under the controller island, tools/route_core.py)
+planes = { nets = ["VIN"], layers = ["In2.Cu"], via = [0.6, 0.3] }
+# GND: F / In1 / B pours drawn by tools/route_core.py (kept group): KRT skips GND tracks
 ground = { net = "GND", width = 0.4 }
-
