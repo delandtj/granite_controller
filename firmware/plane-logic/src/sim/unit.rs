@@ -575,9 +575,9 @@ impl FakeUnit {
                 slot.pgd = false;
                 slot.module_pgood = false;
                 // No 3V3 on the unit means no expander, so every slot
-                // sits at its hardware default: on. The node keeps
-                // running on its rail.
-                slot.node.advance(dt, true, false, false);
+                // sits at its hardware default: on, and the node runs
+                // on whatever the unit's own hot-swap carries.
+                slot.node.advance(dt, unit_rail, false, false);
             }
             return;
         }
