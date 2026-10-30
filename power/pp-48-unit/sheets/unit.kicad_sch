@@ -8977,7 +8977,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C534364"
 			(at 124.46 43.18 0)
 			(hide yes)
 			(show_name no)
@@ -9198,7 +9198,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C2930167"
 			(at 86.36 87.63 0)
 			(hide yes)
 			(show_name no)
@@ -9386,7 +9386,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C2933298"
 			(at 96.52 69.85 0)
 			(hide yes)
 			(show_name no)
@@ -9480,7 +9480,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C137965"
 			(at 96.52 80.01 0)
 			(hide yes)
 			(show_name no)
@@ -9574,7 +9574,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C2933072"
 			(at 147.32 83.82 0)
 			(hide yes)
 			(show_name no)
@@ -9668,7 +9668,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C21120"
 			(at 137.16 86.36 0)
 			(hide yes)
 			(show_name no)
@@ -10044,7 +10044,19 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C2868250"
+			(at 55.88 76.2 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "MPN" "TI INA238AIDGSR"
 			(at 55.88 76.2 0)
 			(hide yes)
 			(show_name no)
@@ -14778,7 +14790,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C534364"
 			(at 505.46 43.18 0)
 			(hide yes)
 			(show_name no)
@@ -14999,7 +15011,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C2930167"
 			(at 467.36 87.63 0)
 			(hide yes)
 			(show_name no)
@@ -15187,7 +15199,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C2933298"
 			(at 477.52 69.85 0)
 			(hide yes)
 			(show_name no)
@@ -15281,7 +15293,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C137965"
 			(at 477.52 80.01 0)
 			(hide yes)
 			(show_name no)
@@ -15375,7 +15387,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C2933072"
 			(at 528.32 83.82 0)
 			(hide yes)
 			(show_name no)
@@ -15469,7 +15481,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C21120"
 			(at 518.16 86.36 0)
 			(hide yes)
 			(show_name no)
@@ -15845,7 +15857,19 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C2868250"
+			(at 436.88 76.2 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "MPN" "TI INA238AIDGSR"
 			(at 436.88 76.2 0)
 			(hide yes)
 			(show_name no)

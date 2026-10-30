@@ -166,7 +166,7 @@ def slot(b, s):
     R(2, "7m 2W", R2512, {"1": "VBUS", "2": "SENSE"}, (35, 38), rot=90, fields={"LCSC": "C2904232"},
       desc="shunt (parallel)")
     sym("Q1", "Transistor_FET:BSC070N10NS5", "BSC070N10NS5", "Package_TO_SOT_SMD:TDSON-8-1",
-        by_name("Transistor_FET:BSC070N10NS5", {"G": "GATE", "S": "OUT", "D": "SENSE"}), (98, 34), rot=90,
+        by_name("Transistor_FET:BSC070N10NS5", {"G": "GATE", "S": "OUT", "D": "SENSE"}), (98, 34), rot=90, fields={"LCSC": "C534364"},
         desc="100 V pass MOSFET, placeholder: SOA check open (ADR 0001)")
     sym("U1", "Power_Management:LM5069MM-2", "LM5069MM-2", "Package_SO:MSOP-10_3x3mm_P0.5mm",
         {"1": "SENSE", "2": "VBUS", "3": "UVLO", "4": "OVLO", "5": "GND", "6": "TIMER", "7": "PWR", "8": "PGD", "9": "OUT", "10": "GATE"},
@@ -188,7 +188,7 @@ def slot(b, s):
     # ========================================================== INA238 under the shunt
     sym("U2", "Sensor_Energy:INA238", "INA238AIDGSR", "Package_SO:TSSOP-10_3x3mm_P0.5mm",
         {"1": "GND", "2": strap, "3": "OVK", "4": "SDA", "5": "SCL", "6": "+3V3", "7": "GND", "8": "OUT", "9": "SENSE", "10": "VBUS"},
-        (44, 60), rot=270,
+        (44, 60), rot=270, fields={"LCSC": "C2868250", "MPN": "TI INA238AIDGSR"}, 
         desc="16-bit monitor on the shunt, address 0x40 slot A / 0x41 slot B (A1 GND, A0 = strap); VBUS pin reads the slot output")
     C(3, "100n", C0402, {"1": "+3V3", "2": "GND"}, (58, 63), desc="INA238 VS")
 

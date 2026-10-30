@@ -108,7 +108,7 @@ def block():
     # ========================================================== INA238 under the shunt
     sym("U208", "Sensor_Energy:INA238", "INA238AIDGSR", "Package_SO:TSSOP-10_3x3mm_P0.5mm",
         {"1": "+3V3", "2": "GND", "3": "NC", "4": "SDA", "5": "SCL", "6": "+3V3", "7": "GND", "8": "VBUS", "9": "USENSE", "10": "VIN"},
-        (44, 60), rot=270, desc="unit monitor on the shunt, segment address 0x44 (A1 VS, A0 GND); VBUS pin reads the unit output; ALERT unused")
+        (44, 60), rot=270, fields={"LCSC": "C2868250", "MPN": "TI INA238AIDGSR"}, desc="unit monitor on the shunt, segment address 0x44 (A1 VS, A0 GND); VBUS pin reads the unit output; ALERT unused")
     C(216, "100n", C0402, {"1": "+3V3", "2": "GND"}, (58, 63), desc="INA238 VS")
 
     # ========================================================== expander control: U_OFF

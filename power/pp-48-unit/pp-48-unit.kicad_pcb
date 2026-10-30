@@ -1454,7 +1454,7 @@
 				)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C2933072"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -4679,7 +4679,7 @@
 				)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C2933072"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -6789,7 +6789,7 @@
 				)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C21120"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -7526,7 +7526,7 @@
 				)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C534364"
 			(at 0 0 270)
 			(layer "F.Fab")
 			(hide yes)
@@ -13698,7 +13698,7 @@
 				)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C2933298"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -15395,7 +15395,7 @@
 				)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C2868250"
 			(at 0 0 270)
 			(layer "F.Fab")
 			(hide yes)
@@ -15404,6 +15404,17 @@
 				(font
 					(size 1.27 1.27)
 					(thickness 0.15)
+				)
+			)
+		)
+		(property "MPN" "TI INA238AIDGSR"
+			(at 0 0 0)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "f8b2cb58-e68e-44fe-aac6-c3cc9e9b61aa")
+			(effects
+				(font
+					(size 1.27 1.27)
 				)
 			)
 		)
@@ -16688,7 +16699,7 @@
 				)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C2930167"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -17344,7 +17355,7 @@
 				)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C21120"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -17505,7 +17516,7 @@
 				)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C137965"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -20347,7 +20358,7 @@
 				)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C2868250"
 			(at 0 0 270)
 			(layer "F.Fab")
 			(hide yes)
@@ -20356,6 +20367,17 @@
 				(font
 					(size 1.27 1.27)
 					(thickness 0.15)
+				)
+			)
+		)
+		(property "MPN" "TI INA238AIDGSR"
+			(at 0 0 0)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "81433d5f-0630-499c-90c3-d0361193ca2b")
+			(effects
+				(font
+					(size 1.27 1.27)
 				)
 			)
 		)
@@ -22766,7 +22788,7 @@
 				)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C2930167"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -25336,7 +25358,7 @@
 				)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C534364"
 			(at 0 0 270)
 			(layer "F.Fab")
 			(hide yes)
@@ -27714,7 +27736,7 @@
 				)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C137965"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -28642,7 +28664,7 @@
 				)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C2933298"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -29356,7 +29378,7 @@
 				(justify mirror)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C137965"
 			(at 0 0 270)
 			(layer "B.Fab")
 			(hide yes)
@@ -33455,7 +33477,7 @@
 				(justify mirror)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25077"
 			(at 0 0 0)
 			(layer "B.Fab")
 			(hide yes)
@@ -33623,7 +33645,7 @@
 				(justify mirror)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C2933298"
 			(at 0 0 270)
 			(layer "B.Fab")
 			(hide yes)
@@ -33959,7 +33981,7 @@
 				(justify mirror)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C2868250"
 			(at 0 0 180)
 			(layer "B.Fab")
 			(hide yes)
@@ -33970,6 +33992,17 @@
 					(thickness 0.15)
 				)
 				(justify mirror)
+			)
+		)
+		(property "MPN" "TI INA238AIDGSR"
+			(at 0 0 0)
+			(layer "B.Fab")
+			(hide yes)
+			(uuid "0556a13e-e07f-40e5-851d-cf67dd36df10")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
 			)
 		)
 		(path "/07539a4c-2682-5350-bab2-416a0282c647/da65d2c1-13e0-5cb3-9cef-8a7dc31c5b05")
@@ -35254,7 +35287,7 @@
 				(justify mirror)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C21120"
 			(at 0 0 180)
 			(layer "B.Fab")
 			(hide yes)
@@ -37717,7 +37750,7 @@
 				(justify mirror)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25765"
 			(at 0 0 270)
 			(layer "B.Fab")
 			(hide yes)
@@ -38053,7 +38086,7 @@
 				(justify mirror)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C25077"
 			(at 0 0 180)
 			(layer "B.Fab")
 			(hide yes)
@@ -39180,7 +39213,7 @@
 				(justify mirror)
 			)
 		)
-		(property "LCSC" ""
+		(property "LCSC" "C2930167"
 			(at 0 0 270)
 			(layer "B.Fab")
 			(hide yes)
