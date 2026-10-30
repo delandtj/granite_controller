@@ -200,7 +200,11 @@ bitflags! {
         const HOT_SWAP_PGD = 5;
         /// U_OFF is asserted (the unit's input is commanded off).
         const U_OFF_ASSERTED = 6;
-        /// The unit's hot-swap latched off (LM5069-1).
+        /// The plane holds the unit's hot-swap off after a fault. The
+        /// LM5069-2 has no latch of its own, so this is the plane's
+        /// (ADR 0005 decision 3, ADR 0002 decision 7a) and only
+        /// [`crate::Command::UnitHotSwapReset`] or a core power loss
+        /// clears it.
         const HOT_SWAP_LATCHED_OFF = 7;
     }
 }

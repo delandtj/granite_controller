@@ -2,7 +2,7 @@
 
 **Status**: Proposed
 **Date**: 2026-10-29
-**Updated**: 2026-10-29 (user answers: image integrity, stagger, latches decided; unit glitch state open; press deadline line asked from the hardware, docs/press-deadline-line.md)
+**Updated**: 2026-10-29 (user answers: image integrity, stagger, latches decided; unit glitch state open; press deadline line asked from the hardware, docs/press-deadline-line.md); 2026-10-30 (the unit hot-swap is an LM5069-2 now, so the latch is this firmware's: decision 7a, and `unit reset` in decision 6 releases instead of pulsing)
 
 Related: docs/adr/0001-48v-power-plane.md (safety rules, TLV message
 format, data flow), docs/adr/0005-chained-plane-boards.md (core + unit
@@ -157,7 +157,7 @@ Two things in the hardware shape the firmware more than the ADRs say:
    | clear OV latch | LCLR pulse 10 ms | command only; never automatic (OV is the fault that kills a node) |
    | module run off / on | DISARM, then RUNOFF; release RUNOFF, then DISARM | ordering enforced, never RUNOFF without DISARM |
    | power-cycle | OFF, wait, ON, optional PWR press if the LED stays dark | the ADR 0001 0x47 sequence, with abort |
-   | unit reset | U_OFF pulse 100 ms | re-arms the latched-off LM5069-1 |
+   | unit reset | U_OFF released | lets the firmware latch of decision 7a go; answers 1 s later with what the unit did |
    | stagger on | OFF on every slot, release one by one | plane-level, delay from config |
 
    Every action is refused (ack code) when it conflicts with a
@@ -170,6 +170,55 @@ Two things in the hardware shape the firmware more than the ADRs say:
    raises an event (ADR 0001 0x42: max, window, action). The slot OV
    latch and the unit hot-swap latch are never cleared automatically
    in the first release; the controller decides.
+
+7a. **The unit hot-swap latch is this firmware's** (ADR 0005 decision 3,
+   user 2026-10-30: the unit stage became an LM5069-**2**, auto-retry,
+   because JLC had one -1 in stock against ~8k of the -2).
+   `plane-logic/src/unit_latch.rs`, fed from the poll cycle.
+
+   - **The rule.** U_PGD (P27) low, with the unit's input inside the
+     stage's UVLO..OVLO window and the core not already holding the
+     unit off, is a unit fault: the core drives U_OFF (P13) high and
+     keeps it high. U_PGD low with the input out of that window is the
+     bus and not the unit - the stage's own UVLO or OVLO opened the
+     FETs and will close them again - so nothing is latched.
+   - **Which voltage is "the input".** The core's own 48 V input
+     (STATUS 0x11), not the unit's INA237. On the board that part's
+     VBUS pin sits on the hot-swap *output* (uinput.py U208), so the
+     only absolute voltage it reports reads ~0 V exactly when the
+     stage is open, which is every moment the rule has to judge. Core
+     and units hang on the same bus behind the same breaker (ADR 0005
+     decision 6), and the core reads it at 20 Hz. A core with no
+     conversion yet latches nothing. The price: a unit whose *own*
+     XT60 came out while the bus is up is latched off, which needs an
+     operator's `unit_reset` - deliberate, and the only reading the
+     hardware allows.
+   - **Debounce.** U_PGD must hold low for 500 ms, and a restart
+     attempt must hold it high for 300 ms before it counts as a
+     recovery. Both come out of the stage's own numbers (uinput.py
+     C203): 160 ms insertion, so a shorter window would latch on every
+     normal ramp; 10 ms fault timer at ~0.5 % duty, so ~2 s between
+     attempts and a pulse the 20 Hz poll happens to catch can neither
+     clear the window nor undo a latch. The unit gets one restart
+     attempt before the core reacts, which is what ADR 0005 budgets.
+   - **The hold is the intended state.** U_OFF in the backup registers
+     is this latch and nothing else writes it, so a reset that keeps
+     VDD comes back holding, discovery re-asserts it on a unit whose
+     expander reset, and a core power loss drops it: the unit then
+     retries, as it does with no core at all, until the core latches
+     it again. The poll re-drives U_OFF from the state and not from
+     the transition, so a write the bus ate is repaired on the next
+     cycle.
+   - **At boot there is no special case.** A unit that is merely
+     starting reaches PGD inside its insertion time; a unit that is
+     retrying never does and is held off 500 ms after the first poll
+     that reads it.
+   - **Reporting and release.** UNIT 0x30 "hot-swap latched off" and
+     "U_OFF asserted", event 19 once per latch, STATUS 0x13 "any unit
+     fault". `unit_reset` (CTRL 0x4A) is the only release: it drops
+     U_OFF, starts the window from scratch and answers 1 s later with
+     Ok when the unit carries power again and Failed when the fault is
+     still there.
 
 8. **Controller link.** I2C1 slave at 0x30 + straps, ADR 0001
    transactions in granite-proto's TLV format. A request (block id,
@@ -226,8 +275,8 @@ Two things in the hardware shape the firmware more than the ADRs say:
 
 1. **plane-logic** (`firmware/plane-logic`, no_std, host-testable)
    - Plane model (units, slots, events), sequencer (per-slot state
-     machines and timers), discovery, poll scheduler, TLV request
-     handler, config.
+     machines and timers), discovery, poll scheduler, the unit
+     hot-swap latch (decision 7a), TLV request handler, config.
    - Device traits: `SegmentBus` (select channel, read / write a
      register at an address), `Clock`, `BackupRegs`, `ConfigStore`,
      `Int`. Drivers for TCA6424A, INA238, ADC121C027, TCA9548A are
@@ -336,7 +385,13 @@ Two things in the hardware shape the firmware more than the ADRs say:
   costs the rollback.
 - **TAMP backup registers lost with VDD**: they are; a core power loss
   is a power-on reset and the hardware defaults are the right answer
-  there.
+  there - including for the unit latch, which a power loss drops on
+  purpose (decision 7a).
+- **A unit with a real short retries while the core decides**: ~0.5 %
+  duty keeps the FETs inside their SOA and the core is 500 ms behind
+  at worst, so the stage sees one restart attempt. A core that is not
+  there at all (no 3V3 on the chain, expander in reset) leaves the unit
+  retrying for ever, which is the hardware default and the safe one.
 - **I2C on the chain**: 4 cables to unit 4. The 2 s re-scan and the
   stuck-bus recovery keep one bad cable to one unit.
 
@@ -399,6 +454,11 @@ link load and to keep one failure at a time.
 - **Latches never cleared automatically.** Decided (user 2026-10-29):
   OV latch and unit hot-swap latch need a controller command.
   Alternative: N retries for the unit hot-swap. Cost: config fields.
+- **The unit latch's two windows** (decision 7a): 500 ms of U_PGD low
+  to latch, 300 ms high to forget. Alternative: count restart attempts
+  the way decision 7 counts a slot's PGD drops, which would need the
+  poll to catch 10 ms pulses. Cost to change: two constants in
+  `unit_latch.rs` and its tests.
 - **Power-up stagger.** Decided (user 2026-10-29): dropped as a boot
   behaviour; each unit has its own input and its slots start before
   the core can act. The stagger stays as a command (stagger on).
@@ -454,7 +514,9 @@ proposed); the state after a unit glitch stays open.
 **Behavior definers**
 - [x] State after a reset or a unit glitch: OFF slots go back OFF
   (user 2026-10-29).
-- [x] Unit hot-swap and OV latches: controller command only.
+- [x] Unit hot-swap and OV latches: controller command only. The unit
+  hot-swap latch itself is in this firmware since 2026-10-30
+  (decision 7a); the LM5069-2 has none of its own.
 - [x] Power-up stagger: dropped, command only.
 - [x] After a rollback: adopt from the backup registers like any
   reset.

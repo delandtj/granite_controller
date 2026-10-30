@@ -544,8 +544,10 @@ impl NodeCommand {
 /// What a command on a plane or one of its units asks for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PlaneCommand {
-    /// Re-arm a unit's own hot-swap latch (LM5069-1). A deliberate act:
-    /// `on` never does it (ADR 0004, "What an Expert Would Ask").
+    /// Let the plane's hold on a unit's hot-swap go after it latched a
+    /// faulted unit off. A deliberate act: `on` never does it
+    /// (ADR 0004, "What an Expert Would Ask"). The plane answers about
+    /// a second later with whether the unit came back.
     UnitReset {
         /// The plane's address.
         address: u8,

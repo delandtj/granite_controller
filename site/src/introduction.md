@@ -76,7 +76,7 @@ repository at tag `rev-c-demo`.
 | Bus | 48-60 V DC nominal (SELV), slots on above about 38 V, off above about 65 V |
 | Boards | 1 core board + 1-4 unit boards, 2 slots per unit, chained with JST PH 14-pin cables |
 | Core | STM32G070 MCU, I2C mux, isolated link to the controller, isolated 12 V aux out, XT30 48 V input, 3-way DIP switch for the plane address |
-| Unit | XT60 48 V input with its own hot-swap (latch-off, about 18 A), two slots |
+| Unit | XT60 48 V input with its own hot-swap (auto-retry, about 18 A; the plane core latches a faulted unit off), two slots |
 | Slot | hot-swap front end with overvoltage latch and V / I / P monitor, port module PM-19V-250W (19 V, 250 W), node power screw terminal, front-panel JST GH 4p (PWR, RST, power LED) |
 | Default | every slot ON in hardware: a dead or missing core or controller never cuts a node |
 

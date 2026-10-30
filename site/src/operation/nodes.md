@@ -19,7 +19,7 @@ A node has two state axes, the rail and the host, plus telemetry.
 | `off` | The rail is switched off: by a command, by the plane's retry limit, or by an escalated `off`. |
 | `on` | The hot-swap reports power good; the slot carries the node. |
 | `starting` | The rail is enabled and waiting for power good. |
-| `fault` | The overvoltage latch is set, the power limit tripped, the retry limit was reached, or the unit board's own hot-swap latched off. |
+| `fault` | The overvoltage latch is set, the power limit tripped, the retry limit was reached, or the unit board's input hot-swap faulted and the plane is holding it off. |
 | `absent` | No module in the slot, or no unit board on that part of the chain. |
 | `unknown` | The plane is not answering, or has not answered yet. |
 
@@ -46,7 +46,7 @@ the slot, and `faults`, a list of names:
 | `ov_latched` | The slot's overvoltage latch is set; the rail stays off until `clear_latch`, which you send after finding the cause. |
 | `power_limit` | The slot exceeded the power limit in the plane's config. |
 | `retry_limit` | The hot-swap dropped power good too often within the plane's window, and the plane switched the slot off. |
-| `unit_latched_off` | The unit board's own hot-swap latched off; the slots of that unit are down until `unit_reset`. |
+| `unit_latched_off` | The unit board's input hot-swap faulted and the plane is holding it off; the slots of that unit are down until `unit_reset`. |
 | `cross_check` | The LED and the rail disagree. |
 
 Neither latch is ever cleared automatically: an overvoltage is the
@@ -66,7 +66,7 @@ fault that kills a node, so a person decides.
 | `power_on` | node, `all` | The rail only: enable the slot. No button. | under a second |
 | `power_off` | node, `all` | The rail only: disable the slot. No button; the host loses power at once. | under a second |
 | `clear_latch` | node, `all` | Clear the slot's overvoltage latch. | under a second |
-| `unit_reset` | `planeN.unitU` | Re-arm a unit board's own hot-swap after it latched off (a 100 ms pulse). Never done by `on`. | under a second |
+| `unit_reset` | `planeN.unitU` | Let the plane's hold on a unit board's input hot-swap go after it latched off. No pulse, so a running unit keeps its nodes. Never done by `on`. | about a second |
 | `plane_reboot` | `planeN` | Reboot the plane. The slots keep their state: the plane saves it first and restores it on the way up. | a few seconds |
 
 `off` and `power_off` are different on purpose. `off` means "shut the
@@ -217,7 +217,16 @@ lost its own power with it.
 **A unit board loses its 3V3** (chain cable). Its slots come up on
 the hardware default while it is gone; when it is back the plane
 configures it again and puts OFF slots back OFF, with a
-`unit_reset_seen` event.
+`unit_reset_seen` event. A unit the plane was holding off after a
+fault is held off again as soon as it answers.
+
+**A unit board's input hot-swap faults** (a short on its 48 V, an
+overload). The limiter restarts by itself about once every two seconds
+and would do so for ever; the plane holds the unit off after half a
+second of it and raises `unit_hot_swap_latched_off`. A power-good that
+drops because the bus itself sagged or spiked is not a fault: nothing
+is held and the unit comes back with the bus. See
+[Recovery](recovery.md).
 
 **The controller goes away** (unplugged, link cable cut). The planes
 do nothing: every node stays as it is. The controller cannot act on a
@@ -234,8 +243,11 @@ node without its plane.
   never moves a rail: no boot policy runs for it. What can move a node
   on its own is a plane boot (through the boot policies) and a rule you
   enabled.
-- Neither the overvoltage latch nor a unit's hot-swap latch is cleared
-  automatically.
+- Neither the overvoltage latch nor the plane's hold on a faulted unit
+  is cleared automatically. The hold survives a plane reset and is
+  dropped only by `unit_reset` or by the plane losing power - a unit
+  with no plane behind it carries power, which is how the hardware is
+  built.
 
 ## From scripts
 

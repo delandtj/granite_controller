@@ -82,7 +82,12 @@ pub enum Command {
         /// True runs the module.
         on: bool,
     },
-    /// 0x4A reset a unit's hot-swap latch (LM5069-1).
+    /// 0x4A let the plane's hold on a unit's hot-swap go.
+    ///
+    /// The part itself (LM5069-2) has no latch to re-arm and U_OFF is
+    /// not pulsed, so a unit that is running keeps its two nodes. The
+    /// result is asynchronous: `ok` when the unit carries power again,
+    /// `failed` when the fault is still there.
     UnitHotSwapReset {
         /// Unit 0-3.
         unit: u8,

@@ -295,7 +295,10 @@ carry the labels a site uses. Free remapping was rejected above.
 latched off.**
 A: The plane refuses (not present / fault result), the ack says so
 with the reason. `on` does not reset a unit latch; that is
-`unit_reset`, a deliberate act.
+`unit_reset`, a deliberate act. Since 2026-10-30 the latch is the
+plane's own (ADR 0002 decision 7a: the unit stage is an auto-retry
+LM5069-2), which changes nothing here - the unit is still held off
+until someone sends `unit_reset`.
 
 ---
 
@@ -484,6 +487,22 @@ decision changed and `granite-proto` is still untouched.
    the site power loss that took the controller with it. A controller
    restart on its own commands nothing, which is what this ADR's expert
    answer asks for.
+
+### The unit latch moved into the plane firmware (2026-10-30)
+The unit hot-swap is an LM5069-2 now and the latch-off is the plane's
+(ADR 0005 decision 3, ADR 0002 decision 7a). Nothing on the controller
+side changed: the same `unit_reset` verb, the same `UnitHotSwapReset`
+CTRL record, the same `latched_off` flag and
+`unit_hot_swap_latched_off` event, and `granite-proto` is untouched.
+Two behaviours an operator sees are different:
+- `unit_reset` no longer pulses U_OFF for 100 ms. It releases the
+  plane's hold, so a unit that is *not* latched keeps both its nodes
+  running through the command instead of losing the rail for a tenth of
+  a second.
+- Its result arrives about a second later and says what came of it:
+  `done` when the unit carries power again, `failed` when the fault is
+  still there and the plane latched it again. The default job timeout
+  covers that easily.
 
 ### Still open
 - The web UI (`firmware/web`) is unchanged and still speaks the rev C

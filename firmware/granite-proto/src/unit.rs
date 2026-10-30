@@ -1,9 +1,10 @@
 //! UNIT block records (tags 0x30-0x36): one unit board of the chained
 //! plane (ADR 0005), index 0-3.
 //!
-//! A unit holds two slots, its own hot-swap (LM5069-1) and its own
-//! input INA238, so its input figures are the sum of its two slots plus
-//! the unit's own losses.
+//! A unit holds two slots, its own hot-swap (LM5069-2, auto-retry; the
+//! latch-off after a fault is the plane's, ADR 0005 decision 3) and its
+//! own input INA238, so its input figures are the sum of its two slots
+//! plus the unit's own losses.
 
 use crate::bits::UnitStatus;
 use crate::record::{RecordError, RecordWriter, as_i16, as_u16};

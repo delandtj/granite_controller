@@ -2,7 +2,7 @@
 
 **Status**: Proposed
 **Date**: 2026-10-29
-**Updated**: 2026-10-29 (review asks answered by the user: EV_ACK, SUMMARY, asynchronous command outcome)
+**Updated**: 2026-10-29 (review asks answered by the user: EV_ACK, SUMMARY, asynchronous command outcome); 2026-10-30 (0x4A and the "hot-swap latched off" bit now mean the firmware's own unit latch, ADR 0002 decision 7a; the wire is unchanged)
 
 Related: docs/adr/0001-48v-power-plane.md ("Message format": the first
 draft of this protocol), firmware/docs/adr/0002-plane-core-firmware.md
@@ -154,7 +154,11 @@ Value types in brackets. Units: V in 10 mV, I in mA, P in 0.1 W, T in
 **UNIT (0x30-0x3F)**
 - 0x30 unit status [u16 bits: present, lost, reset seen (came back at
   hardware defaults), expander ok, input INA238 ok, hot-swap PGD,
-  U_OFF asserted, hot-swap latched off]
+  U_OFF asserted, hot-swap latched off]. "Hot-swap latched off" is the
+  plane's own latch, not the part's: the unit stage is an LM5069-2 that
+  retries for ever, and the plane holds U_OFF high after a fault
+  (ADR 0002 decision 7a, ADR 0005 decision 3). "U_OFF asserted" is set
+  with it; nothing else drives that line.
 - 0x31 input V [u16], 0x32 input I [u16], 0x33 input P [u16]
 - 0x34 input INA238 temperature [i16 T]
 - 0x35 segment errors [u16]
@@ -176,7 +180,11 @@ Value types in brackets. Units: V in 10 mV, I in mA, P in 0.1 W, T in
   timeout]
 - 0x48 abort sequence [u8 slot]
 - 0x49 module run [u8 slot, u8 0 = off / 1 = on]
-- 0x4A unit hot-swap reset [u8 unit]
+- 0x4A unit hot-swap reset [u8 unit]: releases the plane's hold on the
+  unit (there is no hardware latch to re-arm), answers `accepted` and
+  then `ok` when the unit carries power again or `failed` when the
+  fault is still there, about a second later. On a unit that is not
+  held it costs nothing: U_OFF is not pulsed, so the two nodes stay up.
 - 0x4B stagger on [u8 slot bitmap, u16 delay ms]
 - 0x4C reboot [u32 magic 0x52424F54]
 - 0x4D reset unit expanders [u32 magic 0x45585252] (EXP_RSTN, bused:

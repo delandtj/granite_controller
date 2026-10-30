@@ -173,7 +173,7 @@ clear the latch by command.
 | `ov_latched` | The slot's overvoltage latch cut the node. | `clear_latch` on the node |
 | `power_limit_trip` | The slot's power limit tripped its latch. | `clear_latch` on the node |
 | `retry_limit_reached` | The slot's hot-swap kept dropping out; the plane set the slot OFF. | `on` or `power_on` on the node |
-| `unit_hot_swap_latched_off` | A unit board's own input hot-swap latched off; both of its nodes are dark. `latched_off` is set on the unit in the state payload. | `unit_reset` on the unit |
+| `unit_hot_swap_latched_off` | A unit board's input hot-swap faulted and the plane is holding it off; both of its nodes are dark. `latched_off` is set on the unit in the state payload. | `unit_reset` on the unit |
 
 Over the API, with the node id or the unit as the target:
 
@@ -190,10 +190,28 @@ The same over MQTT:
 ```
 
 Units are numbered 0-3 in the order of the chain: `plane0.unit0` is
-the first unit board on plane 0. `unit_reset` pulses the unit's U_OFF
-line for 100 ms to re-arm its hot-swap. It is not refused on a unit
-that is running, and the pulse then takes both of that unit's nodes
-down for 100 ms, so send it only to a unit that is latched off.
+the first unit board on plane 0.
+
+A unit's input hot-swap restarts on its own after a fault, about once
+every two seconds, for ever: the limiter has no latch of its own. The
+plane is the latch. When it sees the unit's power-good drop for half a
+second while the 48 V bus is good, it calls that a unit fault, holds
+the unit off and raises `unit_hot_swap_latched_off`. A power-good that
+drops because the *bus* sagged or spiked is not a fault and is not
+held: the unit comes back by itself when the bus does.
+
+`unit_reset` releases that hold. There is nothing to pulse, so sending
+it to a unit that is running costs its two nodes nothing - but it is
+still worth knowing why a unit latched before releasing it. The result
+comes back about a second later: `done` if the unit carries power
+again, `failed` if the fault is still there and the plane latched it
+again.
+
+The plane keeps the hold through its own resets. It drops it only when
+the plane loses power: the unit then retries until the plane has booted
+and seen the fault again. A unit whose plane is dead or unplugged from
+the chain retries for ever and is never held off - by design, since
+nothing in the fluid should depend on firmware to carry power.
 
 ## Rebooting a plane
 
@@ -217,7 +235,9 @@ running at all:
   the press enable on the units needs the core to keep retriggering
   it;
 - a unit board that loses and regains its supply comes back with its
-  expander at hardware defaults: every slot ON and its hot-swap ON;
+  expander at hardware defaults: every slot ON and its hot-swap ON,
+  and a unit the plane was holding off after a fault starts retrying
+  again until the plane is back and latches it;
 - the overvoltage cut and the current limits are hardware and keep
   working.
 

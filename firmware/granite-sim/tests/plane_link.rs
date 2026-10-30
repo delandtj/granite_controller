@@ -19,6 +19,8 @@
 //! - a corrupted answer fails its CRC and the retry is clean,
 //! - an OFF slot is OFF again after its unit is unplugged and replugged
 //!   (ADR 0002 decision 4, the "OFF goes back OFF" rule),
+//! - a unit whose hot-swap faults is latched off by the plane and comes
+//!   back on `unit_reset` (ADR 0002 decision 7a),
 //! - a plane that lost its power flags "intended state lost", and one
 //!   that only reset on its watchdog does not.
 
@@ -587,6 +589,67 @@ fn an_off_slot_is_off_again_after_its_unit_is_replugged() {
         client.slot_status(0x30, 3).contains(SlotStatus::ENABLED),
         "its partner on the same unit is untouched"
     );
+}
+
+#[test]
+fn a_faulted_unit_is_latched_off_and_unit_reset_brings_it_back() {
+    let mut client = Client::new(&scenario());
+    client.drain_events(0x30);
+
+    // An overload on unit 1's input: its LM5069-2 faults and retries
+    // for ever, so the plane is what holds it off (ADR 0005 decision 3).
+    client
+        .link
+        .plane_mut(0x30)
+        .expect("plane 0x30")
+        .fault_unit_hot_swap(1, true);
+    client.advance(1_000);
+
+    let unit = client.unit_status(0x30, 1);
+    assert!(unit.contains(UnitStatus::PRESENT), "the unit still answers");
+    assert!(unit.contains(UnitStatus::HOT_SWAP_LATCHED_OFF));
+    assert!(unit.contains(UnitStatus::U_OFF_ASSERTED));
+    assert!(!unit.contains(UnitStatus::HOT_SWAP_PGD));
+    assert!(client.flags(0x30).contains(StatusFlags::ANY_UNIT_FAULT));
+    assert!(
+        client
+            .events(0x30)
+            .iter()
+            .any(|e| e.kind == EventKind::UnitHotSwapLatchedOff),
+        "the plane said so once"
+    );
+    client.drain_events(0x30);
+
+    // A reset while the overload is still there is answered `failed`
+    // and the unit is held off again.
+    client.ctrl(0x30, 11, &[Command::UnitHotSwapReset { unit: 1 }]);
+    client.advance(PLANE_TICK_MS);
+    assert_eq!(client.result(0x30, 11), Some(ResultCode::Accepted));
+    client.advance(1_500);
+    assert_eq!(client.result(0x30, 11), Some(ResultCode::Failed));
+    assert!(
+        client
+            .unit_status(0x30, 1)
+            .contains(UnitStatus::HOT_SWAP_LATCHED_OFF)
+    );
+
+    // The shorted module comes out, and the reset takes.
+    client
+        .link
+        .plane_mut(0x30)
+        .expect("plane 0x30")
+        .fault_unit_hot_swap(1, false);
+    client.ctrl(0x30, 12, &[Command::UnitHotSwapReset { unit: 1 }]);
+    client.advance(1_500);
+    assert_eq!(client.result(0x30, 12), Some(ResultCode::Ok));
+    let unit = client.unit_status(0x30, 1);
+    assert!(unit.contains(UnitStatus::HOT_SWAP_PGD));
+    assert!(!unit.contains(UnitStatus::HOT_SWAP_LATCHED_OFF));
+    assert!(!unit.contains(UnitStatus::U_OFF_ASSERTED));
+    assert!(!client.flags(0x30).contains(StatusFlags::ANY_UNIT_FAULT));
+    for slot in 2..4u8 {
+        assert!(client.slot_status(0x30, slot).contains(SlotStatus::PGD));
+    }
 }
 
 #[test]

@@ -271,11 +271,15 @@ Slot B references are slot A's + 50.
 | 1 | `-` bus GND |
 | 2 | `+` VIN, 48-60 V |
 
-Keyed. SMDJ60A TVS, input capacitors, then the unit hot-swap: LM5069-1
-(latch-off), 3 mOhm shunt (current limit about 18 A), two
-BSC040N10NS5 in parallel, UVLO about 38 V, OVLO about 65 V, INA238 at
-0x44 on the unit segment. A latched unit stays off until the plane core
-resets it or the bus is cycled.
+Keyed. SMDJ60A TVS, input capacitors, then the unit hot-swap: LM5069-2
+(auto-retry), 3 mOhm shunt (current limit about 18 A), two
+BSC040N10NS5 in parallel, UVLO about 38 V, OVLO about 65 V, INA237 at
+0x44 on the unit segment (its VBUS pin reads the hot-swap output, not
+the XT60 side). The limiter has no latch: after a fault it restarts
+every two seconds or so, for ever, which keeps the FETs inside their
+safe area and keeps a plane with no core alive. The latch is the plane
+core's, over the expander's U_OFF line, and `unit_reset` releases it
+(see [Recovery](../operation/recovery.md)).
 
 ### J301 - chain in (from the core side)
 

@@ -124,8 +124,11 @@ Fault kinds, with `slot` / `unit` / `count` / `value` / `on` as each one
 needs: `drop_transactions` (NAK the next `count`), `corrupt_answer`
 (flip a byte, so the controller's CRC check rejects it), `watchdog` and
 `power_loss` (a plane reboot that keeps or loses the intended state),
-`unit_unplug` / `unit_replug` (the chain cable), `unit_hot_swap_latch`,
-`ov_latch`, `pgd_loss`, `power_limit_trip`, `ignore_pwr` and `load`.
+`unit_unplug` / `unit_replug` (the chain cable), `unit_hot_swap_latch`
+(an overload on the unit's 48 V input: its LM5069-2 faults and retries,
+and the plane latches the unit off) with `unit_hot_swap_clear` to take
+the overload away again, `ov_latch`, `pgd_loss`, `power_limit_trip`,
+`ignore_pwr` and `load`.
 The same knobs are methods on `FakePlane`, which is how
 `tests/plane_link.rs` drives them.
 

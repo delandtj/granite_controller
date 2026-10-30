@@ -101,7 +101,7 @@ targets outside those forms, are rejected.
 | `power_on` | node, `all` | | Rail only |
 | `power_off` | node, `all` | | Rail only |
 | `clear_latch` | node, `all` | | Clear the slot's overvoltage latch |
-| `unit_reset` | `planeN.unitU` | | Re-arm the unit board's hot-swap |
+| `unit_reset` | `planeN.unitU` | | Let the plane's hold on the unit board's hot-swap go |
 | `plane_reboot` | `planeN` | | Reboot the plane; slots keep their state |
 | `rule_ack` | `all` | `rule` | Re-arm a manual rule |
 | `probe_scan` | `all` | | Accepted; the re-scan is not yet wired to the bus |
@@ -200,7 +200,7 @@ planes report. `what` is one of:
 | `update_confirmed`, `update_failed` | controller | A plane firmware update ended. |
 | `intended_off_reapplied` | controller | After a plane power loss, these nodes (`detail`, comma-separated ids) were commanded off again. |
 | `slot_on`, `slot_off`, `pgd_lost`, `ov_latched`, `power_limit_trip`, `retry_limit_reached`, `led_changed`, `sequence_done`, `sequence_failed` | plane, per node | What the slot did. |
-| `unit_present`, `unit_lost`, `unit_reset_seen`, `unit_hot_swap_latched_off` | plane, per unit | What a unit board did. |
+| `unit_present`, `unit_lost`, `unit_reset_seen`, `unit_hot_swap_latched_off` | plane, per unit | What a unit board did. `unit_hot_swap_latched_off` is the plane holding a faulted unit off, once per fault. |
 | `plane_boot`, `config_stored`, `update_state_changed`, `image_confirmed`, `rolled_back` | plane | What the plane itself did. |
 
 ```json
