@@ -50,9 +50,13 @@ BLOCKS = [
 ONLY = {
     "MCU": {"GND", "+3V3", "/MCU/C6_EN", "/MCU/C6_USB_D+", "/MCU/C6_USB_D-"},
     "USB": {"GND", "VBUS", "/MCU/USB_CONN_D+", "/MCU/USB_CONN_D-", "/MCU/USB_CC1",
-            "/MCU/USB_CC2", "/MCU/USB_D+", "/MCU/USB_D-"},
+            "/MCU/USB_CC2"},
 }
 PLANE_NETS = {"GND", "+3V3"}
+# +3V3 hand copper does not survive krt-route (its plane pass re-does the
+# net's pad taps and drops the rest); KRT routes every +3V3 pad to In2
+SKIP_NETS = {"+3V3"}
+HOLES = [(29.0, 32.6), (126.0, 32.6), (126.0, 74.6), (29.0, 74.6)]   # pcbkit outline, 4 mm inset
 
 # rest: ref -> (rot, courtyard centre x, y)
 CON_T = 28.65 + 2.8          # PH row along the top edge (courtyard 5.59 deep)
@@ -76,14 +80,18 @@ PLACE = {
     # above U1: TMP1075, local I2C pull-ups, LED, CC1
     "U5": (0, 103.8, 53.5), "C15": (90, 108.6, 53.5), "R13": (90, 110.0, 53.5), "R14": (90, 111.4, 53.5),
     "D4": (0, 103.0, 47.5), "R8": (0, 103.0, 49.3), "R25": (0, 114.0, 42.6),
-    "R27": (0, 120.0, 65.7), "R7": (0, 119.6, 73.15),
-    # J9 (Qwiic) and J10 (dry contacts) on the right edge with their protection
-    "J9": (90, CON_R, 44.0), "J10": (90, CON_R, 62.5),
-    "U6": (0, 122.8, 44.0), "RN1": (90, 120.2, 44.0), "F1": (90, 122.8, 40.3), "D6": (90, 122.8, 48.4),
-    "U18": (0, 122.6, 58.0),
-    "R59": (90, 114.0, 50.0), "R60": (90, 115.5, 50.0), "R61": (90, 117.0, 50.0), "R62": (90, 118.5, 50.0),
-    "R55": (90, 114.0, 52.4), "R56": (90, 115.5, 52.4), "R57": (90, 117.0, 52.4), "R58": (90, 118.5, 52.4),
-    "C47": (90, 114.0, 54.8), "C48": (90, 115.5, 54.8), "C49": (90, 117.0, 54.8), "C50": (90, 118.5, 54.8),
+    "R27": (90, 112.6, 56.2), "R7": (0, 119.6, 73.15),
+    # J10 (dry contacts) top right: one RC row per pin at the pin's y (2 mm
+    # pitch): C (DRY_IN | GND), 1k (DRY_IN | DRYC), 10k pull-up standing on
+    # the DRYC line; U18 below J10
+    "J10": (90, CON_R, 45.0), "U18": (90, 122.8, 52.6),
+    "C47": (180, 117.2, 49.0), "R55": (0, 119.4, 49.0), "R59": (270, 121.6, 48.49),
+    "C48": (180, 117.2, 47.0), "R56": (0, 119.4, 47.0), "R60": (270, 121.6, 46.49),
+    "C49": (180, 117.2, 45.0), "R57": (0, 119.4, 45.0), "R61": (270, 121.6, 44.49),
+    "C50": (180, 117.2, 43.0), "R58": (0, 119.4, 43.0), "R62": (270, 121.6, 42.49),
+    # J9 (Qwiic) lower right with its PTC, TVS, ESD and 330R array
+    "J9": (90, CON_R, 65.0), "U6": (0, 123.2, 58.0), "RN1": (180, 122.0, 62.8),
+    "F1": (90, 121.4, 66.8), "D6": (0, 121.0, 69.75),
     # plane link A (J13) / B (J14): load switch row, then ESD + 33R row, pull-ups
     # beside the plane I2C escapes; SPI bus and RST line run below (route_hand.py)
     "U21": (0, 83.0, 61.5), "R71": (90, 86.4, 61.5), "C53": (90, 79.6, 61.5), "C54": (90, 88.0, 61.6),
@@ -118,6 +126,14 @@ def main(argv):
                 d.Flip(d.GetPosition(), pcbnew.FLIP_DIRECTION_TOP_BOTTOM)
             d.SetOrientation(s.GetOrientation())
             d.SetPosition(pcbnew.VECTOR2I(s.GetPosition().x + MM(dx), s.GetPosition().y + MM(dy)))
+            if s.GetFPIDAsString() == d.GetFPIDAsString():
+                # rev C's board-only 3D models (J1, J2: 3dmodels/README.md)
+                d.Models().clear()
+                for m in s.Models():
+                    n = pcbnew.FP_3DMODEL()
+                    n.m_Filename, n.m_Offset, n.m_Rotation, n.m_Scale, n.m_Show = \
+                        m.m_Filename, m.m_Offset, m.m_Rotation, m.m_Scale, m.m_Show
+                    d.Models().append(n)
             dp = {p.GetNumber(): p.GetNetname() for p in d.Pads()}
             for p in s.Pads():
                 old, new = p.GetNetname(), dp.get(p.GetNumber())
@@ -131,8 +147,11 @@ def main(argv):
         n = 0
         for t in src.GetTracks():
             new = netmap.get(str(t.GetNetname()))
-            if not new or (only and new not in only):
+            if not new or new in SKIP_NETS or (only and new not in only):
                 continue
+            if any(abs(mm(t.GetPosition().x) + dx - hx) < 3.5 and abs(mm(t.GetPosition().y) + dy - hy) < 3.5
+                   for hx, hy in HOLES):
+                continue      # nothing under the screw heads
             if t.GetClass() == "PCB_VIA":
                 if not inside(t.GetPosition()):
                     continue
