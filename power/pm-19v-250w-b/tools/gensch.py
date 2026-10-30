@@ -165,7 +165,7 @@ ux, uy = 170.18, 78.74
 heading("CONTROLLER LM5116 (fsw 252 kHz, emulated peak current mode)", ux - 50.8, uy - 27.94)
 part("U1", "pmb:LM5116", "LM5116MHX", "Package_SO:HTSSOP-20-1EP_4.4x6.5mm_P0.65mm_EP3.4x6.5mm_ThermalVias",
      {"1": "VIN_IC", "4": "VIN_IC", "2": "RUN", "3": "RT", "5": "RAMP", "7": "SS", "8": "FB", "9": "COMP",
-      "10": "VOUT", "18": "HB", "19": "HO", "20": "SW", "15": "LO", "16": "VCC", "17": "VCCX", "12": "LSS",
+      "10": "VOUT", "18": "HB", "19": "HO", "20": "SW", "15": "LO", "16": "VCC", "17": "VCCX", "12": "CS",
       "13": "CSG", "11": "DEMB", "6": "GND", "14": "GND", "21": "GND"}, (ux, uy), lcsc="C13755",
      desc="LM5116MHX/NOPB, EN tied to VIN (UVLO / RUN is the on-off input)")
 # left column: analog parts (pin 1 of each on the U1 net)
@@ -187,7 +187,7 @@ two("C16", C, "1u", C0402, "HB", "SW", rx, uy - 7.62 + 2 * P, "C52923", "bootstr
 two("R3", R, "0R", R0402, "HO", "HG", rx, uy - 7.62 + 3 * P, "C17168", "HO series (bring-up: up to 2.2R to slow Q1 turn-on)")
 two("R12", R, "10k", R0402, "DEMB", "CSG", rx, uy - 7.62 + 4 * P, "C25744", "RDEMB: full synchronous after soft start")
 two("C18", C, "1u", C0402, "VCCX", "GND", rx, uy - 7.62 + 5 * P, "C52923", "VCCX bypass")
-note("CSG: Kelvin from R4's GND pad through NT1; CS (LSS): Kelvin from R4's top pad", ux - 25.4, uy + 25.4)
+note("CS / CSG: Kelvin from R4's two pads through NT2 / NT1", ux - 25.4, uy + 25.4)
 
 # ---- power stage
 px, py = 170.18, 165.1
@@ -200,10 +200,10 @@ part("R4", R, "4m 2512", R2512, {"1": "LSS", "2": "GND"}, (px + 15.24, py + 15.2
      desc="RS: ILIM = 0.110 / RS - VOUT T / L = 20 A typ (eq 37); 3 W 1 % 2512")
 part("NT1", "Device:NetTie_2", "NetTie", NETTIE, {"1": "GND", "2": "CSG"}, (px + 30.48, py + 15.24),
      desc="CSG Kelvin tap at R4's GND pad")
+part("NT2", "Device:NetTie_2", "NetTie", NETTIE, {"1": "LSS", "2": "CS"}, (px + 30.48, py + 25.4),
+     desc="CS Kelvin tap at R4's top (LSS) pad")
 part("L1", L, "10u APS1510M100F", LXAL, {"1": "SW", "2": "VOUT"}, (px + 30.48, py - 7.62), rot=90, lcsc="C49261402",
      desc="10 uH, 8.6 mOhm, Isat 26.5 A (40 % drop), 16.5 x 15.5 x 10 mm, F side; second source FEXL1510A-100M C5378597")
-two("R5", R, "2.2R DNP", R0805, "SW", "SNB", px - 38.1, py + 30.48, "C17521", "snubber (fit at bring-up if SW rings)", dnp=True)
-two("C8", C, "470p 100V DNP", C0805, "SNB", "GND", px - 7.62, py + 30.48, "C513677", "snubber C, NP0", dnp=True)
 
 # ---- output
 ox, oy = 297.18, 40.64
@@ -283,8 +283,8 @@ def write():
     for s in b.psyms:
         sh.symbol(s)
     txt = sh.text_out()
-    # J1 is screw pads only, NT1 a net tie: not in the BOM or the placement file
-    for ref in ("J1", "NT1"):
+    # J1 is screw pads only, NT1 / NT2 net ties: not in the BOM or the placement file
+    for ref in ("J1", "NT1", "NT2"):
         i = txt.find('(property "Reference" "%s"' % ref)
         j = txt.rfind("\t(symbol\n", 0, i)
         head = txt[j:i].replace("(in_bom yes)", "(in_bom no)").replace("(in_pos_files yes)", "(in_pos_files no)")
