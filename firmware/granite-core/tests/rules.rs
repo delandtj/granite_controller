@@ -244,9 +244,55 @@ fn the_shipped_defaults_are_the_adr_examples_and_all_disabled() {
 
     assert_eq!(rules[2].source, Source::Vin);
     assert_eq!(rules[2].op, Op::Lt);
-    assert_eq!(rules[2].threshold, 15_000, "15 V in millivolts");
+    assert_eq!(
+        rules[2].threshold, 10_000,
+        "the bottom of the 12 V window, in millivolts"
+    );
     assert_eq!(rules[2].hold_s, 5);
     assert_eq!(rules[2].action, RuleAction::Event);
+}
+
+/// Bug: default rule 3 carried the 15 V threshold of rev C's 19 V
+/// supply, so on a rev D controller (12 V from the planes, window 10 V
+/// to 14 V) it fired the moment it was enabled. It now watches the
+/// bottom of that window.
+#[test]
+fn the_bus_voltage_rule_fits_the_twelve_volt_input() {
+    let nodes = granite_core::config::NodesCfg::default();
+    let rule = &default_rules()[2];
+    assert_eq!(
+        rule.threshold as u32, nodes.vin_min_mv,
+        "the rule and the fault bit watch the same number"
+    );
+
+    let mut e = RuleEngine::with_rules(vec![Rule {
+        enabled: true,
+        ..rule.clone()
+    }]);
+    // A healthy rev D controller: 12 V in, and a loaded bus at 10.5 V.
+    for (mv, when) in [(12_000u32, 0u64), (11_000, 10_000), (10_500, 20_000)] {
+        let o = vin_obs(mv);
+        assert!(
+            e.tick(when, &o).is_empty(),
+            "{mv} mV is inside the window and must not fire"
+        );
+        assert!(!nodes.vin_out_of_window(mv), "{mv} mV is not a vin fault");
+    }
+
+    // Below the window it fires, after its hold.
+    let sagging = vin_obs(9_800);
+    assert!(e.tick(30_000, &sagging).is_empty(), "the hold starts");
+    let fired = e.tick(35_000, &sagging);
+    assert_eq!(fired.len(), 1, "5 s below 10 V is the warning");
+    assert_eq!(fired[0].value, Some(9_800));
+    assert!(nodes.vin_out_of_window(9_800), "and the vin fault bit too");
+}
+
+/// A snapshot with nothing but a VIN reading.
+fn vin_obs(mv: u32) -> Observed {
+    let mut o = Observed::new();
+    o.vin_mv = Stamped::new(Some(mv), 1);
+    o
 }
 
 #[test]

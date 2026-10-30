@@ -559,6 +559,10 @@ fn cleared(rule: &Rule, v: i32) -> bool {
 }
 
 /// The three examples the ADR ships as defaults, all disabled.
+///
+/// Their thresholds are the rev D figures: rule 3 watches the bottom of
+/// the 12 V input window the `nodes` section defaults to, so enabling
+/// it on a healthy controller does not fire it.
 pub fn default_rules() -> Vec<Rule> {
     alloc::vec![
         Rule {
@@ -600,7 +604,14 @@ pub fn default_rules() -> Vec<Rule> {
             name: String::from("bus voltage low"),
             source: Source::Vin,
             op: Op::Lt,
-            threshold: 15_000,
+            // The bottom of the controller's own 12 V input window
+            // (`nodes.vin_min_mv`: rev D is fed 12 V from the planes,
+            // ADR 0004 decision 9), so this event is the warning that
+            // goes with the `vin` fault bit. The 15 V it used to carry
+            // was the figure for rev C's 19 V supply and a rev D
+            // controller sits below it at rest, so the rule fired the
+            // moment it was enabled.
+            threshold: crate::config::DEFAULT_VIN_MIN_MV as i32,
             hysteresis: 500,
             hold_s: 5,
             action: RuleAction::Event,

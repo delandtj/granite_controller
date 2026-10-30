@@ -15,11 +15,17 @@ Three rules come with the default configuration, all **disabled**:
 |---|---|---|---|---|---|
 | 1 | probe over temperature | hottest probe > 70.00 C, **or no probe answering** | 30 s | `force_off` on `all` | auto, hysteresis 5.00 C |
 | 2 | leak float closed | dry contact 1 closed | 2 s | `force_off` on `all` | manual |
-| 3 | bus voltage low | VIN < 15.000 V | 5 s | event only | auto, hysteresis 0.5 V |
+| 3 | bus voltage low | VIN < 10.000 V | 5 s | event only | auto, hysteresis 0.5 V |
 
 Rules 1 and 2 target `all`, which is every present node: when one of
 them fires, the controller submits one `force_off` per node and acks
 the group once (see [Controlling nodes](../operation/nodes.md)).
+
+Rule 3 watches the bottom of the controller's own 12 V input window
+(`nodes.vin_min_mv`, 10 V by default), so it is the event that goes
+with fault bit 3 and says nothing while the input is healthy. Raise
+both together if your supply or cabling needs it, or watch a plane's
+own bus instead with `plane_bus_volts`.
 
 Check them against your frame before you enable them: rule 2 assumes
 your leak float is on dry input 1, and rule 1 trips when **no** probe

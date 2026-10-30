@@ -239,6 +239,18 @@ pub struct ProbeCfg {
 /// front of the ADC clamps at about 35 V (ADR component 4).
 pub const VIN_WINDOW_MAX_MV: u32 = 36_000;
 
+/// Lower bound of the healthy VIN window by default \[mV\].
+///
+/// Rev D is fed 12 V from the planes (ADR 0004 decision 9), so the
+/// window is the supply plus what a long cable and a loaded bus eat:
+/// 10 V to [`DEFAULT_VIN_MAX_MV`]. The shipped "bus voltage low" rule
+/// watches this same number, so the warning and the `vin` fault bit
+/// cannot drift apart ([`crate::rules::default_rules`]).
+pub const DEFAULT_VIN_MIN_MV: u32 = 10_000;
+
+/// Upper bound of the healthy VIN window by default \[mV\].
+pub const DEFAULT_VIN_MAX_MV: u32 = 14_000;
+
 /// True when `mv` is outside the window `min_mv`..`max_mv`. A bound of
 /// `0` is not checked, so a `0`/`0` window never faults.
 ///
@@ -288,8 +300,8 @@ impl Default for NodesCfg {
             // 12 V in from the planes on rev D (ADR 0004 decision 9),
             // so the window is the supply plus what a long cable and a
             // loaded bus eat: 10 V to 14 V.
-            vin_min_mv: 10_000,
-            vin_max_mv: 14_000,
+            vin_min_mv: DEFAULT_VIN_MIN_MV,
+            vin_max_mv: DEFAULT_VIN_MAX_MV,
         }
     }
 }
