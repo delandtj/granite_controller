@@ -3651,7 +3651,7 @@
 		)
 		(embedded_fonts no)
 	)
-	(footprint "Connector_AMASS:AMASS_XT30PW-M_1x02_P2.50mm_Horizontal"
+	(footprint "pp48:AMASS_XT30PW-M_1x02_P2.50mm_Horizontal"
 		(layer "F.Cu")
 		(uuid "63ba6af2-23b6-46af-a9f5-5559729867de")
 		(at 79.5 158.755 180)
@@ -4089,15 +4089,15 @@
 			(uuid "548ef010-867e-478b-85eb-364870c2e936")
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Connector_AMASS.3dshapes/AMASS_XT30PW-M_1x02_P2.50mm_Horizontal.step"
+		(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/AMASS_XT30PW-M.step"
 			(offset
-				(xyz 0 0 0)
+				(xyz -2.5 8.48 0)
 			)
 			(scale
 				(xyz 1 1 1)
 			)
 			(rotate
-				(xyz 0 0 0)
+				(xyz 0 0 180)
 			)
 		)
 	)

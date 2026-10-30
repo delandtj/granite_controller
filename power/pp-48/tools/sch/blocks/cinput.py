@@ -34,7 +34,7 @@ def block():
     def wire(net, *pts):
         b.wire(net, [p if isinstance(p[0], str) else P(*p) for p in pts])
 
-    sym("J1", "Connector_Generic:Conn_01x02", "XT30PW-M", "Connector_AMASS:AMASS_XT30PW-M_1x02_P2.50mm_Horizontal",
+    sym("J1", "Connector_Generic:Conn_01x02", "XT30PW-M", "pp48:AMASS_XT30PW-M_1x02_P2.50mm_Horizontal",
         {"1": "GND", "2": "VIN"}, (-8, 30), mirror="y", fields={"LCSC": "C431092", "MPN": "Amass XT30PW-M"},
         desc="core input, keyed (pin 1 -, pin 2 +), 15 A rated")
     sym("D1", "Device:D_Zener", "SMDJ60A", "Diode_SMD:D_SMC", {"1": "VIN", "2": "GND"}, (2, 38), rot=270,
