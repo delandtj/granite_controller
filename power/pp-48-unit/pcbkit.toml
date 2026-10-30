@@ -54,3 +54,29 @@ power_widths = [0.3, 0.4, 0.4, 0.3]
 planes = { nets = ["VBUS"], layers = ["In2.Cu"], via = [0.6, 0.3] }
 ground = { net = "GND", width = 0.4 }
 
+
+[jlcfab]
+# KiCad -> EasyEDA rotation / centroid per LCSC part (pcbkit jlc.py convention: rotation delta, then
+# dx, dy in mm, KiCad frame at rotation 0, y down; THT from the pad centre). Derived 2026-10-30 by
+# fitting each EasyEDA footprint's numbered pads onto ours (method checked against pcbkit's own
+# LQFP-48 / SOIC-8 / SOIC-4 entries). Still check the JLC placement preview.
+corrections = [
+    ["^AMASS_XT60PW-M_1x02_P7.20mm_Horizontal$", "C98732", 270, 0.0, -3.0],
+    ["^CP_Elec_10x10$", "C87862", 0, 0.0, 0.0],                     # pad 1 = + on both
+    ["^D_SMB$", "C353345", 0, 0.0, 0.0],
+    ["^D_SMC$", "C2990209", 0, 0.0, 0.0],
+    ["^JST_GH_SM04B-GHS-TB_1x04-1MP_P1.25mm_Horizontal$", "C189895", 0, 0.0, -0.25],
+    ["^JST_PH_S14B-PH-K_1x14_P2.00mm_Horizontal$", "C157938", 0, 0.0, 0.0],
+    ["^MSOP-10_3x3mm_P0.5mm$", "C111822", 270, 0.0, 0.0],
+    ["^PM_Aux_Socket_2x03_P1.27$", "C41397112", 270, 0.0, 0.0],     # symmetric; our pins are numbered by function
+    ["^PM_Standoff_M2x7_SMTSO$", "C2916355", 0, 0.0, 0.0],
+    ["^SOIC-4_4.55x2.6mm_P1.27mm$", "C55144", 180, 0.0, 0.0],       # TLP291: EasyEDA footprint and model disagree on pin 1, check in the preview
+    ["^SOT-23$", "C8545", 180, 0.0, 0.0],
+    ["^TDSON-8-1$", "C534364", 270, 0.0, 0.0],                       # fitted on pins 1-4 (EasyEDA numbers the drain pins 5-8, the pad 9)
+    ["^TDSON-8-1$", "C534334", 270, 0.0, 0.0],
+    ["^TSOT-23-6$", "C2670157", 180, 0.0, 0.0],
+    ["^TSSOP-10_3x3mm_P0.5mm$", "C2864837", 270, 0.0, 0.0],
+    ["^TerminalBlock_Degson_DG128-5.0-02P$", "C711349", 0, 0.0, 0.0],
+    ["^VQFN-32-1EP_5x5mm_P0.5mm_EP3.15x3.15mm$", "C80692", 0, 0.0, 0.0],
+    ["^VSSOP-8_2.3x2mm_P0.5mm$", "C70285", 180, 0.0, 0.0],
+]

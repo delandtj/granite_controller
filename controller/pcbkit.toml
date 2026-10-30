@@ -86,3 +86,9 @@ desc = "USB 0.25/0.15 (89R in air)"
 nets = ["*USB*D+", "*USB*D-"]
 width = 0.25
 gap = 0.15
+
+[jlcfab]
+# per-LCSC rotation corrections (see power/pp-48-unit/pcbkit.toml for the method, 2026-10-30)
+corrections = [
+    ["^SOT-23-6$", "C55266", 180, 0.0, 0.0],                        # TPS2553
+]

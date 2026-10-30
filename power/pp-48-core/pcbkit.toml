@@ -51,3 +51,26 @@ power_widths = [0.4, 0.4, 0.3, 0.5, 0.4, 0.4, 0.4]
 planes = { nets = ["VIN"], layers = ["In2.Cu"], via = [0.6, 0.3] }
 # GND: F / In1 / B pours drawn by tools/route_core.py (kept group): KRT skips GND tracks
 ground = { net = "GND", width = 0.4 }
+
+[jlcfab]
+# KiCad -> EasyEDA rotation / centroid per LCSC part (pcbkit jlc.py convention: rotation delta, then
+# dx, dy in mm, KiCad frame at rotation 0, y down; THT from the pad centre). Derived 2026-10-30 by
+# fitting each EasyEDA footprint's numbered pads onto ours (method checked against pcbkit's own
+# LQFP-48 / SOIC-8 / SOIC-4 entries). Still check the JLC placement preview.
+corrections = [
+    ["^SOIC-8_3.9x4.9mm_P1.27mm$", "C5122339", 0, 0.0, 0.0],      # ISO1640: EasyEDA drawn as KiCad (pcbkit's generic SOIC-8 entry is 270)
+    ["^AMASS_XT30PW-M_1x02_P2.50mm_Horizontal$", "C431092", 180, 0.0, -5.0],
+    ["^CP_Elec_10x10$", "C87862", 0, 0.0, 0.0],                     # pad 1 = + on both
+    ["^D_SMC$", "C2990209", 0, 0.0, 0.0],
+    ["^D_SOD-123$", "C917030", 0, 0.0, 0.0],
+    ["^HSOP-8-1EP_3.9x4.9mm_P1.27mm_EP2.41x3.1mm$", "C477928", 270, 0.0, 0.0],
+    ["^SOIC-8-1EP_3.9x4.9mm_P1.27mm_EP2.95x4.9mm_Mask2.71x3.4mm_ThermalVias$", "C471040", 270, 0.0, 0.0],
+    ["^JST_PH_S14B-PH-K_1x14_P2.00mm_Horizontal$", "C157938", 0, 0.0, 0.0],
+    ["^L_Bourns_SRR1260$", "C840528", 0, 0.0, 0.0],
+    ["^L_Coilcraft_LPD5030V$", "C5441621", 0, 0.0, 0.0],
+    ["^PinHeader_2x05_P1.27mm_Vertical_SMD$", "C5155080", 270, 0.0, 0.0],
+    ["^SOT-23$", "C8545", 180, 0.0, 0.0],
+    ["^SSOP-8_2.95x2.8mm_P0.65mm$", "C123302", 180, 0.0, 0.0],
+    ["^SW_DIP_SPSTx03_Slide_KingTek_DSHP03TS_W7.62mm_P1.27mm$", "C50844", 270, 0.0, 0.0],
+    ["^TSSOP-24_4.4x7.8mm_P0.65mm$", "C130026", 270, 0.0, 0.0],
+]
