@@ -78,7 +78,7 @@ One address per node 1-64 at 200..263: Node host LED, 1 = on (0/1, r).
 | +11 | `unit1_watts` | Unit 1 input power | 0.1 W |
 | +12 | `unit2_watts` | Unit 2 input power | 0.1 W |
 | +13 | `unit3_watts` | Unit 3 input power | 0.1 W |
-| +14 | `units_latched_off` | Bit n = unit n latched its hot-swap off | bitmap |
+| +14 | `units_latched_off` | Bit n = the plane holds unit n's hot-swap off after a fault | bitmap |
 | +15 | `reserved` | Reserved, reads 0 | integer |
 
 ## Holding registers
@@ -117,7 +117,7 @@ One address per node 1-64 at 100..163: Node rail: read the state, write 1 = on, 
 | 1 | overvoltage latch set |
 | 2 | power limit tripped |
 | 3 | hot-swap retry limit reached |
-| 4 | the unit board latched its hot-swap off |
+| 4 | the plane holds the unit's hot-swap off |
 | 5 | LED / rail cross-check |
 | 6 | a sequence is running on the slot |
 

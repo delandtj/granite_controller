@@ -144,7 +144,7 @@ pub mod node_fault_bits {
     pub const POWER_LIMIT: u16 = 1 << 2;
     /// The plane gave up retrying the hot-swap.
     pub const RETRY_LIMIT: u16 = 1 << 3;
-    /// The unit's own hot-swap latched off.
+    /// The plane holds the unit's hot-swap off after a fault.
     pub const UNIT_LATCHED_OFF: u16 = 1 << 4;
     /// The plane's LED-against-rail cross-check disagrees.
     pub const CROSS_CHECK: u16 = 1 << 5;
@@ -628,7 +628,7 @@ pub const PLANE_FIELDS: &[BlockField] = &[
     field(
         14,
         "units_latched_off",
-        "Bit n = unit n latched its hot-swap off",
+        "Bit n = the plane holds unit n's hot-swap off after a fault",
         "bitmap",
     ),
     field(15, "reserved", "Reserved, reads 0", "integer"),
@@ -1268,7 +1268,7 @@ address = {} + {} x ({} - {}) + offset:\n\n",
         (node_fault_bits::RETRY_LIMIT, "hot-swap retry limit reached"),
         (
             node_fault_bits::UNIT_LATCHED_OFF,
-            "the unit board latched its hot-swap off",
+            "the plane holds the unit's hot-swap off",
         ),
         (node_fault_bits::CROSS_CHECK, "LED / rail cross-check"),
         (node_fault_bits::BUSY, "a sequence is running on the slot"),

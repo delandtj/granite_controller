@@ -79,12 +79,21 @@ a column edge.
    **Latch in firmware** (user 2026-10-30; was the LM5069-1's own
    latch-off, which had 1 part in stock at JLC against ~8k for the -2):
    after a fault the -2 restarts on its own at ~0.5 % duty. The core
-   latches the unit off: U_PGD falling while the unit input (INA237
-   0x44 VIN) is inside UVLO..OVLO and U_OFF is not commanded is a unit
-   fault; the core drives U_OFF high and keeps it high (power state
-   `fault`, unit hot-swap latched off) until `unit_reset` or a core
-   power loss. U_PGD low with the input out of range is the bus, not a
-   fault: no latch. With no core (or the expander in reset) U_OFF is
+   latches the unit off: U_PGD falling while the unit input is inside
+   UVLO..OVLO and U_OFF is not commanded is a unit fault; the core
+   drives U_OFF high and keeps it high (power state `fault`, unit
+   hot-swap latched off) until `unit_reset` or a core power loss.
+   U_PGD low with the input out of range is the bus, not a fault: no
+   latch. The input the core judges is **its own 48 V input**, not the
+   INA237: U208's VBUS pin sits on the hot-swap output (see uinput.py),
+   so the only absolute voltage that part reports reads ~0 V exactly
+   when the stage is open, which is every moment the rule has to judge.
+   Core and units hang on the same bus behind the same breaker, so the
+   core's divider is the live witness. The cost: a unit whose own XT60
+   came out while the bus is up is latched off and wants an operator's
+   `unit_reset`. Timing, the boot case and the debounce are the
+   firmware's: firmware/docs/adr/0002-plane-core-firmware.md
+   decision 7a. With no core (or the expander in reset) U_OFF is
    low and the unit retries forever: hardware default ON (R14), and the
    0.5 % duty keeps the FETs inside their SOA on a hard short. The
    retry costs one restart attempt (~10 ms fault timer) before the core
