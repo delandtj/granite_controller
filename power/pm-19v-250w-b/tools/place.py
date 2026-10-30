@@ -46,6 +46,12 @@ FIXED = {
     'NT2': (128.4, 102.55, 'B', '1', (0, -1)),      # LSS pad on R4.1, CS below
     'NT1': (129.6, 106.35, 'B', '1', (0, 1)),       # GND pad on R4.2, CSG above
     'R3': (118.2, 107.95, 'B', '2', (0, -1)),        # HG pad up toward Q1's gate
+    # U1's drive parts on B under its via rows (tools/power.py HAND routes)
+    'C16': (109.4, 111.35, 'B', '1', (1, 0)),       # HB pad right, SW pad left
+    'D1': (111.35, 110.3, 'B', '1', (0, 1)),        # K (HB) down beside C16, A (VCC) up
+    'C17': (113.35, 110.6, 'B', '1', (-1, 0)),      # VCC pad left
+    'C18': (110.2, 114.75, 'B', '1', (1, 0)),       # VCCX pad right, GND left
+    'R12': (116.0, 111.0, 'B', '1', (-1, 0)),       # DEMB pad left
     # F, input caps: row 1 VIN up, row 2 VIN down, GND pads in the middle band
     'C2': (108.6, 103.9, 'F', '1', (0, -1)),
     'C3': (111.95, 103.9, 'F', '1', (0, -1)),
@@ -72,6 +78,10 @@ AUX = ('J2', CX + 12.70, CY - 7.85)
 # keep-clear boxes (x0, y0, x1, y1) per side: via fields, pours, lanes
 RESERVED = {
     'B': [(106.95, 100.3, 111.45, 106.9),     # VIN pour + C1 (left of Q1's drain)
+          (107.3, 107.2, 117.0, 113.7),       # U1 via rows and drive parts (hand)
+          (112.0, 113.6, 125.3, 114.6),       # LO lane along y 114.1
+          (116.9, 109.2, 119.0, 110.7),       # U1's SW / HO vias
+          (124.5, 106.3, 125.4, 114.6),       # LO lane up to Q2's gate
           (107.6, 105.9, 116.9, 107.2),       # GND vias under the F cap band
           (117.3, 100.3, 119.8, 106.3),       # SW strip and via column
           (117.3, 106.3, 119.0, 109.3),       # HG lane, R3
@@ -88,11 +98,6 @@ RESERVED = {
 # small parts: ref -> (side, anchor ref, anchor pad, rotations)
 ANCHOR = [
     # U1 drive side (top)
-    ('C16', 'B', 'U1', '18', (0, 90)),
-    ('D1', 'B', 'U1', '18', (0, 90)),
-    ('C17', 'B', 'U1', '16', (0, 90)),
-    ('C18', 'B', 'U1', '17', (0, 90)),
-    ('R12', 'B', 'U1', '11', (0, 90)),
     # U1 analog side (bottom)
     ('R7', 'B', 'U1', '3', (90, 0)),
     ('C19', 'B', 'U1', '5', (90, 0)),
@@ -110,7 +115,7 @@ ANCHOR = [
     ('C23', 'B', 'U1', '2', (90, 0)),
     ('R13', 'B', 'U1', '2', (90, 0)),
     ('D3', 'B', 'U1', '2', (90, 0)),
-    ('U4', 'B', 'R13', '2', (0, 90)),
+    ('U4', 'B', 'J2', '4', (0, 90)),
     ('R15', 'B', 'U4', '4', (90, 0)),
     ('R16', 'B', 'U4', '4', (90, 0)),
     ('C24', 'B', 'U4', '4', (90, 0)),
@@ -119,7 +124,7 @@ ANCHOR = [
     ('D4', 'B', 'U4', '5', (90, 0)),
     ('C26', 'B', 'U4', '5', (90, 0)),
     # VCCX follower right of U1
-    ('Q3', 'B', 'U1', '17', (0, 90, 180, 270)),
+    ('Q3', 'B', 'J2', '2', (0, 90, 180, 270)),
     ('R6', 'B', 'Q3', '1', (0, 90)),
     ('D2', 'B', 'Q3', '1', (0, 90)),
     # supervision, right half
@@ -272,7 +277,7 @@ def main(src, dst):
             x0, y0, x1, y1 = cbox(fp)
             w, h = x1 - x0, y1 - y0
             found = None
-            for i in range(1, 140):
+            for i in range(1, 260):
                 r = i * 0.1
                 n = max(8, int(r * 12))
                 for k in range(n):

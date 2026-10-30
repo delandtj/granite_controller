@@ -43,13 +43,14 @@ ZONES = [
     ('/VIN', B, 3, rect(100.4, 100.4, 117.0, 106.3)),
     ('GND', B, 5, rect(107.5, 104.35, 110.8, 107.05)),          # C1's GND pad and its vias
     ('/VIN', F, 3, [(100.4, 100.4), (116.9, 100.4), (116.9, 103.15), (107.0, 103.15), (107.0, 110.15),
-                    (116.9, 110.15), (116.9, 112.4), (100.4, 112.4)]),
+                    (113.6, 110.15), (113.6, 111.75), (100.4, 111.75)]),     # bottom strip stops above U1's vias
     ('GND', F, 5, rect(107.0, 104.4, 116.9, 108.75)),           # the cap GND band
     ('/VIN', IN1, 3, rect(100.4, 100.4, 117.2, 107.3)),
     # switch node
     ('/SW', B, 4, [(117.3, 100.5), (124.45, 100.5), (124.45, 108.95), (119.1, 108.95), (119.1, 105.25),
                    (117.3, 105.25)]),
-    ('/SW', F, 4, rect(117.3, 100.5, 124.95, 109.4)),
+    ('/SW', F, 4, [(117.3, 100.5), (124.95, 100.5), (124.95, 109.4), (118.85, 109.4), (118.85, 110.5),
+                   (117.1, 110.5), (117.1, 108.95), (117.3, 108.95)]),      # down to U1's SW via
     # low-side source to R4, R4's GND pad and its via field
     ('/LSS', B, 4, [(125.35, 100.5), (130.95, 100.5), (130.95, 102.3), (126.7, 102.3), (126.7, 105.15),
                     (125.35, 105.15)]),
@@ -202,10 +203,73 @@ def main(src, dst):
             n += 1
         placed[net] = placed.get(net, 0) + n
 
+    hand_routes(board, hand, nets)
     skipped = backbones(board, grp)
     pcbnew.ZONE_FILLER(board).Fill(board.Zones())
     board.Save(dst)
     print('zones', len(ZONES), 'vias', placed, 'backbone gaps', skipped)
+
+
+def pad(board, ref, num):
+    fp = board.FindFootprintByReference(ref)
+    for p in fp.Pads():
+        if p.GetNumber() == num and p.IsOnCopperLayer():
+            q = p.GetPosition()
+            return (round(tomm(q.x), 3), round(tomm(q.y), 3))
+    raise KeyError((ref, num))
+
+
+def hand_routes(board, hand, nets):
+    """U1 (on F) drive pins to vias in two staggered rows above the top
+    pin row (row A 1.4 mm, row B 2.2 mm above the pad centres), then:
+      SW, HO  In1 pair to the right: SW into the F SW pour at (117.45, 110.0),
+              HO to R3 (B) at Q1's gate
+      HB      B: C16 pad 1, D1 K;  VCC  B: C17 pad 1, D1 A
+      LO      B lane along y 114.1, up x 124.95 to Q2's gate
+      VCCX    B to C18 (GND via beside it); PGND: its via (In2)
+    CS, CSG, DEMB get their vias; krt-route takes them on from there."""
+    W, S = 0.4, 0.25
+    rowa = {'19': '/HO', '17': '/VCCX', '15': '/LO', '13': '/CSG', '11': '/DEMB'}
+    rowb = {'20': '/SW', '18': '/HB', '16': '/VCC', '14': 'GND', '12': '/CS'}
+    v = {}
+    for row, dy, w in ((rowa, 1.4, S), (rowb, 2.2, 0.2)):
+        for num, net in row.items():
+            x, y = pad(board, 'U1', num)
+            v[num] = (x, round(y - dy, 3))
+            add_track(board, hand, nets[net], (x, y), v[num], F, w)
+            add_via(board, hand, nets[net], v[num][0], v[num][1], SVIA)
+    # SW and HO, In1
+    sw, ho = v['20'], v['19']
+    swv, hov = (117.45, 110.0), (118.2, 109.25)
+    for net, pts, end in (('/SW', [sw, (sw[0], 110.8), (116.65, 110.8), swv], swv),
+                          ('/HO', [ho, (ho[0], 111.6), (118.2, 111.6), hov], hov)):
+        for a, b in zip(pts, pts[1:]):
+            add_track(board, hand, nets[net], a, b, IN1, W)
+        add_via(board, hand, nets[net], end[0], end[1], SVIA)
+    add_track(board, hand, nets['/HO'], hov, pad(board, 'R3', '1'), B, W)
+    # HB: via -> C16 pad 1 -> D1 K
+    c16, d1k = pad(board, 'C16', '1'), pad(board, 'D1', '1')
+    hb = v['18']
+    for a, b in ((hb, (hb[0], c16[1])), ((hb[0], c16[1]), c16), (c16, (d1k[0], c16[1])), ((d1k[0], c16[1]), d1k)):
+        add_track(board, hand, nets['/HB'], a, b, B, W)
+    # VCC: via -> C17 pad 1 -> D1 A
+    vc, c17, d1a = v['16'], pad(board, 'C17', '1'), pad(board, 'D1', '2')
+    for a, b in ((vc, (c17[0], vc[1] - 0.73)), ((c17[0], vc[1] - 0.73), c17),
+                 (c17, (c17[0] - 0.6, d1a[1] + 0.3)), ((c17[0] - 0.6, d1a[1] + 0.3), d1a)):
+        add_track(board, hand, nets['/VCC'], a, b, B, W)
+    g = pad(board, 'C17', '2')
+    add_track(board, hand, nets['GND'], g, (g[0] + 0.75, g[1] - 1.0), B, W)
+    add_via(board, hand, nets['GND'], g[0] + 0.75, g[1] - 1.0, VIA)
+    # LO: B lane to Q2's gate
+    lo, gate = v['15'], pad(board, 'Q2', '4')
+    pts = [lo, (lo[0] + 0.95, 114.1), (124.95, 114.1), (124.95, gate[1] + 1.2), gate]
+    for a, b in zip(pts, pts[1:]):
+        add_track(board, hand, nets['/LO'], a, b, B, W)
+    # VCCX: via -> C18 pad 1; C18 GND pad -> via
+    c18, c18g = pad(board, 'C18', '1'), pad(board, 'C18', '2')
+    add_track(board, hand, nets['/VCCX'], v['17'], c18, B, 0.3)
+    add_track(board, hand, nets['GND'], c18g, (c18g[0] - 1.8, c18g[1]), B, 0.3)
+    add_via(board, hand, nets['GND'], c18g[0] - 1.8, c18g[1], VIA)       # clear of U1's pins on F
 
 
 def inside(poly, x, y):
