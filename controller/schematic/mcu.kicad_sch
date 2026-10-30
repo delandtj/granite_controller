@@ -5,9 +5,9 @@
 	(uuid "0e1bb3cd-6ff3-5424-825a-684fab3f6ce8")
 	(paper "A3")
 	(title_block
-		(title "Granite Controller - MCU")
-		(date "2026-10-07")
-		(rev "C")
+		(title "Granite controller rev D - MCU")
+		(date "2026-10-30")
+		(rev "D")
 	)
 	(lib_symbols
 		(symbol "power:GND"
@@ -1909,8 +1909,7 @@
 				)
 				(polyline
 					(pts
-						(xy 0 2.54) (xy -0.508 2.032) (xy 0.508 2.032) (xy 0 1.524) (xy 0 -4.064) (xy -0.508 -4.572) (xy 0.508 -4.572)
-						(xy 0 -5.08)
+						(xy 0 2.54) (xy -0.508 2.032) (xy 0.508 2.032) (xy 0 1.524) (xy 0 -4.064) (xy -0.508 -4.572) (xy 0.508 -4.572) (xy 0 -5.08)
 					)
 					(stroke
 						(width 0)
@@ -4918,25 +4917,25 @@
 		(fields_autoplaced no)
 		(uuid "c2ec9c7c-d655-4c36-b1b9-d106abcfbcf7")
 		(property "Reference" "TP2"
-			(at 81.28 113.665 0)
+			(at 76.2 113.665 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify right)
+				(justify left)
 			)
 		)
 		(property "Value" "BOOT"
-			(at 81.28 116.205 0)
+			(at 76.2 116.205 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify right)
+				(justify left)
 			)
 		)
 		(property "Footprint" "TestPoint:TestPoint_Pad_D1.5mm"
@@ -8849,236 +8848,6 @@
 	)
 	(symbol
 		(lib_id "Device:R")
-		(at 109.22 207.01 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(fields_autoplaced no)
-		(uuid "1968a572-493c-4533-ad13-a8e1bc131ef9")
-		(property "Reference" "R5"
-			(at 111.76 205.74 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "4.7k"
-			(at 111.76 208.28 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 109.22 207.01 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 109.22 207.01 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 109.22 207.01 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MANUFACTURER" "UNI-ROYAL"
-			(at 109.22 207.01 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MPN" "0402WGF4701TCE"
-			(at 109.22 207.01 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C25900"
-			(at 109.22 207.01 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "c8ec9bd2-25f0-4395-8f48-8d2d281bbfba")
-		)
-		(pin "2"
-			(uuid "24788592-72bf-4555-a6c4-65a4f40e8e72")
-		)
-		(instances
-			(project "granite-controller"
-				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/0e1bb3cd-6ff3-5424-825a-684fab3f6ce8"
-					(reference "R5")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R")
-		(at 121.92 207.01 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(fields_autoplaced no)
-		(uuid "9abd6181-0aa2-4435-b9be-d3cd12a768ac")
-		(property "Reference" "R6"
-			(at 124.46 205.74 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "4.7k"
-			(at 124.46 208.28 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 121.92 207.01 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 121.92 207.01 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 121.92 207.01 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MANUFACTURER" "UNI-ROYAL"
-			(at 121.92 207.01 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MPN" "0402WGF4701TCE"
-			(at 121.92 207.01 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C25900"
-			(at 121.92 207.01 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "614ca47d-0225-44ac-8567-78254a2a6d6b")
-		)
-		(pin "2"
-			(uuid "9611f376-e681-4f36-af8d-fe44ac48fb8e")
-		)
-		(instances
-			(project "granite-controller"
-				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/0e1bb3cd-6ff3-5424-825a-684fab3f6ce8"
-					(reference "R6")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R")
 		(at 134.62 207.01 0)
 		(unit 1)
 		(body_style 1)
@@ -9496,200 +9265,6 @@
 			(project "granite-controller"
 				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/0e1bb3cd-6ff3-5424-825a-684fab3f6ce8"
 					(reference "#PWR414")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R")
-		(at 180.34 207.01 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(fields_autoplaced no)
-		(uuid "0c5706dc-bcf1-466a-ba18-6d439dd27dad")
-		(property "Reference" "R19"
-			(at 182.88 205.74 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "10k"
-			(at 182.88 208.28 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 180.34 207.01 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 180.34 207.01 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 180.34 207.01 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MANUFACTURER" "UNI-ROYAL"
-			(at 180.34 207.01 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MPN" "0402WGF1002TCE"
-			(at 180.34 207.01 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C25744"
-			(at 180.34 207.01 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "2ba0353e-22fa-4c6f-a61f-3cb15de8dd57")
-		)
-		(pin "2"
-			(uuid "f3bfd7eb-1f32-4df9-b341-b47b93821998")
-		)
-		(instances
-			(project "granite-controller"
-				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/0e1bb3cd-6ff3-5424-825a-684fab3f6ce8"
-					(reference "R19")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:GND")
-		(at 180.34 213.36 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(fields_autoplaced no)
-		(uuid "90f42ce8-6d09-4351-b44d-11f09fea5997")
-		(property "Reference" "#PWR437"
-			(at 180.34 207.01 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "GND"
-			(at 180.34 218.44 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 180.34 213.36 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 180.34 213.36 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 180.34 213.36 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "aa07b4f3-b4a5-45f6-bde4-e7ecd18c756f")
-		)
-		(instances
-			(project "granite-controller"
-				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/0e1bb3cd-6ff3-5424-825a-684fab3f6ce8"
-					(reference "#PWR437")
 					(unit 1)
 				)
 			)
@@ -10787,16 +10362,6 @@
 	)
 	(wire
 		(pts
-			(xy 109.22 203.2) (xy 115.57 203.2)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "4c355a87-7e9c-4c84-9467-9c1c41c800c9")
-	)
-	(wire
-		(pts
 			(xy 115.57 203.2) (xy 121.92 203.2)
 		)
 		(stroke
@@ -10844,16 +10409,6 @@
 			(type default)
 		)
 		(uuid "b2614d65-7a20-4a5d-aa1d-13dc14166330")
-	)
-	(wire
-		(pts
-			(xy 180.34 210.82) (xy 180.34 213.36)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "53309e8b-af18-4a84-8281-42cc0ce08423")
 	)
 	(junction
 		(at 109.22 63.5)
@@ -10958,18 +10513,6 @@
 		(uuid "2c119c18-5751-4bef-b58b-c6221f0bf156")
 	)
 	(junction
-		(at 115.57 203.2)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "f37fa871-85ab-42ba-b95e-f7f7c9e4e051")
-	)
-	(junction
-		(at 121.92 203.2)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "e4520218-48aa-45ed-b316-f62cbe57f90f")
-	)
-	(junction
 		(at 134.62 203.2)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -10981,7 +10524,7 @@
 		(color 0 0 0 0)
 		(uuid "569a9e7d-6efb-41fb-aad6-2f11ba4286fa")
 	)
-	(text "ESP32-C6-MINI-1 (radio unused; keep its antenna keep-out free of copper)"
+	(text "ESP32-C6-WROOM-1 (radio unused; keep its antenna keep-out free of copper). Rev D: GPIO2/3 plane link (HP I2C), GPIO6/7 local I2C, GPIO10/11/4/15 dry inputs 1-4, GPIO0 EXP_INT"
 		(exclude_from_sim no)
 		(at 20.32 48.26 0)
 		(effects
@@ -11014,7 +10557,7 @@
 			)
 		)
 	)
-	(global_label "I2C_INT_SDA"
+	(global_label "PLANE_SDA"
 		(shape bidirectional)
 		(at 91.44 91.44 180)
 		(fields_autoplaced yes)
@@ -11036,7 +10579,7 @@
 			)
 		)
 	)
-	(global_label "I2C_INT_SCL"
+	(global_label "PLANE_SCL"
 		(shape bidirectional)
 		(at 91.44 93.98 180)
 		(fields_autoplaced yes)
@@ -11058,7 +10601,7 @@
 			)
 		)
 	)
-	(global_label "EXP_nRESET"
+	(global_label "DRY_IN3"
 		(shape bidirectional)
 		(at 91.44 96.52 180)
 		(fields_autoplaced yes)
@@ -11102,7 +10645,7 @@
 			)
 		)
 	)
-	(global_label "I2C_EXT_SDA"
+	(global_label "I2C_LOC_SDA"
 		(shape bidirectional)
 		(at 91.44 101.6 180)
 		(fields_autoplaced yes)
@@ -11124,7 +10667,7 @@
 			)
 		)
 	)
-	(global_label "I2C_EXT_SCL"
+	(global_label "I2C_LOC_SCL"
 		(shape bidirectional)
 		(at 91.44 104.14 180)
 		(fields_autoplaced yes)
@@ -11168,7 +10711,7 @@
 			)
 		)
 	)
-	(global_label "GPIO_IO15"
+	(global_label "DRY_IN4"
 		(shape bidirectional)
 		(at 127 96.52 0)
 		(fields_autoplaced yes)
@@ -11396,7 +10939,7 @@
 		)
 		(uuid "11c0c770-3103-42da-88c2-854ff6a969e1")
 	)
-	(text "1-wire DS18B20 probes (UART TX open-drain + RX on one node) and board temperature (internal I2C, 0x48)"
+	(text "1-wire DS18B20 probes (UART TX open-drain + RX on one node) and board temperature (local I2C, 0x48)"
 		(exclude_from_sim no)
 		(at 134.62 60.96 0)
 		(effects
@@ -11427,7 +10970,7 @@
 		)
 		(uuid "90762035-c3c0-4995-936f-044eb38f0f5f")
 	)
-	(global_label "I2C_INT_SDA"
+	(global_label "I2C_LOC_SDA"
 		(shape bidirectional)
 		(at 228.6 93.98 0)
 		(fields_autoplaced yes)
@@ -11449,7 +10992,7 @@
 			)
 		)
 	)
-	(global_label "I2C_INT_SCL"
+	(global_label "I2C_LOC_SCL"
 		(shape bidirectional)
 		(at 228.6 96.52 0)
 		(fields_autoplaced yes)
@@ -11574,7 +11117,7 @@
 		)
 		(uuid "2943b7e9-4d3e-4913-9b3a-4b55954b03db")
 	)
-	(text "Pull-ups: internal and external I2C, header expander reset pulled low (add-ons in reset by default), GPIO8 strap high"
+	(text "Pull-ups: local I2C (TMP1075, J9) 4.7k, GPIO8 strap high. Plane link pull-ups (2.2k) and EXP_INT 10k on the Plane link sheet."
 		(exclude_from_sim no)
 		(at 109.22 185.42 0)
 		(effects
@@ -11585,51 +11128,7 @@
 		)
 		(uuid "96457143-6663-4bc8-baad-31cd4e91f056")
 	)
-	(global_label "I2C_INT_SCL"
-		(shape bidirectional)
-		(at 109.22 210.82 270)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "964eec71-0f6e-4157-8db8-361f2390baf8")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 109.22 210.82 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-				(hide yes)
-			)
-		)
-	)
-	(global_label "I2C_INT_SDA"
-		(shape bidirectional)
-		(at 121.92 210.82 270)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "4e047a39-71a0-4b33-bb1e-4874dcfb94f0")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 121.92 210.82 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-				(hide yes)
-			)
-		)
-	)
-	(global_label "I2C_EXT_SCL"
+	(global_label "I2C_LOC_SCL"
 		(shape bidirectional)
 		(at 134.62 210.82 270)
 		(fields_autoplaced yes)
@@ -11651,7 +11150,7 @@
 			)
 		)
 	)
-	(global_label "I2C_EXT_SDA"
+	(global_label "I2C_LOC_SDA"
 		(shape bidirectional)
 		(at 147.32 210.82 270)
 		(fields_autoplaced yes)
@@ -11695,24 +11194,66 @@
 			)
 		)
 	)
-	(global_label "EXP_nRESET"
+	(wire
+		(pts
+			(xy 93.98 111.76) (xy 91.44 111.76)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0422d5e7-ebf5-46f8-b0ca-506d53c0ac2e")
+	)
+	(global_label "DRY_IN1"
 		(shape bidirectional)
-		(at 180.34 203.2 90)
+		(at 91.44 111.76 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify left)
+			(justify right)
 		)
-		(uuid "73c6447f-60a4-4302-97cf-904ed7cffc5f")
+		(uuid "972450e8-e0bc-49b4-83d2-8857fed9a161")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 180.34 203.2 0)
+			(at 91.44 111.76 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 93.98 114.3) (xy 91.44 114.3)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0749c4e6-6d40-406d-a107-f006d895cf59")
+	)
+	(global_label "DRY_IN2"
+		(shape bidirectional)
+		(at 91.44 114.3 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "adc5cadd-5315-494b-a05b-f5803a1e1206")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 91.44 114.3 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
 				(hide yes)
 			)
 		)
@@ -11911,51 +11452,5 @@
 				)
 			)
 		)
-	)
-	(wire
-		(pts
-			(xy 93.98 111.76) (xy 88.9 111.76)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "f4077948-e210-4979-b90f-d2b1be42e780")
-	)
-	(wire
-		(pts
-			(xy 88.9 111.76) (xy 88.9 124.46)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "fafb6d3e-ed6c-4981-b6f2-e604f174b964")
-	)
-	(global_label "EXP_nRESET_INT"
-		(shape bidirectional)
-		(at 88.9 124.46 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "7f519037-736c-40f2-adbe-376a6081fbf2")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 88.9 124.46 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-				(hide yes)
-			)
-		)
-	)
-	(no_connect
-		(at 93.98 114.3)
-		(uuid "b724316d-9e55-4aa5-8d4f-61bab30e9860")
 	)
 )

@@ -5,9 +5,9 @@
 	(uuid "827be8ef-6a37-5395-8e48-6b8c9aee3791")
 	(paper "A3")
 	(title_block
-		(title "Granite Controller - Power")
-		(date "2026-10-07")
-		(rev "C")
+		(title "Granite controller rev D - Power")
+		(date "2026-10-30")
+		(rev "D")
 	)
 	(lib_symbols
 		(symbol "power:GND"
@@ -4717,7 +4717,7 @@
 		(color 0 0 0 0)
 		(uuid "3873fb22-c2b9-4a65-b689-5e29e20a0e4b")
 	)
-	(text "5 V: 19 V buck or USB VBUS (bench), Schottky OR-ing"
+	(text "5 V: 12 V buck or USB VBUS (bench), Schottky OR-ing"
 		(exclude_from_sim no)
 		(at 127 27.94 0)
 		(effects
@@ -4759,7 +4759,6 @@
 		)
 		(uuid "49412235-2936-4f39-bddc-771ae257dcd9")
 	)
-	(embedded_fonts no)
 	(symbol
 		(lib_id "Connector_Generic:Conn_01x02")
 		(at 20.32 114.3 0)
@@ -4772,8 +4771,8 @@
 		(in_pos_files yes)
 		(dnp no)
 		(fields_autoplaced no)
-		(uuid "f40c2827-5c2d-4f9e-8cc5-b973b163882a")
-		(property "Reference" "J3"
+		(uuid "1fac5a1f-2f37-49fe-b402-e8f75eb08f29")
+		(property "Reference" "J11"
 			(at 20.32 109.22 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4783,7 +4782,7 @@
 				)
 			)
 		)
-		(property "Value" "19V_IN"
+		(property "Value" "12V_IN_A"
 			(at 20.32 120.65 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4860,477 +4859,15 @@
 			)
 		)
 		(pin "1"
-			(uuid "582c36e9-9e96-4bf7-b16f-13688380c178")
+			(uuid "4f3e5622-730d-4583-a37d-46181f639f6a")
 		)
 		(pin "2"
-			(uuid "c4dfa9c1-4de8-4034-9f79-aa9929619704")
+			(uuid "a5ae8a1d-82cb-45b9-abeb-cf308ebb7e69")
 		)
 		(instances
 			(project "granite-controller"
 				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/827be8ef-6a37-5395-8e48-6b8c9aee3791"
-					(reference "J3")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(wire
-		(pts
-			(xy 25.4 116.84) (xy 27.94 116.84)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "8127aa2f-1aa8-4a36-b3ec-e8df52e901f0")
-	)
-	(wire
-		(pts
-			(xy 27.94 116.84) (xy 27.94 129.54)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "4bc72d91-576f-4635-a412-4f3da9a69f86")
-	)
-	(symbol
-		(lib_id "power:GND")
-		(at 27.94 129.54 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(fields_autoplaced no)
-		(uuid "ef47b7a1-bd48-4003-b3ac-50588c4a7cd3")
-		(property "Reference" "#PWR508"
-			(at 27.94 123.19 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "GND"
-			(at 27.94 134.62 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 27.94 129.54 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 27.94 129.54 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 27.94 129.54 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "a15bbe47-cc43-4981-a7fa-efa702e65bd9")
-		)
-		(instances
-			(project "granite-controller"
-				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/827be8ef-6a37-5395-8e48-6b8c9aee3791"
-					(reference "#PWR508")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:Polyfuse")
-		(at 40.64 114.3 90)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(fields_autoplaced no)
-		(uuid "b847c9a7-1fc1-4485-99c2-b238d9198cdd")
-		(property "Reference" "F3"
-			(at 40.64 109.22 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "PTC 0.75A"
-			(at 40.64 111.76 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Fuse:Fuse_1206_3216Metric"
-			(at 40.64 114.3 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 40.64 114.3 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 40.64 114.3 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MANUFACTURER" "LUTE"
-			(at 40.64 114.3 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MPN" "1206L075/33NR"
-			(at 40.64 114.3 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C49196637"
-			(at 40.64 114.3 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "f5f53583-29ba-4730-8d91-bf185d09b6f3")
-		)
-		(pin "2"
-			(uuid "9c1550ad-cfaa-46e8-9cd8-41e5d3b2f37b")
-		)
-		(instances
-			(project "granite-controller"
-				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/827be8ef-6a37-5395-8e48-6b8c9aee3791"
-					(reference "F3")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(wire
-		(pts
-			(xy 25.4 114.3) (xy 36.83 114.3)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "ec1f7cc7-d9c9-4010-810d-ad67006131de")
-	)
-	(label "VIN_RAW"
-		(at 26.67 114.3 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "44c59961-c01d-4ec3-8b53-f18bdef0d88e")
-	)
-	(symbol
-		(lib_id "Device:D_Zener")
-		(at 53.34 118.11 270)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(fields_autoplaced no)
-		(uuid "fce04bf7-219f-4b78-afa9-72d20efe9f64")
-		(property "Reference" "D1"
-			(at 51.435 116.84 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-			)
-		)
-		(property "Value" "SMAJ22A"
-			(at 51.435 119.38 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-			)
-		)
-		(property "Footprint" "Diode_SMD:D_SMA"
-			(at 53.34 118.11 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 53.34 118.11 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 53.34 118.11 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MANUFACTURER" "R+O"
-			(at 53.34 118.11 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MPN" "SMAJ22A"
-			(at 53.34 118.11 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C41376403"
-			(at 53.34 118.11 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "17fe825e-f6e1-4948-881e-40ae63c5426b")
-		)
-		(pin "2"
-			(uuid "5a7e2f81-61b9-4d3a-b480-c3933437ac2a")
-		)
-		(instances
-			(project "granite-controller"
-				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/827be8ef-6a37-5395-8e48-6b8c9aee3791"
-					(reference "D1")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(wire
-		(pts
-			(xy 44.45 114.3) (xy 53.34 114.3)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "4919a3c8-446c-42cb-aedc-6694085138e6")
-	)
-	(wire
-		(pts
-			(xy 53.34 114.3) (xy 59.69 114.3)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "22a6ef10-4884-444e-a448-63a402fbb2dc")
-	)
-	(junction
-		(at 53.34 114.3)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "74621d3a-b52b-4bd3-86fb-66905a8a3fbb")
-	)
-	(wire
-		(pts
-			(xy 53.34 121.92) (xy 53.34 129.54)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "594bef4d-f688-4c58-be7d-dfd614cbe8c3")
-	)
-	(symbol
-		(lib_id "power:GND")
-		(at 53.34 129.54 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(fields_autoplaced no)
-		(uuid "124a0a4e-5b4f-4bf9-b49b-2b8279a2496b")
-		(property "Reference" "#PWR509"
-			(at 53.34 123.19 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "GND"
-			(at 53.34 134.62 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 53.34 129.54 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 53.34 129.54 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 53.34 129.54 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "f8d9aa17-28af-47b7-9afd-877dc45121fe")
-		)
-		(instances
-			(project "granite-controller"
-				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/827be8ef-6a37-5395-8e48-6b8c9aee3791"
-					(reference "#PWR509")
+					(reference "J11")
 					(unit 1)
 				)
 			)
@@ -5347,8 +4884,8 @@
 		(in_pos_files yes)
 		(dnp no)
 		(fields_autoplaced no)
-		(uuid "72a6d3c9-ccfd-47a1-8c39-d55b7bc5b427")
-		(property "Reference" "D8"
+		(uuid "298aaaf1-6ceb-4cb1-85b7-635ca33dadc1")
+		(property "Reference" "D10"
 			(at 63.5 110.49 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -5435,15 +4972,357 @@
 			)
 		)
 		(pin "1"
-			(uuid "4bd18c97-12c1-4849-af11-696578d0dcb8")
+			(uuid "3460c7ff-d280-4c17-8308-5a899b0d3fbb")
 		)
 		(pin "2"
-			(uuid "6d6b6cef-7484-42d0-a435-92fa3fca69c8")
+			(uuid "806a4e7b-2196-4ad7-85bb-a07cbc974116")
 		)
 		(instances
 			(project "granite-controller"
 				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/827be8ef-6a37-5395-8e48-6b8c9aee3791"
-					(reference "D8")
+					(reference "D10")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Connector_Generic:Conn_01x02")
+		(at 20.32 139.7 0)
+		(mirror y)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "0dd6f880-1b60-4adf-af50-b1d796441b8e")
+		(property "Reference" "J12"
+			(at 20.32 134.62 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "12V_IN_B"
+			(at 20.32 146.05 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Connector_JST:JST_PH_B2B-PH-K_1x02_P2.00mm_Vertical"
+			(at 20.32 139.7 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 20.32 139.7 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 20.32 139.7 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "JST"
+			(at 20.32 139.7 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "B2B-PH-K-S(LF)(SN)"
+			(at 20.32 139.7 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C131337"
+			(at 20.32 139.7 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "f2eade69-7687-4d1f-9f2f-6b4d11400102")
+		)
+		(pin "2"
+			(uuid "407779ea-c2ff-47d9-8588-e11e0f7b0d01")
+		)
+		(instances
+			(project "granite-controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/827be8ef-6a37-5395-8e48-6b8c9aee3791"
+					(reference "J12")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:D_Schottky")
+		(at 63.5 139.7 180)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "635c74da-e143-499d-86e8-018611bfdbb4")
+		(property "Reference" "D11"
+			(at 63.5 135.89 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "SS34"
+			(at 63.5 143.51 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Diode_SMD:D_SMA"
+			(at 63.5 139.7 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 63.5 139.7 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 63.5 139.7 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "MDD (Microdiode)"
+			(at 63.5 139.7 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "SS34"
+			(at 63.5 139.7 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C8678"
+			(at 63.5 139.7 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "b2a352e2-bbe9-4740-bc3e-023353b23f54")
+		)
+		(pin "2"
+			(uuid "0e8f8115-7038-4f07-a22a-ed05a5185567")
+		)
+		(instances
+			(project "granite-controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/827be8ef-6a37-5395-8e48-6b8c9aee3791"
+					(reference "D11")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:D_Zener")
+		(at 69.85 118.11 270)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "75893f73-e591-4003-8b40-96888253f4ab")
+		(property "Reference" "D12"
+			(at 67.94 124.46 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Value" "SMAJ15A"
+			(at 67.94 127.0 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" "Diode_SMD:D_SMA"
+			(at 69.85 118.11 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 69.85 118.11 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 69.85 118.11 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MANUFACTURER" "Littelfuse"
+			(at 69.85 118.11 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "SMAJ15A"
+			(at 69.85 118.11 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C148216"
+			(at 69.85 118.11 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "ceaf53c0-3078-4a11-9761-d79af6ae5ac2")
+		)
+		(pin "2"
+			(uuid "a8ce0a86-f9f4-4e1b-8768-511bca881cc9")
+		)
+		(instances
+			(project "granite-controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/827be8ef-6a37-5395-8e48-6b8c9aee3791"
+					(reference "D12")
 					(unit 1)
 				)
 			)
@@ -5451,14 +5330,391 @@
 	)
 	(wire
 		(pts
-			(xy 67.31 114.3) (xy 72.39 114.3)
+			(xy 25.4 114.3) (xy 59.69 114.3)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "9c9f448a-bdad-4828-9e7f-e895047e5d2b")
+		(uuid "29ba3be8-b692-4203-bbfc-48f510321159")
 	)
+	(label "12V_IN_A"
+		(at 30.48 114.3 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "23e00e4e-f107-49c1-93eb-20c987d5f50a")
+	)
+	(wire
+		(pts
+			(xy 25.4 116.84) (xy 27.94 116.84)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "abd49673-1a47-4122-8701-a056294d64f7")
+	)
+	(wire
+		(pts
+			(xy 27.94 116.84) (xy 27.94 129.54)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6d182ba0-1da4-44d0-89de-4db95c0ac58a")
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 27.94 129.54 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "67f23c67-5aa3-4a04-9956-db37686288bb")
+		(property "Reference" "#PWR1101"
+			(at 27.94 135.89 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 27.94 133.35 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 27.94 129.54 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 27.94 129.54 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 27.94 129.54 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "b197046b-6484-4f34-9717-279a5d8f4642")
+		)
+		(instances
+			(project "granite-controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/827be8ef-6a37-5395-8e48-6b8c9aee3791"
+					(reference "#PWR1101")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 25.4 139.7) (xy 59.69 139.7)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4f1358b9-a526-4bb2-91bf-0d62e89ad7f8")
+	)
+	(label "12V_IN_B"
+		(at 30.48 139.7 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "ff68c1f1-a420-4138-9b03-1bb97f00df9f")
+	)
+	(wire
+		(pts
+			(xy 25.4 142.24) (xy 27.94 142.24)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "102bba19-4da9-4da8-9187-c444ef9dbee2")
+	)
+	(wire
+		(pts
+			(xy 27.94 142.24) (xy 27.94 149.86)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e4b01129-501d-44e1-9447-61db585d3067")
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 27.94 149.86 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "09d34874-af36-4762-aa70-6a88c30a629b")
+		(property "Reference" "#PWR1102"
+			(at 27.94 156.21 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 27.94 153.67 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 27.94 149.86 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 27.94 149.86 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 27.94 149.86 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "48795685-1c3f-482d-9c48-ed912d6dfc83")
+		)
+		(instances
+			(project "granite-controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/827be8ef-6a37-5395-8e48-6b8c9aee3791"
+					(reference "#PWR1102")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 67.31 114.3) (xy 69.85 114.3)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2f062162-8113-467c-afcd-568d67733734")
+	)
+	(wire
+		(pts
+			(xy 69.85 114.3) (xy 72.39 114.3)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "62330ea9-3001-4d44-9b8a-06c6b530fa8b")
+	)
+	(junction
+		(at 69.85 114.3)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "a2744924-794b-49e0-af87-5e8480588fb0")
+	)
+	(junction
+		(at 72.39 114.3)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "9018d802-5619-4adf-be71-bcc9151dc691")
+	)
+	(label "VIN_12V"
+		(at 73.66 114.3 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "a6abc3b1-e015-4971-92b0-cec4fa8ffffe")
+	)
+	(wire
+		(pts
+			(xy 69.85 121.92) (xy 69.85 129.54)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "06786735-4c62-4946-926e-f98321794481")
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 69.85 129.54 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "a5d3f7ca-235d-4287-ae37-081631f85bc5")
+		(property "Reference" "#PWR1103"
+			(at 69.85 135.89 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 69.85 133.35 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 69.85 129.54 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 69.85 129.54 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 69.85 129.54 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "a2df855a-0f47-4df1-8dc1-bdaff350fd7b")
+		)
+		(instances
+			(project "granite-controller"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149/827be8ef-6a37-5395-8e48-6b8c9aee3791"
+					(reference "#PWR1103")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 67.31 139.7) (xy 72.39 139.7)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "f6afddef-cff1-4ca5-a366-2a2abdb0ae94")
+	)
+	(label "VIN_12V"
+		(at 72.39 139.7 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "2c98ac69-4caf-4b14-ad2c-2d54eda22364")
+	)
+	(embedded_fonts no)
 	(wire
 		(pts
 			(xy 72.39 114.3) (xy 77.47 114.3)
@@ -5510,12 +5766,6 @@
 		(uuid "65cb996f-3b55-4864-926f-9eda43a15257")
 	)
 	(junction
-		(at 72.39 114.3)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "ae2a3b7e-bf4d-4c6f-bc34-f49df99d6712")
-	)
-	(junction
 		(at 77.47 114.3)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -5538,16 +5788,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "97d03c2d-2737-40cb-a6f0-aa0fa0e08e36")
-	)
-	(label "VIN_19V"
-		(at 68.58 114.3 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "3cf77aa1-bbf9-4242-a88d-7bcec1f21f5c")
 	)
 	(symbol
 		(lib_id "power:PWR_FLAG")
@@ -7634,7 +7874,7 @@
 		)
 		(uuid "603f7d0f-4c0a-40b2-b217-879cefc3eeba")
 	)
-	(text "BUCK_5V from the 19 V input stage below"
+	(text "BUCK_5V from the 12 V input stage below"
 		(exclude_from_sim no)
 		(at 20.32 43.18 0)
 		(effects
@@ -7645,7 +7885,7 @@
 		)
 		(uuid "941770b7-81d7-4c1b-a484-21ca42ff2957")
 	)
-	(text "19 V input: redundant 19 V bus, tapped upstream of the per-node hot-swap channels -> PTC, TVS, reverse-polarity Schottky -> LMR51430 buck (1.1 MHz) -> 5.2 V"
+	(text "12 V input: two plane aux feeds (plane J4: PH 2p, 1 CTRL_12V, 2 CTRL_GND) -> one SS34 each (OR-ing + reverse polarity) -> SMAJ15A -> LMR51430 buck (1.1 MHz) -> 5.2 V. No fuse: the plane iso module limits its own output."
 		(exclude_from_sim no)
 		(at 20.32 101.6 0)
 		(effects
@@ -7656,9 +7896,9 @@
 		)
 		(uuid "f11b8c9a-2abe-4ef6-b2dc-089a3a6d5b27")
 	)
-	(text "BUCK_5V = 0.6 V x (1 + 100k/12.4k) = 5.44 V, so +5V is ~5.0 V loaded after D2. D9 SMAJ6.0A crowbars BUCK_5V if U8 fails short (F3 trips). SMAJ22A clamps below the LMR51430 38 V abs max."
+	(text "BUCK_5V = 0.6 V x (1 + 100k/12.4k) = 5.44 V, so +5V is ~5.0 V loaded after D2. D9 SMAJ6.0A crowbars BUCK_5V if U8 fails short (the plane module current-limits). SMAJ15A clamps (24.4 V) below the LMR51430 36 V / 38 V abs max."
 		(exclude_from_sim no)
-		(at 20.32 147.32 0)
+		(at 20.32 162.56 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -7688,7 +7928,7 @@
 		)
 		(uuid "3b3c695f-1965-4cd4-b52d-e436eb89888a")
 	)
-	(label "VIN_19V"
+	(label "VIN_12V"
 		(at 187.96 109.22 180)
 		(effects
 			(font
@@ -7721,7 +7961,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "100k"
+		(property "Value" "68k"
 			(at 194.31 114.3 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -7776,7 +8016,7 @@
 				)
 			)
 		)
-		(property "MPN" "0402WGF1003TCE"
+		(property "MPN" "0402WGF6802TCE"
 			(at 193.04 113.03 0)
 			(hide yes)
 			(show_name no)
@@ -7787,7 +8027,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25741"
+		(property "LCSC" "C36871"
 			(at 193.04 113.03 0)
 			(hide yes)
 			(show_name no)
@@ -8249,9 +8489,9 @@
 			)
 		)
 	)
-	(text "VIN_SENSE = VIN_19V / 11 (100k/10k) -> ESP32 GPIO5 (ADC1). 19 V -> 1.73 V, 36 V clamp -> 3.27 V."
+	(text "VIN_SENSE = VIN_12V x 10k / 78k (68k/10k) -> ESP32 GPIO5 (ADC1). 12 V -> 1.54 V, 24.4 V clamp -> 3.13 V."
 		(exclude_from_sim no)
-		(at 187.96 101.6 0)
+		(at 187.96 95.25 0)
 		(effects
 			(font
 				(size 1.27 1.27)

@@ -920,12 +920,12 @@
       "MCU"
     ],
     [
-      "523e2405-760a-59f0-a9bd-26a6a2afbbb8",
-      "Relay channels"
+      "b0a29a8c-351d-55c9-a76a-359903750a26",
+      "Sensors and dry contacts"
     ],
     [
-      "b0a29a8c-351d-55c9-a76a-359903750a26",
-      "Expansion header"
+      "7c1d5a0e-3f2b-4e8a-9b61-2d4c8e5f0a17",
+      "Plane link"
     ]
   ],
   "text_variables": {},

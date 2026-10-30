@@ -5,14 +5,14 @@
 	(uuid "bd3d1081-8fd5-561e-93ea-9d28b3145149")
 	(paper "A4")
 	(title_block
-		(title "Granite Controller - MCU and USB")
-		(date "2026-07-09")
-		(rev "C")
-		(comment 1 "PoE-powered reset/power controller for 2x7 Strix Halo motherboards")
-		(comment 2 "STM32H563 + LAN8742A + 802.3af PD, 28x photoMOS channels")
+		(title "Granite controller rev D")
+		(date "2026-10-30")
+		(rev "D")
+		(comment 1 "Ethernet controller and plane link master for frames with 48 V power planes")
+		(comment 2 "ESP32-C6 + W5500, 2x 12 V in from the planes, 2x plane link (I2C + EXP_INT), probes, dry contacts, Qwiic")
 	)
 	(lib_symbols)
-	(text "Granite Controller: PoE-powered reset/power controller for 8 Strix Halo motherboards, immersion-cooled."
+	(text "Granite controller rev D: Ethernet controller and plane link master for up to 8 power planes, immersion-cooled."
 		(exclude_from_sim no)
 		(at 31.75 22.86 0)
 		(effects
@@ -23,7 +23,7 @@
 		)
 		(uuid "045eacc2-e355-46bf-a599-8c5d82e8fc12")
 	)
-	(text "One RJ45 = power + control. ESP32-C6 + W5500 Ethernet. 16 floating photoMOS contact channels via MCP23017. Spec: docs/controller.md"
+	(text "Powered from two planes' isolated 12 V aux (PH 2p). Node control lives on the planes. Spec: docs/controller-rev-d.md (delta to rev C docs/controller.md)"
 		(exclude_from_sim no)
 		(at 31.75 27.94 0)
 		(effects
@@ -173,7 +173,7 @@
 		)
 	)
 	(sheet
-		(at 31.75 81.28)
+		(at 107.95 81.28)
 		(size 54.61 17.78)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -187,9 +187,9 @@
 		(fill
 			(color 0 0 0 0)
 		)
-		(uuid "523e2405-760a-59f0-a9bd-26a6a2afbbb8")
-		(property "Sheetname" "Relay channels"
-			(at 31.75 80.5684 0)
+		(uuid "b0a29a8c-351d-55c9-a76a-359903750a26")
+		(property "Sheetname" "Sensors and dry contacts"
+			(at 107.95 80.5684 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -199,8 +199,8 @@
 				(justify left bottom)
 			)
 		)
-		(property "Sheetfile" "schematic/relays.kicad_sch"
-			(at 31.75 99.6484 0)
+		(property "Sheetfile" "schematic/expansion.kicad_sch"
+			(at 107.95 99.6484 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -219,7 +219,7 @@
 		)
 	)
 	(sheet
-		(at 107.95 81.28)
+		(at 31.75 81.28)
 		(size 54.61 17.78)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -233,9 +233,9 @@
 		(fill
 			(color 0 0 0 0)
 		)
-		(uuid "b0a29a8c-351d-55c9-a76a-359903750a26")
-		(property "Sheetname" "Expansion header"
-			(at 107.95 80.5684 0)
+		(uuid "7c1d5a0e-3f2b-4e8a-9b61-2d4c8e5f0a17")
+		(property "Sheetname" "Plane link"
+			(at 31.75 80.5684 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -245,8 +245,8 @@
 				(justify left bottom)
 			)
 		)
-		(property "Sheetfile" "schematic/expansion.kicad_sch"
-			(at 107.95 99.6484 0)
+		(property "Sheetfile" "schematic/planelink.kicad_sch"
+			(at 31.75 99.6484 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
