@@ -1,0 +1,67 @@
+# pcbkit settings for the PM-19V-250W-B port module (LM5116 single phase).
+# 4L JLC, 58.4 x 22.9 mm eighth-brick outline (drawn by tools/place.py).
+#
+# Board flow (tools/build.sh runs it end to end):
+#   gensch -> netlist -> mkboard -> tools/place.py -> setrules ->
+#   tools/power.py (pours, via fields, group "power") -> krt-route ->
+#   gndpour -> silk -> DRC -> jlcfab
+
+[project]
+name = "pm-19v-250w-b"
+libs = { pm = "pm.pretty" }
+
+[mkboard]
+copper_layers = 4
+stage_x = -120.0
+sheet_pitch = 90.0
+cell = 14.0
+per_row = 6
+
+[rules]
+stackup = "jlc04161h-7628"
+# In1: VIN (input end) and VOUT (output end) pours, signals between;
+# In2: solid GND, 0.2 mm under B where the hot loop is.
+layers = { "In1.Cu" = ["signal", "SIG"], "In2.Cu" = ["power", "GND"] }
+
+[rules.netclasses]
+# name = [track, clearance, via_dia, via_drill]
+Default = [0.2, 0.15, 0.5, 0.2]   # 0.15: U1 HTSSOP pads at 0.65 pitch leave 0.19
+
+[krt]
+work = "~/.cache/pcbkit/pm-19v-250w-b/route"
+rework = "~/.cache/pcbkit/pm-19v-250w-b/reroute"
+clearance = 0.2
+via = [0.5, 0.2]
+track_width = 0.2
+same_net_pad_clearance = 0.15
+signal_layers = ["F.Cu", "In1.Cu", "B.Cu"]
+keep_groups = ["power", "hand"]
+power_nets = ["/HG", "/HO", "/LO", "/HB", "/VCC", "/VIN_IC", "/VCCX"]
+power_widths = [0.4, 0.4, 0.4, 0.4, 0.4, 0.3, 0.3]
+planes = { nets = ["GND"], layers = ["In2.Cu"], via = [0.6, 0.3] }
+ground = { net = "GND", width = 0.4 }
+
+[gndpour]
+net = "GND"
+layers = ["F.Cu", "B.Cu"]
+via = [0.6, 0.3]
+via_clearance = 0.3
+edge_in = 0.8
+edge_pitch = 3.0
+grid = 3.0
+short_edge_inset = 0.0
+zone_clearance = 0.25
+zone_min_width = 0.25
+priority = 1
+group = "gnd-stitch"
+fill = true
+
+[viaout]
+keep = [["U1", "21"]]
+
+[silk]
+small_area = 8.0
+
+[jlcfab]
+out = "fab"
+skip_dnp = true
