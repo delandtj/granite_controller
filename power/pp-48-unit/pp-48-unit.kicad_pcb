@@ -5718,6 +5718,11 @@
 			(uuid "5e9c1028-b8f9-4b9a-b759-9a5679f970b6")
 		)
 		(embedded_fonts no)
+		(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/TerminalBlock_Degson_DG128-5.0-02P.step"
+			(offset (xyz 2.5 0 0))
+			(scale (xyz 1 1 1))
+			(rotate (xyz 0 0 0))
+		)
 	)
 	(footprint ""
 		(layer "F.Cu")
@@ -17237,6 +17242,11 @@
 			(uuid "f728ce67-76f7-42e0-9339-7b01292032e8")
 		)
 		(embedded_fonts no)
+		(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/TerminalBlock_Degson_DG128-5.0-02P.step"
+			(offset (xyz 2.5 0 0))
+			(scale (xyz 1 1 1))
+			(rotate (xyz 0 0 0))
+		)
 	)
 	(footprint "Capacitor_SMD:C_0603_1608Metric"
 		(layer "F.Cu")
