@@ -18,19 +18,18 @@ the rev1 core block (tools/core.py, x 52-100) without the tile input
   was, top right. The controller island (CTRL_GND) keeps its block top left
   (u 0-21.6, v 0-21) and now runs as a strip along the top edge to u 31
   (v 0-9); its band (2 mm, all layers) runs down u 31-33 and left along v
-  9-11. The coupled inductor L2 sits on the strip's corner, rot 270: its
-  windings are on diagonal pads (N1 1-3, N2 2-4), so no straight barrier
-  splits them. SEC2 (pad 4, top left) is in the strip, SW (pad 1, top
-  right) and VOUT1 (pad 3, bottom left) are on the bus side, and CTRL_GND
-  (pad 2, bottom right) is an island pocket on F (>= 1.5 mm to pads 1 / 3,
-  2 mm band round it) with vias at ENCLAVE to CTRL_GND on In1 / B, which
-  reach under L2 from the strip (no bus copper under L2 on In1 / In2 / B).
-  Secondary on F in the strip: D6 anode by pad 4, C30 / C31 under its
-  cathode, the TVS D7 above the link headers J2 / J3. Primary: U2 right of L2 rot 180 (SW pin 8 next to
-  pad 1), C11 / C12 at its VIN / RTN pins, R12 (RON) above them, the
-  UVLO divider on B behind them, the FB / ripple network left of U2 (F and
-  B, clear of L2's footprint), BST C13 and VCC C16 on B under its left
-  pins, D2 below it, the VOUT1 cap C29 below pad 3.
+  9-11. The coupled inductor L2 (Coilcraft LPD5030V, one winding per side)
+  straddles the vertical band, rot 180: its secondary L2 (4-3: SEC2 top,
+  CTRL_GND bottom) in the strip, its primary L1 (1-2: VOUT1 top, SW
+  bottom) on the bus side; the band narrows to the 1.48 mm between the
+  pad columns under the part.
+  Secondary on F in the strip: D6 anode by pad 3, C30 / C31 under its
+  cathode, the TVS D7 above the link headers J2 / J3. Primary: U2 right of
+  L2 rot 180 (SW pin 8 level with L2 pad 1), C11 / C12 at its VIN / RTN
+  pins, R12 (RON) above them, the UVLO divider on B behind them, the VOUT1
+  cap C29 above L2 pad 2, the FB divider / Cac between L2 and U2 (R17 and
+  the ripple R13 / C14 on B), BST C13 and VCC C16 on B under U2's left
+  pins, D2 below it.
 """
 import os
 import sys
@@ -61,20 +60,21 @@ MOVED = {
 }
 # 12 V aux Fly-Buck (the module's place, top right); see the docstring
 FLY = {
-    'L2': (32.0, 10.0, 270, F),
+    'L2': (32.0, 5.0, 180, F),
     # secondary, in the island strip
-    'D6': (26.5, 3.0, 0, F), 'C30': (21.0, 6.5, 270, F), 'C31': (23.1, 6.5, 270, F), 'D7': (14.5, 1.6, 0, F),
+    'D6': (25.6, 3.0, 0, F), 'C30': (21.0, 6.7, 270, F), 'C31': (23.1, 6.7, 270, F), 'D7': (14.5, 1.6, 0, F),
     # primary: U2 and its input caps, RON, UVLO divider
     'U2': (41.0, 5.4, 180, F), 'C11': (46.5, 6.0, 270, F), 'C12': (45.6, 9.8, 0, F), 'R12': (46.3, 1.6, 180, F),
     'R10': (46.6, 4.8, 90, B), 'R11': (44.6, 4.8, 90, B),
-    # FB divider and ripple injection left of U2; BST / VCC caps under its left pins
-    'R17': (34.8, 1.4, 0, F), 'R14': (34.8, 3.0, 0, F), 'C15': (34.8, 4.6, 0, F),
+    # VOUT1 cap above L2 pad 2, FB divider / Cac between L2 and U2, ripple injection on B; BST / VCC caps under
+    # U2's left pins
+    'C29': (35.4, 1.2, 0, F), 'R14': (35.4, 3.7, 90, F), 'C15': (36.6, 3.7, 90, F), 'R17': (35.6, 6.8, 0, B),
     'R13': (35.2, 2.0, 0, B), 'C14': (35.0, 4.2, 0, B),
     'C13': (38.3, 6.7, 90, B), 'C16': (38.3, 3.9, 90, B),
-    'D2': (41.0, 9.6, 0, F), 'C29': (29.5, 16.1, 270, F),
+    'D2': (41.0, 9.6, 0, F),
 }
-ENCLAVE = [(33.5, 13.2), (34.9, 13.2)]     # L2 pad 2 (CTRL_GND) vias to In1 / B (island there: u 28-35.5, v 7.5-14)
-SOLID = [('J1', '1'), ('J1', '2'), ('R4', '2'), ('U6', '21'), ('C20', '2'), ('R5', '2')]   # small GND pads: starved spokes
+SOLID = [('J1', '1'), ('J1', '2'), ('R4', '2'), ('U6', '21'), ('C20', '2'), ('R5', '2'),   # small GND pads: starved spokes
+         ('U2', '9')]                     # U2's exposed pad and its thermal vias: solid to the GND pours
 
 
 def main(src, dst):

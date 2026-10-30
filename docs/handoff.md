@@ -234,22 +234,19 @@ the controller is also built for a 19 V input: adapt it to the plane's
 isolated 12 V aux (ADR 0003 decision 14, kept). Revisit what the
 controller keeps (ESP32, Ethernet, probes, link master to the planes).
 
-Open (2026-10-29): the isolated 12 V aux is now an own Fly-Buck, LM5017
-C34355 + Bourns SRF0703-470M C3273458, functional isolation, values in
-ADR 0003 decision 14; drawn on the Supplies sheet (U2, L2 with the new
-footprint pp48:L_Bourns_SRF0703, CTRL_GND island; ERC 0). Check the
-SRF0703 land pattern: the datasheet's 0.4 mm pad gap label contradicts
-its 2.9 mm terminal pitch (footprint uses 2.9). J4 (JST PH 2, pin 1 CTRL_12V, pin 2 CTRL_GND)
-is the controller's 12 V input: match it in the controller revisit.
-Placed on the core board (2026-10-30, tools/place_core.py FLY, top right
-where the module was; placement DRC 0 errors besides unconnected, parity
-clean). L2's windings are on diagonal pads, so the island barrier cannot
-be straight: the CTRL_GND island gains a strip along the top edge (u 0-31,
-v 0-9, band u 31-33 / v 9-11), L2 (rot 270) sits on its corner with SEC2
-in the strip, SW / VOUT1 on the bus side, and its CTRL_GND pad 2 an island
-pocket on F with two vias (ENCLAVE) to CTRL_GND on In1 / B, which reach
-under L2 (u 28-35.5, v 7.5-14). The core route script must draw that
-(CTRL / BAND polygons in route_hand.py are the old rev1 shape).
+Isolated 12 V aux (revised 2026-10-30, ADR 0003 decision 14): Fly-Buck
+LM5018 C471040 + Coilcraft LPD5030V-333 C5441621 (1:1, 33 uH, 1000 V
+winding to winding, 4.8 x 4.8 mm), ~1.2 W. The SRF0703 was dropped: its
+real land pattern (LCSC footprint, datasheet 0.4 mm gap) puts the two
+windings' pads 0.46 mm apart and it has no isolation rating. The
+LPD5030V has one winding per side, so the island barrier is straight
+(1.48 mm between the pad columns under the part); no pocket, no vias.
+L2 sits on the island strip's right edge (u 31-33 band), rot 180. JLC
+holds ~23 LPD5030V: fine for prototypes. Controller revisit: add ~100 uF
+on its 12 V input for the radio's TX peaks (the aux is no longer sized
+to carry them alone). J4 (JST PH 2, pin 1 CTRL_12V, pin 2 CTRL_GND) is
+the controller's 12 V input: match it in the controller revisit.
+3D models: J1 / L2 from LCSC (pp48.3dshapes, offsets checked in renders).
 
 Board ROUTED as 2-slot UNITS (2026-10-29, ADR 0004 decision 9; N = 2 =
 core + 1 unit + end strip, 106 x 72 mm): DRC 0 unconnected, 0 parity, 0

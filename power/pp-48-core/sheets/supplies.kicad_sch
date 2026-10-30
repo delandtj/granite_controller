@@ -1221,7 +1221,7 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Device:L_Coupled_1324"
+		(symbol "Device:L_Coupled_1243"
 			(pin_names
 				(offset 0.254)
 				(hide yes)
@@ -1241,7 +1241,7 @@
 					)
 				)
 			)
-			(property "Value" "L_Coupled_1324"
+			(property "Value" "L_Coupled_1243"
 				(at 0 -4.445 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -1306,7 +1306,7 @@
 					)
 				)
 			)
-			(symbol "L_Coupled_1324_0_1"
+			(symbol "L_Coupled_1243_0_1"
 				(circle
 					(center -3.048 1.524)
 					(radius 0.254)
@@ -1498,7 +1498,7 @@
 					)
 				)
 			)
-			(symbol "L_Coupled_1324_1_1"
+			(symbol "L_Coupled_1243_1_1"
 				(pin passive line
 					(at -5.08 2.54 0)
 					(length 2.54)
@@ -1518,7 +1518,7 @@
 					)
 				)
 				(pin passive line
-					(at -5.08 -2.54 0)
+					(at 5.08 2.54 180)
 					(length 2.54)
 					(name "2"
 						(effects
@@ -1536,7 +1536,7 @@
 					)
 				)
 				(pin passive line
-					(at 5.08 2.54 180)
+					(at 5.08 -2.54 180)
 					(length 2.54)
 					(name "3"
 						(effects
@@ -1554,7 +1554,7 @@
 					)
 				)
 				(pin passive line
-					(at 5.08 -2.54 180)
+					(at -5.08 -2.54 0)
 					(length 2.54)
 					(name "4"
 						(effects
@@ -4451,7 +4451,7 @@
 		)
 		(uuid "c6f81979-2ae8-520b-8663-c08edd6375e3")
 	)
-	(text "ISOLATED 12 V AUX  U2 LM5017 Fly-Buck from VIN, L2 1:1, secondary on the CTRL_GND island"
+	(text "ISOLATED 12 V AUX  U2 LM5018 Fly-Buck from VIN, L2 1:1, secondary on the CTRL_GND island"
 		(exclude_from_sim no)
 		(at 13.97 104.14 0)
 		(effects
@@ -4461,7 +4461,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "7c025255-69f7-5b83-8f20-83273eb805f0")
+		(uuid "a969c063-2796-5b04-bde2-fb9b19f1a520")
 	)
 	(symbol
 		(lib_id "Regulator_Switching:LM5164DDA")
@@ -5173,7 +5173,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Inductor_SMD:L_12x12mm_H6mm"
+		(property "Footprint" "Inductor_SMD:L_Bourns_SRR1260"
 			(at 85.09 53.34 0)
 			(hide yes)
 			(show_name no)
@@ -5197,7 +5197,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "shielded, Isat >= 1.5 A, 12x12 land pattern (SRR1260 / CDRH127 class)"
+		(property "Description" "shielded, Isat >= 1.5 A, Bourns SRR1260 land pattern"
 			(at 85.09 53.34 0)
 			(hide yes)
 			(show_name no)
@@ -6115,7 +6115,7 @@
 				)
 			)
 		)
-		(property "Value" "LM5017MRX/NOPB"
+		(property "Value" "LM5018MRX/NOPB"
 			(at 57.15 133.35 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -6125,7 +6125,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_SO:SOIC-8-1EP_3.9x4.9mm_P1.27mm_EP2.95x4.9mm_Mask2.71x3.4mm_ThermalVias"
+		(property "Footprint" "pp48:SOIC-8-1EP_3.9x4.9mm_P1.27mm_EP2.95x4.9mm_Mask2.71x3.4mm_ThermalVias"
 			(at 57.15 142.24 0)
 			(hide yes)
 			(show_name no)
@@ -6149,7 +6149,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "100 V 600 mA COT synchronous buck, Fly-Buck primary 12.7 V"
+		(property "Description" "100 V 300 mA COT synchronous buck (LM5017 pinout), Fly-Buck primary 12.7 V"
 			(at 57.15 142.24 0)
 			(hide yes)
 			(show_name no)
@@ -6161,7 +6161,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" "C34355"
+		(property "LCSC" "C471040"
 			(at 57.15 142.24 0)
 			(hide yes)
 			(show_name no)
@@ -6418,7 +6418,7 @@
 				)
 			)
 		)
-		(property "Value" "280k"
+		(property "Value" "169k"
 			(at 41.116 128.27 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -6452,7 +6452,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "RON from VIN: fsw = VOUT1 / (9e-11 x RON) ~ 500 kHz"
+		(property "Description" "RON from VIN: fsw = VOUT1 / (9e-11 x RON) ~ 800 kHz, on-time 200 ns at 75 V"
 			(at 36.83 127 0)
 			(hide yes)
 			(show_name no)
@@ -6464,7 +6464,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" "C5121536"
+		(property "LCSC" "C2933337"
 			(at 36.83 127 0)
 			(hide yes)
 			(show_name no)
@@ -6774,7 +6774,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:L_Coupled_1324")
+		(lib_id "Device:L_Coupled_1243")
 		(at 102.87 132.08 0)
 		(mirror x)
 		(unit 1)
@@ -6795,7 +6795,7 @@
 				)
 			)
 		)
-		(property "Value" "47u"
+		(property "Value" "33u"
 			(at 102.87 128.27 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -6805,7 +6805,7 @@
 				)
 			)
 		)
-		(property "Footprint" "pp48:L_Bourns_SRF0703"
+		(property "Footprint" "pp48:L_Coilcraft_LPD5030V"
 			(at 102.87 132.08 0)
 			(hide yes)
 			(show_name no)
@@ -6829,7 +6829,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "Fly-Buck coupled inductor 1:1, 47 uH, Isat 1.14 A, hi-pot 500 Vrms; N1 1-3 primary, N2 2-4 secondary (dots 1, 2)"
+		(property "Description" "Fly-Buck coupled inductor 1:1, 33 uH, Isat 0.49 A (10 %), 1000 V winding to winding; L1 1-2 primary, L2 4-3 secondary (dots 1, 4)"
 			(at 102.87 132.08 0)
 			(hide yes)
 			(show_name no)
@@ -6841,7 +6841,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" "C3273458"
+		(property "LCSC" "C5441621"
 			(at 102.87 132.08 0)
 			(hide yes)
 			(show_name no)
@@ -6853,7 +6853,7 @@
 				(justify left)
 			)
 		)
-		(property "MPN" "Bourns SRF0703-470M"
+		(property "MPN" "Coilcraft LPD5030V-333MRC"
 			(at 102.87 132.08 0)
 			(hide yes)
 			(show_name no)

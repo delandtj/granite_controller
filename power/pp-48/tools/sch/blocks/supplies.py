@@ -5,15 +5,18 @@ ripple injection), fed from VIN (the bus at the input connector, ahead of
 the tile hot-swap) so the core stays up and reports when the hot-swap
 trips (ADR 0003). Load: ~20 mA per column (INA238, TCA9535, ADC,
 photoMOS / opto LEDs, pull-ups) plus the MCU, ~0.2 A at N = 8.
-Isolated 12 V aux for the controller (ADR 0003 decision 14): U2 LM5017
-Fly-Buck from VIN (datasheet 8.2.2, K = 9e-11): 1:1 coupled inductor L2
-Bourns SRF0703-470M (N1 = 1-3 dot 1 primary, N2 = 2-4 dot 2 secondary,
-hi-pot 500 Vrms), primary VOUT1 12.7 V (R14 / R17), ~500 kHz (R12 280k
-from VIN), type 3 ripple (R13 / C14 / C15, required for a Fly-Buck),
+Isolated 12 V aux for the controller (ADR 0003 decision 14): U2 LM5018
+(300 mA; the LM5017MR symbol, same pins) Fly-Buck from VIN (LM5018
+datasheet 8.2.2, K = 9e-11): 1:1 coupled inductor L2 Coilcraft
+LPD5030V-333 (33 uH, 1000 V winding to winding; L1 = 1-2 dot 1 primary,
+L2 = 4-3 dot 4 secondary, one winding per side of the part), primary
+VOUT1 12.7 V (R14 / R17), ~800 kHz (R12 169k from VIN: ripple 0.43 A
+at 75 V, peak ~0.32 A under the 0.39 A minimum current limit and the
+0.49 A Isat), type 3 ripple (R13 / C14 / C15, required for a Fly-Buck),
 UVLO on 30.3 V / 2 V hysteresis (R10 / R11), D2 VOUT1 -> VCC. Secondary:
-D6 100 V Schottky, CTRL_12V ~12.0 V at 170 mA (~2 W, sized so one OR-ed
-feed carries the controller's radio peaks), C30 / C31, D7 13 V TVS and
-the LED (~2 mA) as the preload. CTRL_12V / CTRL_GND to J4 are the
+D6 100 V Schottky, CTRL_12V ~12.0 V at up to 100 mA (~1.2 W; the
+controller draws ~0.7 W), C30 / C31, D7 13 V TVS and the LED (~2 mA) as
+the preload. CTRL_12V / CTRL_GND to J4 are the
 controller's world, never tied to GND: functional isolation, >= 1 mm
 gap on every layer around the island.
 """
@@ -53,9 +56,9 @@ def lm5164(b, gx, gy, u, vout, nets, rron, l, rfb1, cout, ca, rsuffix, cbase, lc
     # ---------------------------------------------------------- switch node (right)
     xbst, xra, xl = 15, 17, 22
     b.sym(cc(0), "Device:C", "2.2n 50V", C0402, {"1": nets["bst"], "2": nets["sw"]}, at=P(xbst, -8), desc="bootstrap")
-    b.sym(lref, "Device:L", l, "Inductor_SMD:L_12x12mm_H6mm", {"1": nets["sw"], "2": nets["vout"]}, at=P(xl, -2), rot=90,
+    b.sym(lref, "Device:L", l, "Inductor_SMD:L_Bourns_SRR1260", {"1": nets["sw"], "2": nets["vout"]}, at=P(xl, -2), rot=90,
           fields={"LCSC": lcsc_l, "MPN": "Bourns SRR1260-330M" if l == "33u" else "Sumida CDRH127/LDNP-680MC"},
-          desc="shielded, Isat >= 1.5 A, 12x12 land pattern (SRR1260 / CDRH127 class)")
+          desc="shielded, Isat >= 1.5 A, Bourns SRR1260 land pattern")
     b.wire(bst, [(u, "7"), P(12, -6), P(12, -13), P(xbst, -13), (cc(0), "1")])
     b.wire(sw, [(u, "8"), P(xbst, -2), (lref, "1")])
     b.wire(sw, [P(xbst, -2), (cc(0), "2")])
@@ -90,18 +93,18 @@ def lm5164(b, gx, gy, u, vout, nets, rron, l, rfb1, cout, ca, rsuffix, cbase, lc
     return P, rail
 
 def flybuck(b, gx, gy):
-    """the isolated 12 V aux, LM5017 U2 at (gx, gy) in 1.27 mm grid units"""
+    """the isolated 12 V aux, LM5018 U2 at (gx, gy) in 1.27 mm grid units"""
     def P(x, y): return ((gx + x) * G, (gy + y) * G)
-    b.sym("U2", "Regulator_Switching:LM5017MR", "LM5017MRX/NOPB",
-          "Package_SO:SOIC-8-1EP_3.9x4.9mm_P1.27mm_EP2.95x4.9mm_Mask2.71x3.4mm_ThermalVias",
+    b.sym("U2", "Regulator_Switching:LM5017MR", "LM5018MRX/NOPB",
+          "pp48:SOIC-8-1EP_3.9x4.9mm_P1.27mm_EP2.95x4.9mm_Mask2.71x3.4mm_ThermalVias",
           {"1": "GND", "2": "VIN", "3": "UVLO2", "4": "RON2", "5": "FB2", "6": "VCC2", "7": "BST2", "8": "SW2", "9": "GND"},
-          at=P(0, 0), fields={"LCSC": "C34355"}, desc="100 V 600 mA COT synchronous buck, Fly-Buck primary 12.7 V")
+          at=P(0, 0), fields={"LCSC": "C471040"}, desc="100 V 300 mA COT synchronous buck (LM5017 pinout), Fly-Buck primary 12.7 V")
 
     # ---------------------------------------------------------- input side (left)
     yr = -22
     b.sym("R10", "Device:R", "100k", R0805, {"1": "VIN", "2": "UVLO2"}, at=P(-30, -7), desc="UVLO top, 20 uA x 100k = 2 V hysteresis")
     b.sym("R11", "Device:R", "4.22k", R0402, {"1": "UVLO2", "2": "GND"}, at=P(-30, 3), desc="on at 30.3 V, off at 28.3 V")
-    b.sym("R12", "Device:R", "280k", R0805, {"1": "VIN", "2": "RON2"}, at=P(-16, -12), desc="RON from VIN: fsw = VOUT1 / (9e-11 x RON) ~ 500 kHz")
+    b.sym("R12", "Device:R", "169k", R0805, {"1": "VIN", "2": "RON2"}, at=P(-16, -12), desc="RON from VIN: fsw = VOUT1 / (9e-11 x RON) ~ 800 kHz, on-time 200 ns at 75 V")
     b.sym("C11", "Device:C", "2.2u 100V", C1210, {"1": "VIN", "2": "GND"}, at=P(-24, -16),
           fields={"LCSC": "C338133"}, desc="input, at the VIN pin")
     b.sym("C12", "Device:C", "100n 100V", C0603, {"1": "VIN", "2": "GND"}, at=P(-5, -16), desc="input HF")
@@ -114,15 +117,15 @@ def flybuck(b, gx, gy):
 
     # ---------------------------------------------------------- switch node, coupled inductor
     b.sym("C13", "Device:C", "10n 50V", C0402, {"1": "BST2", "2": "SW2"}, at=P(14, -8), desc="bootstrap")
-    b.sym("L2", "Device:L_Coupled_1324", "47u", "pp48:L_Bourns_SRF0703",
-          {"1": "SW2", "3": "VOUT1", "2": "CTRL_GND", "4": "SEC2"}, at=P(36, -8), mirror="x",
-          fields={"LCSC": "C3273458", "MPN": "Bourns SRF0703-470M"},
-          desc="Fly-Buck coupled inductor 1:1, 47 uH, Isat 1.14 A, hi-pot 500 Vrms; N1 1-3 primary, N2 2-4 secondary (dots 1, 2)")
+    b.sym("L2", "Device:L_Coupled_1243", "33u", "pp48:L_Coilcraft_LPD5030V",
+          {"1": "SW2", "2": "VOUT1", "4": "CTRL_GND", "3": "SEC2"}, at=P(36, -8), mirror="x",
+          fields={"LCSC": "C5441621", "MPN": "Coilcraft LPD5030V-333MRC"},
+          desc="Fly-Buck coupled inductor 1:1, 33 uH, Isat 0.49 A (10 %), 1000 V winding to winding; L1 1-2 primary, L2 4-3 secondary (dots 1, 4)")
     b.wire("BST2", [("U2", "7"), P(11, -4), P(11, -14), P(14, -14), ("C13", "1")])
     b.name("BST2", at=P(11, -10), ang=90)
     b.wire("SW2", [("U2", "8"), P(14, -2), P(22, -2), P(22, -6), ("L2", "1")])
     b.wire("SW2", [P(14, -2), ("C13", "2")])
-    b.wire("CTRL_GND", [P(28, -10), ("L2", "2")])
+    b.wire("CTRL_GND", [P(28, -10), ("L2", "4")])
     b.name("SW2", at=P(18, -2))
 
     # ---------------------------------------------------------- type 3 ripple, feedback, VCC
@@ -145,7 +148,7 @@ def flybuck(b, gx, gy):
 
     # ---------------------------------------------------------- primary output VOUT1
     b.sym("C29", "Device:C", "4.7u 25V", C0805, {"1": "VOUT1", "2": "GND"}, at=P(56, 2), desc="primary output COUT1")
-    b.wire("VOUT1", [("L2", "3"), P(42, -6), P(42, 4), ("C14", "2"), P(42, 4), P(42, -6), P(48, -6), ("R14", "1"),
+    b.wire("VOUT1", [("L2", "2"), P(42, -6), P(42, 4), ("C14", "2"), P(42, 4), P(42, -6), P(48, -6), ("R14", "1"),
                      P(48, -6), P(56, -6), ("C29", "1"), P(56, -6), P(60, -6), P(60, 27), P(13, 27), ("D2", "2")])
 
     # ---------------------------------------------------------- secondary: the controller's world (CTRL_GND island)
@@ -161,7 +164,7 @@ def flybuck(b, gx, gy):
     b.sym("J4", "Connector_Generic:Conn_01x02", "12V AUX OUT", "Connector_JST:JST_PH_B2B-PH-K_1x02_P2.00mm_Vertical",
           {"1": "CTRL_12V", "2": "CTRL_GND"}, at=P(102, -22), fields={"LCSC": "C131337"},
           desc="isolated 12 V to the controller (controller input to be adapted to 12 V)")
-    b.wire("SEC2", [("L2", "4"), P(42, -10), P(42, -22), ("D6", "2")])
+    b.wire("SEC2", [("L2", "3"), P(42, -10), P(42, -22), ("D6", "2")])
     b.name("SEC2", at=P(42, -14), ang=90)
     b.wire("CTRL_12V", [P(53, -25), P(53, -22), ("D6", "1"), P(53, -22), P(56, -22), ("C30", "1"), P(56, -22), P(66, -22),
                         ("C31", "1"), P(66, -22), P(76, -22), ("D7", "1"), P(76, -22), P(86, -22), ("R9", "1"), P(86, -22), ("J4", "1")])
@@ -171,7 +174,7 @@ def flybuck(b, gx, gy):
     b.wire("LED12_A", [("R9", "2"), ("D5", "2")])
     b.wire("CTRL_GND", [P(86, -4), ("D5", "1")])
     b.name("LED12_A", at=P(86, -14))
-    b.text("ISOLATED 12 V AUX  U2 LM5017 Fly-Buck from VIN, L2 1:1, secondary on the CTRL_GND island", P(-34, -30))
+    b.text("ISOLATED 12 V AUX  U2 LM5018 Fly-Buck from VIN, L2 1:1, secondary on the CTRL_GND island", P(-34, -30))
 
 
 def block(N=2):
@@ -190,7 +193,7 @@ def block(N=2):
     b.name("LED33_A", at=P(75, 8))
     b.text("3V3 BUCK  U1 LM5164, 200 kHz, from VIN", P(-34, -30))
 
-    # isolated 12 V aux U2: LM5017 Fly-Buck (see the docstring)
+    # isolated 12 V aux U2: LM5018 Fly-Buck (see the docstring)
     b.power("CTRL_12V", "power:+12V", value="CTRL_12V")
     b.power("CTRL_GND", "power:GND", value="CTRL_GND")
     flybuck(b, 45, 112)
