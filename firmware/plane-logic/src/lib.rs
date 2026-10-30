@@ -21,6 +21,8 @@
 //!   20 Hz / 2 Hz / 1 Hz schedule.
 //! - [`sequencer`]: the slot actions, their timing and the PRESS_TRIG
 //!   toggling that bounds a press.
+//! - [`unit_latch`]: the firmware latch that holds a faulted unit
+//!   hot-swap off, since the LM5069-2 would retry for ever.
 //! - [`link`] / [`update`] / [`events`] / [`log`]: the controller link,
 //!   the firmware update, the event ring and the log ring.
 //! - [`plane`]: [`Plane`] itself, which is all of the above as one state
@@ -71,6 +73,7 @@ pub mod model;
 pub mod plane;
 pub mod poll;
 pub mod sequencer;
+pub mod unit_latch;
 pub mod update;
 
 #[cfg(feature = "sim")]
@@ -85,3 +88,4 @@ pub use device::{
 pub use model::{SlotModel, UnitModel};
 pub use plane::{LedPattern, Plane, Setup, reset_cause};
 pub use sequencer::Button;
+pub use unit_latch::UnitLatch;

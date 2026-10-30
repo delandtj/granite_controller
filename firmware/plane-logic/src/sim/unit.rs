@@ -349,6 +349,77 @@ pub struct FakeSlot {
     pub glitch_pgd: bool,
 }
 
+/// A simulated LM5069-**2** unit hot-swap (uinput.py U207).
+///
+/// The auto-retry part: on a fault it opens the FETs, waits out its
+/// retry period and tries again, for ever and with no memory of having
+/// faulted. One attempt lasts the fault timer ([`HotSwap::attempt_ms`],
+/// 10 ms on the board) and the whole cycle [`HotSwap::period_ms`]
+/// (~2 s, the 0.5 % duty of ADR 0005 decision 3). Whether U_PGD rises
+/// during an attempt is the fault's business - a dead short never lets
+/// the output up, a power-limit trip does - so it is a knob.
+///
+/// The part is only enabled while U_OFF is low (Q204 off) and the input
+/// is inside its UVLO / OVLO window; with neither, the TIMER sits in
+/// reset and U_PGD is low.
+#[derive(Debug, Clone, Copy)]
+pub struct HotSwap {
+    /// An overload the part faults on: the thing the firmware latch is
+    /// there for.
+    pub fault: bool,
+    /// How long one restart attempt lasts \[ms\] (the fault timer).
+    pub attempt_ms: u32,
+    /// Attempt plus the wait before the next one \[ms\].
+    pub period_ms: u32,
+    /// U_PGD rises during an attempt.
+    pub pgd_on_attempt: bool,
+    /// Where the retry cycle stands \[ms\].
+    phase_ms: u32,
+    /// U_PGD as it stands.
+    pgd: bool,
+}
+
+impl Default for HotSwap {
+    fn default() -> Self {
+        HotSwap {
+            fault: false,
+            attempt_ms: 10,
+            period_ms: 2_000,
+            pgd_on_attempt: true,
+            phase_ms: 0,
+            pgd: false,
+        }
+    }
+}
+
+impl HotSwap {
+    /// U_PGD as the expander's P27 reads it.
+    pub const fn pgd(&self) -> bool {
+        self.pgd
+    }
+
+    /// True while the stage passes the full input to VBUS.
+    pub const fn conducting(&self) -> bool {
+        self.pgd && !self.fault
+    }
+
+    /// Advance the stage by `dt` with its enable and its input.
+    fn advance(&mut self, dt: u32, enabled: bool) {
+        if !enabled {
+            self.phase_ms = 0;
+            self.pgd = false;
+            return;
+        }
+        if !self.fault {
+            self.phase_ms = 0;
+            self.pgd = true;
+            return;
+        }
+        self.phase_ms = (self.phase_ms + dt) % self.period_ms.max(1);
+        self.pgd = self.pgd_on_attempt && self.phase_ms < self.attempt_ms;
+    }
+}
+
 /// One simulated unit board.
 #[derive(Debug, Clone, Copy)]
 pub struct FakeUnit {
@@ -359,11 +430,15 @@ pub struct FakeUnit {
     pub expander: FakeExpander,
     /// Its two slots, A then B.
     pub slots: [FakeSlot; 2],
-    /// The input monitor at 0x44.
+    /// The input monitor at 0x44. Its VBUS pin is on the hot-swap
+    /// *output* (uinput.py U208), so the voltage it reports follows the
+    /// stage and not the XT60.
     pub input: FakeIna,
-    /// The unit hot-swap latched off (LM5069-1): only a U_OFF pulse
-    /// re-arms it.
-    pub hotswap_latched: bool,
+    /// The unit's own 48 V input at the XT60 \[mV\]: the bus, which no
+    /// part on the unit can read.
+    pub input_mv: u32,
+    /// Its hot-swap.
+    pub hotswap: HotSwap,
 }
 
 impl Default for FakeUnit {
@@ -383,7 +458,11 @@ impl FakeUnit {
                 bus_mv: 48_000,
                 ..FakeIna::default()
             },
-            hotswap_latched: false,
+            input_mv: 48_000,
+            hotswap: HotSwap {
+                pgd: true,
+                ..HotSwap::default()
+            },
         };
         for slot in unit.slots.iter_mut() {
             slot.ina.bus_mv = 48_000;
@@ -417,9 +496,21 @@ impl FakeUnit {
         self.powered = true;
     }
 
-    /// True while the unit's own hot-swap passes power.
-    pub fn unit_rail(&self) -> bool {
-        !self.expander.asserted(expander::LINE_U_OFF) && !self.hotswap_latched
+    /// True while the unit's input is inside the hot-swap's UVLO / OVLO
+    /// window (uinput.py R233-R236: on at 38.3 V, off at 64.6 V).
+    pub const fn input_in_range(&self) -> bool {
+        self.input_mv >= 38_300 && self.input_mv <= 64_600
+    }
+
+    /// True while the hot-swap is enabled: U_OFF low (Q204 off, and a
+    /// unit with no 3V3 drives nothing) and the input in range.
+    pub fn hot_swap_enabled(&self) -> bool {
+        !self.expander.asserted(expander::LINE_U_OFF) && self.input_in_range()
+    }
+
+    /// True while the unit's own hot-swap passes power to the slots.
+    pub const fn unit_rail(&self) -> bool {
+        self.hotswap.conducting()
     }
 
     /// The three input port bytes the expander answers with.
@@ -461,7 +552,7 @@ impl FakeUnit {
             expander::LINE_U_OFF,
             self.expander.driven(expander::LINE_U_OFF).unwrap_or(false),
         );
-        set(expander::LINE_U_PGD, self.unit_rail());
+        set(expander::LINE_U_PGD, self.hotswap.pgd());
         ports
     }
 
@@ -471,6 +562,14 @@ impl FakeUnit {
     /// LEDs have no current and no contact closes, whatever the expander
     /// holds.
     pub fn advance(&mut self, dt: u32, press_en: bool) {
+        // The hot-swap runs on the unit's own 48 V and does not care
+        // about the chain's 3V3: a unit whose cable is out still passes
+        // power, because U_OFF then drives nothing (R214).
+        self.hotswap.advance(dt, self.hot_swap_enabled());
+        let unit_rail = self.unit_rail();
+        // The INA237's VBUS pin is on the hot-swap output, so it reads
+        // the rail and not the XT60 (uinput.py U208).
+        self.input.bus_mv = if unit_rail { self.input_mv } else { 0 };
         if !self.powered {
             for slot in self.slots.iter_mut() {
                 slot.pgd = false;
@@ -482,12 +581,6 @@ impl FakeUnit {
             }
             return;
         }
-        // A U_OFF pulse re-arms the latched LM5069-1.
-        if self.expander.asserted(expander::LINE_U_OFF) {
-            self.hotswap_latched = false;
-        }
-        let unit_rail = self.unit_rail();
-
         for half in 0..2usize {
             let b = half == 1;
             let off = self.expander.asserted(expander::out_line(b, Out::Off));
@@ -521,9 +614,8 @@ impl FakeUnit {
             let node_rail = rail && slot.module && !runoff;
             slot.node.advance(dt, node_rail, pwrd, rstd);
         }
-        // The unit monitor sits on the input side of the hot-swap, so
-        // its voltage does not follow the rail; its current is the two
-        // slots'.
+        // The unit monitor's shunt is on the input side, so it carries
+        // the two slots' current.
         self.input.current_ma = self.slots.iter().map(|s| s.ina.current_ma).sum();
     }
 }

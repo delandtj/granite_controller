@@ -545,36 +545,205 @@ fn a_stagger_releases_the_slots_one_at_a_time() {
     assert_eq!(sim.result(1), Some(ResultCode::Ok));
 }
 
+// --- the unit hot-swap latch (ADR 0005 decision 3) ---------------------
+
+/// True while the plane holds the unit off and says so.
+fn latched(sim: &mut Sim, unit: u8) -> bool {
+    sim.plane.unit_held_off(unit)
+        && sim
+            .plane
+            .unit(unit)
+            .unwrap()
+            .status
+            .contains(UnitStatus::HOT_SWAP_LATCHED_OFF)
+        && sim.unit(unit as usize).expander.asserted(expander::LINE_U_OFF)
+}
+
 #[test]
-fn a_unit_hot_swap_reset_pulses_u_off() {
+fn a_unit_fault_with_the_bus_in_range_is_latched_off_and_held() {
     let mut sim = settled();
-    sim.unit(0).hotswap_latched = true;
-    sim.advance(200);
+    assert!(!latched(&mut sim, 0));
+    // The unit's hot-swap starts faulting: the LM5069-2 retries on its
+    // own, the core has to be the latch.
+    sim.unit(0).hotswap.fault = true;
+
+    sim.advance(300);
+    assert!(!latched(&mut sim, 0), "inside the fault window");
+    sim.advance(400);
+    assert!(latched(&mut sim, 0), "past the window");
+    assert!(sim.saw(EventKind::UnitHotSwapLatchedOff));
+    assert!(sim.plane.intended().u_off(0), "it is in the backup set");
     assert!(
         sim.plane
             .unit(0)
             .unwrap()
             .status
-            .contains(UnitStatus::HOT_SWAP_LATCHED_OFF)
+            .contains(UnitStatus::U_OFF_ASSERTED)
     );
-    assert!(sim.saw(EventKind::UnitHotSwapLatchedOff));
+    assert!(sim.plane.unit(0).unwrap().in_fault());
+    // U_OFF holds the part's UVLO down, so it stops retrying, and
+    // nothing lets go of it on its own.
+    sim.advance(30_000);
+    assert!(latched(&mut sim, 0));
+    assert!(!sim.unit(0).hotswap.pgd());
+    // The other unit is untouched.
+    assert!(!latched(&mut sim, 1));
+}
 
+#[test]
+fn retry_pulses_do_not_stop_or_undo_the_latch() {
+    let mut sim = settled();
+    // A fault whose restart attempts do bring U_PGD up for a moment,
+    // and a retry period short enough that the 20 Hz poll catches some
+    // of them.
+    {
+        let hot = &mut sim.unit(0).hotswap;
+        hot.fault = true;
+        hot.attempt_ms = 50;
+        hot.period_ms = 100;
+        hot.pgd_on_attempt = true;
+    }
+    // Stepped finer than the poll period, so the attempts really do
+    // come and go between the plane's reads.
+    for _ in 0..200 {
+        sim.step(10);
+    }
+    assert!(latched(&mut sim, 0), "the pulses are not a recovery");
+    let events = sim
+        .events()
+        .iter()
+        .filter(|e| e.kind == EventKind::UnitHotSwapLatchedOff)
+        .count();
+    assert_eq!(events, 1, "latched once, not once per retry");
+}
+
+#[test]
+fn a_bus_dip_is_not_a_unit_fault() {
+    let mut sim = settled();
+    // The whole bus sags under the unit's UVLO: the core reads it on
+    // its own input and every unit's hot-swap opens.
+    sim.unit(0).input_mv = 30_000;
+    sim.dev.pins.core_volts = 3_000;
+    sim.advance(5_000);
+    assert!(!sim.plane.unit(0).unwrap().status.contains(UnitStatus::HOT_SWAP_PGD));
+    assert!(!latched(&mut sim, 0), "the bus, not the unit");
+    assert!(!sim.saw(EventKind::UnitHotSwapLatchedOff));
+
+    // And over the OVLO.
+    sim.unit(0).input_mv = 70_000;
+    sim.dev.pins.core_volts = 7_000;
+    sim.advance(5_000);
+    assert!(!latched(&mut sim, 0));
+
+    // The bus comes back and so does the unit, with no command.
+    sim.unit(0).input_mv = 48_000;
+    sim.dev.pins.core_volts = 4_800;
+    sim.advance(1_000);
+    assert!(!latched(&mut sim, 0));
+    assert!(
+        sim.plane
+            .unit(0)
+            .unwrap()
+            .status
+            .contains(UnitStatus::HOT_SWAP_PGD)
+    );
+}
+
+#[test]
+fn a_unit_reset_releases_the_hold_and_the_unit_comes_back() {
+    let mut sim = settled();
+    sim.unit(0).hotswap.fault = true;
+    sim.advance(1_000);
+    assert!(latched(&mut sim, 0));
+    for slot in 0..2u8 {
+        assert!(!sim.plane.slot(slot).unwrap().status.contains(SlotStatus::PGD));
+    }
+
+    // The overload is gone; the operator re-arms the unit.
+    sim.unit(0).hotswap.fault = false;
     assert_eq!(
         sim.ctrl_now(1, &[Command::UnitHotSwapReset { unit: 0 }]),
         ResultCode::Accepted
     );
     assert!(
-        sim.unit(0).expander.asserted(expander::LINE_U_OFF),
-        "U_OFF is out"
-    );
-    sim.advance(200);
-    assert!(
         !sim.unit(0).expander.asserted(expander::LINE_U_OFF),
-        "and released after the pulse"
+        "U_OFF goes at once: there is nothing to pulse"
     );
-    assert!(!sim.unit(0).hotswap_latched, "the LM5069-1 is re-armed");
-    assert_eq!(sim.result(1), Some(ResultCode::Ok));
     assert!(!sim.plane.intended().u_off(0));
+    assert!(!sim.plane.unit_held_off(0));
+
+    sim.advance(1_200);
+    assert_eq!(sim.result(1), Some(ResultCode::Ok));
+    assert!(!latched(&mut sim, 0));
+    assert!(
+        sim.plane
+            .unit(0)
+            .unwrap()
+            .status
+            .contains(UnitStatus::HOT_SWAP_PGD)
+    );
+    for slot in 0..2u8 {
+        assert!(sim.plane.slot(slot).unwrap().status.contains(SlotStatus::PGD));
+    }
+}
+
+#[test]
+fn a_unit_reset_into_a_fault_that_is_still_there_latches_again() {
+    let mut sim = settled();
+    sim.unit(0).hotswap.fault = true;
+    sim.advance(1_000);
+    assert!(latched(&mut sim, 0));
+
+    assert_eq!(
+        sim.ctrl_now(1, &[Command::UnitHotSwapReset { unit: 0 }]),
+        ResultCode::Accepted
+    );
+    sim.advance(1_200);
+    assert_eq!(sim.result(1), Some(ResultCode::Failed));
+    assert!(latched(&mut sim, 0), "the fault window ran out again");
+}
+
+#[test]
+fn a_core_boot_latches_a_unit_that_is_already_retrying() {
+    let mut sim = Sim::with_units(2);
+    sim.unit(0).hotswap.fault = true;
+    sim.boot();
+    sim.advance(2_000);
+    assert!(latched(&mut sim, 0));
+    assert!(!latched(&mut sim, 1));
+
+    // A reset that keeps VDD finds the hold in the backup set and keeps
+    // holding, without waiting out another window.
+    sim.core_reset(plane_logic::reset_cause::WATCHDOG);
+    assert!(sim.plane.unit_held_off(0));
+    sim.advance(500);
+    assert!(latched(&mut sim, 0));
+
+    // A core power loss is the one thing besides unit_reset that lets
+    // go: the backup set is gone and the unit retries until the core
+    // latches it again.
+    sim.core_power_loss();
+    assert!(!sim.plane.unit_held_off(0));
+    sim.advance(200);
+    assert!(!latched(&mut sim, 0), "the unit is retrying again");
+    sim.advance(1_000);
+    assert!(latched(&mut sim, 0), "and is latched again");
+}
+
+#[test]
+fn a_unit_reset_on_a_healthy_unit_costs_it_nothing() {
+    let mut sim = settled();
+    assert_eq!(
+        sim.ctrl_now(1, &[Command::UnitHotSwapReset { unit: 1 }]),
+        ResultCode::Accepted
+    );
+    // No pulse, so the rail never drops and the hosts stay up.
+    sim.advance(1_200);
+    assert_eq!(sim.result(1), Some(ResultCode::Ok));
+    assert!(sim.unit(1).unit_rail());
+    for slot in 2..4u8 {
+        assert_eq!(sim.plane.slot(slot).unwrap().led.mode, LedMode::On);
+    }
 }
 
 #[test]

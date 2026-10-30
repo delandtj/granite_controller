@@ -28,7 +28,8 @@ use crate::events::{Events, Results};
 use crate::link::PendingWrite;
 use crate::log::{Log, level};
 use crate::model::{SlotModel, UnitModel};
-use crate::sequencer::{Sequence, Stagger, UnitPulse};
+use crate::sequencer::{Sequence, Stagger, UnitRelease};
+use crate::unit_latch::UnitLatch;
 use crate::update::Update;
 
 /// How long the plane waits for FW confirm before it resets and lets the
@@ -147,8 +148,12 @@ pub struct Plane {
     pub(crate) sequences: [Sequence; SLOT_COUNT],
     /// The plane-level stagger, when one runs.
     pub(crate) stagger: Option<Stagger>,
-    /// Per-unit U_OFF pulses (CTRL 0x4A).
-    pub(crate) unit_pulses: [Option<UnitPulse>; UNIT_COUNT],
+    /// Per-unit hot-swap latch: the firmware half of the LM5069-2
+    /// (ADR 0005 decision 3).
+    pub(crate) unit_latch: [UnitLatch; UNIT_COUNT],
+    /// Per-unit `unit_reset` releases waiting on their verdict
+    /// (CTRL 0x4A).
+    pub(crate) unit_releases: [Option<UnitRelease>; UNIT_COUNT],
     /// When PC6 was last toggled.
     pub(crate) press_trig_ms: u64,
 
@@ -218,7 +223,8 @@ impl Plane {
             pending_config: None,
             sequences: [Sequence::idle(); SLOT_COUNT],
             stagger: None,
-            unit_pulses: [None; UNIT_COUNT],
+            unit_latch: [UnitLatch::new(); UNIT_COUNT],
+            unit_releases: [None; UNIT_COUNT],
             press_trig_ms: 0,
             events: Events::new(),
             results: Results::new(),
@@ -274,6 +280,15 @@ impl Plane {
     /// One unit's model.
     pub fn unit(&self, unit: u8) -> Option<&UnitModel> {
         self.units.get(unit as usize)
+    }
+
+    /// True while the core holds a unit's hot-swap off after a fault
+    /// (ADR 0005 decision 3). Only `unit_reset` or a core power loss
+    /// lets go.
+    pub fn unit_held_off(&self, unit: u8) -> bool {
+        self.unit_latch
+            .get(unit as usize)
+            .is_some_and(crate::unit_latch::UnitLatch::held)
     }
 
     /// The event ring.
@@ -445,6 +460,15 @@ impl Plane {
             }
         }
         self.backup.store(dev.backup());
+
+        // U_OFF in the intended state is this latch and nothing else
+        // (ADR 0005 decision 3): a reset that kept VDD comes back
+        // holding the unit it was holding, and a core power loss - which
+        // wiped the set above - comes back holding nothing, which is the
+        // hardware default of a unit that retries for ever.
+        for unit in 0..UNIT_COUNT {
+            self.unit_latch[unit].restore(self.intended.u_off(unit as u8));
+        }
 
         if let Some(found) = crate::config::load(dev.config_store()) {
             self.config = found.config;

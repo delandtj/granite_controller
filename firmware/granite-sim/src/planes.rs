@@ -205,7 +205,8 @@ impl FakePlane {
             FaultKind::PowerLoss => self.power_loss(),
             FaultKind::UnitUnplug => self.set_unit_power(fault.unit, false),
             FaultKind::UnitReplug => self.set_unit_power(fault.unit, true),
-            FaultKind::UnitHotSwapLatch => self.latch_unit_hot_swap(fault.unit),
+            FaultKind::UnitHotSwapLatch => self.fault_unit_hot_swap(fault.unit, true),
+            FaultKind::UnitHotSwapClear => self.fault_unit_hot_swap(fault.unit, false),
             FaultKind::OvLatch => self.latch_ov(fault.slot),
             FaultKind::PgdLoss => self.drop_pgd(fault.slot),
             FaultKind::PowerLimitTrip => self.trip_power_limit(fault.slot, fault.value as u16),
@@ -249,11 +250,15 @@ impl FakePlane {
         }
     }
 
-    /// Latch a unit's own hot-swap off (LM5069-1): only CTRL 0x4A
-    /// re-arms it.
-    pub fn latch_unit_hot_swap(&mut self, unit: u8) {
+    /// Put an overload on a unit's input, or take it away.
+    ///
+    /// The LM5069-2 faults on it and retries for ever (ADR 0005
+    /// decision 3); the plane is what latches the unit off. Clearing it
+    /// is the operator pulling the shorted module: a `unit_reset` after
+    /// that brings the unit back, and one before it does not.
+    pub fn fault_unit_hot_swap(&mut self, unit: u8, on: bool) {
         if let Some(fake) = self.unit_mut(unit) {
-            fake.hotswap_latched = true;
+            fake.hotswap.fault = on;
         }
     }
 

@@ -155,8 +155,11 @@ pub enum FaultKind {
     UnitUnplug,
     /// The unit's chain cable goes back in.
     UnitReplug,
-    /// The unit's own hot-swap (LM5069-1) latches off.
+    /// An overload on the unit's input: its LM5069-2 faults and
+    /// retries, and the plane latches the unit off.
     UnitHotSwapLatch,
+    /// The overload is gone, so a `unit_reset` can bring the unit back.
+    UnitHotSwapClear,
     /// The slot's overvoltage latch is set.
     OvLatch,
     /// The slot's hot-swap drops PGD for one cycle.

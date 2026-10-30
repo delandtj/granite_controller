@@ -10,7 +10,7 @@
 //! be stale: the only sticky ones are the latches (OV, power limit),
 //! which ADR 0002 decision 7 says are never cleared automatically.
 
-use granite_proto::{CrossCheck, EventKind, EventTarget, SEGMENT_CHANNELS, SlotStatus, UnitStatus};
+use granite_proto::{CrossCheck, EventKind, EventTarget, SEGMENT_CHANNELS, SlotStatus};
 
 use crate::device::Devices;
 use crate::drivers::expander::{self, In};
@@ -70,29 +70,14 @@ impl Plane {
         expander.read_inputs(dev.bus())?;
         self.expanders[ch] = expander;
 
-        // The unit's own hot-swap, from P27.
+        // The unit's own hot-swap, from P27. The LM5069-2 retries by
+        // itself for ever, so the latch is the firmware's
+        // ([`crate::unit_latch`], ADR 0005 decision 3): U_PGD low with
+        // the bus in range is a unit fault and the core holds U_OFF
+        // high, U_PGD low with the bus out of range is the bus.
         let u_pgd = expander.get_input(expander::LINE_U_PGD);
-        let was_latched = self.units[ch].status.contains(UnitStatus::HOT_SWAP_LATCHED_OFF);
-        self.units[ch].status = self
-            .units[ch]
-            .status
-            .set(UnitStatus::HOT_SWAP_PGD, u_pgd)
-            .set(UnitStatus::U_OFF_ASSERTED, self.intended.u_off(ch as u8));
-        // PGD low while the unit is not commanded off is the LM5069-1
-        // sitting latched: it never retries by itself (ADR 0005
-        // decision 3), and nothing on the plane clears it.
-        let latched = !u_pgd && !self.intended.u_off(ch as u8);
-        self.units[ch].status = self
-            .units[ch]
-            .status
-            .set(UnitStatus::HOT_SWAP_LATCHED_OFF, latched);
-        if latched && !was_latched {
-            self.note(level::ERROR, "unit hot-swap latched", Some(ch as u32));
-            self.raise(
-                EventTarget::Unit(ch as u8),
-                EventKind::UnitHotSwapLatchedOff,
-            );
-        }
+        self.judge_unit_hot_swap(dev, ch, u_pgd);
+        self.units[ch].status = self.unit_hot_swap_status(ch, u_pgd);
 
         for half in 0..2usize {
             self.poll_slot(dev, ch, half)?;

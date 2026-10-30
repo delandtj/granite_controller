@@ -40,9 +40,15 @@ pub const HOLD_PRESS_MS: u32 = 5_000;
 /// clear is harmless).
 pub const LCLR_PULSE_MS: u32 = 10;
 
-/// How long U_OFF is held to re-arm a latched unit hot-swap (ADR 0002
-/// decision 6: "unit reset | U_OFF pulse 100 ms").
-pub const U_OFF_PULSE_MS: u32 = 100;
+/// How long after a `unit_reset` the plane judges whether the unit came
+/// back \[ms\] (ADR 0002 decision 6, as amended by ADR 0005 decision 3:
+/// the LM5069-2 needs no re-arming pulse, so the command releases the
+/// firmware hold and waits).
+///
+/// Long enough for the stage's 160 ms insertion and for
+/// [`crate::unit_latch::FAULT_DEBOUNCE_MS`] to fire again if the fault
+/// is still there, so the result says which of the two happened.
+pub const UNIT_RELEASE_MS: u32 = 1_000;
 
 /// How long the plane waits after cutting a rail before it calls the
 /// node off.
@@ -176,22 +182,22 @@ pub struct Stagger {
     pub cmd_seq: u8,
 }
 
-/// A U_OFF pulse on one unit (CTRL 0x4A).
+/// A `unit_reset` whose verdict is not in yet (CTRL 0x4A).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct UnitPulse {
-    /// When U_OFF is released.
-    pub until_ms: u64,
+pub struct UnitRelease {
+    /// When the plane looks at U_PGD and answers the command.
+    pub judge_ms: u64,
     /// The CTRL sequence number that owns it.
     pub cmd_seq: u8,
 }
 
 impl Plane {
     /// True while any slot runs a sequence, a stagger runs or a unit
-    /// pulse is out (STATUS 0x13).
+    /// release waits for its verdict (STATUS 0x13).
     pub fn any_sequence_running(&self) -> bool {
         self.sequences.iter().any(Sequence::running)
             || self.stagger.is_some()
-            || self.unit_pulses.iter().any(Option::is_some)
+            || self.unit_releases.iter().any(Option::is_some)
     }
 
     /// True while any button is held: what PC6 answers to.
@@ -400,7 +406,7 @@ impl Plane {
             self.step_slot(dev, slot);
         }
         self.step_stagger(dev);
-        self.step_unit_pulses(dev);
+        self.step_unit_releases(dev);
     }
 
     /// One slot's step.
@@ -566,25 +572,30 @@ impl Plane {
         self.stagger = Some(next);
     }
 
-    /// Release a unit's U_OFF pulse when its time is up.
-    fn step_unit_pulses<D: Devices>(&mut self, dev: &mut D) {
+    /// Answer a `unit_reset` once the unit has had its settling time.
+    ///
+    /// The command let the hold go; what it reports is what came of it,
+    /// which the poll cycle has been filling in ever since: the unit's
+    /// hot-swap carries power again, or the fault is still there and the
+    /// latch took it back ([`crate::unit_latch`]).
+    fn step_unit_releases<D: Devices>(&mut self, dev: &mut D) {
         for unit in 0..UNIT_COUNT {
-            let Some(pulse) = self.unit_pulses[unit] else {
+            let Some(release) = self.unit_releases[unit] else {
                 continue;
             };
-            if self.now_ms < pulse.until_ms {
+            if self.now_ms < release.judge_ms {
                 continue;
             }
-            self.intended.set_u_off(unit as u8, false);
-            self.save_intended(dev);
-            let ok = self.drive_unit_line(dev, unit, expander::LINE_U_OFF, false);
-            self.unit_pulses[unit] = None;
-            self.units[unit].status = self
-                .units[unit]
-                .status
-                .without(UnitStatus::U_OFF_ASSERTED);
+            self.unit_releases[unit] = None;
+            let _ = dev;
+            let ok = self.unit_present(unit)
+                && !self.unit_latch[unit].held()
+                && self.units[unit].status.contains(UnitStatus::HOT_SWAP_PGD);
+            if !ok {
+                self.note(level::WARN, "unit did not come back", Some(unit as u32));
+            }
             self.results.finish(
-                pulse.cmd_seq,
+                release.cmd_seq,
                 if ok {
                     ResultCode::Ok
                 } else {
@@ -800,7 +811,14 @@ impl Plane {
         }
     }
 
-    /// CTRL 0x4A unit hot-swap reset: a U_OFF pulse.
+    /// CTRL 0x4A unit hot-swap reset: let the firmware hold go.
+    ///
+    /// With the LM5069-2 there is nothing to re-arm in hardware - the
+    /// part has been retrying all along - so this releases U_OFF, starts
+    /// the fault window from scratch and answers
+    /// [`UNIT_RELEASE_MS`] later with what the unit did (ADR 0005
+    /// decision 3). On a unit that is not held it is the same release
+    /// and costs the unit nothing: it is already on.
     pub(crate) fn cmd_unit_reset<D: Devices>(
         &mut self,
         dev: &mut D,
@@ -814,19 +832,29 @@ impl Plane {
         if !self.unit_present(u) {
             return ResultCode::NotPresent;
         }
-        if self.unit_pulses[u].is_some() {
+        if self.unit_releases[u].is_some() {
             return ResultCode::Conflict;
         }
-        self.intended.set_u_off(unit, true);
+        let was_held = self.unit_latch[u].held();
+        self.unit_latch[u].release();
+        self.intended.set_u_off(unit, false);
         self.save_intended(dev);
-        if !self.drive_unit_line(dev, u, expander::LINE_U_OFF, true) {
-            self.intended.set_u_off(unit, false);
-            self.save_intended(dev);
+        if !self.drive_unit_line(dev, u, expander::LINE_U_OFF, false) {
+            // The line never moved: take the hold back rather than
+            // claim a unit is on when its U_OFF is still out.
+            if was_held {
+                self.unit_latch[u].hold();
+                self.intended.set_u_off(unit, true);
+                self.save_intended(dev);
+            }
             return ResultCode::Failed;
         }
-        self.units[u].status |= UnitStatus::U_OFF_ASSERTED;
-        self.unit_pulses[u] = Some(UnitPulse {
-            until_ms: self.now_ms + U_OFF_PULSE_MS as u64,
+        self.units[u].status = self
+            .units[u]
+            .status
+            .without(UnitStatus::U_OFF_ASSERTED | UnitStatus::HOT_SWAP_LATCHED_OFF);
+        self.unit_releases[u] = Some(UnitRelease {
+            judge_ms: self.now_ms + UNIT_RELEASE_MS as u64,
             cmd_seq,
         });
         self.note(level::INFO, "unit reset", Some(unit as u32));

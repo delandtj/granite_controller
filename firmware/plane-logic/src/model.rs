@@ -265,10 +265,19 @@ impl UnitModel {
     }
 
     /// Clear everything a unit that went away cannot claim.
+    ///
+    /// U_OFF and the hot-swap latch are not among them: the core's hold
+    /// on a faulted unit outlives the unit's chain cable (ADR 0005
+    /// decision 3), and the expander is driven back into it as soon as
+    /// the unit answers again.
     pub fn mark_absent(&mut self) {
         self.status = UnitStatus::from_bits(
             self.status.bits()
-                & (UnitStatus::LOST | UnitStatus::RESET_SEEN | UnitStatus::U_OFF_ASSERTED).bits(),
+                & (UnitStatus::LOST
+                    | UnitStatus::RESET_SEEN
+                    | UnitStatus::U_OFF_ASSERTED
+                    | UnitStatus::HOT_SWAP_LATCHED_OFF)
+                    .bits(),
         );
         self.volts = 0;
         self.amps = 0;
