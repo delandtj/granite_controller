@@ -105,12 +105,22 @@ pub const MAX_SENDS: u32 = 6;
 /// acknowledgements.
 pub const WRITES_PER_POLL: usize = 1;
 
-/// How long a job may run before the client gives up on it \[ms\].
+/// What a job gets on top of the longest its own command can take
+/// \[ms\] before the client gives up on it.
 ///
-/// A soft off waits [`super::command::OFF_TIMEOUT_S`] for the host and
-/// then escalates, and a plane that goes away fails its jobs at once,
-/// so this only catches a plane that answers but never finishes.
-pub const JOB_TIMEOUT_MS: u64 = 600_000;
+/// The deadline of a job is [`job_timeout_ms`]: what the command's
+/// options allow (a soft off waits the node's whole `t_soft_off_s`,
+/// which may be an hour) plus this margin for the link's resends and
+/// the plane's command queue. It only catches a plane that answers but
+/// never finishes - one that goes away fails its jobs at once - so the
+/// margin is generous and the deadline is never shorter than the
+/// sequence it covers.
+pub const JOB_MARGIN_MS: u64 = 60_000;
+
+/// How long a job whose command is `command` may run \[ms\].
+pub fn job_timeout_ms(command: &Command) -> u64 {
+    command.worst_case_ms() + JOB_MARGIN_MS
+}
 
 /// What ADR 0004 decision 8 calls the update policy.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
@@ -182,6 +192,9 @@ struct Job {
     /// The worst result code any plane has given it.
     code: Option<ResultCode>,
     submitted_ms: u64,
+    /// When the client gives up on it \[ms\]: the submission plus
+    /// [`job_timeout_ms`] of its own command.
+    deadline_ms: u64,
 }
 
 /// Everything the client knows and schedules for one address.
@@ -871,6 +884,9 @@ impl PlaneClient {
         let id = self.next_job;
         self.next_job = self.next_job.wrapping_add(1).max(1);
         let stages = command.stages();
+        // The deadline follows the command: a node whose soft-off
+        // window is an hour gets its hour.
+        let deadline_ms = now_ms.saturating_add(job_timeout_ms(&command));
         let job = Job {
             id,
             command,
@@ -879,6 +895,7 @@ impl PlaneClient {
             outstanding: 0,
             code: None,
             submitted_ms: now_ms,
+            deadline_ms,
         };
         let absent = job.stages.is_empty() || !self.targets_present(&job);
         self.jobs.push(job);
@@ -989,8 +1006,8 @@ impl PlaneClient {
         // resent. The plane's memory is eight sequence numbers deep: if
         // a long sequence's entry were pushed out of it, a resend would
         // no longer look like a duplicate and the command would run a
-        // second time. Such a job ends on [`JOB_TIMEOUT_MS`] instead,
-        // which is the harmless direction.
+        // second time. Such a job ends on its own deadline instead
+        // ([`job_timeout_ms`]), which is the harmless direction.
         let stale: Vec<u8> = self.planes[i]
             .in_flight
             .iter()
@@ -1161,12 +1178,12 @@ impl PlaneClient {
         });
     }
 
-    /// Give up on jobs that have run too long.
+    /// Give up on jobs that have run past their own deadline.
     fn expire_jobs(&mut self, now_ms: u64) {
         let late: Vec<JobId> = self
             .jobs
             .iter()
-            .filter(|j| now_ms.saturating_sub(j.submitted_ms) > JOB_TIMEOUT_MS)
+            .filter(|j| now_ms > j.deadline_ms)
             .map(|j| j.id)
             .collect();
         for id in late {

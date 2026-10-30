@@ -36,7 +36,15 @@
 //! So an accepted actuator command becomes a [`Pending`] entry that is
 //! resolved by the matching `action_done` / `action_failed` event from the
 //! event bus. Commands that finish inside the dispatcher (`config_get`,
-//! `rule_ack`, ...) are acked straight from the reply. The `accepted`
+//! `rule_ack`, ...) are acked straight from the reply.
+//!
+//! The entry remembers the plane job of the `accepted` reply, so the
+//! completion ack carries the same `job` (ADR 0004 decision 6, "Acks"),
+//! and it carries its own deadline: how long the action may take comes
+//! from `granite_core::dispatch::ack_timeout_ms` for that command and
+//! the node settings, so a node with a long `t_soft_off_s` is not acked
+//! as "did not finish in time" while its plane is still waiting for the
+//! host. The `accepted`
 //! event the ADR asks for on receipt is the one the dispatcher already
 //! emits for every queued action; this module publishes it like any other
 //! event rather than inventing a second one.
@@ -143,10 +151,12 @@ use esp_idf_svc::sys::{
 use esp_idf_svc::tls::X509;
 use serde_json::Value;
 
-use granite_core::config::{Config, Secrets};
+use granite_core::config::{Config, NodesCfg, Secrets};
+use granite_core::dispatch::ack_timeout_ms;
 use granite_core::hal::BootReason;
 use granite_core::msg::{Command, CommandKind, Event, EventKind, LWT_PAYLOAD, Reply, State, Status, Topics};
 use granite_core::observed::{Observed, Stamped};
+use granite_core::plane::JobId;
 
 use crate::platform::logring::LogRecord;
 
@@ -177,10 +187,16 @@ const ERROR_IDLE_PASSES: usize = 12;
 /// Longest the worker waits for the dispatcher to answer a command.
 pub const REPLY_TIMEOUT: Duration = Duration::from_secs(20);
 
-/// Longest the worker waits for an accepted action to finish before it
-/// acks the command as timed out. Soft-off plus escalation plus a cycle
-/// is the slowest path the actuator has.
-pub const ACTION_TIMEOUT: Duration = Duration::from_secs(300);
+/// Longest the worker waits for a command that finishes by restarting
+/// the board (`ota`, `reboot`, `factory_reset`) before it gives up on
+/// the ack.
+///
+/// An accepted *plane* job gets no fixed deadline: it gets
+/// `granite_core::dispatch::ack_timeout_ms` for the command and the
+/// node settings it was submitted with, which covers the longest
+/// sequence those settings allow (a `t_soft_off_s` of an hour included)
+/// plus the plane client's own margin.
+pub const RESTART_TIMEOUT: Duration = Duration::from_secs(600);
 
 /// Reconnect ladder, in seconds (ADR component 7: 1 s to 60 s).
 const BACKOFF_MIN_S: u64 = 1;
@@ -567,8 +583,15 @@ struct Pending {
     action: CommandKind,
     /// The dispatcher's reply channel, until it answered.
     reply: Option<Receiver<Reply>>,
+    /// The plane job the dispatcher accepted it as, so the completion
+    /// ack carries the same `job` the `accepted` reply did.
+    job: Option<JobId>,
     /// Monotonic deadline.
     deadline_ms: u64,
+    /// How long the action itself may take once it is accepted \[ms\],
+    /// from the command and the node settings it was submitted with
+    /// (`granite_core::dispatch::ack_timeout_ms`).
+    action_timeout_ms: u64,
 }
 
 impl Pending {
@@ -764,6 +787,7 @@ fn run(ctx: &mut MqttCtx, stop: &AtomicBool) -> anyhow::Result<Outcome> {
                                     qos,
                                     &mut ctx.commands,
                                     &mut pending,
+                                    &cfg.nodes,
                                 );
                             } else {
                                 log::debug!("mqtt: ignoring a message on {topic}");
@@ -1082,6 +1106,7 @@ fn on_command(
     qos: QoS,
     commands: &mut CommandFn,
     pending: &mut Vec<Pending>,
+    nodes: &NodesCfg,
 ) {
     let text = match core::str::from_utf8(data) {
         Ok(t) => t,
@@ -1116,11 +1141,22 @@ fn on_command(
         return;
     }
     log::info!("mqtt: command {} {} on {}", cmd.id, cmd.action, cmd.target);
+    // What the action may take once it is accepted comes from the
+    // command and the node settings, not from a constant: a node with a
+    // long soft-off window keeps its ack waiting that long.
+    let action_timeout_ms = match cmd.action {
+        CommandKind::Ota | CommandKind::Reboot | CommandKind::FactoryReset => {
+            RESTART_TIMEOUT.as_millis() as u64
+        }
+        _ => ack_timeout_ms(&cmd, nodes),
+    };
     pending.push(Pending {
         id: cmd.id.clone(),
         action: cmd.action,
         reply: Some(reply_rx),
+        job: None,
         deadline_ms: now_ms() + REPLY_TIMEOUT.as_millis() as u64,
+        action_timeout_ms,
     });
 }
 
@@ -1158,8 +1194,12 @@ fn resolve_pending(
                         return false;
                     }
                     if queued {
+                        // Remember the job so the completion ack can
+                        // carry it, and give the action the time its
+                        // own settings ask for.
+                        p.job = reply.job;
                         p.reply = None;
-                        p.deadline_ms = now + ACTION_TIMEOUT.as_millis() as u64;
+                        p.deadline_ms = now + p.action_timeout_ms;
                         return true;
                     }
                     done.push(reply);
@@ -1178,7 +1218,11 @@ fn resolve_pending(
             } else {
                 "the controller task did not answer in time"
             };
-            done.push(Reply::err(&p.id, why));
+            let reply = Reply::err(&p.id, why);
+            done.push(match p.job {
+                Some(job) => reply.with_job(job),
+                None => reply,
+            });
             return false;
         }
         true
@@ -1226,9 +1270,23 @@ fn resolve_from_event(
         }
         _ => return,
     };
+    // The completion ack carries the same `job` the `accepted` reply
+    // did (ADR 0004 decision 6, "Acks"), so a client can match the two
+    // without keeping the command id.
+    let mut job = None;
     let before = pending.len();
-    pending.retain(|p| !(p.awaiting_completion() && p.id == reply.id));
+    pending.retain(|p| {
+        let mine = p.awaiting_completion() && p.id == reply.id;
+        if mine {
+            job = p.job;
+        }
+        !mine
+    });
     if pending.len() != before {
+        let reply = match job {
+            Some(job) => reply.with_job(job),
+            None => reply,
+        };
         publish_ack(client, topics, qos, &reply, session);
     }
 }

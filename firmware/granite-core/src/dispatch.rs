@@ -366,7 +366,16 @@ fn node_verb(
     args: &Args,
     ctx: &DispatchCtx<'_>,
 ) -> Result<NodeCommand, String> {
-    let opts = args.apply_to(node_options(node, ctx));
+    node_verb_with(action, node, args, args.apply_to(node_options(node, ctx)))
+}
+
+/// One node verb on one node with the options already resolved.
+fn node_verb_with(
+    action: CommandKind,
+    node: NodeId,
+    args: &Args,
+    opts: NodeOptions,
+) -> Result<NodeCommand, String> {
     let verb = match action {
         CommandKind::On => NodeCommand::on(node),
         CommandKind::Off => NodeCommand::off(node),
@@ -431,6 +440,59 @@ fn group_options(nodes: &[NodeId], cmd: &Command, ctx: &DispatchCtx<'_>) -> Node
         opts.soft_off_s = opts.soft_off_s.min(one.soft_off_s);
     }
     cmd.args.apply_to(opts)
+}
+
+/// Grace an ack gets on top of the job's own deadline \[ms\].
+///
+/// A transport that waits for a plane job should give up *after* the
+/// plane client has, so the ack a client sees is the client's
+/// `timed_out` (which says what happened to the node) and not the
+/// transport's "did not finish in time".
+pub const ACK_GRACE_MS: u64 = 15_000;
+
+/// How long a transport has to wait for this command's ack \[ms\].
+///
+/// Derived from the configuration, not a fixed constant: a node whose
+/// `t_soft_off_s` is an hour needs an ack timeout of over an hour, and
+/// a bare `press` needs seconds. It is the longest sequence the node's
+/// settings allow ([`crate::plane::NodeCommand::worst_case_ms`]), plus
+/// the plane client's job margin, plus [`ACK_GRACE_MS`].
+///
+/// For a command over `all` the worst case of any configured node is
+/// taken, because the group is as slow as its slowest member.
+pub fn ack_timeout_ms(cmd: &Command, nodes: &crate::config::NodesCfg) -> u64 {
+    let opts = cmd.args.apply_to(worst_options(cmd.target, nodes));
+    let worst = match cmd.action {
+        CommandKind::OnAll => {
+            // The stagger walks at most the slots of one plane.
+            let slots: Vec<NodeId> = (1..=granite_proto::SLOT_COUNT as NodeId).collect();
+            NodeCommand::on_all(slots).with_opts(opts).worst_case_ms()
+        }
+        action if action.is_node_verb() => node_verb_with(action, 1, &cmd.args, opts)
+            .map(|verb| verb.worst_case_ms())
+            .unwrap_or(crate::plane::SEQUENCE_SLACK_MS),
+        action if action.is_plane_verb() => PlaneCommand::Reboot {
+            address: granite_proto::ADDR_BASE,
+        }
+        .worst_case_ms(),
+        // Not a plane verb at all: it is answered from the dispatcher.
+        _ => 0,
+    };
+    worst + crate::plane::JOB_MARGIN_MS + ACK_GRACE_MS
+}
+
+/// The slowest settings any node this target can reach asks for.
+fn worst_options(target: Target, nodes: &crate::config::NodesCfg) -> NodeOptions {
+    if let Target::Node(node) = target {
+        return NodeOptions::of_settings(&nodes.settings(node));
+    }
+    let mut opts = NodeOptions::default();
+    for settings in &nodes.nodes {
+        let one = NodeOptions::of_settings(&settings.clone().clamped());
+        opts.led_timeout_s = opts.led_timeout_s.max(one.led_timeout_s);
+        opts.soft_off_s = opts.soft_off_s.max(one.soft_off_s);
+    }
+    opts
 }
 
 /// `config_get`: one section, or the whole exportable document.

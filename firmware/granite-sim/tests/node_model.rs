@@ -404,6 +404,40 @@ fn the_node_settings_reach_the_plane() {
     assert_eq!(rig.core.observed.node(1).unwrap().host, HostState::On);
 }
 
+/// Bug: the plane job gave up after a fixed 600 s (and the MQTT ack
+/// after 300 s), while a node's `t_soft_off_s` may be 3600. A soft off
+/// on a node that waits 15 minutes for its host now runs to its end and
+/// is acked with the job id it was accepted with.
+#[test]
+fn a_long_soft_off_is_not_timed_out() {
+    let mut config = Config::default();
+    config.nodes.nodes.push(NodeSettings {
+        node: 1,
+        // Well past the 600 s the client used to allow a job.
+        t_soft_off_s: 900,
+        ..NodeSettings::for_node(1)
+    });
+    let mut scenario = scenario();
+    scenario.planes[0].slots[0].host_on = true;
+    // The host ignores the short press, so the sequence waits the whole
+    // window and then escalates to the hold.
+    scenario.planes[0].slots[0].respond = PlaneRespond::IgnoresShortPress;
+    let mut rig = Rig::with_scenario(scenario, config);
+    assert!(rig.run_until(10_000, |core| {
+        core.observed.node_host(1) == HostState::On
+    }));
+
+    let reply = rig.verb("c-slow", CommandKind::Off, Target::Node(1));
+    assert!(reply.ok, "{:?}", reply.error);
+    let job = reply.job.expect("a job id");
+    // 900 s of waiting plus the escalation, on the fake clock.
+    let ack = rig.ack("c-slow", 1_000_000);
+    assert!(ack.ok, "the job was given up on: {:?}", ack.error);
+    assert_eq!(ack.result.as_deref(), Some("done"));
+    assert_eq!(ack.job, Some(job), "the completion ack carries its job");
+    assert_eq!(rig.host(1), HostState::Off, "the host was shut down");
+}
+
 #[test]
 fn a_boot_policy_is_applied_once_per_controller_start() {
     let mut config = Config::default();

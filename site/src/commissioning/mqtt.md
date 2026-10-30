@@ -90,18 +90,20 @@ command and watch the ack:
 mosquitto_pub ... -t granite/pod1/granite-37adc7/cmd \
   -m '{"v":1,"id":"t1","action":"on","target":3}'
 # -> granite/pod1/granite-37adc7/event  {"v":1,"ts":..,"kind":"accepted","id":"t1","action":"on","target":3,"job":12}
-# -> granite/pod1/granite-37adc7/ack/t1 {"v":1,"id":"t1","ok":true,"result":"done","error":null}
+# -> granite/pod1/granite-37adc7/ack/t1 {"v":1,"id":"t1","ok":true,"result":"done","error":null,"job":12}
 ```
 
 The command becomes a job on the plane that holds node 3, and the ack
-is published when the plane reports the job **complete**: an `on` acks
-once the host LED is lit (or the plane gave up waiting), an `off` once
-the host shut down or the escalation finished, which can take the
-node's whole `t_soft_off_s`. A job that has not finished after 300 s is
-acked with `ok: false` and `the action did not finish in time`; the
-plane carries on, and the outcome still lands in the node's `last_job`.
-A command the controller refuses (an absent node, a wrong target) is
-acked at once with `ok: false`.
+is published when the plane reports the job **complete**, carrying the
+same `job` number the `accepted` event did: an `on` acks once the host
+LED is lit (or the plane gave up waiting), an `off` once the host shut
+down or the escalation finished, which can take the node's whole
+`t_soft_off_s`. The wait is sized from that setting, so a node with a
+long window is not cut short; a job that overruns it is acked with
+`ok: false` and `the action did not finish in time`, the plane carries
+on, and the outcome still lands in the node's `last_job`. A command the
+controller refuses (an absent node, a wrong target) is acked at once
+with `ok: false`.
 
 ## When the broker goes away
 

@@ -142,12 +142,14 @@ Examples:
 ## Acks
 
 A plane verb is acked when the plane reports the job finished; the
-`accepted` event (with the `job` number) comes first. Everything else,
-and every refusal, is acked at once.
+`accepted` event (with the `job` number) comes first. The completion
+ack carries the **same `job`**, so a client can match the two without
+keeping the command id. Everything else, and every refusal, is acked at
+once.
 
 ```json
-{"v":1,"id":"c-1","ok":true,"result":"done","error":null}
-{"v":1,"id":"c-2","ok":false,"result":null,"error":"failed: conflict"}
+{"v":1,"id":"c-1","ok":true,"result":"done","error":null,"job":12}
+{"v":1,"id":"c-2","ok":false,"result":null,"error":"failed: conflict","job":13}
 {"v":1,"id":"c-3","ok":false,"result":null,"error":"node 3 is not present"}
 {"v":1,"id":"c-12","ok":true,"result":"ok","error":null,"data":{"nodes":[],"plane_update":"manual","..."}}
 ```
@@ -157,9 +159,15 @@ and every refusal, is acked at once.
 `error` values for a plane job: `failed: <code>`, `absent: <code>`,
 `link_lost`, `timed_out`, where `<code>` is the plane's result code
 (`busy`, `bad_argument`, `conflict`, `not_present`, `refused`,
-`failed`). A job not finished after 300 s is acked with `the action did
-not finish in time`; it carries on, and its outcome still reaches the
-node's `last_job`.
+`failed`).
+
+How long a job is given is not a fixed number: it is the longest
+sequence the node's own settings allow - an `off` on a node with
+`t_soft_off_s` of 3600 gets its hour plus the escalation - with a
+margin for the link's resends. Past that the job ends as `timed_out`,
+and a little later the ack goes out as `the action did not finish in
+time`. The plane carries on either way, and the outcome still reaches
+the node's `last_job`.
 
 ## Events
 

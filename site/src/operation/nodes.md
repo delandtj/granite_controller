@@ -140,7 +140,8 @@ job it became:
 
 The plane reports the outcome some time later. It then shows up as an
 `action_done` or `action_failed` event, as the node's `last_job` in the
-state payload, as the MQTT ack, and as the HTTP result of `?wait=1`:
+state payload, as the MQTT ack and as the HTTP result of `?wait=1`,
+both of which carry the same `job` number as the acceptance:
 
 | Outcome | Meaning |
 |---|---|
@@ -148,7 +149,7 @@ state payload, as the MQTT ack, and as the HTTP result of `?wait=1`:
 | `failed: <code>` | The plane refused it or the sequence did not reach its goal. |
 | `absent: <code>` | The node, unit or plane was not there when the plane looked. |
 | `link_lost` | The plane stopped answering before it reported a result. |
-| `timed_out` | The plane answered but never finished (after 10 minutes). |
+| `timed_out` | The plane answered but never finished, after the longest its sequence could take with this node's settings plus a minute of margin. |
 
 The `<code>` is the plane's result code: `busy`, `bad_argument`,
 `conflict` (a sequence is already running on that slot, for example an

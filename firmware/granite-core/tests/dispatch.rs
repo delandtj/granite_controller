@@ -321,6 +321,64 @@ fn on_all_leaves_the_nodes_that_run_alone() {
     assert!(out.jobs.is_empty(), "no node was touched");
 }
 
+/// Bug: the MQTT ack gave up after a fixed 300 s and the plane job
+/// after 600 s, while a node's `t_soft_off_s` may be 3600. The
+/// deadlines are derived from the command and the node's settings now.
+#[test]
+fn the_ack_and_job_timeouts_cover_the_longest_sequence() {
+    use granite_core::dispatch::{ACK_GRACE_MS, ack_timeout_ms};
+    use granite_core::plane::{JOB_MARGIN_MS, NodeCommand, job_timeout_ms};
+
+    let mut cfg = Config::default();
+    // A node that waits an hour for its host before escalating.
+    cfg.nodes.nodes.push(NodeSettings {
+        node: 1,
+        t_soft_off_s: granite_core::node::MAX_SOFT_OFF_S,
+        ..NodeSettings::for_node(1)
+    });
+
+    let hour_ms = u64::from(granite_core::node::MAX_SOFT_OFF_S) * 1_000;
+    let off = Command::new("c-off", CommandKind::Off).with_target(Target::Node(1));
+    let ack = ack_timeout_ms(&off, &cfg.nodes);
+    assert!(
+        ack > hour_ms + JOB_MARGIN_MS,
+        "an ack has to outlast the sequence and the client's margin: {ack} ms"
+    );
+
+    // The job's own deadline is shorter than the ack's, so the client's
+    // `timed_out` outcome wins the race and the ack says what happened.
+    let job = job_timeout_ms(&granite_core::plane::Command::Node(
+        NodeCommand::off(1).with_opts(granite_core::plane::NodeOptions::of_settings(
+            &cfg.nodes.settings(1),
+        )),
+    ));
+    assert!(job > hour_ms, "the job covers the whole soft-off window");
+    assert_eq!(ack, job + ACK_GRACE_MS);
+
+    // The default node keeps the ack short: 120 s soft off, not an hour.
+    let default_off = Command::new("c-off2", CommandKind::Off).with_target(Target::Node(2));
+    let short = ack_timeout_ms(&default_off, &cfg.nodes);
+    assert!(short < ack, "{short} ms for a default node, {ack} for node 1");
+    assert!(
+        short > u64::from(granite_core::node::DEFAULT_SOFT_OFF_S) * 1_000,
+        "but still longer than the window it waits: {short} ms"
+    );
+
+    // A press is seconds of work, so it is not given minutes of grace
+    // beyond the margins.
+    let press = Command::new("c-press", CommandKind::Press).with_target(Target::Node(2));
+    let press_ms = ack_timeout_ms(&press, &cfg.nodes);
+    assert!(press_ms < short, "a press is quicker than a soft off");
+
+    // `all` takes the slowest node of the set, so the group is covered.
+    let all_off = Command::new("c-all", CommandKind::Off).with_target(Target::All);
+    assert_eq!(
+        ack_timeout_ms(&all_off, &cfg.nodes),
+        ack,
+        "the group waits as long as its slowest member"
+    );
+}
+
 /// With no plane at all there is nothing to fan out to.
 #[test]
 fn all_with_no_present_node_is_refused() {

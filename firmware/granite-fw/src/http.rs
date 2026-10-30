@@ -209,9 +209,11 @@ impl CommandChannel {
 }
 
 /// A `?wait=1` wait that [`handle`] still owes the client: the command
-/// id to watch for and how long the core allowed.
+/// id to watch for, the plane job it became and how long the core
+/// allowed.
 struct PendingWait {
     id: String,
+    job: Option<granite_core::plane::JobId>,
     timeout_ms: u32,
 }
 
@@ -229,11 +231,16 @@ struct ChannelDispatcher<'a> {
     commands: &'a CommandChannel,
     completions: Option<Receiver<Event>>,
     pending: Option<PendingWait>,
+    /// The job id of the last `accepted` reply, so the outcome this
+    /// transport waits for can carry it too.
+    last_job: Option<granite_core::plane::JobId>,
 }
 
 impl api::Dispatcher for ChannelDispatcher<'_> {
     fn dispatch(&mut self, cmd: &Command) -> Reply {
-        self.commands.call(cmd)
+        let reply = self.commands.call(cmd);
+        self.last_job = reply.job;
+        reply
     }
 
     /// Note the wait and answer "this transport cannot wait", so the core
@@ -250,6 +257,7 @@ impl api::Dispatcher for ChannelDispatcher<'_> {
         if self.completions.is_some() {
             self.pending = Some(PendingWait {
                 id: cmd.id.clone(),
+                job: self.last_job,
                 timeout_ms,
             });
         }
@@ -268,7 +276,12 @@ fn wait_outcome(completions: &Receiver<Event>, pending: &PendingWait) -> Option<
         // Timeout, or a bus with no publisher left.
         let event = completions.recv_timeout(left).ok()?;
         if let Some(reply) = finished_reply(&event, &pending.id) {
-            return Some(reply);
+            // The outcome carries the job the `accepted` reply named,
+            // the way the MQTT completion ack does.
+            return Some(match pending.job {
+                Some(job) => reply.with_job(job),
+                None => reply,
+            });
         }
     }
 }
@@ -739,6 +752,7 @@ fn handle(ctx: &HttpCtx, request: ApiRequest, now: u64) -> ApiResponse {
             commands: &ctx.commands,
             completions,
             pending: None,
+            last_job: None,
         };
 
         let mut api_ctx = ApiCtx {
@@ -900,6 +914,7 @@ mod tests {
             commands: &commands,
             completions: Some(completions),
             pending: None,
+            last_job: None,
         };
         assert!(waiting.wait_for(&cmd, 1_000).is_none());
         let pending = waiting.pending.take().expect("the wait was recorded");
@@ -910,6 +925,7 @@ mod tests {
             commands: &commands,
             completions: None,
             pending: None,
+            last_job: None,
         };
         assert!(not_waiting.wait_for(&cmd, 1_000).is_none());
         assert!(not_waiting.pending.is_none());
@@ -925,14 +941,17 @@ mod tests {
         tx.send(done("x", "off")).expect("buffered");
         let pending = PendingWait {
             id: String::from("x"),
+            job: Some(7),
             timeout_ms: 1_000,
         };
         let reply = wait_outcome(&completions, &pending).expect("the third event is ours");
         assert_eq!(reply.result.as_deref(), Some("off"));
+        assert_eq!(reply.job, Some(7), "the outcome carries its job id");
         // Nothing left on the bus: the cap runs out and the caller keeps
         // the `accepted` reply.
         let short = PendingWait {
             id: String::from("x"),
+            job: None,
             timeout_ms: 10,
         };
         assert!(wait_outcome(&completions, &short).is_none());

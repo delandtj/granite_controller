@@ -68,6 +68,24 @@ pub const PRESS_MS: u16 = 300;
 /// Delay between slots of a staggered `on_all` \[ms\].
 pub const STAGGER_MS: u16 = 2_000;
 
+/// How long the plane holds PWR when `off` or `force_off` escalates
+/// \[ms\] (ADR 0003 CTRL 0x51 escalate 1 and 3, "hold PWR 5 s"; the
+/// plane's own `HOLD_PRESS_MS`).
+pub const HOLD_MS: u64 = 5_000;
+
+/// How long the plane waits after cutting a rail before it calls the
+/// node off \[ms\] (the plane's `CUT_SETTLE_MS`).
+pub const CUT_SETTLE_MS: u64 = 1_000;
+
+/// What a sequence may take beyond the waits its options spell out
+/// \[ms\]: the plane's own 20 Hz cycle, the link retries of ADR 0003
+/// decision 4, and the controller's poll period.
+///
+/// Not a timing requirement - only slack, so that a deadline derived
+/// from a node's settings is never tighter than the sequence it has to
+/// cover.
+pub const SEQUENCE_SLACK_MS: u64 = 5_000;
+
 /// A job identifier: unique for the life of the client.
 pub type JobId = u32;
 
@@ -372,6 +390,47 @@ impl NodeCommand {
         matches!(self, NodeCommand::Off { .. } | NodeCommand::ForceOff { .. })
     }
 
+    /// The longest the plane can take over this command \[ms\], from the
+    /// options it carries.
+    ///
+    /// This is what a job deadline and an ack timeout are built from
+    /// (see [`super::client::job_timeout_ms`]): a node whose
+    /// `t_soft_off_s` is an hour has to be allowed its hour, and a node
+    /// that only wants a press must not keep an ack waiting for one.
+    pub fn worst_case_ms(&self) -> u64 {
+        let led = |opts: &NodeOptions| u64::from(opts.led_timeout_s) * 1_000;
+        let press = u64::from(PRESS_MS);
+        match self {
+            // Wait for the LED, press PWR, wait again (CTRL 0x50).
+            NodeCommand::On { opts, .. } => 2 * led(opts) + press + SEQUENCE_SLACK_MS,
+            // Short press, wait for the host, hold PWR, cut the rail.
+            NodeCommand::Off { opts, .. } => {
+                press + u64::from(opts.soft_off_s) * 1_000 + HOLD_MS + CUT_SETTLE_MS
+                    + SEQUENCE_SLACK_MS
+            }
+            // The same without the wait: the hold starts at once.
+            NodeCommand::ForceOff { .. } => HOLD_MS + CUT_SETTLE_MS + SEQUENCE_SLACK_MS,
+            // Rail down, the off delay, rail up, then an `on`.
+            NodeCommand::Cycle { opts, .. } => {
+                u64::from(CYCLE_OFF_S) * 1_000 + 2 * led(opts) + press + SEQUENCE_SLACK_MS
+            }
+            NodeCommand::Reset { .. } => press + SEQUENCE_SLACK_MS,
+            NodeCommand::Press { ms, .. } => u64::from(*ms) + SEQUENCE_SLACK_MS,
+            // The stagger walks the slots of one plane, then every node
+            // runs its own `on`. Planes run side by side, so the worst
+            // case is the whole set on one plane.
+            NodeCommand::OnAll { nodes, opts, .. } => {
+                nodes.len() as u64 * u64::from(STAGGER_MS)
+                    + 2 * led(opts)
+                    + press
+                    + SEQUENCE_SLACK_MS
+            }
+            NodeCommand::PowerOn { .. }
+            | NodeCommand::PowerOff { .. }
+            | NodeCommand::ClearLatch { .. } => SEQUENCE_SLACK_MS,
+        }
+    }
+
     /// The stages of CTRL writes this command becomes.
     ///
     /// Empty when nothing it names is a node id; the client turns that
@@ -511,6 +570,14 @@ impl PlaneCommand {
         }
     }
 
+    /// The longest the plane can take over this command \[ms\].
+    ///
+    /// A unit reset is a 100 ms pulse and a reboot never reports at all
+    /// (the write's delivery is the outcome), so both are slack only.
+    pub const fn worst_case_ms(&self) -> u64 {
+        SEQUENCE_SLACK_MS
+    }
+
     /// The plane this command goes to.
     pub const fn address(&self) -> u8 {
         match self {
@@ -588,6 +655,14 @@ impl Command {
             Command::Plane(c) => c.stages(),
         }
     }
+
+    /// The longest the plane can take over it \[ms\].
+    pub fn worst_case_ms(&self) -> u64 {
+        match self {
+            Command::Node(c) => c.worst_case_ms(),
+            Command::Plane(c) => c.worst_case_ms(),
+        }
+    }
 }
 
 impl From<NodeCommand> for Command {
@@ -617,7 +692,8 @@ pub enum JobOutcome {
     /// The write could never be delivered, or the plane stopped
     /// answering before it reported a result.
     LinkLost,
-    /// The client gave up waiting (see [`super::client::JOB_TIMEOUT_MS`]).
+    /// The client gave up waiting (see
+    /// [`super::client::job_timeout_ms`]).
     TimedOut,
 }
 

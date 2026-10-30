@@ -50,10 +50,10 @@ pub mod update;
 
 use granite_proto::{ADDR_BASE, MAX_PLANES, SLOT_COUNT};
 
-pub use client::{PlaneClient, UpdatePolicy};
+pub use client::{JOB_MARGIN_MS, PlaneClient, UpdatePolicy, job_timeout_ms};
 pub use command::{
-    Command, FinishedJob, JobId, JobOutcome, NodeCommand, NodeOptions, OFF_TIMEOUT_S, ON_TIMEOUT_S,
-    PRESS_MS, PlaneCommand, STAGGER_MS,
+    CUT_SETTLE_MS, Command, FinishedJob, HOLD_MS, JobId, JobOutcome, NodeCommand, NodeOptions,
+    OFF_TIMEOUT_S, ON_TIMEOUT_S, PRESS_MS, PlaneCommand, SEQUENCE_SLACK_MS, STAGGER_MS,
 };
 pub use config::DesiredConfig;
 pub use event::ClientEvent;
