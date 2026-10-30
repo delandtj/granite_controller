@@ -122,7 +122,7 @@ if KIND == "core":
               ("MCU", "mcu", mcu.block(8, tile=False), 3000), ("Mux", "mux", mux.block(8), 4000),
               ("Link", "link", link.block(8), 5000), ("Chain", "chain", chain.block("core"), 8000)]
     label = lambda n: n
-    anchors = [("GND", True), ("+3V3", True), ("VIN", True), ("CTRL_3V3", True), ("CTRL_GND", False), ("CTRL_12V", False)]
+    anchors = [("GND", True), ("+3V3", True), ("VIN", True), ("CTRL_3V3", True), ("CTRL_GND", True), ("CTRL_12V", True)]
     note = "UNITk_SDA / UNITk_SCL: TCA9548A channel k-1 = chain P(k-1). VIN = the core's XT30 input"
 else:
     sheets = [("Unit", "unit", unit.block(), 1000), ("Input", "input", uinput.block(), 7000),

@@ -2824,13 +2824,13 @@
 	)
 	(wire
 		(pts
-			(xy 190.5 246.38) (xy 194.31 246.38)
+			(xy 190.5 246.38) (xy 198.12 246.38)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "70bf2079-089b-5670-9011-ec30554dba0c")
+		(uuid "18861d13-815b-5083-b695-a5d9591ce51a")
 	)
 	(global_label "CTRL_GND"
 		(shape passive)
@@ -2856,6 +2856,86 @@
 		)
 	)
 	(symbol
+		(lib_id "power:PWR_FLAG")
+		(at 198.12 246.38 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom no)
+		(on_board no)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "8afc8979-2fc6-5b83-b17f-cfe13ec66c07")
+		(property "Reference" "#FLG9010"
+			(at 198.12 246.38 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "PWR_FLAG"
+			(at 198.12 242.57 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 198.12 246.38 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Datasheet" ""
+			(at 198.12 246.38 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Description" ""
+			(at 198.12 246.38 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "1"
+			(uuid "175c252a-d17f-5b17-9537-5264582e6bf8")
+		)
+		(instances
+			(project "pp-48-core"
+				(path "/2947a401-cd9a-5ee7-8a9d-b67547832ff9"
+					(reference "#FLG9010")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:+12V")
 		(at 228.6 246.38 0)
 		(unit 1)
@@ -2865,8 +2945,8 @@
 		(on_board no)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "5b049f17-69ae-57ac-9b3c-5c8d9d963ce2")
-		(property "Reference" "#PWR9010"
+		(uuid "5cc7c313-e38c-5929-82e2-c3640a8d6d63")
+		(property "Reference" "#PWR9011"
 			(at 228.6 246.38 0)
 			(hide yes)
 			(show_name no)
@@ -2924,12 +3004,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "32d5c509-d134-5fc0-8058-9edc5bc7d286")
+			(uuid "9e56f91e-d5d9-5165-a71d-7dc0725b0c37")
 		)
 		(instances
 			(project "pp-48-core"
 				(path "/2947a401-cd9a-5ee7-8a9d-b67547832ff9"
-					(reference "#PWR9010")
+					(reference "#PWR9011")
 					(unit 1)
 				)
 			)
@@ -2937,13 +3017,13 @@
 	)
 	(wire
 		(pts
-			(xy 228.6 246.38) (xy 232.41 246.38)
+			(xy 228.6 246.38) (xy 236.22 246.38)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "d7ed7967-372b-5a91-b38f-feb81e21c75a")
+		(uuid "bb343b24-054e-5724-b10f-06e2b64c26f1")
 	)
 	(global_label "CTRL_12V"
 		(shape passive)
@@ -2964,6 +3044,86 @@
 			(effects
 				(font
 					(size 1.27 1.27)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:PWR_FLAG")
+		(at 236.22 246.38 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom no)
+		(on_board no)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "c467c166-4bc9-5156-b5a1-07fa04ebd788")
+		(property "Reference" "#FLG9012"
+			(at 236.22 246.38 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "PWR_FLAG"
+			(at 236.22 242.57 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 236.22 246.38 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Datasheet" ""
+			(at 236.22 246.38 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Description" ""
+			(at 236.22 246.38 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "1"
+			(uuid "766d22a4-35a2-5a2b-859d-bddaaa03cd37")
+		)
+		(instances
+			(project "pp-48-core"
+				(path "/2947a401-cd9a-5ee7-8a9d-b67547832ff9"
+					(reference "#FLG9012")
+					(unit 1)
 				)
 			)
 		)

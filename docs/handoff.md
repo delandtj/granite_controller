@@ -227,10 +227,10 @@ controller keeps (ESP32, Ethernet, probes, link master to the planes).
 
 Open (2026-10-29): the isolated 12 V aux is now an own Fly-Buck, LM5017
 C34355 + Bourns SRF0703-470M C3273458, functional isolation, values in
-ADR 0003 decision 14. The Supplies sheet still draws the INTERIM module
-U2 (URB4812YMD-6WR3 class, C5369743): redraw it to the Fly-Buck. C11
-22 uF / 100 V electrolytic (CP_Elec_10x10) and C13 10 uF / 50 V 1210
-have no LCSC code yet. J4 (JST PH 2, pin 1 CTRL_12V, pin 2 CTRL_GND)
+ADR 0003 decision 14; drawn on the Supplies sheet (U2, L2 with the new
+footprint pp48:L_Bourns_SRF0703, CTRL_GND island; ERC 0). Check the
+SRF0703 land pattern: the datasheet's 0.4 mm pad gap label contradicts
+its 2.9 mm terminal pitch (footprint uses 2.9). J4 (JST PH 2, pin 1 CTRL_12V, pin 2 CTRL_GND)
 is the controller's 12 V input: match it in the controller revisit.
 
 Board ROUTED as 2-slot UNITS (2026-10-29, ADR 0004 decision 9; N = 2 =
