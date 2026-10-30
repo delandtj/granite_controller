@@ -3123,7 +3123,7 @@
 		(embedded_fonts no)
 		(model "${KIPRJMOD}/carrier.3dshapes/PM_Aux_Socket_2x03_P1.27.step"
 			(offset
-				(xyz 0 0 0)
+				(xyz 0 0 0.3)
 			)
 			(scale
 				(xyz 1 1 1)
@@ -10265,7 +10265,7 @@
 			)
 		)
 	)
-	(footprint "Fuse:Fuse_Littelfuse-NANO2-451_453"
+	(footprint "carrier:Fuse_Littelfuse-NANO2-451_453"
 		(layer "F.Cu")
 		(uuid "c12bcfca-9e97-47ed-8dd2-959599a59272")
 		(at 113 106.5)
@@ -10464,9 +10464,9 @@
 			(uuid "6d13ad51-6fbc-4667-add7-bf1cbf60c8fa")
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Fuse.3dshapes/Fuse_Littelfuse-NANO2-451_453.step"
+		(model "${KIPRJMOD}/carrier.3dshapes/Fuse_Littelfuse-NANO2-451_453.step"
 			(offset
-				(xyz 0 0 0)
+				(xyz 0 0 1.35)
 			)
 			(scale
 				(xyz 1 1 1)

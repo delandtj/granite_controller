@@ -71,7 +71,7 @@ def block():
         b.tie(net, at if isinstance(at[0], str) else P(*at), ang)
 
     # ========================================================== connector, TVS, bulk (VIN rail y = 32)
-    sym("J201", "Connector_Generic:Conn_01x02", "XT60PW-M", "Connector_AMASS:AMASS_XT60PW-M_1x02_P7.20mm_Horizontal",
+    sym("J201", "Connector_Generic:Conn_01x02", "XT60PW-M", "pp48:AMASS_XT60PW-M_1x02_P7.20mm_Horizontal",
         {"1": "GND", "2": "VIN"}, (-8, 30), mirror="y", fields={"LCSC": "C98732", "MPN": "Amass XT60PW-M"},
         desc="unit input, keyed (pin 1 -, pin 2 +), 30 A rated; cable from the top edge")
     sym("D201", "Device:D_Zener", "SMDJ60A", "Diode_SMD:D_SMC", {"1": "VIN", "2": "GND"}, (2, 38), rot=270,

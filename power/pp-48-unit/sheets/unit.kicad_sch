@@ -13288,7 +13288,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_SO:SOIC-4_4.55x3.7mm_P2.54mm"
+		(property "Footprint" "pp48:SOIC-4_4.55x3.7mm_P2.54mm"
 			(at 264.16 73.66 0)
 			(hide yes)
 			(show_name no)
@@ -13483,7 +13483,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_SO:SOIC-4_4.55x3.7mm_P2.54mm"
+		(property "Footprint" "pp48:SOIC-4_4.55x3.7mm_P2.54mm"
 			(at 312.42 58.42 0)
 			(hide yes)
 			(show_name no)
@@ -13678,7 +13678,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_SO:SOIC-4_4.55x2.6mm_P1.27mm"
+		(property "Footprint" "pp48:SOIC-4_4.55x2.6mm_P1.27mm"
 			(at 287.02 78.74 0)
 			(hide yes)
 			(show_name no)
@@ -19089,7 +19089,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_SO:SOIC-4_4.55x3.7mm_P2.54mm"
+		(property "Footprint" "pp48:SOIC-4_4.55x3.7mm_P2.54mm"
 			(at 645.16 73.66 0)
 			(hide yes)
 			(show_name no)
@@ -19284,7 +19284,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_SO:SOIC-4_4.55x3.7mm_P2.54mm"
+		(property "Footprint" "pp48:SOIC-4_4.55x3.7mm_P2.54mm"
 			(at 693.42 58.42 0)
 			(hide yes)
 			(show_name no)
@@ -19479,7 +19479,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_SO:SOIC-4_4.55x2.6mm_P1.27mm"
+		(property "Footprint" "pp48:SOIC-4_4.55x2.6mm_P1.27mm"
 			(at 668.02 78.74 0)
 			(hide yes)
 			(show_name no)
@@ -20167,7 +20167,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_DFN_QFN:VQFN-32-1EP_5x5mm_P0.5mm_EP3.15x3.15mm"
+		(property "Footprint" "pp48:VQFN-32-1EP_5x5mm_P0.5mm_EP3.15x3.15mm"
 			(at 101.6 241.3 0)
 			(hide yes)
 			(show_name no)

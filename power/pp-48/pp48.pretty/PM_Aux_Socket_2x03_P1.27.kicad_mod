@@ -133,7 +133,7 @@
 	(embedded_fonts no)
 	(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/PM_Aux_Socket_2x03_P1.27.step"
 		(offset
-			(xyz 0 0 0)
+			(xyz 0 0 0.3)
 		)
 		(scale
 			(xyz 1 1 1)

@@ -62,7 +62,7 @@ from sch.kicad import by_name
 G = 1.27
 FET = "Transistor_FET:2N7002"
 SOT23 = "Package_TO_SOT_SMD:SOT-23"
-TLP176 = ("pp:TLP176AM", "TLP176AM", "Package_SO:SOIC-4_4.55x3.7mm_P2.54mm")
+TLP176 = ("pp:TLP176AM", "TLP176AM", "pp48:SOIC-4_4.55x3.7mm_P2.54mm")
 STANDOFF = "pp48:PM_Standoff_M2x7_SMTSO"
 SHARED = ("GND", "+3V3", "VBUS", "SDA", "SCL", "NC", "PRESS_RTN")
 SLOT_DX, SLOT_REF = 300, 50           # slot B: drawn 300 grid units right, references + 50
@@ -99,7 +99,7 @@ def expander(b):
     nets = dict(EXP_IO)
     nets.update({"25": "GND", "33": "GND", "26": "GND", "27": "+3V3", "31": "+3V3", "28": "EXP_RSTN",
                  "29": "SCL", "30": "SDA", "32": "NC"})
-    b.sym("U5", "pp:TCA6424ARGJR", "TCA6424ARGJR", "Package_DFN_QFN:VQFN-32-1EP_5x5mm_P0.5mm_EP3.15x3.15mm", nets,
+    b.sym("U5", "pp:TCA6424ARGJR", "TCA6424ARGJR", "pp48:VQFN-32-1EP_5x5mm_P0.5mm_EP3.15x3.15mm", nets,
           at=P(80, 190), fields={"LCSC": "C80692"},
           desc="unit GPIO in slot B, address 0x22 (ADDR GND); 11 lines per slot: slot A P00-P07 / P10-P12 (to slot A over "
                "the In2 bus), slot B P14-P17 / P20-P26; INT unused (polled); all inputs after reset")
@@ -265,7 +265,7 @@ def slot(b, s):
         fields={"LCSC": "C5370540"}, desc="photoMOS front-panel RST_SW contact")
     R(20, "270", R0402, {"1": "RSTD", "2": "RSTD_A"}, (268, 44), rot=270, fields={"LCSC": "C22775"},
       desc="photoMOS LED, ~6.5 mA from the expander")
-    sym("U8", "Isolator:TLP291", "TLP291", "Package_SO:SOIC-4_4.55x2.6mm_P1.27mm",
+    sym("U8", "Isolator:TLP291", "TLP291", "pp48:SOIC-4_4.55x2.6mm_P1.27mm",
         {"1": "PLED_A", "2": "PLED_N", "3": "GND", "4": "LED"}, (226, 62), rot=270, mirror="y",
         fields={"LCSC": "C55144"}, desc="power LED sense opto: LED lit -> output low")
     R(21, "220", R0402, {"1": "PLED_P", "2": "PLED_A"}, (220, 48), desc="opto LED series (as rev C)")

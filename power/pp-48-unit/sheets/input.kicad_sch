@@ -3163,7 +3163,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Connector_AMASS:AMASS_XT60PW-M_1x02_P7.20mm_Horizontal"
+		(property "Footprint" "pp48:AMASS_XT60PW-M_1x02_P7.20mm_Horizontal"
 			(at 22.86 58.42 0)
 			(hide yes)
 			(show_name no)

@@ -4778,7 +4778,7 @@
 			)
 		)
 	)
-	(footprint "Connector_AMASS:AMASS_XT60PW-M_1x02_P7.20mm_Horizontal"
+	(footprint "pp48:AMASS_XT60PW-M_1x02_P7.20mm_Horizontal"
 		(layer "F.Cu")
 		(uuid "236ae58e-0111-4fef-99d1-97a1ed78af15")
 		(at 154.9 116.494999)
@@ -5096,15 +5096,15 @@
 			(uuid "0e31cb43-a150-4b37-ae42-df5c16214dcd")
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Connector_AMASS.3dshapes/AMASS_XT60PW-M_1x02_P7.20mm_Horizontal.step"
+		(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/AMASS_XT60PW-M.step"
 			(offset
-				(xyz 0 0 0)
+				(xyz 3.6 7.1 0)
 			)
 			(scale
 				(xyz 1 1 1)
 			)
 			(rotate
-				(xyz 0 0 0)
+				(xyz 0 0 270)
 			)
 		)
 	)
@@ -5719,9 +5719,15 @@
 		)
 		(embedded_fonts no)
 		(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/TerminalBlock_Degson_DG128-5.0-02P.step"
-			(offset (xyz 2.5 0 0))
-			(scale (xyz 1 1 1))
-			(rotate (xyz 0 0 0))
+			(offset
+				(xyz 2.5 -0.1 0.2)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz 0 0 0)
+			)
 		)
 	)
 	(footprint ""
@@ -9239,7 +9245,7 @@
 		(embedded_fonts no)
 		(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/PM_Aux_Socket_2x03_P1.27.step"
 			(offset
-				(xyz 0 0 0)
+				(xyz 0 0 0.3)
 			)
 			(scale
 				(xyz 1 1 1)
@@ -10019,7 +10025,7 @@
 		(embedded_fonts no)
 		(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/PM_Aux_Socket_2x03_P1.27.step"
 			(offset
-				(xyz 0 0 0)
+				(xyz 0 0 0.3)
 			)
 			(scale
 				(xyz 1 1 1)
@@ -12326,7 +12332,7 @@
 			)
 		)
 	)
-	(footprint "Package_DFN_QFN:VQFN-32-1EP_5x5mm_P0.5mm_EP3.15x3.15mm"
+	(footprint "pp48:VQFN-32-1EP_5x5mm_P0.5mm_EP3.15x3.15mm"
 		(layer "F.Cu")
 		(uuid "8431c63a-d1fb-43ac-b5e7-190bd4b29e58")
 		(at 136.8 137.6)
@@ -13014,7 +13020,7 @@
 			(uuid "c9678072-0bbb-428d-a3d2-ed831cc94f92")
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Package_DFN_QFN.3dshapes/VQFN-32-1EP_5x5mm_P0.5mm_EP3.15x3.15mm.step"
+		(model "${KICAD10_3DMODEL_DIR}/Package_DFN_QFN.3dshapes/QFN-32-1EP_5x5mm_P0.5mm_EP3.3x3.3mm.step"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -17265,9 +17271,15 @@
 		)
 		(embedded_fonts no)
 		(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/TerminalBlock_Degson_DG128-5.0-02P.step"
-			(offset (xyz 2.5 0 0))
-			(scale (xyz 1 1 1))
-			(rotate (xyz 0 0 0))
+			(offset
+				(xyz 2.5 -0.1 0.2)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz 0 0 0)
+			)
 		)
 	)
 	(footprint "Capacitor_SMD:C_0603_1608Metric"
@@ -29833,7 +29845,7 @@
 			)
 		)
 	)
-	(footprint "Package_SO:SOIC-4_4.55x3.7mm_P2.54mm"
+	(footprint "pp48:SOIC-4_4.55x3.7mm_P2.54mm"
 		(layer "B.Cu")
 		(uuid "20f63cc9-393d-4fd6-840e-7799b7c79b6c")
 		(at 106 150.8)
@@ -30267,9 +30279,9 @@
 			(uuid "9c0ffa76-5612-459c-a55a-e2e0385d3673")
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Package_SO.3dshapes/SOIC-4_4.55x3.7mm_P2.54mm.step"
+		(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/TLP176AM_SO4.step"
 			(offset
-				(xyz 0 0 0)
+				(xyz 0 0 0.07)
 			)
 			(scale
 				(xyz 1 1 1)
@@ -30279,7 +30291,7 @@
 			)
 		)
 	)
-	(footprint "Package_SO:SOIC-4_4.55x3.7mm_P2.54mm"
+	(footprint "pp48:SOIC-4_4.55x3.7mm_P2.54mm"
 		(layer "B.Cu")
 		(uuid "25232e1d-2f8a-41a9-a5f2-c6099611626d")
 		(at 131 146.2)
@@ -30713,9 +30725,9 @@
 			(uuid "4d4edd4e-151d-4897-9aed-6fc730ead196")
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Package_SO.3dshapes/SOIC-4_4.55x3.7mm_P2.54mm.step"
+		(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/TLP176AM_SO4.step"
 			(offset
-				(xyz 0 0 0)
+				(xyz 0 0 0.07)
 			)
 			(scale
 				(xyz 1 1 1)
@@ -32684,7 +32696,7 @@
 			)
 		)
 	)
-	(footprint "Package_SO:SOIC-4_4.55x2.6mm_P1.27mm"
+	(footprint "pp48:SOIC-4_4.55x2.6mm_P1.27mm"
 		(layer "B.Cu")
 		(uuid "4465934f-98aa-4bd0-b02e-95f76e5d1299")
 		(at 131 141.6)
@@ -33018,9 +33030,9 @@
 			(uuid "ed0448e6-f02c-4901-a8c6-91d3939d9dcf")
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Package_SO.3dshapes/SOIC-4_4.55x2.6mm_P1.27mm.step"
+		(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/TLP291_SO4.step"
 			(offset
-				(xyz 0 0 0)
+				(xyz 0 0 0.02)
 			)
 			(scale
 				(xyz 1 1 1)
@@ -33030,7 +33042,7 @@
 			)
 		)
 	)
-	(footprint "Package_SO:SOIC-4_4.55x2.6mm_P1.27mm"
+	(footprint "pp48:SOIC-4_4.55x2.6mm_P1.27mm"
 		(layer "B.Cu")
 		(uuid "493ae4b2-0c56-4c6c-9ed9-442a9bc68a35")
 		(at 106 141.6)
@@ -33364,9 +33376,9 @@
 			(uuid "b77661d6-25da-4613-abaa-361410411e0c")
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Package_SO.3dshapes/SOIC-4_4.55x2.6mm_P1.27mm.step"
+		(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/TLP291_SO4.step"
 			(offset
-				(xyz 0 0 0)
+				(xyz 0 0 0.02)
 			)
 			(scale
 				(xyz 1 1 1)
@@ -34561,7 +34573,7 @@
 			)
 		)
 	)
-	(footprint "Package_SO:SOIC-4_4.55x3.7mm_P2.54mm"
+	(footprint "pp48:SOIC-4_4.55x3.7mm_P2.54mm"
 		(layer "B.Cu")
 		(uuid "679cf64f-2a89-4794-92ff-1bdcb84e7a34")
 		(at 106 146.2)
@@ -34995,9 +35007,9 @@
 			(uuid "ebf57a8a-9f26-451f-80d7-33c2372afb2d")
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Package_SO.3dshapes/SOIC-4_4.55x3.7mm_P2.54mm.step"
+		(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/TLP176AM_SO4.step"
 			(offset
-				(xyz 0 0 0)
+				(xyz 0 0 0.07)
 			)
 			(scale
 				(xyz 1 1 1)
@@ -36073,7 +36085,7 @@
 			)
 		)
 	)
-	(footprint "Package_SO:SOIC-4_4.55x3.7mm_P2.54mm"
+	(footprint "pp48:SOIC-4_4.55x3.7mm_P2.54mm"
 		(layer "B.Cu")
 		(uuid "86392c6c-8feb-404e-ad56-42ce8728c5f5")
 		(at 131 150.8)
@@ -36507,9 +36519,9 @@
 			(uuid "566a455d-9cb6-4ca6-8ae6-5e6dbb22345d")
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Package_SO.3dshapes/SOIC-4_4.55x3.7mm_P2.54mm.step"
+		(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/TLP176AM_SO4.step"
 			(offset
-				(xyz 0 0 0)
+				(xyz 0 0 0.07)
 			)
 			(scale
 				(xyz 1 1 1)

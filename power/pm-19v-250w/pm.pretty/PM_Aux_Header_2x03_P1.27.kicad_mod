@@ -131,4 +131,15 @@
 		(uuid "99e4f4fe-19e8-4152-ac68-810b272f3384")
 	)
 	(embedded_fonts no)
+	(model "${KIPRJMOD}/pm.3dshapes/PM_Aux_Header_2x03_P1.27.step"
+		(offset
+			(xyz 0 -1.27 0.5)
+		)
+		(scale
+			(xyz 1 1 1)
+		)
+		(rotate
+			(xyz 0 0 90)
+		)
+	)
 )

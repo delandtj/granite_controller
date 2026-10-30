@@ -4044,7 +4044,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Fuse:Fuse_Littelfuse-NANO2-451_453"
+		(property "Footprint" "carrier:Fuse_Littelfuse-NANO2-451_453"
 			(at 43.18 50.8 0)
 			(show_name no)
 			(do_not_autoplace no)
