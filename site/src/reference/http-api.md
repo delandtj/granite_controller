@@ -35,8 +35,11 @@ request bodies are limited to 64 KiB except the firmware upload.
 | GET | `/api/v1/session` | none | `{ok, authenticated, password_set, locked_out, lockout_left_s}` |
 | GET | `/api/v1/status` | yes | Status page data: identity, `boot_reason`, `uptime_s`, `free_heap`, `state`, `net`, `mqtt`, `ota`, `staged`, `modbus` |
 | GET | `/api/v1/state` | yes | The state snapshot (same as the MQTT `state` payload) |
-| GET | `/api/v1/nodes` | yes | `{settings: <nodes section>, nodes: [...]}` |
-| POST | `/api/v1/nodes/<1-8 or all>/<action>` | yes | Queue an action; body is the `args` object (optional). 200 with `accepted` when queued, 400 when refused. `all` is accepted for `on`, `off`, `force_off`, `reset`, `cycle` and `on_all` (one press at a time, in `nodes.order`); `press` is per node. Add `?wait=1` to hold the reply until the action finishes (30 s cap, see below) |
+| GET | `/api/v1/nodes` | yes | `{ok, settings: <nodes section>, nodes: [...], verbs: [...]}`; `nodes` is the `nodes` array of the state payload, `verbs` the twelve plane verbs |
+| POST | `/api/v1/nodes/<target>/<verb>` | yes | Submit a plane verb. `<target>` is a node id `1`..`64`, `all`, `planeN` or `planeN.unitU`; `<verb>` is one of `on`, `off`, `force_off`, `reset`, `cycle`, `press`, `on_all`, `power_on`, `power_off`, `clear_latch`, `unit_reset`, `plane_reboot`. The body is the `args` object, bare or as `{"args":{..}}` (optional). 200 with `accepted` and the `job` id, 400 when refused. Add `?wait=1` to hold the reply until the plane reports (30 s cap, see below). An unknown verb or a malformed target is a 404 |
+| GET | `/api/v1/planes` | yes | `{ok, planes: [...], update_policy}`; `planes` is the `planes` array of the state payload |
+| GET | `/api/v1/planes/<0-7>` | yes | `{ok, plane: {..}, nodes: [..]}`: the controller's full model of one plane and its present nodes, in raw plane units (see below); 404 if the plane does not answer |
+| GET | `/api/v1/planes/<0-7>/units` | yes | `{ok, plane, units: [..]}`: the unit boards of one plane, raw units; 404 if the plane does not answer |
 | POST | `/api/v1/cmd` | yes | A raw command, identical to the MQTT `cmd` payload |
 | GET | `/api/v1/config` | yes | Full export (no secrets) |
 | PUT | `/api/v1/config` | yes | Import a full document |
@@ -77,39 +80,53 @@ Node actions, `/api/v1/cmd`, `/recover`, reboot and factory reset
 return the same reply object MQTT publishes as an ack:
 
 ```json
-{"v":1,"id":"api-12","ok":true,"result":"ok","error":null}
-{"v":1,"id":"api-13","ok":false,"result":null,"error":"refused: unknown_state"}
+{"v":1,"id":"api-9","ok":true,"result":"accepted","error":null,"job":1}
+{"v":1,"id":"api-7","ok":false,"result":null,"error":"node 40 is on plane 4 which is not present"}
+{"v":1,"id":"api-4","ok":false,"result":null,"error":"force_off needs a single node target"}
 ```
 
-`result` is `accepted` for anything queued (every node action, OTA,
-reboot), `ok`, `staged` or `saved` for configuration, or a
-`refused: ...` string. The outcome of a queued action is not in the
-HTTP reply: read `nodes[i].last_action` in `/api/v1/state`, or the
-MQTT `event` and `ack` topics. See
-[Controlling nodes](../operation/nodes.md) for the reasons.
+`result` is `accepted` for anything queued (every plane verb, OTA,
+reboot), with `job` set for a plane verb; `ok`, `staged` or `saved` for
+configuration. A refusal has `ok: false` and the reason in `error`. The
+outcome of a plane job is not in the HTTP reply: read
+`nodes[i].last_job` in `/api/v1/state`, or the MQTT `event` and `ack`
+topics. See [Controlling nodes](../operation/nodes.md) for the
+outcomes and the reasons.
 
 ### `?wait=1` on a node action
 
-`POST /api/v1/nodes/<n>/<action>?wait=1` (also `wait=true`, `wait=yes`)
-holds the reply until that command id finishes, and answers with the
-outcome instead of the queue ack: 200 `{"result":"on"}`, or 400 with
-`"error":"power_on_timeout"`. It is meant for scripts that would
-otherwise poll `/api/v1/state`.
+`POST /api/v1/nodes/<target>/<verb>?wait=1` (also `wait=true`,
+`wait=yes`) holds the reply until the plane reports the job, and
+answers with the outcome instead of the queue ack: 200 with
+`"result":"done"`, or 400 with `"error":"failed: conflict"`,
+`"absent: not_present"`, `"link_lost"` and so on, `job` set in both. It
+is meant for scripts that would otherwise poll `/api/v1/state`.
 
 Two limits:
 
-- The wait is capped at 30 seconds. A longer action - a soft `off` with
-  `t_soft_off_ms` at its two-minute maximum - keeps running and the
+- The wait is capped at 30 seconds. A longer job - a soft `off` that
+  waits the node's `t_soft_off_s` for its host - keeps running and the
   reply falls back to `accepted`, so `?wait=1` never replaces reading
-  `nodes[i].last_action`.
+  `nodes[i].last_job`.
 - The controller runs one HTTP server task, so a waiting request
   answers nothing else while it waits: the setup page stalls for as
   long as the action takes. Use it from scripts, not from a browser
   tab, and not in parallel.
 
-An escalation inside `off` (soft-off gave up, the controller holds PWR)
-is a step, not the end: the wait goes on and the reply is the final
-`off`, which is also what the MQTT ack reports.
+An escalation inside `off` runs on the plane as part of the same job,
+so the reply is the job's one final outcome, which is also what the
+MQTT ack reports.
+
+## Plane routes
+
+`/api/v1/planes/<n>` and `/api/v1/planes/<n>/units` return the
+controller's model of the plane as it reads it from the link, not the
+rounded state payload: `volts` in 10 mV, `amps` in mA, `watts` in 0.1 W,
+`temperature` and `core_temperature` in 0.1 C, `energy_joules` with the
+`energy_boot_count` it belongs to, plus bookkeeping such as `ts_ms`,
+`config_hash`, `serial`, `bootloader`, `segment_errors` and
+`times_lost`. For dashboards use `/api/v1/state` or `/api/v1/planes`,
+which carry the same data in volts, amperes, watts and degrees.
 
 ## Status payload fields
 
@@ -131,10 +148,12 @@ curl -sk -c jar -X POST -d '{"password":"correct horse battery"}' $B/api/v1/sess
 curl -sk -b jar -X POST -d '{"name":"ops"}' $B/api/v1/security/tokens
 T=<token from the previous reply>
 curl -sk -H "Authorization: Bearer $T" $B/api/v1/status
+curl -sk -H "Authorization: Bearer $T" $B/api/v1/planes
 curl -sk -H "Authorization: Bearer $T" -X POST $B/api/v1/nodes/3/on
 curl -sk -H "Authorization: Bearer $T" $B/api/v1/config/export -o granite-37adc7-config.json
 ```
 
 The same sequence runs against the simulator
-(`cargo run -p granite-sim -- serve`, `https://127.0.0.1:8443`) with no
-hardware.
+(`cargo run -p granite-sim -- serve --scenario
+granite-sim/scenarios/two-planes.toml`, `https://127.0.0.1:8443`) with
+no hardware: the scenario puts two simulated planes on the link.

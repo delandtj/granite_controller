@@ -6,13 +6,24 @@ devboard features.
 
 ## Layout
 
+`firmware/Cargo.toml` is a workspace with four members; `granite-fw`
+is excluded on purpose and built on its own, because it is an ESP-IDF
+crate with its own target, linker and `.cargo/config.toml`.
+
 | Path | What |
 |---|---|
-| `firmware/granite-core` | Hardware-independent core: node state machine, actuator, rules, config, messages, HTTP handlers, Modbus map. Host-tested with `cargo test`. |
-| `firmware/granite-fw` | The ESP-IDF binary for the board. A standalone crate, not a workspace member. |
-| `firmware/granite-sim` | Host simulator: the real core and the real setup page over a fake board. Also `keygen`, `recover`, `modbus-map`. |
+| `firmware/granite-core` | Hardware-independent controller core: the plane client (discovery, polling, plane jobs, events, config push, plane firmware updates), node settings, rules, config, messages, HTTP handlers, Modbus map. Host-tested with `cargo test`. Workspace member. |
+| `firmware/granite-proto` | The plane link wire format (frames, records, CRCs), `no_std`, shared by the controller and the plane. Workspace member. |
+| `firmware/plane-logic` | The hardware-free core of the plane firmware: plane model, sequencer, unit discovery and polling, link handler, update state machine, drivers for the unit board chips. `no_std`; builds for `thumbv6m-none-eabi`, and with the `sim` feature runs on the host. Workspace member. |
+| `firmware/granite-sim` | Host simulator: the real core and the real setup page over a fake controller, with fake planes that run the real `plane-logic`. Also `keygen`, `recover`, `modbus-map`. Workspace member. |
+| `firmware/granite-fw` | The ESP-IDF binary for the controller. Not a workspace member. |
 | `firmware/web` | The setup page (plain HTML/CSS/JS), gzipped into the image by `build.sh`. |
-| `firmware/docs` | The architecture decision record, the generated Modbus map, the Home Assistant example. |
+| `firmware/docs` | The architecture decision records and the generated Modbus map. |
+
+The plane core firmware for the STM32G070 (`plane-fw`, and its
+bootloader `plane-boot`) does not exist yet; `plane-logic` is the part
+of it that is written. Until then there is no plane image to build or
+flash.
 
 ## Toolchain
 
@@ -36,8 +47,13 @@ cargo build --release
 
 Output: `target/riscv32imac-esp-espidf/release/granite-fw` (an ELF;
 espflash converts it while flashing). Features `wifi-dev`, `rgb-led`,
-`devboard` and `hwtest` are for bare devkits only and must not be in
-an image that goes on a board.
+`devboard` and `hwtest` are for bare devkits only, and the
+`*-test` features are bench fault injections; none of them may be in
+an image that goes on a controller.
+
+The current image runs the rev D node model with a placeholder plane
+link driver that answers every address with NAK, so it finds no
+planes; the real driver comes with the rev D board.
 
 Optional at build time:
 
@@ -118,11 +134,18 @@ yet; try the first one on a bench board.
 
 ```sh
 cd firmware
-cargo test                                   # granite-core and granite-sim
+cargo test                                   # every workspace member
+cargo test -p plane-logic --features sim     # the plane logic on its own
+cargo build -p plane-logic --target thumbv6m-none-eabi   # it still builds for the MCU
 cargo run -p granite-sim -- serve            # https://127.0.0.1:8443
-cargo run -p granite-sim -- serve --assets ../web
+cargo run -p granite-sim -- serve --scenario granite-sim/scenarios/two-planes.toml
+cargo run -p granite-sim -- serve --assets web
 cargo run -p granite-sim -- modbus-map > docs/modbus_map.md
 ```
+
+The `two-planes.toml` scenario puts two simulated planes on the link,
+one with all four unit boards, with faults that arrive while it runs;
+`granite-sim/README.md` has the scenario format.
 
 ## This site
 

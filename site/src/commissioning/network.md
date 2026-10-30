@@ -24,10 +24,10 @@ Fill in:
 | DNS | One or more servers. Needed to resolve the broker, the NTP server or OTA URLs by name. |
 | Hostname | Empty keeps `granite-xxxxxx`. |
 | SNTP server | Empty keeps the server from DHCP option 42; a static setup should name one. |
-| Confirm window | Seconds you have to confirm a staged change. 30 to 3600, default 300. |
+| Confirm window | Seconds you have to confirm a staged change, default 300. The page takes 30 to 3600. |
 | Static dead-man | Seconds without a ping answer from the gateway before the board drops the static address and starts DHCP. Default 3600, 0 disables it. The gateway must answer ICMP echo, or set 0. |
 | mDNS | Advertise `granite-xxxxxx.local`. Keep on unless your policy forbids multicast. |
-| VLAN id | Present in the UI; VLAN tagging is **not implemented** in the current firmware. Leave empty and do tagging on the switch port. |
+| VLAN id | Present in the UI; VLAN tagging is **not implemented** in the current firmware, which logs a warning and runs untagged. Leave empty and do tagging on the switch port. |
 
 Press "Stage and apply". The board switches to the new address at
 once. Open the page again at the **new** address, log in, and press
@@ -50,8 +50,15 @@ edit.
 
 ## What happens on a mistake
 
+A revert reboot restarts the controller only. The planes run their
+slots on their own and keep every node as it was while the controller
+is away. The one thing a controller boot does to nodes is its boot
+policy: a node set to `on` or `off` gets that command about three
+seconds after every controller boot, and a node on the default `leave`
+is not touched (see [Nodes and boot policy](nodes.md)).
+
 - Wrong address or gateway: you lose the session, wait out the window,
-  the board reboots into the old configuration and answers again at the
+  the controller reboots into the old configuration and answers again at the
   old address.
 - Wrong VLAN on the switch side: the firmware cannot recover that;
   fix the switch port.
@@ -70,9 +77,7 @@ edit.
 Until the first NTP sync the clock is the firmware build time. The
 status page and `net` on the console show whether SNTP has synced. TLS
 to the broker works either way as long as the broker certificate's
-not-before date is earlier than the firmware build time. (The MQTT
-page shows a "skip TLS time check" box; the current firmware ignores
-it because the ESP-IDF MQTT client has no such option.)
+not-before date is earlier than the firmware build time.
 
 ## Hostname and device id
 

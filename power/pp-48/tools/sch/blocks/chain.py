@@ -26,7 +26,7 @@ Cable: two PHR-14 housings, 14 wires, wire k from pin k to pin 15 - k.
 Core: one OUT header J301, Pk = mux channel k (ports UNITk+1_SDA / SCL, as
 the Mux sheet names them), EXP_RSTN from the MCU (port), PRESS_EN from the
 deadline monostable U301 (74LVC1G123): every rising edge of PRESS_TRIG
-(MCU PC6, TIM3_CH1) retriggers it, Q stays high for ~1 s (R301 x C301)
+(MCU PB12, a GPIO the press task toggles) retriggers it, Q stays high for ~1 s (R301 x C301)
 after the last edge; a stuck-high, stuck-low or floating trigger (R302
 pull-down) ends in PRESS_EN low. Unit: IN header J301 (left edge) and OUT
 header J302 (strip, right edge); IN P0 is this unit's segment (ports SDA /

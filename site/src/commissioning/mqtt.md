@@ -82,18 +82,26 @@ mosquitto_sub -h broker.site.example -p 8883 --cafile ca.pem -u ops -P ... -v -t
 ```
 
 You should see the retained `status` (`"online":true`) and `state`
-messages at once, then `event` lines as nodes change. Send a command
-and watch the ack:
+messages at once (`state` lists every plane that answers and every
+node that is present), then `event` lines as nodes change. Send a
+command and watch the ack:
 
 ```sh
 mosquitto_pub ... -t granite/pod1/granite-37adc7/cmd \
   -m '{"v":1,"id":"t1","action":"on","target":3}'
-# -> granite/pod1/granite-37adc7/ack/t1 {"v":1,"id":"t1","ok":true,"result":"ok","error":null}
+# -> granite/pod1/granite-37adc7/event  {"v":1,"ts":..,"kind":"accepted","id":"t1","action":"on","target":3,"job":12}
+# -> granite/pod1/granite-37adc7/ack/t1 {"v":1,"id":"t1","ok":true,"result":"done","error":null}
 ```
 
-The ack is published when the action **completes**, so an `on` acks
-after the LED comes up (up to `t_on`), an `off` after the OS shut down
-(up to `t_soft_off`) or after the escalation to a forced power-off.
+The command becomes a job on the plane that holds node 3, and the ack
+is published when the plane reports the job **complete**: an `on` acks
+once the host LED is lit (or the plane gave up waiting), an `off` once
+the host shut down or the escalation finished, which can take the
+node's whole `t_soft_off_s`. A job that has not finished after 300 s is
+acked with `ok: false` and `the action did not finish in time`; the
+plane carries on, and the outcome still lands in the node's `last_job`.
+A command the controller refuses (an absent node, a wrong target) is
+acked at once with `ok: false`.
 
 ## When the broker goes away
 
@@ -101,7 +109,9 @@ The controller reconnects on an exponential ladder from 1 s to 60 s,
 keeps running its rules and boot policy, and its `mqtt_connected` flag
 is visible to the rules, in the state payload and as Modbus discrete
 input 13. The last will sets `status` to `"online":false`. Nothing
-about node power changes because the broker is gone.
+about node power changes because the broker is gone: the planes hold
+their nodes as they are, and the controller keeps serving the HTTP API
+and Modbus.
 
 The topic and payload reference is in
 [MQTT topics and commands](../reference/mqtt.md); a ready-made Home

@@ -61,39 +61,41 @@ Topic base: `<topic_root>/<site>/<device_id>`.
 
 | Field | Type | Default | Meaning |
 |---|---|---|---|
-| `nodes` | 8 x NodeSettings | | Index 0 is node 1. |
-| `order` | node ids | `[1,2,3,4,5,6,7,8]` | Sequence for `on_all` and the boot policy. |
-| `timings` | Timings | | See below. |
+| `nodes` | NodeSettings[] | `[]` | Per-node settings, keyed by node id (1..64). A node without an entry uses the defaults; entries are kept while a node is not present. |
+| `plane_update` | `manual` or `auto` | `manual` | Plane firmware update policy. |
 | `probes` | `{rom, name}`[] | `[]` | Up to 8; `rom` is 16 hex digits. |
-| `t_probe_s` | seconds | 10 | Probe read period (read at boot). |
-| `vin_trim` | float | 1.0 | Multiplier on the measured bus voltage (read at boot). |
+| `t_probe_s` | seconds | 10 | Probe read period. `0` means 10. |
+| `vin_trim` | float | 1.0 | Multiplier on the measured controller input voltage. |
+| `vin_min_mv` | mV | 10000 | Lower bound of the input voltage window; `0` = unchecked. |
+| `vin_max_mv` | mV | 14000 | Upper bound; `0` = unchecked, at most 36000. |
+
+The node id is not configured: it is `8 x (plane address - 0x30) +
+slot + 1`, fixed by the plane's address straps and the slot. See
+[Nodes and boot policy](../commissioning/nodes.md).
 
 NodeSettings:
 
-| Field | Values | Default |
-|---|---|---|
-| `name` | string | `node<N>` |
-| `boot_policy` | `leave`, `on`, `off` | `leave` (stored; not applied by the current firmware) |
-| `sense` | `enabled`, `ignore` | `enabled` |
-
-Timings (milliseconds; out-of-range values are clamped to the bound
-when saved):
-
-| Field | Default | Min | Max |
+| Field | Values | Default | Meaning |
 |---|---|---|---|
-| `t_short_ms` | 250 | 100 | 1000 |
-| `t_hold_ms` | 8000 | 4000 | 10000 |
-| `t_on_ms` | 10000 | 1000 | 300000 |
-| `t_soft_off_ms` | 120000 | 5000 | 900000 |
-| `t_cycle_ms` | 10000 | 1000 | 300000 |
-| `t_stagger_ms` | 5000 | 0 | 60000 |
-| `t_settle_ms` | 5000 | 0 | 60000 |
+| `node` | 1..64 | | The key. An entry outside 1..64 is dropped. |
+| `name` | string | `node<N>` | Empty (or left out) means the default. |
+| `boot_policy` | `leave`, `on`, `off` | `leave` | Sent once per controller start. |
+| `led_sense` | bool | `true` | `false`: `on`, `cycle` and `on_all` do not wait for the host LED. |
+| `t_soft_off_s` | seconds | 120 | How long `off` waits for the host before it escalates. `0` means 120; above 3600 is clamped to 3600. |
+| `escalation` | `none`, `hold`, `hold_then_cut` | `hold_then_cut` | How far `off` and `force_off` go when the host stays lit. |
+
+There are no per-node press timings any more: the plane runs the
+sequences with its own constants (15 s LED wait for `on`, 300 ms short
+press, 5 s hold, 5 s off time in `cycle`, 2 s stagger in `on_all`). The
+rev C fields `order` and `timings`, and `sense` in a node entry, are
+ignored when a document carrying them is imported.
 
 ## `rules`
 
 `rules`: array of up to 16 rule objects, unique ids 1..255. The rule
 fields are described in [Rules](../commissioning/rules.md). Default:
-the three disabled example rules.
+the three disabled example rules (read the warning there before
+enabling them).
 
 ## `sec`
 
@@ -131,13 +133,15 @@ the three disabled example rules.
 ## Validation
 
 A document is rejected as a whole (HTTP 400) when: more than 8 probes
-or a bad ROM id, more than 16 rules,
-duplicate rule ids or id 0, static mode without an address, MQTT
-enabled without a host, Modbus enabled without an allow-list, or a
-`schema_version` newer than 1. Timings outside their range and a QoS
-above 2 are clamped rather than rejected. IP and CIDR syntax is not
-validated by the core; a typo there is what the commit-confirm step is
-for.
+or a bad ROM id, `vin_min_mv` not below `vin_max_mv` (when both are
+set), more than 16 rules, duplicate rule ids or id 0, static mode
+without an address, MQTT enabled without a host, Modbus enabled without
+an allow-list, or a `schema_version` newer than 1. A value that does
+not parse (an unknown `escalation`, say) is a 400 with the parser's
+message. Node entries outside 1..64 are dropped, `t_soft_off_s` and
+`vin_max_mv` are clamped and a QoS above 2 becomes 1 rather than being
+rejected. IP and CIDR syntax is not validated by the core; a typo there
+is what the commit-confirm step is for.
 
 ## Example export
 
@@ -150,13 +154,13 @@ for.
            "ca_pem": "-----BEGIN CERTIFICATE-----\n...", "username": "granite-37adc7",
            "client_id": "", "site": "pod1", "topic_root": "granite", "qos": 1,
            "keepalive_s": 30, "t_state_s": 60, "auto_confirm_on_connect": false},
-  "nodes": {"nodes": [{"name": "node1", "boot_policy": "on", "sense": "enabled"}, "..."],
-            "order": [1, 2, 3, 4, 5, 6, 7, 8],
-            "timings": {"t_short_ms": 250, "t_hold_ms": 8000, "t_on_ms": 10000,
-                        "t_soft_off_ms": 120000, "t_cycle_ms": 10000,
-                        "t_stagger_ms": 5000, "t_settle_ms": 5000},
+  "nodes": {"nodes": [{"node": 9, "name": "web-1", "boot_policy": "on", "led_sense": true,
+                       "t_soft_off_s": 300, "escalation": "hold"},
+                      {"node": 12, "boot_policy": "leave", "led_sense": false,
+                       "t_soft_off_s": 120, "escalation": "hold_then_cut"}],
+            "plane_update": "manual",
             "probes": [{"rom": "28ff000000000001", "name": "inlet"}],
-            "t_probe_s": 10, "vin_trim": 1.0},
+            "t_probe_s": 10, "vin_trim": 1.0, "vin_min_mv": 10000, "vin_max_mv": 14000},
   "rules": {"rules": ["..."]},
   "sec": {"admin_password_set": true, "session_hours": 12, "max_login_fails": 5,
           "lockout_s": 60,

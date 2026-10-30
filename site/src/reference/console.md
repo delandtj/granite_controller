@@ -32,7 +32,7 @@ commands:
 | `fleet-key` | `fleet-key sha256 <fingerprint>` or `fleet-key none configured` |
 | `factory-reset CONFIRM` | Erases config and secrets, keeps the `factory` namespace (recovery token, fleet key, device key and certificate), reboots. Without the literal `CONFIRM` it refuses. |
 | `ota-mark-valid` | Ends probation of the running image |
-| `reboot` | Planned reboot; node power untouched |
+| `reboot` | Planned reboot of the controller; the planes keep their nodes as they are (only the boot policies run again, see [Nodes and boot policy](../commissioning/nodes.md)) |
 | `log [n]` | Last `n` lines of the 16 KB log ring, then `-- N lines kept` |
 
 `?` is an alias for `help`. Lines are limited to 512 characters;
@@ -40,5 +40,10 @@ backspace and Ctrl-C work.
 
 The log ring is also what the Maintenance page and
 `GET /api/v1/log/tail` show, and it captures the first boot lines
-before the network is up, which is where an expander or W5500 problem
-shows.
+before the network is up, which is where a plane link, sensor or W5500
+problem shows.
+
+The console belongs to the controller only. A plane core has no
+console: in service everything about it comes through the controller
+(plane state, plane events, the plane verbs), and on the bench its
+diagnostics come over SWD.

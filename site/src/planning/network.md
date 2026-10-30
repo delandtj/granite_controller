@@ -77,6 +77,10 @@ A frame controller is a management device. Treat it like a BMC:
 - MQTT should run over TLS with the broker's CA loaded on the
   controller, and with per-device credentials or a client certificate.
   A plaintext broker on 1883 works for a bench.
+- The power planes have no network interface. They sit on the
+  controller's isolated I2C link and are reached only through the
+  controller, so there is nothing else in the frame to address,
+  firewall or update from the network.
 
 ## Time
 
