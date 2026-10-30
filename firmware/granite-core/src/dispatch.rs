@@ -30,6 +30,7 @@ use crate::config::{Config, Section};
 use crate::jobs::{JobLog, SubmittedJob};
 use crate::msg::{Args, Command, CommandKind, PROTOCOL_VERSION, Reply, TargetKind};
 use crate::observed::Observed;
+use crate::plane::model::{HostState, PowerState};
 use crate::plane::{
     Command as PlaneJob, JobId, NodeCommand, NodeOptions, PlaneClient, PlaneCommand,
 };
@@ -205,6 +206,11 @@ fn submit(cmd: &Command, ctx: &mut DispatchCtx<'_>) -> Dispatched {
         Ok(jobs) => jobs,
         Err(e) => return done(Reply::err(&cmd.id, e), Vec::new()),
     };
+    if plane_jobs.is_empty() {
+        // `on_all` with every present node already running: the verb
+        // has nothing left to ask a plane for, so it is done.
+        return done(Reply::ok(&cmd.id, "done"), Vec::new());
+    }
     let mut submitted: Vec<SubmittedJob> = Vec::new();
     for job in plane_jobs {
         let nodes = job.nodes();
@@ -282,14 +288,7 @@ fn node_jobs(cmd: &Command, ctx: &DispatchCtx<'_>) -> Result<Vec<PlaneJob>, Stri
     // `on_all` is a group by definition and ignores a node target, the
     // way rev C did.
     if cmd.action == CommandKind::OnAll {
-        let nodes = ctx.observed.present_nodes();
-        if nodes.is_empty() {
-            return Err(String::from("no node is present"));
-        }
-        let opts = group_options(&nodes, cmd, ctx);
-        return Ok(alloc::vec![PlaneJob::Node(
-            NodeCommand::on_all(nodes).with_opts(opts)
-        )]);
+        return on_all_job(cmd, ctx);
     }
     // `all` is every present node, one job each: a node verb means the
     // same thing for a set as for one node, and the plane runs the
@@ -316,6 +315,48 @@ fn node_jobs(cmd: &Command, ctx: &DispatchCtx<'_>) -> Result<Vec<PlaneJob>, Stri
     Ok(alloc::vec![PlaneJob::Node(node_verb(
         cmd.action, node, &cmd.args, ctx
     )?)])
+}
+
+/// `on_all`: a staggered `on` over the present nodes that are not
+/// running (ADR 0004 decision 4).
+///
+/// A node whose host is up is left out of the command altogether, and
+/// of the rest only the ones whose rail is down are named to the
+/// plane's stagger - 0x4B switches every slot it is given off before it
+/// releases them one at a time, so naming a powered slot would cut it.
+/// The result is what the ADR asks for: `on_all` brings up what is off
+/// and does not disturb what runs.
+///
+/// `Ok(vec![])` means "nothing to do": every present node is already
+/// running, which the caller answers with a plain `done`.
+fn on_all_job(cmd: &Command, ctx: &DispatchCtx<'_>) -> Result<Vec<PlaneJob>, String> {
+    let present = ctx.observed.present_nodes();
+    if present.is_empty() {
+        return Err(String::from("no node is present"));
+    }
+    let mut nodes: Vec<NodeId> = Vec::new();
+    let mut stagger: Vec<NodeId> = Vec::new();
+    for node in present {
+        let Some(obs) = ctx.observed.node(node) else {
+            continue;
+        };
+        // A host that is up (steady LED or blinking in sleep) is left
+        // alone; `on` on a sleeping host is not this verb's business.
+        if matches!(obs.host, HostState::On | HostState::Sleep) {
+            continue;
+        }
+        nodes.push(node);
+        if !matches!(obs.power, PowerState::On | PowerState::Starting) {
+            stagger.push(node);
+        }
+    }
+    if nodes.is_empty() {
+        return Ok(Vec::new());
+    }
+    let opts = group_options(&nodes, cmd, ctx);
+    Ok(alloc::vec![PlaneJob::Node(
+        NodeCommand::on_all_of(nodes, stagger).with_opts(opts)
+    )])
 }
 
 /// One node verb on one node, with that node's own timings.

@@ -13,7 +13,7 @@
 //! | reset | 0x46 press RST |
 //! | cycle | 0x47 power-cycle |
 //! | press | 0x45 / 0x46 press PWR / RST |
-//! | on_all | 0x4B stagger on, then 0x50 node on per slot |
+//! | on_all | 0x4B stagger on over the rails that are down, then 0x50 node on per slot |
 //! | power_on / power_off | 0x40 enable |
 //! | clear_latch | 0x41 clear the OV latch |
 //! | unit_reset | 0x4A unit hot-swap reset |
@@ -27,7 +27,7 @@
 //! A job is one or more **stages**, each a list of per-plane CTRL
 //! writes. Almost every verb is one stage of one write; `on_all` is
 //! two, because the stagger has to finish before each slot gets its
-//! PWR press. A stage ends when every write in it has a final result,
+//! PWR press (one, when no rail needs staggering). A stage ends when every write in it has a final result,
 //! and the job's outcome is the worst of them (ADR 0004 decision 6:
 //! commands complete asynchronously and the ack follows the plane's
 //! result).
@@ -197,8 +197,15 @@ pub enum NodeCommand {
     },
     /// Staggered `on` over a set of nodes, grouped per plane.
     OnAll {
-        /// The nodes, in any order; duplicates are ignored.
+        /// The nodes to bring up, in any order; duplicates are ignored.
         nodes: Vec<NodeId>,
+        /// Of those, the ones whose rail is down: the only slots the
+        /// plane's stagger (0x4B) may name. 0x4B takes every slot it is
+        /// given off before releasing them one by one (ADR 0002
+        /// decision 6), so a node that is already powered has to stay
+        /// out of it - `on_all` is a staggered `on` (ADR 0004
+        /// decision 4), not a power cycle.
+        stagger: Vec<NodeId>,
         /// Timings of the nodes in the set. One set of options for the
         /// group: a staggered `on_all` is one plane command per plane
         /// and cannot carry a timeout per slot.
@@ -254,10 +261,24 @@ impl NodeCommand {
         }
     }
 
-    /// `on_all` over a set of nodes with the default timings.
-    pub const fn on_all(nodes: Vec<NodeId>) -> Self {
+    /// `on_all` over a set of nodes with the default timings, staggering
+    /// every one of them: what a caller that knows nothing about the
+    /// rails asks for.
+    pub fn on_all(nodes: Vec<NodeId>) -> Self {
+        NodeCommand::OnAll {
+            stagger: nodes.clone(),
+            nodes,
+            opts: NodeOptions::DEFAULT,
+        }
+    }
+
+    /// `on_all` where the caller knows which rails are down: only those
+    /// slots are staggered, the rest are left powered and only get their
+    /// `on` (ADR 0004 decision 4).
+    pub fn on_all_of(nodes: Vec<NodeId>, stagger: Vec<NodeId>) -> Self {
         NodeCommand::OnAll {
             nodes,
+            stagger,
             opts: NodeOptions::DEFAULT,
         }
     }
@@ -270,7 +291,13 @@ impl NodeCommand {
             NodeCommand::Off { node, .. } => NodeCommand::Off { node, opts },
             NodeCommand::ForceOff { node, .. } => NodeCommand::ForceOff { node, opts },
             NodeCommand::Cycle { node, .. } => NodeCommand::Cycle { node, opts },
-            NodeCommand::OnAll { nodes, .. } => NodeCommand::OnAll { nodes, opts },
+            NodeCommand::OnAll {
+                nodes, stagger, ..
+            } => NodeCommand::OnAll {
+                nodes,
+                stagger,
+                opts,
+            },
             other => other,
         }
     }
@@ -394,7 +421,8 @@ impl NodeCommand {
         alloc::vec![alloc::vec![Step::one(address, command)]]
     }
 
-    /// `on_all`: one stagger per plane, then one node-on per slot.
+    /// `on_all`: one stagger per plane over the rails that are down,
+    /// then one node-on per slot.
     ///
     /// The stagger (0x4B) takes every named slot down and brings it
     /// back [`STAGGER_MS`] apart, so the inrush of eight boards does
@@ -402,10 +430,15 @@ impl NodeCommand {
     /// hosts that stayed dark. They have to be two stages: a node-on
     /// sent while the stagger still holds a slot off would release the
     /// rail behind the stagger's back.
+    ///
+    /// Only the slots in `stagger` are named to 0x4B. A node whose rail
+    /// is already up gets its node-on and keeps its power: the stagger
+    /// is there to spread inrush, and a slot that is already carrying a
+    /// board has none left to spread.
     fn stagger_stages(&self) -> Vec<Vec<Step>> {
-        let opts = match self {
-            NodeCommand::OnAll { opts, .. } => *opts,
-            _ => NodeOptions::default(),
+        let (opts, cut) = match self {
+            NodeCommand::OnAll { opts, stagger, .. } => (*opts, stagger.as_slice()),
+            _ => (NodeOptions::default(), &[] as &[NodeId]),
         };
         let mut stagger: Vec<Step> = Vec::new();
         let mut on: Vec<Step> = Vec::new();
@@ -413,19 +446,21 @@ impl NodeCommand {
             let Some((address, slot)) = node_location(node) else {
                 continue;
             };
-            match stagger.iter_mut().find(|s| s.address == address) {
-                Some(step) => {
-                    if let Some(Ctrl::StaggerOn { slots, .. }) = step.commands.first_mut() {
-                        *slots = slots.plus(slot);
+            if cut.contains(&node) {
+                match stagger.iter_mut().find(|s| s.address == address) {
+                    Some(step) => {
+                        if let Some(Ctrl::StaggerOn { slots, .. }) = step.commands.first_mut() {
+                            *slots = slots.plus(slot);
+                        }
                     }
+                    None => stagger.push(Step::one(
+                        address,
+                        Ctrl::StaggerOn {
+                            slots: IndexBitmap::NONE.plus(slot),
+                            delay_ms: STAGGER_MS,
+                        },
+                    )),
                 }
-                None => stagger.push(Step::one(
-                    address,
-                    Ctrl::StaggerOn {
-                        slots: IndexBitmap::NONE.plus(slot),
-                        delay_ms: STAGGER_MS,
-                    },
-                )),
             }
             on.push(Step::one(
                 address,
@@ -435,8 +470,13 @@ impl NodeCommand {
                 },
             ));
         }
-        if stagger.is_empty() {
+        if on.is_empty() {
             return Vec::new();
+        }
+        if stagger.is_empty() {
+            // Every rail is already up: nothing to spread, just the
+            // presses.
+            return alloc::vec![on];
         }
         alloc::vec![stagger, on]
     }
@@ -725,6 +765,43 @@ mod tests {
         );
         assert_eq!(stages[0][1].address, 0x31);
         assert_eq!(stages[1].len(), 3, "one node-on per slot, duplicates gone");
+    }
+
+    /// Bug: `on_all` named every slot to the stagger, so a running node
+    /// lost its rail and had to boot again. Only the rails that are
+    /// down are staggered (ADR 0004 decision 4: a staggered `on`).
+    #[test]
+    fn on_all_only_staggers_the_rails_that_are_down() {
+        // Nodes 1 and 3 want the verb; only node 3's rail is off.
+        let stages = NodeCommand::on_all_of(alloc::vec![1, 3], alloc::vec![3]).stages();
+        assert_eq!(stages.len(), 2);
+        assert_eq!(stages[0].len(), 1, "one stagger, for one plane");
+        assert_eq!(
+            stages[0][0].commands[0],
+            Ctrl::StaggerOn {
+                slots: IndexBitmap::NONE.plus(2),
+                delay_ms: STAGGER_MS
+            },
+            "node 1's slot is not in the bitmap"
+        );
+        assert_eq!(stages[1].len(), 2, "both still get their node-on");
+
+        // Nothing to stagger: the presses alone, and no slot is cut.
+        let presses = NodeCommand::on_all_of(alloc::vec![1, 3], Vec::new()).stages();
+        assert_eq!(presses.len(), 1, "no stagger stage at all");
+        assert_eq!(presses[0].len(), 2);
+        assert!(
+            presses[0]
+                .iter()
+                .all(|step| matches!(step.commands[0], Ctrl::NodeOn { .. }))
+        );
+
+        // And a group with nothing in it is no job.
+        assert!(
+            NodeCommand::on_all_of(Vec::new(), Vec::new())
+                .stages()
+                .is_empty()
+        );
     }
 
     #[test]

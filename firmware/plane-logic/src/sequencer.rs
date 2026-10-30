@@ -834,6 +834,14 @@ impl Plane {
     }
 
     /// CTRL 0x4B stagger on.
+    ///
+    /// Every named slot goes off first and comes back one at a time
+    /// (ADR 0002 decision 6), so naming a slot that already carries a
+    /// board cuts it. That is this command's contract and it stays
+    /// here: which slots may be cut is the caller's decision. The
+    /// controller's `on_all` names only the slots whose rail is down
+    /// (controller ADR 0004 decision 4, `NodeCommand::OnAll` of
+    /// granite-core).
     pub(crate) fn cmd_stagger<D: Devices>(
         &mut self,
         dev: &mut D,

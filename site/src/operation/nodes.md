@@ -82,15 +82,21 @@ once.
 
 ### `on_all`
 
-`on_all` takes every node the controller sees as present, ignores the
-target it was sent with, and runs in two stages: first each plane
-switches **every one of those slots off** and brings them back one at a
-time, 2 s apart, so the inrush of eight boards does not land at once;
-then each slot gets an `on`, which presses PWR on the hosts that stayed
-dark. A node that was running when `on_all` arrived therefore loses
-its rail for a moment and has to boot again. Use it to bring up a dead
-frame, not as "make sure everything is on"; for that, send `on` to each
-node, which leaves running nodes alone.
+`on_all` is a staggered `on` over the nodes that are **not running**.
+It ignores the target it was sent with and takes every present node
+whose host is dark (a host that is on, or asleep with a blinking LED,
+is left alone entirely). It then runs in two stages: first each plane
+switches the slots **whose rail is down** off and brings them back one
+at a time, 2 s apart, so the inrush of eight boards does not land at
+once; then every node of the set gets an `on`, which presses PWR on the
+hosts that stayed dark.
+
+A node that is already powered is never named to the stagger, so it
+keeps its rail and only gets its press: there is no inrush to spread
+for a slot that already carries a board. Nothing that runs is cut, so
+`on_all` is both "bring up a dead frame" and "make sure everything is
+on". When every present node is already running it is answered with
+`done` and no plane job at all.
 
 ### Arguments
 

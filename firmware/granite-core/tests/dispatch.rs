@@ -64,15 +64,26 @@ impl Harness {
 
     /// A node with a module in its slot.
     fn add_node(&mut self, node: NodeId, present: bool) {
-        let (address, slot) = granite_core::plane::node_location(node).expect("a node id");
-        let mut obs = NodeObs::unknown(node, address, slot);
-        obs.present = present;
-        obs.power = if present {
+        let power = if present {
             PowerState::On
         } else {
             PowerState::Absent
         };
-        obs.host = HostState::On;
+        self.add_node_in(node, present, power, HostState::On);
+    }
+
+    /// A present node whose rail is down and whose host is dark: what
+    /// `on_all` is for.
+    fn add_dark_node(&mut self, node: NodeId) {
+        self.add_node_in(node, true, PowerState::Off, HostState::Unknown);
+    }
+
+    fn add_node_in(&mut self, node: NodeId, present: bool, power: PowerState, host: HostState) {
+        let (address, slot) = granite_core::plane::node_location(node).expect("a node id");
+        let mut obs = NodeObs::unknown(node, address, slot);
+        obs.present = present;
+        obs.power = power;
+        obs.host = host;
         obs.ts_ms = 20;
         self.observed.nodes.push(obs);
         self.observed.nodes.sort_by_key(|n| n.node);
@@ -122,7 +133,9 @@ fn a_node_verb_becomes_a_plane_job_and_answers_accepted() {
         assert_eq!(reply.result.as_deref(), Some("accepted"), "{action}");
         assert!(reply.job.is_some(), "{action} carries its job id");
     }
-    // on_all is a group and takes every present node.
+    // on_all is a group and takes every present node that is not
+    // already running: nodes 1 and 2 are up, node 3 is dark.
+    h.add_dark_node(3);
     let reply = h.verb(CommandKind::OnAll, Target::All);
     assert!(reply.ok);
     assert!(reply.job.is_some());
@@ -241,6 +254,7 @@ fn all_fans_a_node_verb_out_over_every_present_node() {
     }
 
     // on_all stays one group job.
+    h.add_dark_node(11);
     let group = h.dispatched(&Command::new("c-group", CommandKind::OnAll).with_target(Target::All));
     assert_eq!(group.jobs.len(), 1, "on_all is one staggered group");
 }
@@ -269,6 +283,42 @@ fn a_fan_out_is_acked_once() {
     for node in [1, 2] {
         assert!(h.jobs.last(node).and_then(|l| l.result.clone()).is_some());
     }
+}
+
+/// Bug: `on_all` cut the rail of every present node, running ones
+/// included, and staggered them back on. ADR 0004 decision 4 calls it a
+/// staggered `on`: a running node is left alone, and only a node whose
+/// rail is down is named to the plane's stagger.
+#[test]
+fn on_all_leaves_the_nodes_that_run_alone() {
+    use granite_core::plane::{Command as PlaneJob, NodeCommand};
+
+    let mut h = Harness::new();
+    // Nodes 1 and 2 run (rail and host on). Node 3's rail is up but its
+    // host is dark, node 4 is off altogether.
+    h.add_dark_node(4);
+    h.add_node_in(3, true, PowerState::On, HostState::Off);
+
+    let out = h.dispatched(&Command::new("c-on-all", CommandKind::OnAll).with_target(Target::All));
+    assert!(out.reply.ok, "{:?}", out.reply.error);
+    assert_eq!(out.jobs.len(), 1, "one staggered group");
+    // The client has no link, so the job is already finished and
+    // carries the command the dispatcher built.
+    let finished = h.plane.drain_jobs();
+    match &finished[0].command {
+        PlaneJob::Node(NodeCommand::OnAll { nodes, stagger, .. }) => {
+            assert_eq!(nodes, &vec![3, 4], "the running nodes are left out");
+            assert_eq!(stagger, &vec![4], "only a rail that is down is cut");
+        }
+        other => panic!("expected on_all, got {other:?}"),
+    }
+
+    // Every present node running: nothing to ask a plane for.
+    let mut all_up = Harness::new();
+    let out = all_up.dispatched(&Command::new("c-idle", CommandKind::OnAll).with_target(Target::All));
+    assert!(out.reply.ok, "{:?}", out.reply.error);
+    assert_eq!(out.reply.result.as_deref(), Some("done"));
+    assert!(out.jobs.is_empty(), "no node was touched");
 }
 
 /// With no plane at all there is nothing to fan out to.

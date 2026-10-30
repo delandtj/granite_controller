@@ -209,6 +209,59 @@ fn an_mqtt_command_becomes_a_plane_job_and_is_acked() {
     assert!(last.finished_ms.is_some());
 }
 
+/// Bug: `on_all` cut the rail of every present node, running ones
+/// included, and staggered them back on. It is a staggered `on` (ADR
+/// 0004 decision 4): a node that runs is not touched, and a node whose
+/// rail is up but whose host is dark keeps its rail and gets its press.
+#[test]
+fn on_all_does_not_cut_a_node_that_runs() {
+    let mut rig = Rig::new();
+    // Bring node 1 up: rail on, host on.
+    let reply = rig.verb("c-on1", CommandKind::On, Target::Node(1));
+    assert!(reply.ok, "{:?}", reply.error);
+    rig.ack("c-on1", 60_000);
+    assert_eq!(rig.host(1), HostState::On);
+    // Node 2's rail off, so the stagger has something to release.
+    let reply = rig.verb("c-off2", CommandKind::PowerOff, Target::Node(2));
+    assert!(reply.ok, "{:?}", reply.error);
+    rig.ack("c-off2", 30_000);
+    assert!(rig.run_until(5_000, |core| {
+        core.observed.node_power(2) == PowerState::Off
+    }));
+
+    // A watcher that would catch node 1 losing its rail for a moment.
+    let reply = rig.verb("c-onall", CommandKind::OnAll, Target::All);
+    assert!(reply.ok, "{:?}", reply.error);
+    let mut node1_dropped = false;
+    let ack = {
+        let want = String::from("c-onall");
+        let until = rig.now_ms + 120_000;
+        while rig.now_ms < until && rig.core.finished_reply(&want).is_none() {
+            rig.run(TICK_MS);
+            if rig.core.observed.node_power(1) == PowerState::Off {
+                node1_dropped = true;
+            }
+        }
+        rig.core.finished_reply(&want).expect("an ack for on_all")
+    };
+    assert!(ack.ok, "{:?}", ack.error);
+    assert!(
+        !node1_dropped,
+        "on_all cut the rail of a node that was running"
+    );
+    assert_eq!(rig.host(1), HostState::On, "and it kept running");
+    // The ones that were off came up.
+    assert!(rig.run_until(60_000, |core| {
+        (2..=4).all(|node| core.observed.node_host(node) == HostState::On)
+    }));
+
+    // With everything running there is nothing left to do.
+    let idle = rig.verb("c-idle", CommandKind::OnAll, Target::All);
+    assert!(idle.ok, "{:?}", idle.error);
+    assert_eq!(idle.result.as_deref(), Some("done"));
+    assert!(idle.job.is_none(), "no plane job was submitted");
+}
+
 #[test]
 fn a_modbus_write_takes_the_same_path() {
     let mut rig = Rig::new();
