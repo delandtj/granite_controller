@@ -2347,7 +2347,7 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Sensor_Energy:INA238"
+		(symbol "Sensor_Energy:INA237"
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -2363,7 +2363,7 @@
 					)
 				)
 			)
-			(property "Value" "INA238"
+			(property "Value" "INA237"
 				(at 3.81 11.43 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -2384,7 +2384,7 @@
 					)
 				)
 			)
-			(property "Datasheet" "https://www.ti.com/lit/ds/symlink/ina238.pdf"
+			(property "Datasheet" "https://www.ti.com/lit/ds/symlink/ina237.pdf"
 				(at 8.89 -2.54 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -2428,7 +2428,7 @@
 					)
 				)
 			)
-			(symbol "INA238_0_1"
+			(symbol "INA237_0_1"
 				(rectangle
 					(start 7.62 10.16)
 					(end -7.62 -10.16)
@@ -2441,7 +2441,7 @@
 					)
 				)
 			)
-			(symbol "INA238_1_1"
+			(symbol "INA237_1_1"
 				(pin input line
 					(at 10.16 7.62 180)
 					(length 2.54)
@@ -8674,7 +8674,7 @@
 		)
 		(uuid "045cb729-2fd9-5156-b1c6-22c602197522")
 	)
-	(text "SLOT A: 48 V HOT-SWAP, INA238, OV LATCH, MODULE MOUNT, ID ADC, NODE TERMINAL"
+	(text "SLOT A: 48 V HOT-SWAP, INA237, OV LATCH, MODULE MOUNT, ID ADC, NODE TERMINAL"
 		(exclude_from_sim no)
 		(at 15.24 25.4 0)
 		(effects
@@ -8684,9 +8684,9 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "c55d074d-221b-5bbc-a2f5-0bdfa2ec7d44")
+		(uuid "91870568-67bb-5f32-b80e-13742cab2764")
 	)
-	(text "SLOT B: 48 V HOT-SWAP, INA238, OV LATCH, MODULE MOUNT, ID ADC, NODE TERMINAL"
+	(text "SLOT B: 48 V HOT-SWAP, INA237, OV LATCH, MODULE MOUNT, ID ADC, NODE TERMINAL"
 		(exclude_from_sim no)
 		(at 396.24 25.4 0)
 		(effects
@@ -8696,7 +8696,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "1b18e411-a204-5bc1-af66-11bdd366a0dd")
+		(uuid "7d0c67ce-bb99-54f1-bacf-3e546acd9a96")
 	)
 	(text "UNIT: TWO SLOTS ON ONE I2C SEGMENT. SLOT A (LEFT, NETS A_*) AND SLOT B (RIGHT, REFS + 50, NETS B_*)"
 		(exclude_from_sim no)
@@ -8710,7 +8710,7 @@
 		)
 		(uuid "6818fcff-1314-5a04-ad90-cce98e8f4668")
 	)
-	(text "I2C SEGMENT: INA238 0x40 / 0x41, ADC121C027 0x51 / 0x52 (slot A / B), TCA6424A 0x22"
+	(text "I2C SEGMENT: INA237 0x40 / 0x41, ADC121C027 0x51 / 0x52 (slot A / B), TCA6424A 0x22"
 		(exclude_from_sim no)
 		(at 15.24 190.5 0)
 		(effects
@@ -8720,7 +8720,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "2bd7aa81-76c6-531c-9bec-e72c2a3b6d35")
+		(uuid "31b64288-d5ca-59f2-b08b-795f074be18e")
 	)
 	(symbol
 		(lib_id "Device:R")
@@ -9978,7 +9978,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Sensor_Energy:INA238")
+		(lib_id "Sensor_Energy:INA237")
 		(at 55.88 76.2 270)
 		(unit 1)
 		(body_style 1)
@@ -9998,7 +9998,7 @@
 				)
 			)
 		)
-		(property "Value" "INA238AIDGSR"
+		(property "Value" "INA237AIDGSR"
 			(at 75.85 64.77 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -10044,7 +10044,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" "C2868250"
+		(property "LCSC" "C2864837"
 			(at 55.88 76.2 0)
 			(hide yes)
 			(show_name no)
@@ -10056,7 +10056,7 @@
 				(justify left)
 			)
 		)
-		(property "MPN" "TI INA238AIDGSR"
+		(property "MPN" "TI INA237AIDGSR"
 			(at 55.88 76.2 0)
 			(hide yes)
 			(show_name no)
@@ -10162,7 +10162,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "INA238 VS"
+		(property "Description" "INA237 VS"
 			(at 73.66 80.01 0)
 			(hide yes)
 			(show_name no)
@@ -15791,7 +15791,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Sensor_Energy:INA238")
+		(lib_id "Sensor_Energy:INA237")
 		(at 436.88 76.2 270)
 		(unit 1)
 		(body_style 1)
@@ -15811,7 +15811,7 @@
 				)
 			)
 		)
-		(property "Value" "INA238AIDGSR"
+		(property "Value" "INA237AIDGSR"
 			(at 456.85 64.77 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -15857,7 +15857,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" "C2868250"
+		(property "LCSC" "C2864837"
 			(at 436.88 76.2 0)
 			(hide yes)
 			(show_name no)
@@ -15869,7 +15869,7 @@
 				(justify left)
 			)
 		)
-		(property "MPN" "TI INA238AIDGSR"
+		(property "MPN" "TI INA237AIDGSR"
 			(at 436.88 76.2 0)
 			(hide yes)
 			(show_name no)
@@ -15975,7 +15975,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "INA238 VS"
+		(property "Description" "INA237 VS"
 			(at 454.66 80.01 0)
 			(hide yes)
 			(show_name no)

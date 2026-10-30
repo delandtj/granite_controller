@@ -5,7 +5,7 @@ decisions 4 and 9).
 Slot A (core side, references as drawn, nets A_*) and slot B (far side,
 references + 50, nets B_*, drawn to the right) are the same slot drawing;
 GND, +3V3, VBUS, SDA and SCL are shared. The only differences: slot B's
-address straps (INA238 A0 and ADC ADR0 on +3V3: 0x41 / 0x52 against slot
+address straps (INA237 A0 and ADC ADR0 on +3V3: 0x41 / 0x52 against slot
 A's 0x40 / 0x51), and the unit parts drawn once with slot A: the segment
 pull-ups R26 / R27 (placed in slot A) and the expander U5 (TCA6424A, 0x22,
 11 lines per slot, reset = all inputs; placed in slot B) with its caps C9 /
@@ -13,7 +13,7 @@ C13 and /RESET pull-up R30. The expander's two spares carry the unit
 hot-swap (docs/adr/0005 decision 3): P13 U_OFF out, P27 U_PGD in (ports).
 
 The slot: the front end (shunts, LM5069-2,
-pass FET, UVLO / OVLO, timer, PGD, output clamp), the INA238, the enable
+pass FET, UVLO / OVLO, timer, PGD, output clamp), the INA237, the enable
 chain and the OV latch are the PP-48-2S slot block (power/pp-48-2s/tools/
 sch/blocks/slot.py) unchanged, at the same coordinates. What changed:
 
@@ -42,9 +42,9 @@ sch/blocks/slot.py) unchanged, at the same coordinates. What changed:
   output caps).
 
 - Slot latch U3 is set (/PRE = OVK, low) by three open-drain sources: the
-  module's OV_KILL, the INA238 ALERT (power limit, ALATCH; firmware sets
+  module's OV_KILL, the INA237 ALERT (power limit, ALATCH; firmware sets
   the limit at boot, the reset value never trips) and the PGOOD-loss trip
-  Q6. The INA238 DIAG_ALRT register tells a power trip from the other two.
+  Q6. The INA237 DIAG_ALRT register tells a power trip from the other two.
 - PGOOD-loss blanking (ADR 0003): U10 holds ARM. It is set while the
   module's PGOOD and the LM5069 PGD are both high (Q8 / Q9 in series on
   /PRE, level, so either may rise first) and cleared while PGD is low (any
@@ -90,7 +90,7 @@ def block():
         slot(b, s)
     expander(b)
     b.text("UNIT: TWO SLOTS ON ONE I2C SEGMENT. SLOT A (LEFT, NETS A_*) AND SLOT B (RIGHT, REFS + 50, NETS B_*)", P(12, 12))
-    b.text("I2C SEGMENT: INA238 0x40 / 0x41, ADC121C027 0x51 / 0x52 (slot A / B), TCA6424A 0x22", P(12, 150), size=1.5)
+    b.text("I2C SEGMENT: INA237 0x40 / 0x41, ADC121C027 0x51 / 0x52 (slot A / B), TCA6424A 0x22", P(12, 150), size=1.5)
     return b.finish()
 
 
@@ -128,7 +128,7 @@ def expander(b):
 def slot(b, s):
     dx = 0 if s == "A" else SLOT_DX
     roff = 0 if s == "A" else SLOT_REF
-    strap = "GND" if s == "A" else "+3V3"       # INA238 A0 and ADC ADR0: slot B is the next address
+    strap = "GND" if s == "A" else "+3V3"       # INA237 A0 and ADC ADR0: slot B is the next address
 
     def n(net):
         return net if net in SHARED else "%s_%s" % (s, net)
@@ -185,12 +185,12 @@ def slot(b, s):
     C(2, "2.2u 100V", C1210, {"1": "OUT", "2": "GND"}, (122, 38), fields={"LCSC": "C338133"},
       desc="slot output, in front of the module")
 
-    # ========================================================== INA238 under the shunt
-    sym("U2", "Sensor_Energy:INA238", "INA238AIDGSR", "Package_SO:TSSOP-10_3x3mm_P0.5mm",
+    # ========================================================== INA237 under the shunt
+    sym("U2", "Sensor_Energy:INA237", "INA237AIDGSR", "Package_SO:TSSOP-10_3x3mm_P0.5mm",
         {"1": "GND", "2": strap, "3": "OVK", "4": "SDA", "5": "SCL", "6": "+3V3", "7": "GND", "8": "OUT", "9": "SENSE", "10": "VBUS"},
-        (44, 60), rot=270, fields={"LCSC": "C2868250", "MPN": "TI INA238AIDGSR"}, 
+        (44, 60), rot=270, fields={"LCSC": "C2864837", "MPN": "TI INA237AIDGSR"},
         desc="16-bit monitor on the shunt, address 0x40 slot A / 0x41 slot B (A1 GND, A0 = strap); VBUS pin reads the slot output")
-    C(3, "100n", C0402, {"1": "+3V3", "2": "GND"}, (58, 63), desc="INA238 VS")
+    C(3, "100n", C0402, {"1": "+3V3", "2": "GND"}, (58, 63), desc="INA237 VS")
 
     # ========================================================== enable chain and OV latch, as PP-48-2S
     sym("Q2", FET, "2N7002", SOT23, {"1": "OFF", "2": "GND", "3": "UVLO"}, (82, 90),
@@ -287,13 +287,13 @@ def slot(b, s):
     wire("VBUS", (16, 32), ("R1", "1"), (30, 32), ("R2", "1"))      # one VBUS symbol, both shunts
     wire("SENSE", ("R1", "2"), ("Q1", "5"))
     wire("SENSE", (40, 32), ("R2", "2"))
-    wire("SENSE", (40, 38), ("U2", "9"))                            # Kelvin tap to INA238 IN-
+    wire("SENSE", (40, 38), ("U2", "9"))                            # Kelvin tap to INA237 IN-
     wire("SENSE", ("U1", "1"), ("Q1", "5"))
     wire("GATE", ("Q1", "4"), ("U1", "10"))
     name("GATE", (98, 40))
     wire("OUT", ("Q1", "1"), ("SO1", "1"))
     wire("OUT", ("U1", "9"), ("Q1", "1"))
-    wire("OUT", (102, 42), (50, 42), ("U2", "8"))                   # INA238 VBUS reads the slot output
+    wire("OUT", (102, 42), (50, 42), ("U2", "8"))                   # INA237 VBUS reads the slot output
     for x, ref, pin in ((112, "D1", "1"), (122, "C2", "1")):
         wire("OUT", (x, 32), (ref, pin))
     b.flag(n("OUT"), pt((108, 32)))
@@ -311,7 +311,7 @@ def slot(b, s):
     wire("PWR", ("U1", "7"), ("R7", "1"))
     wire("TIMER", ("U1", "6"), ("C1", "1"))
 
-    # ========================================================== INA238 supply, alert, I2C segment
+    # ========================================================== INA237 supply, alert, I2C segment
     wire("+3V3", (58, 56), ("C3", "1"), ("U2", "6"))
     wire("GND", (32, 64), ("U2", "7"))
     tie("OVK", ("U2", "3"))                                         # ALERT (open drain) sets the slot latch
@@ -383,4 +383,4 @@ def slot(b, s):
             r = renumber(ref, roff)
             b.tie(b.syms[r].nets[pin], (r, pin))
 
-    b.text("SLOT %s: 48 V HOT-SWAP, INA238, OV LATCH, MODULE MOUNT, ID ADC, NODE TERMINAL" % s, pt((12, 20)))
+    b.text("SLOT %s: 48 V HOT-SWAP, INA237, OV LATCH, MODULE MOUNT, ID ADC, NODE TERMINAL" % s, pt((12, 20)))

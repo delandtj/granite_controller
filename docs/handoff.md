@@ -2,6 +2,30 @@
 
 Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
 
+## 2026-10-30: repo merge, manual, 3D models, LCSC / stock pass
+
+- granite_controller and granite-plane merged (this repo, pushed to
+  delandtj/granite_controller, rename pending): rev C in controller-rev-c/
+  (tag rev-c-demo), superseded boards in attic/, manual (site/) rewritten
+  for rev D and the planes.
+- 3D models: unit J1 / J51 (Degson), J3 / J53 aux sockets, J201 XT60, U5,
+  photoMOS / opto; module J2 header; carrier F1. EasyEDA STEPs are not on
+  the footprint origin: placement = pad fit + STEP-to-WRL shift.
+- Unit: every part has an LCSC code now. INA238 (0 at JLC) -> INA237AIDGSR
+  C2864837 on U2 / U52 / U208: pin- and register-compatible for what
+  plane-logic/src/drivers/ina238.rs uses (SHUNT_CAL 819.2e6, LSBs,
+  DIETEMP, MANUFACTURER_ID probe); gain error 0.3 % (was 0.1 %), offset
+  50 uV max (~15 mA on 3.5 mOhm).
+- Module: U2 / U3 MCP65R46-1.21 (0 stock) -> MCP65R46T-2402E/CHY C623510
+  (2.4 V reference, same hysteresis / open drain / pinout), dividers R12
+  178k -> 84.5k (OV_KILL 22.68 V, was 22.75) and R14 133k -> 61.9k (PGOOD
+  17.26 V, was 17.30); C13 2.2n 100 V -> GCM155R72A222KA01D C2980802.
+  TLV3011A rejected: no hysteresis (PGOOD chatter on the ramp could trip
+  the unit's armed PGOOD-loss latch).
+- OPEN (user decision): unit U207 LM5069MM-1 (latch-off) has 1 at JLC;
+  LM5069-2 (auto-retry, stocked) would need a firmware latch through
+  U_OFF. Or global sourcing / consigned -1 parts.
+
 ## 2026-10-29: firmware specs written (all review asks answered)
 
 firmware/docs/adr, Proposed, every review ask answered by the user:

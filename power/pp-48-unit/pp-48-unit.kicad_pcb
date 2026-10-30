@@ -15350,7 +15350,7 @@
 				)
 			)
 		)
-		(property "Value" "INA238AIDGSR"
+		(property "Value" "INA237AIDGSR"
 			(at 0 2.45 270)
 			(layer "F.Fab")
 			(uuid "f9f1607f-a22b-426d-aae8-d12d3e199c15")
@@ -15395,7 +15395,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C2868250"
+		(property "LCSC" "C2864837"
 			(at 0 0 270)
 			(layer "F.Fab")
 			(hide yes)
@@ -15407,7 +15407,7 @@
 				)
 			)
 		)
-		(property "MPN" "TI INA238AIDGSR"
+		(property "MPN" "TI INA237AIDGSR"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -15415,6 +15415,7 @@
 			(effects
 				(font
 					(size 1.27 1.27)
+					(thickness 0.15)
 				)
 			)
 		)
@@ -19793,7 +19794,7 @@
 				)
 			)
 		)
-		(property "Description" "INA238 VS"
+		(property "Description" "INA237 VS"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -20313,7 +20314,7 @@
 				)
 			)
 		)
-		(property "Value" "INA238AIDGSR"
+		(property "Value" "INA237AIDGSR"
 			(at 0 2.45 270)
 			(layer "F.Fab")
 			(uuid "d27b11d3-5fd5-4846-a2e5-e1a63ea4b82d")
@@ -20358,7 +20359,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C2868250"
+		(property "LCSC" "C2864837"
 			(at 0 0 270)
 			(layer "F.Fab")
 			(hide yes)
@@ -20370,7 +20371,7 @@
 				)
 			)
 		)
-		(property "MPN" "TI INA238AIDGSR"
+		(property "MPN" "TI INA237AIDGSR"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -20378,6 +20379,7 @@
 			(effects
 				(font
 					(size 1.27 1.27)
+					(thickness 0.15)
 				)
 			)
 		)
@@ -23270,7 +23272,7 @@
 				)
 			)
 		)
-		(property "Description" "INA238 VS"
+		(property "Description" "INA237 VS"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -33932,7 +33934,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Value" "INA238AIDGSR"
+		(property "Value" "INA237AIDGSR"
 			(at 0 -2.45 180)
 			(layer "B.Fab")
 			(uuid "93e0661a-485c-40d7-8ace-83efb9a1b4d9")
@@ -33981,7 +33983,7 @@
 				(justify mirror)
 			)
 		)
-		(property "LCSC" "C2868250"
+		(property "LCSC" "C2864837"
 			(at 0 0 180)
 			(layer "B.Fab")
 			(hide yes)
@@ -33994,7 +33996,7 @@
 				(justify mirror)
 			)
 		)
-		(property "MPN" "TI INA238AIDGSR"
+		(property "MPN" "TI INA237AIDGSR"
 			(at 0 0 0)
 			(layer "B.Fab")
 			(hide yes)
@@ -34002,6 +34004,7 @@
 			(effects
 				(font
 					(size 1.27 1.27)
+					(thickness 0.15)
 				)
 			)
 		)
@@ -35094,7 +35097,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Description" "INA238 VS"
+		(property "Description" "INA237 VS"
 			(at 0 0 180)
 			(layer "B.Fab")
 			(hide yes)

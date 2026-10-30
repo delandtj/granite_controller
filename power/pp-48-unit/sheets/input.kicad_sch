@@ -1087,7 +1087,7 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Sensor_Energy:INA238"
+		(symbol "Sensor_Energy:INA237"
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -1103,7 +1103,7 @@
 					)
 				)
 			)
-			(property "Value" "INA238"
+			(property "Value" "INA237"
 				(at 3.81 11.43 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -1124,7 +1124,7 @@
 					)
 				)
 			)
-			(property "Datasheet" "https://www.ti.com/lit/ds/symlink/ina238.pdf"
+			(property "Datasheet" "https://www.ti.com/lit/ds/symlink/ina237.pdf"
 				(at 8.89 -2.54 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -1168,7 +1168,7 @@
 					)
 				)
 			)
-			(symbol "INA238_0_1"
+			(symbol "INA237_0_1"
 				(rectangle
 					(start 7.62 10.16)
 					(end -7.62 -10.16)
@@ -1181,7 +1181,7 @@
 					)
 				)
 			)
-			(symbol "INA238_1_1"
+			(symbol "INA237_1_1"
 				(pin input line
 					(at 10.16 7.62 180)
 					(length 2.54)
@@ -3119,7 +3119,7 @@
 		)
 		(uuid "be8542b9-fdcd-51ce-9ec6-28419e2bcd42")
 	)
-	(text "UNIT INPUT  J201 XT60 -> TVS -> U207 LM5069-1 (3 mOhm, Q202 || Q203) -> VBUS; U208 INA238 0x44"
+	(text "UNIT INPUT  J201 XT60 -> TVS -> U207 LM5069-1 (3 mOhm, Q202 || Q203) -> VBUS; U208 INA237 0x44"
 		(exclude_from_sim no)
 		(at 15.24 15.24 0)
 		(effects
@@ -3129,7 +3129,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "d74c9111-3dcf-5e76-b864-9b7c90136d06")
+		(uuid "728d79fe-fb18-5e91-a9eb-148b8214ec13")
 	)
 	(symbol
 		(lib_id "Connector_Generic:Conn_01x02")
@@ -5079,7 +5079,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Sensor_Energy:INA238")
+		(lib_id "Sensor_Energy:INA237")
 		(at 88.9 96.52 270)
 		(unit 1)
 		(body_style 1)
@@ -5099,7 +5099,7 @@
 				)
 			)
 		)
-		(property "Value" "INA238AIDGSR"
+		(property "Value" "INA237AIDGSR"
 			(at 108.87 85.09 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -5145,7 +5145,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" "C2868250"
+		(property "LCSC" "C2864837"
 			(at 88.9 96.52 0)
 			(hide yes)
 			(show_name no)
@@ -5157,7 +5157,7 @@
 				(justify left)
 			)
 		)
-		(property "MPN" "TI INA238AIDGSR"
+		(property "MPN" "TI INA237AIDGSR"
 			(at 88.9 96.52 0)
 			(hide yes)
 			(show_name no)
@@ -5263,7 +5263,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "INA238 VS"
+		(property "Description" "INA237 VS"
 			(at 106.68 100.33 0)
 			(hide yes)
 			(show_name no)
