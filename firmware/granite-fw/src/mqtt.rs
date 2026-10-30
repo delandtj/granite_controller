@@ -44,10 +44,11 @@
 //! from `granite_core::dispatch::ack_timeout_ms` for that command and
 //! the node settings, so a node with a long `t_soft_off_s` is not acked
 //! as "did not finish in time" while its plane is still waiting for the
-//! host. The `accepted`
-//! event the ADR asks for on receipt is the one the dispatcher already
-//! emits for every queued action; this module publishes it like any other
-//! event rather than inventing a second one.
+//! host.
+//!
+//! The `accepted` event the ADR asks for on receipt is the one the
+//! dispatcher already emits for every queued action; this module
+//! publishes it like any other event rather than inventing a second one.
 //!
 //! ### Reconnect
 //!
