@@ -3,7 +3,7 @@
 	(generator "pcbnew")
 	(generator_version "10.0")
 	(layer "F.Cu")
-	(descr "PM module aux socket on the host (docs/pm-interface.md): 2x3 1.27 mm SMT female header 4.6 mm, hanxia HX PM1.27-2x3P TP (LCSC C41397112); pins numbered by function (1 OV_KILL 2 PGOOD 3 ID 4 RUN 5 GND 6 GND, GND in the middle row)")
+	(descr "PM module aux socket on the host (docs/pm-interface.md): 2x3 1.27 mm SMT female header 4.6 mm, hanxia HX PM1.27-2x3P TP (LCSC C41397112); 3D model from LCSC / EasyEDA, turned 90 deg (its rows run along x); pins numbered by function (1 OV_KILL 2 PGOOD 3 ID 4 RUN 5 GND 6 GND, GND in the middle row)")
 	(tags "PM module aux socket 1.27")
 	(property "Reference" "REF**"
 		(at 0 -3.155 0)
@@ -131,4 +131,15 @@
 		(uuid "b86806c6-bf4c-45a2-ade3-2b5de511edb6")
 	)
 	(embedded_fonts no)
+	(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/PM_Aux_Socket_2x03_P1.27.step"
+		(offset
+			(xyz 0 0 0)
+		)
+		(scale
+			(xyz 1 1 1)
+		)
+		(rotate
+			(xyz 0 0 90)
+		)
+	)
 )

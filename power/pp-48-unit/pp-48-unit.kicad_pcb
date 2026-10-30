@@ -9237,6 +9237,17 @@
 			(uuid "5d2e402f-c9dd-4eea-ae40-d55b372decc8")
 		)
 		(embedded_fonts no)
+		(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/PM_Aux_Socket_2x03_P1.27.step"
+			(offset
+				(xyz 0 0 0)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz 0 0 90)
+			)
+		)
 	)
 	(footprint "Capacitor_SMD:C_0402_1005Metric"
 		(layer "F.Cu")
@@ -10006,6 +10017,17 @@
 			(uuid "724008a8-a521-49d2-9528-c2b2fb8d696c")
 		)
 		(embedded_fonts no)
+		(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/PM_Aux_Socket_2x03_P1.27.step"
+			(offset
+				(xyz 0 0 0)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz 0 0 90)
+			)
+		)
 	)
 	(footprint ""
 		(layer "F.Cu")
