@@ -15,8 +15,8 @@ __pycache__/
 # Generated fab outputs (tools/jlcfab.py)
 fab/
 
-# mdBook output (controller-rev-c/site/)
-controller-rev-c/site/book/
+# mdBook output (site/)
+site/book/
 
 # Per-board recovery tokens and passwords (secrets)
 firmware/*recovery_token*

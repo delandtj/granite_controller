@@ -11,15 +11,16 @@ on top of granite_controller's history, so both histories are here.
 
 - controller: controller rev D (KiCad project, tools), the live design.
 - controller-rev-c: the rev C controller board (relays, expanders, 19 V
-  input), kept as demoware, plus its installer / operator manual
-  (site/, mdBook). Tag rev-c-demo is the last rev C state of the whole
-  repo, firmware included.
+  input), kept as demoware. Tag rev-c-demo is the last rev C state of
+  the whole repo, firmware included.
 - power/pp-48: shared plane tools (schematic generator, placement and
   routing scripts), pp.kicad_sym, pp48.pretty, pp48.3dshapes.
 - power/pp-48-core, power/pp-48-unit: the chained plane (ADR 0005), one
   core board and identical 2-slot unit boards.
 - power/pm-19v-250w: the port module. power/pm-bench-carrier: bench
   carrier for one module. power/tools: module mount geometry.
+- site: installer / operator manual (mdBook). Still describes rev C
+  (relays, expanders, 19 V input); to be reworked for rev D and the plane.
 - firmware: Rust workspace. granite-core (no_std: dispatcher, commands,
   MQTT / HTTP / Modbus surfaces, rules, config), granite-sim (host
   simulator), granite-fw (ESP32-C6 binary, still the rev C hardware
