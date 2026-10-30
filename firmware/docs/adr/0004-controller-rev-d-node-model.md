@@ -425,8 +425,9 @@ the twelve plane verbs and nothing else, with the new target spellings.
 `on` and `off` are the verbs of decision 4, so a boot policy of `off` on
 a node whose host is already dark leaves the rail up: `off` means "shut
 the host down", and `power_off` is the verb that means the rail. The
-policies run once, three seconds after the dispatcher starts, which is
-discovery plus a slot report of every plane.
+policies run three seconds after a **plane** boot (see the fixes below;
+the first implementation ran them three seconds after the dispatcher
+started, which is not what this ADR asks for).
 
 ### granite-fw: two marked placeholders
 Rev D hardware does not exist, so the board firmware compiles against
@@ -446,6 +447,43 @@ rev C has it, rather than moving to the LP pins as decision 9 says. The
 OTA probation ladder lost its "expanders initialised" step and did not
 gain a plane step: a controller whose planes are unplugged still has to
 be able to take a firmware update.
+
+### Fixes after the first pass (2026-10-30)
+Six places where the implementation did not do what this ADR says. No
+decision changed and `granite-proto` is still untouched.
+
+1. **Target `all`.** Only `on_all` accepted it, so the shipped rules 1
+   and 2 (`force_off` on `all`) switched nothing off. Every node verb
+   takes `all` now and becomes one plane job per present node, each with
+   that node's settings; `granite_core::jobs` keeps one entry per
+   command, so the group is acked once with the worst outcome of its
+   jobs.
+2. **`on_all`.** It named every present slot to the plane's stagger
+   (0x4B), which switches a slot off before releasing it, so a running
+   node lost its rail. Decision 4 calls the verb a staggered `on`: the
+   set is now the present nodes whose host is dark, and only those whose
+   rail is down are named to 0x4B. 0x4B itself is unchanged - which
+   slots may be cut is the caller's decision (ADR 0002 decision 6).
+3. **Default rule 3** tripped below 15 V, the figure for rev C's 19 V
+   supply, which a 12 V rev D controller is always below. It watches
+   `config::DEFAULT_VIN_MIN_MV` (10 V), the same constant
+   `nodes.vin_min_mv` defaults to.
+4. **Modbus fault bit 0** (`PLANE_LOST`) was never set. The client
+   tracks the addresses it had found and lost, the snapshot carries them
+   (`Observed::planes_lost`) and `modbus_map::plane_faults` decides bits
+   0, 1 and 7 in one host-tested place.
+5. **Acks.** The MQTT completion ack had no `job`; it (and the HTTP
+   `?wait=1` outcome) carries the job id of the acceptance now. The ack
+   and job deadlines are derived from the command and the node's
+   settings (`dispatch::ack_timeout_ms`, `plane::job_timeout_ms`)
+   instead of fixed 300 s / 600 s constants, which cut off any node
+   whose `t_soft_off_s` was more than a few minutes.
+6. **Boot policy** ran once per controller start. It runs per plane boot
+   now (`granite_core::boot`): the boot count moved, or the plane came
+   up reporting a lost intended state with an uptime under a minute -
+   the site power loss that took the controller with it. A controller
+   restart on its own commands nothing, which is what this ADR's expert
+   answer asks for.
 
 ### Still open
 - The web UI (`firmware/web`) is unchanged and still speaks the rev C
