@@ -12,7 +12,8 @@ References are the drawing's + 200.
 - D201 SMDJ60A bus TVS on VIN, as the rev1 core: 60 V standoff, breakdown
   >= 66.7 V (above the 64.6 V OVLO), clamp 96.8 V. C201 bulk damps the
   cable ringing when the hot-swap opens.
-- U207 LM5069-1 (latch-off): shunt R201 || R202 = 3 mOhm, current limit
+- U207 LM5069-2 (auto-retry, as the slots; was -1 latch-off, 1 in stock at
+  JLC on 2026-10-30): shunt R201 || R202 = 3 mOhm, current limit
   55 mV / 3 mOhm = 18.3 A (16.2-20.5 A over 48.5-61.5 mV), circuit breaker
   105 mV = 35 A. Q202 || Q203 BSC040N10NS5 with 10 Ohm gate resistors;
   power limit ~75 W at 60 V (RPWR = 1.3e5 x (RSNS x PLIM - 1.18 mV x VDS)
@@ -20,9 +21,12 @@ References are the drawing's + 200.
   holds only the slot front ends' small caps when this stage starts; the
   slots' own hot-swaps start after it (their 160 ms insertion), so the
   unit FETs are fully on while the slots charge their modules.
-- Reset of a latched unit: the MCU drives U_OFF high over the unit's
-  TCA6424A (P13), Q204 pulls UVLO low; R214 holds Q204 off while the
-  expander is in reset or unpowered (unit ON). U_PGD (P27): open-drain PGD
+- Latch in firmware (ADR 0005 decision 3, 2026-10-30): after a fault the
+  -2 retries on its own (~0.5 % duty); the core sees U_PGD fall while the
+  unit input is in range and holds the unit off by driving U_OFF high over
+  the unit's TCA6424A (P13): Q204 pulls UVLO low. unit_reset releases it.
+  R214 holds Q204 off while the expander is in reset or unpowered: with no
+  core the unit retries forever (unit ON, R14). U_PGD (P27): open-drain PGD
   with a 3V3 pull-up.
 - U208 INA237 on the shunt, on the unit segment at 0x44 (A1 = VS, A0 =
   GND): IN+ VIN, IN- USENSE, VBUS pin = unit output. ALERT is not wired
@@ -90,10 +94,10 @@ def block():
         fields={"LCSC": "C534334"}, desc="parallel pass FET, for conduction loss")
     R(210, "10", R0402, {"1": "GATE", "2": "GATE_A"}, (90, 41), rot=90, desc="gate resistor (parallel FETs)")
     R(211, "10", R0402, {"1": "GATE_B", "2": "GATE"}, (98, 17), desc="gate resistor (parallel FETs)")
-    sym("U207", "Power_Management:LM5069MM-1", "LM5069MM-1", "Package_SO:MSOP-10_3x3mm_P0.5mm",
+    sym("U207", "Power_Management:LM5069MM-2", "LM5069MM-2", "Package_SO:MSOP-10_3x3mm_P0.5mm",
         {"1": "USENSE", "2": "VIN", "3": "UVLO", "4": "OVLO", "5": "GND", "6": "TIMER", "7": "PWR", "8": "U_PGD", "9": "VBUS", "10": "GATE"},
-        (96, 56), fields={"LCSC": "C486026"},
-        desc="unit hot-swap, 55 mV current limit, power limit, LATCH-OFF (-1); LCSC stock 1 on 2026-10-29 (LM5069MM-2 C111822 has 7k)")
+        (96, 56), fields={"LCSC": "C111822"},
+        desc="unit hot-swap, 55 mV current limit, power limit, auto-retry 0.5 % (-2); the latch is the firmware's, over U_OFF")
     R(233, "143k", R0805, {"1": "VIN", "2": "UVLO"}, (68, 69), desc="UVLO: on 38.3 V, off 35.3 V (21 uA hysteresis)")
     R(234, "10k", R0402, {"1": "UVLO", "2": "GND"}, (68, 77))
     R(235, "124k", R0805, {"1": "VIN", "2": "OVLO"}, (76, 55), desc="OVLO: off 64.6 V, as the slots")
@@ -113,7 +117,7 @@ def block():
 
     # ========================================================== expander control: U_OFF
     sym("Q204", FET, "2N7002", SOT23, {"1": "U_OFF", "2": "GND", "3": "UVLO"}, (82, 90),
-        fields={"LCSC": "C8545"}, desc="expander U_OFF (P13) high = unit off (and resets the latched LM5069-1)")
+        fields={"LCSC": "C8545"}, desc="expander U_OFF (P13) high = unit off: the firmware latch after a unit fault")
     R(214, "100k", R0402, {"1": "U_OFF", "2": "GND"}, (76, 95), desc="expander in reset or no 3V3 = unit ON")
 
     # ========================================================== wiring
@@ -154,5 +158,5 @@ def block():
     b.port("SCL", "bidirectional", side="left", pos=P(12, 76))
     b.port("U_OFF", "input", side="left", pos=P(64, 90))
     b.port("U_PGD", "output", side="right", pos=P(134, 58))
-    b.text("UNIT INPUT  J201 XT60 -> TVS -> U207 LM5069-1 (3 mOhm, Q202 || Q203) -> VBUS; U208 INA237 0x44", P(-14, -4))
+    b.text("UNIT INPUT  J201 XT60 -> TVS -> U207 LM5069-2 (3 mOhm, Q202 || Q203) -> VBUS; U208 INA237 0x44", P(-14, -4))
     return b.finish()

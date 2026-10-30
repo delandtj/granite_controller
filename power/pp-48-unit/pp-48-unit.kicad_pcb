@@ -29523,7 +29523,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Description" "expander U_OFF (P13) high = unit off (and resets the latched LM5069-1)"
+		(property "Description" "expander U_OFF (P13) high = unit off: the firmware latch after a unit fault"
 			(at 0 0 180)
 			(layer "B.Fab")
 			(hide yes)
@@ -35745,7 +35745,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Value" "LM5069MM-1"
+		(property "Value" "LM5069MM-2"
 			(at 0 -2.45 180)
 			(layer "B.Fab")
 			(uuid "e3cfb240-8c10-4960-894d-98b1bf6d0a05")
@@ -35769,7 +35769,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Description" "unit hot-swap, 55 mV current limit, power limit, LATCH-OFF (-1); LCSC stock 1 on 2026-10-29 (LM5069MM-2 C111822 has 7k)"
+		(property "Description" "unit hot-swap, 55 mV current limit, power limit, auto-retry 0.5 % (-2); the latch is the firmware's, over U_OFF"
 			(at 0 0 180)
 			(layer "B.Fab")
 			(hide yes)
@@ -35794,7 +35794,7 @@
 				(justify mirror)
 			)
 		)
-		(property "LCSC" "C486026"
+		(property "LCSC" "C111822"
 			(at 0 0 180)
 			(layer "B.Fab")
 			(hide yes)

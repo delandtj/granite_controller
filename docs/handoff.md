@@ -22,9 +22,11 @@ Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
   17.26 V, was 17.30); C13 2.2n 100 V -> GCM155R72A222KA01D C2980802.
   TLV3011A rejected: no hysteresis (PGOOD chatter on the ramp could trip
   the unit's armed PGOOD-loss latch).
-- OPEN (user decision): unit U207 LM5069MM-1 (latch-off) has 1 at JLC;
-  LM5069-2 (auto-retry, stocked) would need a firmware latch through
-  U_OFF. Or global sourcing / consigned -1 parts.
+- Unit U207 LM5069MM-1 (1 at JLC) -> LM5069MM-2 C111822 (user
+  2026-10-30): auto-retry, the latch moves into the core firmware (ADR
+  0005 decision 3: U_PGD falls with the input in range -> hold U_OFF
+  until unit_reset). Firmware side: plane-logic, after the bug-fix
+  branch fw-fixes lands.
 
 ## 2026-10-29: firmware specs written (all review asks answered)
 

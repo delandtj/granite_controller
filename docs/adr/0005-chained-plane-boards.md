@@ -5,7 +5,9 @@ power/pp-48-unit)
 **Date**: 2026-10-29
 
 **Updated**: 2026-10-29 (user: chain on JST PH 2.0, 3V3 from the core,
-unit hot-swap latch-off, input strip on the far side)
+unit hot-swap latch-off, input strip on the far side); 2026-10-30 (user:
+unit hot-swap LM5069-2 auto-retry with the latch in firmware, decision 3;
+INA237 for INA238)
 
 Related: docs/adr/0004-plane-column-layout.md (decisions 1, 1a, 2, 6
 and 9 stand; 3, 4, 5, 7 and 8 are replaced here, see "What changes"),
@@ -66,14 +68,27 @@ a column edge.
      channel height near the bottom (decision 4).
 
 3. **Unit hot-swap** (the ADR 0003 tile level, now per 2 slots):
-   LM5069-1 latch-off, the core's tile circuit scaled to one unit:
+   LM5069-2 (auto-retry), the core's tile circuit scaled to one unit:
    2 slots x ~265 W = 530 W, 14 A at 38 V. Shunt ~3 mOhm (55 mV
    limit ~18 A, e.g. 2 x 6 mOhm 2512), one or two BSC040N10NS5 (SOA
    to check at the unit power limit), UVLO / OVLO / timer as the
-   slots, INA238 on the shunt at 0x44 on the unit segment. Control
+   slots, INA237 on the shunt at 0x44 on the unit segment. Control
    over the TCA6424A's two spare lines: P13 U_OFF (out, Q pulls UVLO
    low, 100k pull-down = ON at reset) and P27 U_PGD (in). The
-   INA238 ALERT is not wired (polled; DIAG_ALRT).
+   INA237 ALERT is not wired (polled; DIAG_ALRT).
+   **Latch in firmware** (user 2026-10-30; was the LM5069-1's own
+   latch-off, which had 1 part in stock at JLC against ~8k for the -2):
+   after a fault the -2 restarts on its own at ~0.5 % duty. The core
+   latches the unit off: U_PGD falling while the unit input (INA237
+   0x44 VIN) is inside UVLO..OVLO and U_OFF is not commanded is a unit
+   fault; the core drives U_OFF high and keeps it high (power state
+   `fault`, unit hot-swap latched off) until `unit_reset` or a core
+   power loss. U_PGD low with the input out of range is the bus, not a
+   fault: no latch. With no core (or the expander in reset) U_OFF is
+   low and the unit retries forever: hardware default ON (R14), and the
+   0.5 % duty keeps the FETs inside their SOA on a hard short. The
+   retry costs one restart attempt (~10 ms fault timer) before the core
+   reacts; acceptable, the slots' own hot-swaps behave the same.
 
 4. **Chain link**: a short cable between neighbouring boards, the same
    latching header at both edges of a unit and at the core's right
@@ -312,7 +327,9 @@ to size with the SOA check of decision 3.
 
 Review asks: none open. Decided by the user 2026-10-29: chain on JST
 PH 2.0; 3V3 from the core; unit hot-swap LM5069-1 latch-off (stays off
-after a fault until the MCU resets it over U_OFF or the 48 V cycles);
+after a fault until the MCU resets it over U_OFF or the 48 V cycles;
+2026-10-30: LM5069-2 auto-retry with the latch in the core firmware,
+decision 3);
 input strip on the far side (right of slot B).
 
 ---
