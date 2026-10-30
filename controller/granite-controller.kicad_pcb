@@ -11743,7 +11743,7 @@
 		(embedded_fonts no)
 		(model "${KIPRJMOD}/3dmodels/HR911105A.step"
 			(offset
-				(xyz 0 0 0)
+				(xyz 4.443 -4.357 0)
 			)
 			(scale
 				(xyz 1 1 1)
@@ -15449,13 +15449,13 @@
 		(embedded_fonts no)
 		(model "${KIPRJMOD}/3dmodels/HRO_TYPE-C-31-M-12.step"
 			(offset
-				(xyz 0 0 0)
+				(xyz 0 1.424 0)
 			)
 			(scale
 				(xyz 1 1 1)
 			)
 			(rotate
-				(xyz 0 0 0)
+				(xyz 0 0 180)
 			)
 		)
 	)
