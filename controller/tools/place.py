@@ -64,7 +64,8 @@ CON_B = 78.55 - 2.8          # along the bottom edge
 CON_R = 129.95 - 2.8         # along the right edge (rot 90)
 PLACE = {
     # probes on the top edge between the magjack and USB-C
-    "J4": (0, 60.0, CON_T), "J5": (0, 70.0, CON_T), "J6": (0, 80.0, CON_T), "J7": (0, 90.0, CON_T),
+    # J4 body >= 6 mm from the RJ45 body (latch, fingers), J7 >= 2 mm from the USB-C shell
+    "J4": (0, 64.06, CON_T), "J5": (0, 73.97, CON_T), "J6": (0, 83.88, CON_T), "J7": (0, 93.79, CON_T),
     "R30": (0, 92.0, 35.6), "D5": (0, 94.6, 35.6),
     # 12 V inputs and plane link on the bottom edge, link next to U1's I2C pins
     "J11": (0, 54.8, CON_B), "J12": (0, 61.9, CON_B), "J14": (0, 72.0, CON_B), "J13": (0, 85.1, CON_B),
@@ -131,8 +132,12 @@ def main(argv):
                 d.Models().clear()
                 for m in s.Models():
                     n = pcbnew.FP_3DMODEL()
-                    n.m_Filename, n.m_Offset, n.m_Rotation, n.m_Scale, n.m_Show = \
-                        m.m_Filename, m.m_Offset, m.m_Rotation, m.m_Scale, m.m_Show
+                    # copy the vectors by value: assigning the SWIG wrappers
+                    # left zero offsets / rotations on the saved board
+                    n.m_Filename, n.m_Show = str(m.m_Filename), m.m_Show
+                    n.m_Offset = pcbnew.VECTOR3D(m.m_Offset.x, m.m_Offset.y, m.m_Offset.z)
+                    n.m_Rotation = pcbnew.VECTOR3D(m.m_Rotation.x, m.m_Rotation.y, m.m_Rotation.z)
+                    n.m_Scale = pcbnew.VECTOR3D(m.m_Scale.x, m.m_Scale.y, m.m_Scale.z)
                     d.Models().append(n)
             dp = {p.GetNumber(): p.GetNetname() for p in d.Pads()}
             for p in s.Pads():
