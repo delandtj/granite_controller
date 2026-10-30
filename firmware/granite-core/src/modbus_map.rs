@@ -184,6 +184,37 @@ pub mod fault_bits {
     pub const NO_PLANE: u16 = 1 << 7;
 }
 
+/// The fault bits [`plane_faults`] decides, so a caller can clear the
+/// ones it does not set without touching the others.
+pub const PLANE_FAULT_MASK: u16 =
+    fault_bits::PLANE_LOST | fault_bits::NODE_FAULT | fault_bits::NO_PLANE;
+
+/// The plane fault bits of input register [`FAULTS_ADDR`] for one
+/// snapshot: bit 0 `PLANE_LOST`, bit 1 `NODE_FAULT`, bit 7 `NO_PLANE`.
+///
+/// The decision lives here rather than in the firmware's loop so it is
+/// host-testable; the firmware applies it with
+/// `faults |= plane_faults(o); faults &= !(PLANE_FAULT_MASK & !bits)`.
+///
+/// - `PLANE_LOST` while any plane the controller had found is not
+///   answering ([`Observed::planes_lost`]), cleared when it answers
+///   again or is forgotten.
+/// - `NODE_FAULT` while a present node has a fault flag set.
+/// - `NO_PLANE` while no plane answers at all.
+pub fn plane_faults(o: &Observed) -> u16 {
+    let mut bits = 0u16;
+    if o.any_plane_lost() {
+        bits |= fault_bits::PLANE_LOST;
+    }
+    if o.nodes.iter().any(|node| node.present && node.faults.any()) {
+        bits |= fault_bits::NODE_FAULT;
+    }
+    if o.planes.is_empty() {
+        bits |= fault_bits::NO_PLANE;
+    }
+    bits
+}
+
 /// What register [`LAST_RESULT_ADDR`] reports.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 #[repr(u16)]

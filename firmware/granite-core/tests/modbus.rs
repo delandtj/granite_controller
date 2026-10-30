@@ -8,10 +8,10 @@ use granite_core::modbus_map::{
     BLOCKS, BOARD_TEMP_ADDR, DRY_BASE, FAULTS_ADDR, FW_ADDR, FwVersion, Image, LAST_RESULT_ADDR,
     LINK_ADDR, MAP, MAP_VERSION, MAP_VERSION_ADDR, MQTT_ADDR, MapError, NODE_BASE, NODE_CMD_BASE,
     NODE_COIL_BASE, NODE_COUNT_ADDR, NODE_HOST_BIT_BASE, NODE_POWER_BIT_BASE, NODE_STRIDE,
-    ON_ALL_ADDR, PLANE_BASE, PLANE_CMD_BASE, PLANE_STRIDE, PLANES_PRESENT_ADDR, PROBE_BASE,
-    RegKind, ResultCode, UPTIME_ADDR, VIN_ADDR, check_coil, check_holding, cmd_word,
+    ON_ALL_ADDR, PLANE_BASE, PLANE_CMD_BASE, PLANE_FAULT_MASK, PLANE_STRIDE, PLANES_PRESENT_ADDR,
+    PROBE_BASE, RegKind, ResultCode, UPTIME_ADDR, VIN_ADDR, check_coil, check_holding, cmd_word,
     command_from_coil, command_from_holding, entry, fault_bits, name_of, node_fault_bits,
-    plane_cmd_word, plane_flag_bits, render_markdown,
+    plane_cmd_word, plane_faults, plane_flag_bits, render_markdown,
 };
 use granite_core::msg::{CommandKind, Reply};
 use granite_core::observed::{NodeObs, Observed, PlaneObs, ProbeObs, Stamped, UnitObs};
@@ -159,6 +159,48 @@ fn the_controller_registers_did_not_move() {
         Some(ResultCode::Accepted.as_u16())
     );
     assert_eq!(img.word(RegKind::HoldingRegister, ON_ALL_ADDR), Some(0));
+}
+
+/// Bug: fault bit 0 (`PLANE_LOST`, "a plane the controller had found
+/// stopped answering") was defined but never set; only `NO_PLANE` and
+/// `NODE_FAULT` were. The decision is `plane_faults` here, and the
+/// firmware only applies it.
+#[test]
+fn the_plane_fault_bits_report_a_lost_plane() {
+    // One plane answers, one node in fault: bit 1 only.
+    let mut o = snapshot();
+    assert_eq!(plane_faults(&o), fault_bits::NODE_FAULT);
+
+    // A plane that had been found stops answering: bit 0 joins it, and
+    // bit 7 stays clear because another plane still answers.
+    o.planes_lost = vec![0x31];
+    assert!(o.any_plane_lost());
+    let both = fault_bits::PLANE_LOST | fault_bits::NODE_FAULT;
+    assert_eq!(plane_faults(&o), both);
+    let img = Image::new(&o, FwVersion::default(), both, ResultCode::Idle);
+    assert_eq!(
+        img.word(RegKind::InputRegister, FAULTS_ADDR),
+        Some(both),
+        "and that is what input register 13 reads"
+    );
+
+    // Every plane gone: bit 0 and bit 7, and no node left to fault.
+    o.planes.clear();
+    o.nodes.clear();
+    assert_eq!(
+        plane_faults(&o),
+        fault_bits::PLANE_LOST | fault_bits::NO_PLANE
+    );
+
+    // Answering again, or forgotten: nothing left to report.
+    o.planes_lost.clear();
+    assert_eq!(plane_faults(&o), fault_bits::NO_PLANE);
+    // The mask covers exactly the bits the function decides, so a
+    // caller can clear what it did not set.
+    assert_eq!(
+        PLANE_FAULT_MASK,
+        fault_bits::PLANE_LOST | fault_bits::NODE_FAULT | fault_bits::NO_PLANE
+    );
 }
 
 #[test]

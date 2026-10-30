@@ -190,6 +190,10 @@ struct PlaneState {
     plane: Plane,
     /// A plane answers here.
     present: bool,
+    /// A plane answered here and stopped: the controller is missing one
+    /// it had found. Cleared when the address answers again or when the
+    /// plane is forgotten; a fresh client has nothing to miss.
+    lost: bool,
     next_status_ms: u64,
     next_detail_ms: u64,
     next_info_ms: u64,
@@ -223,6 +227,7 @@ impl PlaneState {
         PlaneState {
             plane: Plane::new(address),
             present: false,
+            lost: false,
             next_status_ms: 0,
             next_detail_ms: 0,
             next_info_ms: 0,
@@ -396,6 +401,8 @@ impl PlaneClient {
                 Ok(n) => {
                     let payload_len = n;
                     self.planes[i].present = true;
+                    // It answers again: nothing is missing here.
+                    self.planes[i].lost = false;
                     self.planes[i]
                         .plane
                         .apply_info(now_ms, &self.buf[..payload_len]);
@@ -809,6 +816,9 @@ impl PlaneClient {
             return;
         }
         self.planes[i].present = false;
+        // A plane the controller had found is missing: fault bit 0
+        // stays up until it answers again (ADR 0004, Modbus map v2).
+        self.planes[i].lost = true;
         self.planes[i].plane.forget_states();
         self.planes[i].events_due = false;
         self.events.push_back(ClientEvent::PlaneLost { address });
@@ -1454,6 +1464,37 @@ impl PlaneClient {
     /// The addresses that answer.
     pub fn addresses(&self) -> Vec<u8> {
         self.planes().map(|p| p.address).collect()
+    }
+
+    /// The addresses of the planes the controller had found and that
+    /// stopped answering, lowest first.
+    ///
+    /// This is what Modbus fault bit 0 reports (`PLANE_LOST`): an
+    /// address drops out of the list when it answers again, or when
+    /// [`PlaneClient::forget_plane`] gives up on it. A client that has
+    /// just started has nothing in it, because it has not found
+    /// anything to miss yet.
+    pub fn lost_addresses(&self) -> Vec<u8> {
+        self.planes
+            .iter()
+            .filter(|s| s.lost && !s.present)
+            .map(|s| s.plane.address)
+            .collect()
+    }
+
+    /// Stop missing a plane: the address is scanned on as before, but it
+    /// no longer counts as lost.
+    ///
+    /// For an operator who has taken a plane out of the frame on
+    /// purpose. True when there was something to forget.
+    pub fn forget_plane(&mut self, address: u8) -> bool {
+        match granite_proto::plane_of_address(address) {
+            Some(n) if self.planes[n as usize].lost => {
+                self.planes[n as usize].lost = false;
+                true
+            }
+            _ => false,
+        }
     }
 
     /// One plane, if it answers.

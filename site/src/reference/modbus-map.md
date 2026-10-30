@@ -16,17 +16,20 @@ reading a plausible wrong node. Read input register 14 first.
 
 Notes on the fault word (input register 13):
 
-- Bit 7 is set while no plane answers at all. Bit 0 ("a plane stopped
-  answering") is defined but not set by the current firmware; watch
-  input register 15 (a bit per plane that answers) for a single lost
-  plane.
+- Bit 0 is set while a plane the controller had **found** is not
+  answering, and clears when that address answers again. A controller
+  that has never seen a plane does not set it: there is nothing to
+  miss. Input register 15 (a bit per plane that answers) says which
+  plane went away.
+- Bit 7 is set while no plane answers at all.
 - Bit 1 is set while any present node has a fault flag set (offset 10
   of its block).
 - Bit 2 needs a probe to be *configured*: a probe found by the boot
   scan and then unplugged does not set it, a ROM id in the `nodes`
   section that stops answering does.
 - Bit 3 uses the window `nodes.vin_min_mv`..`nodes.vin_max_mv` (10 V to
-  14 V by default, either bound at `0` to disable that side).
+  14 V by default, either bound at `0` to disable that side); the
+  shipped rule 3 watches the lower bound as well.
 - Bit 5 stays set until the section that fell back at boot is written
   again.
 

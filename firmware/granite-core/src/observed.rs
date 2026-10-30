@@ -456,6 +456,12 @@ pub struct Observed {
     pub nodes: Vec<NodeObs>,
     /// Every plane that answers, lowest address first.
     pub planes: Vec<PlaneObs>,
+    /// The addresses of the planes the controller had found and that
+    /// stopped answering ([`crate::plane::PlaneClient::lost_addresses`]):
+    /// what Modbus fault bit 0 reports. Empty on a controller that has
+    /// not lost one.
+    #[serde(default)]
+    pub planes_lost: Vec<u8>,
     /// Probes in config order; slot index is the Modbus probe register.
     pub probes: Vec<ProbeObs>,
     /// TMP1075, centi-degrees Celsius.
@@ -477,6 +483,7 @@ impl Default for Observed {
         Observed {
             nodes: Vec::new(),
             planes: Vec::new(),
+            planes_lost: Vec::new(),
             probes: Vec::new(),
             board_temp: Stamped::never(None),
             vin_mv: Stamped::never(None),
@@ -518,6 +525,12 @@ impl Observed {
         nodes.sort_unstable_by_key(|n| n.node);
         self.nodes = nodes;
         self.planes = planes;
+        self.planes_lost = client.lost_addresses();
+    }
+
+    /// True while a plane the controller had found is not answering.
+    pub fn any_plane_lost(&self) -> bool {
+        !self.planes_lost.is_empty()
     }
 
     /// One node, if its plane answers and its slot holds a module.

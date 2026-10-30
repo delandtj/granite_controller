@@ -40,7 +40,7 @@ use granite_core::hal::{
     BoardTemp, BusVoltage, DryInputs, LedPattern, PlaneLink, Probes, StatusLed,
 };
 use granite_core::jobs::JobLog;
-use granite_core::modbus_map::fault_bits;
+use granite_core::modbus_map::{PLANE_FAULT_MASK, fault_bits, plane_faults};
 use granite_core::msg::{Command, Event, EventKind, event_from_client, event_from_rule};
 use granite_core::node::BootPolicy;
 use granite_core::observed::{Observed, ProbeObs, Stamped};
@@ -657,31 +657,18 @@ fn dispatcher<L: PlaneLink>(
             }
         }
 
-        // Modbus fault bits 0, 1 and 7: what the planes are doing.
+        // Modbus fault bits 0, 1 and 7: what the planes are doing. The
+        // decision is granite_core's (host-tested), this only applies
+        // it: bit 0 plane lost, bit 1 node fault, bit 7 no plane.
         {
             let snapshot = platform
                 .observed
                 .read()
                 .map(|o| o.clone())
                 .unwrap_or_else(|_| Observed::new());
-            let mut set = 0u16;
-            let mut clear = 0u16;
-            if snapshot.planes.is_empty() {
-                set |= fault_bits::NO_PLANE;
-            } else {
-                clear |= fault_bits::NO_PLANE;
-            }
-            if snapshot
-                .nodes
-                .iter()
-                .any(|node| node.faults.any() && node.present)
-            {
-                set |= fault_bits::NODE_FAULT;
-            } else {
-                clear |= fault_bits::NODE_FAULT;
-            }
+            let set = plane_faults(&snapshot);
             faults.fetch_or(set, Ordering::Relaxed);
-            faults.fetch_and(!clear, Ordering::Relaxed);
+            faults.fetch_and(!(PLANE_FAULT_MASK & !set), Ordering::Relaxed);
 
             // A node whose state changed on either axis.
             let now_states: Vec<(NodeId, String, String)> = snapshot

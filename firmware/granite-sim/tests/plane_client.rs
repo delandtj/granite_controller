@@ -373,6 +373,25 @@ fn a_plane_that_stops_answering_is_lost_and_found_again() {
     assert!(harness.saw(|e| matches!(e, ClientEvent::PlaneLost { address: 0x31 })));
     assert!(harness.client.node(9).is_none(), "its nodes went with it");
     assert_eq!(harness.client.addresses(), vec![0x30], "0x30 is untouched");
+    // Bug: Modbus fault bit 0 ("a plane stopped answering") was never
+    // set. The client now says which planes it is missing, the snapshot
+    // carries it, and granite_core decides the bit.
+    assert_eq!(harness.client.lost_addresses(), vec![0x31]);
+    let mut observed = granite_core::observed::Observed::new();
+    observed.refresh_planes(&harness.client);
+    assert_eq!(observed.planes_lost, vec![0x31]);
+    assert!(observed.any_plane_lost());
+    let bits = granite_core::modbus_map::plane_faults(&observed);
+    assert_eq!(
+        bits & granite_core::modbus_map::fault_bits::PLANE_LOST,
+        granite_core::modbus_map::fault_bits::PLANE_LOST,
+        "fault bit 0 is set while a plane is missing"
+    );
+    assert_eq!(
+        bits & granite_core::modbus_map::fault_bits::NO_PLANE,
+        0,
+        "0x30 still answers, so bit 7 stays clear"
+    );
 
     // The next scan finds it again, with its nodes.
     harness.clear();
@@ -382,6 +401,33 @@ fn a_plane_that_stops_answering_is_lost_and_found_again() {
     );
     assert!(harness.saw(|e| matches!(e, ClientEvent::PlaneFound { address: 0x31, .. })));
     assert!(harness.run_until(2_000, |h| h.node(9).power == PowerState::On));
+    // And the bit clears with it.
+    assert!(harness.client.lost_addresses().is_empty());
+    observed.refresh_planes(&harness.client);
+    assert!(!observed.any_plane_lost());
+    assert_eq!(
+        granite_core::modbus_map::plane_faults(&observed)
+            & granite_core::modbus_map::fault_bits::PLANE_LOST,
+        0
+    );
+}
+
+/// A plane an operator has taken out of the frame can be forgotten, so
+/// fault bit 0 stops reporting it.
+#[test]
+fn a_plane_that_is_gone_on_purpose_can_be_forgotten() {
+    let mut harness = Harness::new(&scenario());
+    harness.fake(0x31).drop_transactions(2);
+    assert!(harness.run_until(5_000, |h| h.client.plane(0x31).is_none()));
+    assert_eq!(harness.client.lost_addresses(), vec![0x31]);
+
+    assert!(harness.client.forget_plane(0x31), "there was one to forget");
+    assert!(harness.client.lost_addresses().is_empty());
+    assert!(
+        !harness.client.forget_plane(0x31),
+        "and nothing to forget twice"
+    );
+    assert!(!harness.client.forget_plane(0x30), "0x30 is not missing");
 }
 
 #[test]

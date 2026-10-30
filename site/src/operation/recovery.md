@@ -122,9 +122,10 @@ The controller asks every plane for its status once a second. A plane
 that misses two transactions in a row is declared lost:
 
 - an event `"kind":"plane","what":"plane_lost"` with its address,
-- its bit drops out of the plane bitmap (input register 15); fault bit
-  7 is set when no plane answers at all. Fault bit 0 ("a plane stopped
-  answering") is in the map but the firmware does not set it yet,
+- its bit drops out of the plane bitmap (input register 15), and fault
+  bit 0 ("a plane stopped answering") goes up and stays up until that
+  address answers again; fault bit 7 is set when no plane answers at
+  all. Both bits also light the status LED red at 2 Hz,
 - its nodes drop out of the state payload, jobs that were running on
   it fail with `link_lost`, and new commands to its nodes are refused
   as absent.
