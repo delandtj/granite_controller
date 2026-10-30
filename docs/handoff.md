@@ -52,7 +52,7 @@ setrules). Unit now 78.5 x 72 (strip 19.5 mm: two FETs side by side
 under J302 plus hole H4). Strip power path re-placed top-down (XT60 ->
 C201 -> D201 -> shunts R201 / R202 stacked -> USENSE column -> Q202 / Q203
 tabs up -> VBUS along the bottom and up the column right of J302, via
-field). Core: placed, DRC clean except unconnected, NOT routed yet.
+field). Core: placed (Fly-Buck included), DRC clean except unconnected, NOT routed yet.
 
 Unit routing (tools/route_unit.sh <placed board>, in power/pp-48-unit):
 route_unit.py hand copper (rev1 slot copper via route_hand.column, In2
@@ -232,6 +232,15 @@ footprint pp48:L_Bourns_SRF0703, CTRL_GND island; ERC 0). Check the
 SRF0703 land pattern: the datasheet's 0.4 mm pad gap label contradicts
 its 2.9 mm terminal pitch (footprint uses 2.9). J4 (JST PH 2, pin 1 CTRL_12V, pin 2 CTRL_GND)
 is the controller's 12 V input: match it in the controller revisit.
+Placed on the core board (2026-10-30, tools/place_core.py FLY, top right
+where the module was; placement DRC 0 errors besides unconnected, parity
+clean). L2's windings are on diagonal pads, so the island barrier cannot
+be straight: the CTRL_GND island gains a strip along the top edge (u 0-31,
+v 0-9, band u 31-33 / v 9-11), L2 (rot 270) sits on its corner with SEC2
+in the strip, SW / VOUT1 on the bus side, and its CTRL_GND pad 2 an island
+pocket on F with two vias (ENCLAVE) to CTRL_GND on In1 / B, which reach
+under L2 (u 28-35.5, v 7.5-14). The core route script must draw that
+(CTRL / BAND polygons in route_hand.py are the old rev1 shape).
 
 Board ROUTED as 2-slot UNITS (2026-10-29, ADR 0004 decision 9; N = 2 =
 core + 1 unit + end strip, 106 x 72 mm): DRC 0 unconnected, 0 parity, 0
