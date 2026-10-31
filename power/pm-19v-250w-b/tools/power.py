@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Power copper for PM-19V-250W-B: pours on F / In1 / B, via fields, thin
 backbones inside the pours (so the router sees one node), in a group
-"power" that krt-route keeps; the CS / CSG Kelvin stubs and vias under R4,
-in a group "hand".
+"power" that krt-route keeps; the CS / CSG Kelvin stubs under R4 and the
+CS / CSG pair to U1 (SENSE), in a group "hand"; a rule area keeping In1
+tracks out from under L1's SW pad.
 Usage: power.py <in.kicad_pcb> <out.kicad_pcb>
 
 Run after tools/place.py. In2 (solid GND) and the small-signal nets are left
@@ -100,9 +101,28 @@ VIAS = [
 
 # Kelvin stubs: (net, [(x, y), ...] B.Cu track points, via at the last point)
 KELVIN = [
-    ('/CS', [(128.4, 103.05), (128.4, 103.7)]),
-    ('/CSG', [(129.6, 105.85), (128.9, 105.15)]),
+    ('/CS', [(128.4, 103.05), (128.95, 103.6), (129.6, 103.6)]),
+    ('/CSG', [(129.6, 105.85), (129.0, 105.25)]),
 ]
+
+# CS / CSG from the Kelvin vias to U1, side by side, never under the SW
+# copper on F / In1: In1 pair down between L1's pads (CSG inside), across
+# to the left of Q2's LO lane, vias to B, B under L1's SW pad (In2 GND
+# between), CSG into R12 pad 2, CS back up to In1 left of the pad to its
+# pin via. (net, layer, points); a via at every layer change.
+SENSE = [
+    ('/CSG', IN1, [(129.0, 105.25), (129.0, 110.4), (128.4, 111.0), (124.2, 111.0)]),
+    ('/CSG', B, [(124.2, 111.0), (116.51, 111.0)]),
+    ('/CS', IN1, [(129.6, 103.6), (129.6, 110.4), (128.35, 111.65), (123.6, 111.65)]),
+    ('/CS', B, [(123.6, 111.65), (118.0, 111.65), (117.2, 112.45)]),
+    ('/CS', IN1, [(117.2, 112.45), (114.17, 112.45), (114.07, 112.35)]),
+]
+SENSE_VIAS = [('/CSG', 124.2, 111.0), ('/CS', 123.6, 111.65), ('/CS', 117.2, 112.45)]
+
+# no signal tracks next to L1's SW pad: on In1 under it (pad + 0.4 mm; In1
+# is 0.2 mm under F), on F in the strip left of it (the router ran COMP there)
+NO_TRACKS = [('no-in1-sw', IN1, rect(118.5, 104.45, 122.5, 118.45)),
+             ('no-f-sw', F, rect(118.1, 104.85, 118.9, 118.05))]
 
 
 def mm(v):
@@ -192,6 +212,7 @@ def main(src, dst):
         for a, b in zip(pts, pts[1:]):
             add_track(board, hand, nets[net], a, b, B, 0.2)
         add_via(board, hand, nets[net], pts[-1][0], pts[-1][1], SVIA)
+    sense_pair(board, hand, nets)
 
     placed = {}
     for net, cands in VIAS:
@@ -227,7 +248,7 @@ def hand_routes(board, hand, nets):
       HB      B: C16 pad 1, D1 K;  VCC  B: C17 pad 1, D1 A
       LO      B lane along y 114.1, up x 124.95 to Q2's gate
       VCCX    B to C18 (GND via beside it); PGND: its via (In2)
-    CS, CSG, DEMB get their vias; krt-route takes them on from there."""
+    CS, CSG, DEMB get their vias; DEMB is krt-route's, CS / CSG are SENSE."""
     W, S = 0.4, 0.25
     rowa = {'19': '/HO', '17': '/VCCX', '15': '/LO', '13': '/CSG', '11': '/DEMB'}
     rowb = {'20': '/SW', '18': '/HB', '16': '/VCC', '14': 'GND', '12': '/CS'}
@@ -270,6 +291,34 @@ def hand_routes(board, hand, nets):
     add_track(board, hand, nets['/VCCX'], v['17'], c18, B, 0.3)
     add_track(board, hand, nets['GND'], c18g, (c18g[0] - 1.8, c18g[1]), B, 0.3)
     add_via(board, hand, nets['GND'], c18g[0] - 1.8, c18g[1], VIA)       # clear of U1's pins on F
+
+
+def sense_pair(board, hand, nets):
+    """SENSE / SENSE_VIAS (group "hand") and the NO_TRACKS rule areas"""
+    for net, layer, pts in SENSE:
+        for a, b in zip(pts, pts[1:]):
+            add_track(board, hand, nets[net], a, b, layer, 0.2)
+    for net, x, y in SENSE_VIAS:
+        add_via(board, hand, nets[net], x, y, SVIA)
+    names = [name for name, _, _ in NO_TRACKS]
+    for z in list(board.Zones()):
+        if z.GetIsRuleArea() and z.GetZoneName() in names:
+            board.Remove(z)
+    for name, layer, pts in NO_TRACKS:
+        z = pcbnew.ZONE(board)
+        z.SetIsRuleArea(True)
+        z.SetZoneName(name)
+        z.SetLayer(layer)
+        z.SetDoNotAllowTracks(True)
+        z.SetDoNotAllowVias(False)
+        z.SetDoNotAllowPads(False)
+        z.SetDoNotAllowZoneFills(False)
+        z.SetDoNotAllowFootprints(False)
+        ol = z.Outline()
+        ol.NewOutline()
+        for x, y in pts:
+            ol.Append(mm(x), mm(y))
+        board.Add(z)
 
 
 def inside(poly, x, y):
