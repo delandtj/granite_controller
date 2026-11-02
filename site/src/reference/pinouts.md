@@ -144,7 +144,7 @@ The two buses share no pins. A fault on J9 cannot block the plane link.
 | J2 | Controller link in | JST B5B-PH-K-S | C157993 |
 | J3 | Controller link out | JST B5B-PH-K-S | C157993 |
 | J4 | 12 V aux out, isolated | JST B2B-PH-K-S | C131337 |
-| J301 | Chain out | JST S14B-PH-K-S (side entry) | C157938 |
+| J301 | Chain out (to unit 1) | CJT A2541HWR-2x7P, 2x7 2.54 mm right-angle socket, gold, B side | C19100281 |
 | SW1 | Plane address | KingTek DSHP03TSGET, 3-way DIP | C50844 |
 | J6 | SWD | Samtec FTSH-105-01-L-DV-K, ARM Cortex 10-pin 1.27 mm | C5155080 |
 | J5 | SWD | Tag-Connect TC2030-NL pads (no part) | - |
@@ -187,18 +187,19 @@ when no controller is connected; the green `12V` LED is the preload.
 
 ### J301 - chain out (to unit 1)
 
-| Pin | Signal | Pin | Signal |
-|---|---|---|---|
-| 1 | EXP_RSTN | 8 | GND |
-| 2 | PRESS_EN | 9 | P1 SCL (mux channel 1, unit 2) |
-| 3 | P3 SCL (mux channel 3, unit 4) | 10 | P1 SDA |
-| 4 | P3 SDA | 11 | GND |
-| 5 | GND | 12 | P0 SCL (mux channel 0, unit 1) |
-| 6 | P2 SCL (mux channel 2, unit 3) | 13 | P0 SDA |
-| 7 | P2 SDA | 14 | +3V3 |
+2x7 socket, pins listed top to bottom as odd / even pin. The pinout is
+the same for the plug and the socket (plug pin n mates socket pin n),
+see [Chain joint](#chain-joint).
 
-This is the OUT pinout; see [Chain cable](#chain-cable) for how it
-meets a unit's IN header.
+| Pins | Signal (odd) | Signal (even) |
+|---|---|---|
+| 1, 2 | EXP_RSTN | PRESS_EN |
+| 3, 4 | P3 SDA (mux channel 3, unit 4) | P3 SCL |
+| 5, 6 | P2 SDA (mux channel 2, unit 3) | P2 SCL |
+| 7, 8 | GND | GND |
+| 9, 10 | P1 SDA (mux channel 1, unit 2) | P1 SCL |
+| 11, 12 | P0 SDA (mux channel 0, unit 1) | P0 SCL |
+| 13, 14 | +3V3 | GND |
 
 ### SW1 - plane address
 
@@ -255,8 +256,8 @@ OFF = 1. Plane I2C address = 0x30 + ADR[2:0]: all ON = 0x30, all OFF =
 | Ref | Function | Part | LCSC |
 |---|---|---|---|
 | J201 | 48 V input | Amass XT60PW-M | C98732 |
-| J301 | Chain in (left edge) | JST S14B-PH-K-S (side entry) | C157938 |
-| J302 | Chain out (right edge) | JST S14B-PH-K-S (side entry) | C157938 |
+| J301 | Chain in (left edge) | CJT A2541WR-2x7P, 2x7 2.54 mm right-angle pin header (plug), gold, B side | C5136987 |
+| J302 | Chain out (right edge) | CJT A2541HWR-2x7P, 2x7 2.54 mm right-angle socket, gold, B side | C19100281 |
 | J1, J51 | Node 19 V, slot A, B | Degson DG128-5.0-02P | C711349 |
 | J2, J52 | Front panel, slot A, B | JST SM04B-GHS-TB (GH, 1.25 mm) | C189895 |
 | J3, J53 | Module aux, slot A, B | hanxia HX PM1.27-2x3P socket | C41397112 |
@@ -283,32 +284,36 @@ core's, over the expander's U_OFF line, and `unit_reset` releases it
 
 ### J301 - chain in (from the core side)
 
-| Pin | Signal | Pin | Signal |
-|---|---|---|---|
-| 1 | +3V3 (from the core) | 8 | P2 SDA |
-| 2 | P0 SDA (this unit's segment) | 9 | P2 SCL |
-| 3 | P0 SCL | 10 | GND |
-| 4 | GND | 11 | P3 SDA |
-| 5 | P1 SDA | 12 | P3 SCL |
-| 6 | P1 SCL | 13 | PRESS_EN |
-| 7 | GND | 14 | EXP_RSTN |
+2x7 plug, same pinout as the socket (odd = row farther from the edge,
+even = row nearer the edge). IN P0 is this unit's own segment.
+
+| Pins | Signal (odd) | Signal (even) |
+|---|---|---|
+| 1, 2 | EXP_RSTN | PRESS_EN |
+| 3, 4 | P3 SDA | P3 SCL |
+| 5, 6 | P2 SDA | P2 SCL |
+| 7, 8 | GND | GND |
+| 9, 10 | P1 SDA | P1 SCL |
+| 11, 12 | P0 SDA (this unit's segment) | P0 SCL |
+| 13, 14 | +3V3 (from the core) | GND |
 
 ### J302 - chain out (to the next unit)
 
-The OUT pinout, as on the core's J301. The unit shifts the segments by
-one: its IN P1..P3 leave as OUT P0..P2, and OUT P3 is not connected.
-+3V3, GND, PRESS_EN and EXP_RSTN pass straight through. That is how the
-next unit finds its own segment on P0 without any setting.
+2x7 socket, the same pinout as the plug and as the core's J301. The
+unit shifts the segments by one: its IN P1..P3 leave as OUT P0..P2, and
+OUT P3 (pins 3 and 4) is not connected. +3V3, GND, PRESS_EN and
+EXP_RSTN pass straight through. That is how the next unit finds its own
+segment on P0 without any setting.
 
-| Pin | Signal | Pin | Signal |
-|---|---|---|---|
-| 1 | EXP_RSTN | 8 | GND |
-| 2 | PRESS_EN | 9 | P1 SCL (= IN P2) |
-| 3 | not connected (P3 SCL) | 10 | P1 SDA (= IN P2) |
-| 4 | not connected (P3 SDA) | 11 | GND |
-| 5 | GND | 12 | P0 SCL (= IN P1) |
-| 6 | P2 SCL (= IN P3) | 13 | P0 SDA (= IN P1) |
-| 7 | P2 SDA (= IN P3) | 14 | +3V3 |
+| Pins | Signal (odd) | Signal (even) |
+|---|---|---|
+| 1, 2 | EXP_RSTN | PRESS_EN |
+| 3, 4 | not connected (P3 SDA) | not connected (P3 SCL) |
+| 5, 6 | P2 SDA (= IN P3) | P2 SCL (= IN P3) |
+| 7, 8 | GND | GND |
+| 9, 10 | P1 SDA (= IN P2) | P1 SCL (= IN P2) |
+| 11, 12 | P0 SDA (= IN P1) | P0 SCL (= IN P1) |
+| 13, 14 | +3V3 | GND |
 
 ### J1, J51 - node 19 V
 
@@ -368,14 +373,25 @@ degrees takes no screw.
 Every unit carries the same addresses; the core's mux puts each unit on
 its own channel.
 
-## Chain cable
+## Chain joint
 
-Two PHR-14 housings, 14 wires, SPH-002T-P0.5S contacts, about 50-100
-mm, flat. The facing headers are turned 180 degrees to each other, so
-**wire k runs from pin k at one end to pin 15 - k at the other**: an
-OUT header's pin 14 (+3V3) meets the IN header's pin 1 (+3V3), OUT pin
-13 (P0 SDA) meets IN pin 2, and so on. Every joint uses the same cable:
-core J301 or unit J302 (OUT) to the next unit's J301 (IN).
+There is no chain cable. Neighbouring boards plug into each other, in
+the plane of the boards. A unit's J301 (left edge) is a right-angle 2x7
+2.54 mm pin header, CJT A2541WR-2x7P (C5136987, gold), on the B side
+with its body flush with the board's left edge and the pins 6 mm past
+it. The core's J301 and a unit's J302 (right edge) are the matching
+right-angle 2x7 socket, CJT A2541HWR-2x7P (C19100281, gold), on the B
+side with its entry face 4 mm past the board's right edge.
+
+Plug pin n mates socket pin n, so the pinout above is the same on both
+sides. The pins sit at 42.5 to 57.74 mm from the board's top edge on
+every board, so the plug and socket line up.
+
+Fully mated the boards stand 4 mm apart; the joint works from 4 to 6
+mm gap (6 to 4 mm of the pins inside the socket). The boards sit on a
+common mounting bar and are screwed down to it. The bar holds the
+boards: the connector carries no load and has no latch. To remove a
+middle unit, slide the boards after it 6 mm away first.
 
 ## Link cable
 

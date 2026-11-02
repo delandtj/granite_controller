@@ -6,8 +6,8 @@ DRAFT for review (2026-10-29). 56 x 72 mm, board x 52-108, y 100-172:
 the rev1 core block (tools/core.py, x 52-100) without the tile input
 (XT90, hot-swap, shunts, FETs, INA238 U8), plus an 8 mm right margin:
 
-- Chain OUT header J301 on B at the right edge, pins at v 35..61 like the
-  units' headers (pin 14 = 3V3 at the bottom), holes H3 / H4 in the margin
+- Chain OUT socket J301 (2x7 right angle) on B at the right edge, face 4 mm
+  past it, pins v 42.5..57.74 like the units' (3V3 at the bottom), holes H3 / H4 in the margin
   corners above and below it.
 - Mux U6 moved from the bottom left into the freed tile area, rot 180 so
   channels 0-3 (pins 4-11) face the header, channel 0 lowest (as P0 on
@@ -39,11 +39,12 @@ import pcbnew
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import core as rev1                       # noqa: E402  (rev1 core table)
-from boardfit import F, B, put, fit, chain, solid   # noqa: E402
+from boardfit import F, B, put, fit, link, solid   # noqa: E402
 
 CX, Y0 = rev1.CX, rev1.Y0                 # core origin (52, 100)
 RIGHT = CX + 56.0
-PIN_TOP = Y0 + 35.0                       # chain pins v 35..61 (14 pins)
+PIN1 = Y0 + 42.5                          # chain socket pin 1 (top) v 42.5, 7 rows at 2.54 to v 57.74
+PAST = 4.0                                # socket face past the board edge (tools/sch/blocks/chain.py)
 
 TILE = ('R1', 'R2', 'Q2', 'Q3', 'R10', 'R11', 'C14', 'C15', 'U8', 'C16', 'U7', 'C3', 'R37',
         'R33', 'R34', 'R35', 'R36', 'Q4', 'R14', 'R12', 'R38', 'J1')
@@ -86,7 +87,7 @@ def main(src, dst):
     table.update(FLY)
     for ref, (u, v, rot, side) in table.items():
         put(board, ref, CX + u, Y0 + v, rot, side)
-    chain(board, 'J301', RIGHT + 0.2, 'right', PIN_TOP, True)
+    link(board, 'J301', RIGHT, 'right', PIN1, PAST)
     fit(board, 'J1', 180, F, cx=CX + 30.0, bottom=Y0 + 72.4)
     for ref, num in SOLID:
         solid(board, ref, num)

@@ -28,7 +28,7 @@ that is much cheaper to find now.
 - [ ] Link LED on, `net` shows the expected address and mode.
 - [ ] Every plane is found at its address, with the number of units
       you fitted, and no address collision is reported.
-- [ ] Every chain cable fully seated and tied; every unit reports its
+- [ ] Every board plugged fully into its neighbour and screwed down on the bar; every unit reports its
       input voltage.
 - [ ] Every module screwed down with lock washers and reported present.
 - [ ] Every node number matches the motherboard you expect: power each

@@ -214,7 +214,7 @@ policies of that plane's nodes run as well - that is how a frame comes
 back by itself after the site power returns, even when the controller
 lost its own power with it.
 
-**A unit board loses its 3V3** (chain cable). Its slots come up on
+**A unit board loses its 3V3** (chain joint). Its slots come up on
 the hardware default while it is gone; when it is back the plane
 configures it again and puts OFF slots back OFF, with a
 `unit_reset_seen` event. A unit the plane was holding off after a

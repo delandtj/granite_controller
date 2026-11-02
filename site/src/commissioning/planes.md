@@ -1,7 +1,7 @@
 # Assembling and cabling planes
 
 A power plane is one core board and one to four unit boards in a row,
-joined by short chain cables. This chapter puts a plane together, sets
+plugged into each other. This chapter puts a plane together, sets
 its address, mounts the port modules, connects the power and the node
 cables, and cables the planes to the controller. Do it with the 48 V
 bus **off** (its breaker outside the fluid open) and the lid open.
@@ -70,8 +70,9 @@ the frame; you cannot reach SW1 once the tank is sealed.
 
 - Every board is held on its own four M3 holes: the core in its
   corners, a unit by two holes in its input strip and two at its left
-  edge. Mount them in a row, core first, units to its right, 2-5 mm
-  apart. The chain cable takes the gap and any misalignment.
+  edge. Mount them in a row on a common mounting bar, core first,
+  units to its right. Fit them together as in step 5; the bar holds
+  the boards, so the chain joint is not a place to take up misalignment.
 - On every unit, the chain input J301 is at the left edge (towards
   the core) and the chain output J302 at the right edge, in the input
   strip. The XT60 enters from the top edge; the node cables leave at
@@ -85,7 +86,7 @@ the frame; you cannot reach SW1 once the tank is sealed.
 The chain gives each unit its position: the unit plugged into the core
 is unit 1, the one plugged into unit 1 is unit 2, and so on up to unit
 4. The unit boards are identical and carry no setting of their own; the
-cable path alone decides which slots a unit holds.
+position in the row alone decides which slots a unit holds.
 
 | Unit (from the core) | Slot A | Slot B | Nodes on plane 0x30 |
 |---|---|---|---|
@@ -102,21 +103,25 @@ because the node number follows the position, not the board. Keep the
 units in order and leave no gap: unit 3 is reached only through units
 1 and 2.
 
-## 5. Make and fit the chain cables
+## 5. Fit the boards together on the bar
 
-One chain cable per unit, all the same:
+There are no chain cables and nothing to crimp. Each board plugs into
+its neighbour in the plane of the boards, with a right-angle 2x7 2.54
+mm pin header (plug) on a unit's left edge (J301) and a right-angle 2x7
+socket on the core's right edge (J301) and a unit's right edge (J302).
 
-- Two JST PHR-14 housings, 14 wires, crimp contacts SPH-002T-P0.5S.
-  About 50-100 mm long, flat and straight.
-- The headers face each other turned 180 degrees, so the cable joins
-  **pin n at one end to pin 15 - n at the other** (pin 1 to pin 14,
-  pin 2 to pin 13, ...). Laid flat without a twist between two facing
-  headers, that is what a straight flat cable does; check it with a
-  meter before fitting the first one.
-- Core J301 to unit 1 J301; unit 1 J302 to unit 2 J301; and so on.
-  Never chain an output to an output or an input to an input.
-- Push each housing fully home and tie the cable to a board hole as
-  strain relief. PH contacts hold by friction only.
+- Put the core on the bar first. Slide unit 1 up to it until the plug
+  is home in the core's socket, then unit 2 onto unit 1, and so on.
+  Fully mated the boards stand 4 mm apart. The joint works from a 4 to
+  a 6 mm gap (6 to 4 mm of the pins inside the socket).
+- Plug always goes into socket, so a wrong joint cannot be made: the
+  core's J301 or a unit's J302 (sockets, right edge) receives the next
+  unit's J301 (plug, left edge).
+- Screw every board down on the bar. The bar holds the boards: the
+  connector carries no load and has no latch, so a board that is not
+  screwed down can pull out.
+- To remove a middle unit, slide the boards after it 6 mm away from it
+  first, then lift the unit out.
 
 The chain carries the I2C segments for the units, 3.3 V from the core
 for the units' logic (the units have no supply of their own for it),
@@ -190,9 +195,8 @@ the controller's ground, not the bus ground.
 
 - [ ] Every plane's SW1 set to its planned address, no two alike, and
       recorded with the plane's position.
-- [ ] Units in order from the core, no gaps; every chain cable from an
-      output (core J301 or unit J302) to an input (unit J301), checked
-      pin n to pin 15 - n, fully seated and tied.
+- [ ] Units in order from the core, no gaps; every board plugged fully
+      into its neighbour (4 mm apart) and screwed down on the bar.
 - [ ] Every module fitted the right way round, all four screws with
       lock washers, aux header seated.
 - [ ] XT30 and XT60 cables polarity-checked; breaker outside the fluid

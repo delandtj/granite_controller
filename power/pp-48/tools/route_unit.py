@@ -10,15 +10,16 @@ docs/adr/0005-chained-plane-boards.md. Run after tools/place_unit.py.
   replaced by the band below.
 - In2 band (the long nets, off the router): ten rows at v 59.85 + 0.3 i (the
   rev1 channel height, between the standoff pads and the node connectors)
-  from J301's pins, row order = pin order (top pin, top row, outermost
-  vertical), so nothing crosses. Rows 0-7 (EXP_RSTN, PRESS_EN, CH3..CH1:
+  from J301's pins (the 2x7 plug: inner column straight out, outer column
+  down between the inner pads first), row order = pin order (top pin, top
+  row, outermost vertical), so nothing crosses. Rows 0-7 (EXP_RSTN, PRESS_EN, CH3..CH1:
   everything J302 passes on) cross both slots into the strip, each up to a
   pad via of the ladder at u 0.4 + 0.6 i (strip-local), krt-route takes them
   on to J302 on F / B; the band ends in the strip's left edge, so the
-  strip's In2 stays one piece of the VBUS plane. Rows 8 / 9 (SEG_SCL /
-  SEG_SDA) end on tap pad vias in slot A. EXP_RSTN also has its own row from
-  pin 14 to a tap by the expander U5. +3V3: rev1's trunk (v 64.95, 0.4 mm)
-  from J301 pin 1 to J302 pin 14 with a tap pad via per slot. In2 no-via
+  strip's In2 stays one piece of the VBUS plane. Rows 8 / 9 (SEG_SDA /
+  SEG_SCL) end on tap pad vias in slot A. EXP_RSTN also has its own row from
+  pin 1 to a tap by the expander U5. +3V3: rev1's trunk (v 64.95, 0.4 mm)
+  from J301 pin 13 to J302 pin 13 with a tap pad via per slot. In2 no-via
   rule areas over all of it; tools/unitsplit.py cuts these nets into the
   pieces krt-route has to join (margin / slot / strip).
 - Strip power path on F: VIN zone column (XT60 -> C201 -> D201 -> shunt VIN
@@ -48,9 +49,9 @@ SX = X0 + 50.0                           # strip origin
 GROUP = 'hand'
 # In2 band: J301 pins (pin, net) top-down = rows 0..9; rows 0-7 run to the ladder in the strip (krt-route on to
 # J302), rows 8 / 9 (the segment) end on tap vias in slot A (krt-route on to the segment's parts)
-J301_X = 97.59
-BAND = [(14, '/EXP_RSTN'), (13, '/PRESS_EN'), (12, '/Chain/CH3_SCL'), (11, '/Chain/CH3_SDA'), (9, '/Chain/CH2_SCL'),
-        (8, '/Chain/CH2_SDA'), (6, '/Chain/CH1_SCL'), (5, '/Chain/CH1_SDA'), (3, '/SEG_SCL'), (2, '/SEG_SDA')]
+BAND = [(1, '/EXP_RSTN'), (2, '/PRESS_EN'), (3, '/Chain/CH3_SDA'), (4, '/Chain/CH3_SCL'), (5, '/Chain/CH2_SDA'),
+        (6, '/Chain/CH2_SCL'), (9, '/Chain/CH1_SDA'), (10, '/Chain/CH1_SCL'), (11, '/SEG_SDA'), (12, '/SEG_SCL')]
+PITCH = 2.54                             # J301 2x7 plug: odd pins the inner column, even pins the outer (edge) one
 LADDER = 8                               # rows 0..7
 SEG_TAPS = {8: X0 + 10.8, 9: X0 + 9.6}   # row -> tap x (tap via 0.65 below the row's end), left of J1
 ROW0, ROW = 59.85, 0.3                   # row v (slot-local, as rev1)
@@ -114,9 +115,13 @@ def band(k):
     IN2 = pcbnew.In2_Cu
     rows = [Y0 + ROW0 + ROW * i for i in range(len(BAND))]
     for i, (pin, net) in enumerate(BAND):
-        py = pad_at(k.b, 'J301', str(pin))[1]
+        px, py = pad_at(k.b, 'J301', str(pin))
         x = VERT0 - ROW * i
-        head = [(J301_X, py), (x - 0.3, py), (x, py + 0.3), (x, rows[i] - 0.3), (x + 0.3, rows[i])]
+        head = [(px, py)]
+        if pin % 2 == 0:                        # outer column: down to the gap between the inner pads
+            py += PITCH / 2
+            head.append((px + PITCH / 2, py))
+        head += [(x - 0.3, py), (x, py + 0.3), (x, rows[i] - 0.3), (x + 0.3, rows[i])]
         if i < LADDER:
             lx, ly = SX + LAD_U + LAD_DU * i, Y0 + LAD_V - LAD_DV * i
             k.track(net, head + [(lx - 0.3, rows[i]), (lx, rows[i] - 0.3), (lx, ly)], 0.15, IN2)
@@ -126,25 +131,26 @@ def band(k):
             ty = rows[-1] + 0.65
             k.track(net, head + [(tx - 0.3, rows[i]), (tx, rows[i] + 0.3), (tx, ty)], 0.15, IN2)
             k.pad_via(net, (tx, ty), 'SV%d' % i)
-    # EXP_RSTN to the expander: its own In2 row from J301 pin 14 up and right to a tap by U5 / R30
-    px, py = pad_at(k.b, 'J301', '14')
+    # EXP_RSTN to the expander: its own In2 row from J301 pin 1 up and right to a tap by U5 / R30
+    px, py = pad_at(k.b, 'J301', '1')
     k.track('/EXP_RSTN', [(px, py), (px, RST_Y + 0.4), (px + 0.4, RST_Y), RST_TAP], 0.15, IN2)
     k.pad_via('/EXP_RSTN', RST_TAP, 'RV1')
     k.track('/EXP_RSTN', [RST_TAP, pad_at(k.b, 'R30', '1')], 0.2, pcbnew.B_Cu)   # tap -> /RESET pull-up (krt-route on to U5)
     rh.rule_area(k.b, 'band rst', (IN2,), [(px - 0.4, RST_Y - 0.4), (RST_TAP[0] - 0.4, RST_Y - 0.4), (RST_TAP[0] - 0.4, RST_Y + 0.4),
                                            (px + 0.4, RST_Y + 0.4), (px + 0.4, py - 0.9), (px - 0.4, py - 0.9)],
                  keep_tracks=True, no_vias=True)
-    # +3V3 trunk on In2 (rev1's, 0.4 mm): J301 pin 1 down below the band, right to J302 pin 14, one tap pad
+    # +3V3 trunk on In2 (rev1's, 0.4 mm): J301 pin 13 down below the band, right to J302 pin 13, one tap pad
     # via per slot (tools/unitsplit.py gives KRT one +3V3 section per slot and one in the strip)
-    (ax, ay), (bx, by) = pad_at(k.b, 'J301', '1'), pad_at(k.b, 'J302', '14')
+    (ax, ay), (bx, by) = pad_at(k.b, 'J301', '13'), pad_at(k.b, 'J302', '13')
     k.track('+3V3', [(ax, ay), (ax, TRUNK_Y - 0.4), (ax + 0.4, TRUNK_Y), (bx - 0.4, TRUNK_Y), (bx, TRUNK_Y - 0.4), (bx, by)], 0.4, IN2)
     for i, x in enumerate(TAPS):
         k.pad_via('+3V3', (x, TRUNK_Y), 'PV3%s' % 'AB'[i])
     rh.rule_area(k.b, 'band trunk', (IN2,), [(ax - 0.5, TRUNK_Y - 0.5), (bx + 0.5, TRUNK_Y - 0.5), (bx + 0.5, TRUNK_Y + 0.5),
                                              (ax - 0.5, TRUNK_Y + 0.5)], keep_tracks=True, no_vias=True)
-    # KRT does not see In2 when it places vias: none through the band or the J301 verticals
-    xl = VERT0 - ROW * (len(BAND) - 1) - 0.4
-    pts = [(xl, Y0 + 34.6), (VERT0 + 0.4, Y0 + 34.6), (VERT0 + 0.4, rows[0] - 0.4),
+    # KRT does not see In2 when it places vias: none through the band, the J301 escapes or verticals
+    xl = pad_at(k.b, 'J301', '2')[0] - 0.4
+    top = pad_at(k.b, 'J301', '1')[1] - 0.4
+    pts = [(xl, top), (VERT0 + 0.4, top), (VERT0 + 0.4, rows[0] - 0.4),
            (SX + LAD_U - 0.4, rows[0] - 0.4), (SX + LAD_U - 0.4, rows[LADDER - 1] + 0.4),
            (SEG_TAPS[8] + 0.4, rows[LADDER - 1] + 0.4), (SEG_TAPS[8] + 0.4, rows[-1] + 0.4), (xl, rows[-1] + 0.4)]
     rh.rule_area(k.b, 'band', (IN2,), pts, keep_tracks=True, no_vias=True)
@@ -204,13 +210,13 @@ def escapes(k):
 
 def strip(k):
     """strip power path, Kelvin and gate escapes (absolute coordinates; the right-hand parts follow
-    J302's pin column JX and the board edge RIGHT)"""
+    J302's pin columns and the board edge RIGHT)"""
     F, B = pcbnew.F_Cu, pcbnew.B_Cu
-    JX = pad_at(k.b, 'J302', '1')[0]               # pin column; pads +-0.88
-    pin14 = pad_at(k.b, 'J302', '14')[1]           # bottom pin (3V3)
+    xin, xout = pad_at(k.b, 'J302', '1')[0], pad_at(k.b, 'J302', '2')[0]   # socket columns; pads +-0.85
+    pin14 = pad_at(k.b, 'J302', '14')[1]           # bottom row (3V3 / GND)
     xt = pad_at(k.b, 'J201', '2')                  # XT60 VIN pin
     q3 = max(pad_at(k.b, 'Q203', n)[0] for n in '1234') + 0.7
-    ur, vl = JX - 1.16, JX + 1.24                  # USENSE column right edge, VBUS column left edge
+    ur, vl = xin - 1.16, xout + 1.24               # USENSE column right edge, VBUS column left edge
     top = pin14 + 0.95                             # below the last pin: the drain tabs' row
     vin = [(xt[0] - 2.6, 113.9), (xt[0] + 2.6, 113.9), (xt[0] + 2.6, 123.5), (154.6, 123.5), (154.6, 142.3), (158.6, 142.3),
            (158.6, 145.5), (154.4, 145.5), (154.4, 154.0), (150.3, 154.0), (150.3, 119.5), (xt[0] - 2.6, 119.5)]

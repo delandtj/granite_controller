@@ -28,7 +28,7 @@ addresses live on the planes' DIP switches and nowhere else.
 
 - **Every slot defaults ON in hardware.** A plane core that is
   unpowered, in reset or crashed, a missing controller, a pulled link
-  cable or a pulled chain cable never cuts a node. The overvoltage cut,
+  cable or a separated chain joint never cuts a node. The overvoltage cut,
   the slot and unit current limits and the module's own limit all work
   without any firmware.
 - **Nothing moves a node on its own.** A controller reboot, a crash or

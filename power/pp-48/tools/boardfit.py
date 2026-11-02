@@ -4,7 +4,9 @@ put(): a part at (x, y) absolute, rotation, side. fit(): a part by its
 courtyard box (one edge or centre given per axis), for connectors whose
 origin is a pin. chain(): a JST PH side-entry chain header on B with its
 pin row vertical, pin 1 at the top or bottom and the mating face at the
-given board edge.
+given board edge. link(): a right-angle 2x7 chain plug / socket on B, pin 1
+at the top, its front (the plug's body, the socket's face) a given distance
+past the board edge.
 """
 import pcbnew
 
@@ -67,6 +69,27 @@ def chain(board, ref, edge_x, face, pin1_y, pin1_top):
         if abs(ax - bx) < 1e-3 and (ay < by) == pin1_top and body_left == (face == 'left'):
             dx = (edge_x - x0) if face == 'left' else (edge_x - x1)
             fp.SetPosition(pcbnew.VECTOR2I(mm(dx), mm(pin1_y - ay)))
+            return fp
+    raise SystemExit('%s: no orientation fits' % ref)
+
+
+# right-angle 2x7 2.54 mm: the front (plug: body face, the pins go on 6 mm; socket: entry face) from the
+# outer pad row (the even pins, nearer the edge); KiCad's footprints, which match CJT A2541WR / A2541HWR
+FRONT = {'PinHeader_2x07_P2.54mm_Horizontal': 4.04, 'PinSocket_2x07_P2.54mm_Horizontal': 10.03}
+
+
+def link(board, ref, edge_x, face, pin1_y, past=0.0):
+    """2x7 right-angle chain plug / socket on B: pin 1 at pin1_y at the top, rows vertical, the front
+    `past` mm beyond the board edge edge_x, facing 'left' or 'right'"""
+    fp = get(board, ref)
+    front = FRONT[fp.GetFPID().GetLibItemName().wx_str()]
+    for rot in (0, 90, 180, 270):
+        fp = put(board, ref, 0.0, 0.0, rot, B)
+        (ax, ay), (bx, by), (ox, _) = pad_xy(fp, '1'), pad_xy(fp, '13'), pad_xy(fp, '2')
+        outer = ox > ax if face == 'right' else ox < ax
+        if abs(ax - bx) < 1e-3 and ay < by and outer:
+            s = 1 if face == 'right' else -1
+            fp.SetPosition(pcbnew.VECTOR2I(mm(edge_x + s * past - s * front - ox), mm(pin1_y - ay)))
             return fp
     raise SystemExit('%s: no orientation fits' % ref)
 
