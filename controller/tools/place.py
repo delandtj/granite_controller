@@ -136,6 +136,10 @@ def main(argv):
                     # left zero offsets / rotations on the saved board
                     n.m_Filename, n.m_Show = str(m.m_Filename), m.m_Show
                     n.m_Offset = pcbnew.VECTOR3D(m.m_Offset.x, m.m_Offset.y, m.m_Offset.z)
+                    if r == "J1":
+                        # rev C's HR911105A y offset was 2.2 mm off (pins,
+                        # pegs and tabs beside their holes): README value
+                        n.m_Offset = pcbnew.VECTOR3D(4.443, -6.555, 0)
                     n.m_Rotation = pcbnew.VECTOR3D(m.m_Rotation.x, m.m_Rotation.y, m.m_Rotation.z)
                     n.m_Scale = pcbnew.VECTOR3D(m.m_Scale.x, m.m_Scale.y, m.m_Scale.z)
                     d.Models().append(n)

@@ -15,7 +15,7 @@ checked in a 3D render (pin-1 dot on the silk pin-1 mark).
 
 | Footprint | Offset | Rotation |
 |---|---|---|
-| Connector_RJ:RJ45_Hanrun_HR911105A_Horizontal | 4.443, -4.357, 0 | 0 |
+| Connector_RJ:RJ45_Hanrun_HR911105A_Horizontal | 4.443, -6.555, 0 | 0 |
 | granite:ESP32-C6-WROOM-1 | -9, -12.75, 0 | 0 |
 | Connector_USB:USB_C_Receptacle_HRO_TYPE-C-31-M-12 | 0, 1.424, 0 | 180 |
 
