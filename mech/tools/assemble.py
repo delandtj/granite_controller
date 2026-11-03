@@ -15,8 +15,8 @@ Layout (docs/adr/0005-chained-plane-boards.md, decisions 1 and 7):
 - the controller is cable-connected and has no fixed place: it is put
   CTRL_GAP above the row, left-aligned with the core, as a placeholder.
 
-Each board STEP is imported once (hidden, at its KiCad coordinates) and
-every instance is an App::Link with its own placement.
+Each instance is its own import of the board STEP inside an App::Part
+whose placement moves it (App::Links to one hidden import showed nothing).
 """
 import os
 
@@ -60,34 +60,25 @@ def place_board(name, left, top, z=0.0):
 
 def main():
     doc = App.newDocument("plane_8port")
-    src = doc.addObject("App::DocumentObjectGroup", "Sources")
-    base = {}
-    for name in EDGES:
-        before = set(doc.Objects)
-        Import.insert(os.path.join(STEP, name + ".step"), doc.Name)
-        new = [o for o in doc.Objects if o not in before]
-        # headless import leaves every feature hidden (no GUI to set it);
-        # a link only shows the visible children of what it points at
-        for o in new:
-            if o.isDerivedFrom("Part::Feature"):
-                o.Visibility = True
-        tops = [o for o in new if not o.InList]
-        part = doc.addObject("App::Part", "src_" + name.replace("-", "_"))
-        for o in tops:
-            part.addObject(o)
-        src.addObject(part)
-        part.Visibility = False
-        base[name] = part
-
     asm = doc.addObject("App::Part", "Plane_8port")
 
     def link(name, label, placement):
-        lk = doc.addObject("App::Link", label)
-        lk.LinkedObject = base[name]
-        lk.Placement = placement
-        lk.Label = label
-        asm.addObject(lk)
-        return lk
+        """One full import of board `name` per instance (no App::Link: links
+        to a hidden source showed nothing in the GUI), moved by `placement`."""
+        before = set(doc.Objects)
+        Import.insert(os.path.join(STEP, name + ".step"), doc.Name)
+        new = [o for o in doc.Objects if o not in before]
+        # headless import leaves every feature hidden (no GUI to set it)
+        for o in new:
+            o.Visibility = True
+        part = doc.addObject("App::Part", label)
+        part.Label = label
+        for o in new:
+            if not o.InList:
+                part.addObject(o)
+        part.Placement = placement
+        asm.addObject(part)
+        return part
 
     x = 0.0
     link("pp-48-core", "Core", place_board("pp-48-core", x, 0.0))
