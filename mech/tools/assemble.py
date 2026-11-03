@@ -66,6 +66,11 @@ def main():
         before = set(doc.Objects)
         Import.insert(os.path.join(STEP, name + ".step"), doc.Name)
         new = [o for o in doc.Objects if o not in before]
+        # headless import leaves every feature hidden (no GUI to set it);
+        # a link only shows the visible children of what it points at
+        for o in new:
+            if o.isDerivedFrom("Part::Feature"):
+                o.Visibility = True
         tops = [o for o in new if not o.InList]
         part = doc.addObject("App::Part", "src_" + name.replace("-", "_"))
         for o in tops:
