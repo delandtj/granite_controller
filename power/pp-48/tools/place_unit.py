@@ -4,9 +4,9 @@ Usage: place_unit.py <in.kicad_pcb> <out.kicad_pcb>
 
 DRAFT for review (2026-10-29). 78.5 x 72 mm, board x 91-169.5, y 100-172:
 
-- Left margin x 91-100: chain IN header J301 on B, mating face at the left
-  edge, pins at v 35..61 (pin 1 = 3V3 at the bottom, the own segment on
-  pins 2 / 3 above it); holes H1 / H2 at the corners (pcbkit outline puts H2
+- Left margin x 91-100: chain IN plug J301 (2x7 right angle) on B, body
+  flush with the left edge, pins v 42.5..57.74 (pin 1 at the top, 3V3 and
+  the own segment at the bottom); holes H1 / H2 at the corners (pcbkit outline puts H2
   top right; moved).
 - Slots A (x 100) and B (x 125): the rev1 slot table of tools/place.py
   unchanged (unit references +0, slot B +50), unit parts as rev1.
@@ -14,9 +14,9 @@ DRAFT for review (2026-10-29). 78.5 x 72 mm, board x 91-169.5, y 100-172:
   (cable from the top), hole H3 under it, bulk C201, TVS D201, shunts
   R201 / R202 and FETs Q202 / Q203 down the F side (VIN -> USENSE -> VBUS
   in signal-flow order), the LM5069 U207, INA238 U208, dividers and small
-  parts on B behind them; chain OUT header J302 on B at the right edge at
-  the same height as J301 (pin 14 = 3V3 at the bottom), so the cable to the
-  next unit runs flat; H4 at the bottom right corner.
+  parts on B behind them; chain OUT socket J302 on B at the right edge at
+  the same height as J301 (face 4 mm past the edge), so the next unit's plug
+  goes straight in; H4 at the bottom right corner.
 """
 import os
 import sys
@@ -26,12 +26,13 @@ import pcbnew
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import place as rev1                     # noqa: E402  (slot table, module outline)
-from boardfit import F, B, put, fit, chain, solid   # noqa: E402
+from boardfit import F, B, put, fit, link, solid   # noqa: E402
 
 X0, Y0 = rev1.X0, rev1.Y0                # slot A origin (100, 100)
 LEFT, RIGHT = X0 - 9.0, X0 + 69.5        # board edges
 SX = X0 + 50.0                           # strip origin
-PIN_TOP, PIN_BOT = Y0 + 35.0, Y0 + 61.0  # chain pin rows v 35..61 (14 pins, pitch 2.0)
+PIN1 = Y0 + 42.5                         # chain pin 1 (top) v 42.5, 7 rows at 2.54 to v 57.74 (as the core)
+PAST = 4.0                               # OUT socket face past the edge (tools/sch/blocks/chain.py)
 
 # strip, (u, v) from the strip's top-left corner (x = SX). Power path top-down on F (VIN column on
 # the left, tools/route_unit.py): XT60 -> C201 -> D201 -> shunts R201 / R202 stacked (VIN pads left,
@@ -94,9 +95,9 @@ def main(src, dst):
         board.Add(o)
         o.SetPosition(pcbnew.VECTOR2I(pcbnew.FromMM(X0 + rev1.PITCH * (c - 1) + rev1.MOD[0]), pcbnew.FromMM(Y0 + rev1.MOD[1])))
         o.SetOrientationDegrees(270)
-    # chain headers on B: IN at the left edge (pin 1 bottom), OUT at the right edge (pin 1 top)
-    chain(board, 'J301', LEFT - 0.2, 'left', PIN_BOT, False)
-    chain(board, 'J302', RIGHT + 0.2, 'right', PIN_TOP, True)
+    # chain on B, pin 1 at the top: IN plug at the left edge (body flush), OUT socket at the right (face 4 mm out)
+    link(board, 'J301', LEFT, 'left', PIN1)
+    link(board, 'J302', RIGHT, 'right', PIN1, PAST)
     # strip: XT60 mating face at the top edge, then the table
     fit(board, 'J201', 0, F, cx=SX + 8.5, top=Y0 - 0.4)
     for ref, (u, v, rot, side) in STRIP.items():

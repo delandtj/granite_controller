@@ -65,7 +65,7 @@ corrections = [
     ["^D_SOD-123$", "C917030", 0, 0.0, 0.0],
     ["^HSOP-8-1EP_3.9x4.9mm_P1.27mm_EP2.41x3.1mm$", "C477928", 270, 0.0, 0.0],
     ["^SOIC-8-1EP_3.9x4.9mm_P1.27mm_EP2.95x4.9mm_Mask2.71x3.4mm_ThermalVias$", "C471040", 270, 0.0, 0.0],
-    ["^JST_PH_S14B-PH-K_1x14_P2.00mm_Horizontal$", "C157938", 0, 0.0, 0.0],
+    ["^PinSocket_2x07_P2.54mm_Horizontal$", "C19100281", 270, 0.0, 0.0],    # chain socket: fitted on the body side (EasyEDA numbers the rows the other way; a socket has no pin identity)
     ["^L_Bourns_SRR1260$", "C840528", 0, 0.0, 0.0],
     ["^L_Coilcraft_LPD5030V$", "C5441621", 0, 0.0, 0.0],
     ["^PinHeader_2x05_P1.27mm_Vertical_SMD$", "C5155080", 270, 0.0, 0.0],

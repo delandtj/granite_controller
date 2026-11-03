@@ -10,7 +10,7 @@ regions of a net get a temporary name <net>_U<region>, the rest keeps the
 real name). CH1..CH3, PRESS_EN: J301 side apart from the ladder + J302;
 SEG_SDA / SCL: J301 apart from the taps + parts; EXP_RSTN: J301, the
 expander tap + U5 / R30, the ladder + J302 each apart; +3V3: J301, each
-slot's tap + parts, the strip + J302 pin 14 each apart (the real net is then
+slot's tap + parts, the strip + J302 pin 13 each apart (the real net is then
 empty and krt-route drops it; join makes it again). Slot A's expander lines
 /Unit/A_*: their items in slot B (behind the In2 bus) become <net>_SB, as
 tools/netsplit.py does on rev1.

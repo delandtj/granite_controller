@@ -7,7 +7,9 @@ power/pp-48-unit)
 **Updated**: 2026-10-29 (user: chain on JST PH 2.0, 3V3 from the core,
 unit hot-swap latch-off, input strip on the far side); 2026-10-30 (user:
 unit hot-swap LM5069-2 auto-retry with the latch in firmware, decision 3;
-INA237 for INA238)
+INA237 for INA238); 2026-11-02 (user: no chain cable, the boards plug
+into each other on a mounting bar: decisions 4 and 7, the "Direct
+board-to-board mating" alternative taken)
 
 Related: docs/adr/0004-plane-column-layout.md (decisions 1, 1a, 2, 6
 and 9 stand; 3, 4, 5, 7 and 8 are replaced here, see "What changes"),
@@ -28,7 +30,8 @@ long board needs a second tile and an In2 VBUS split.
 
 The user wants one unit design that is chained: build 2, 4, 6 or 8
 slots by plugging unit boards together, each unit powered on its own
-(decided 2026-10-29: short signal cable between boards, per-unit
+(decided 2026-10-29: short signal cable between boards, 2026-11-02:
+boards plugged into each other on a bar instead; per-unit
 XT60PW input, input stage in a side strip, core board with its own
 small 48 V input).
 
@@ -36,8 +39,8 @@ What the rev1 work already gives: the unit (two 25 mm slot columns, one
 I2C segment, TCA6424A, In2 bus for slot A's lines) is drawn and routed
 as a block, and the rotating channel (ADR 0004 decision 5) makes every
 unit's copper identical while each unit still gets its own mux
-channel. Both carry over; the channel just crosses a cable instead of
-a column edge.
+channel. Both carry over; the channel just crosses a board joint
+instead of a column edge.
 
 ---
 
@@ -99,28 +102,36 @@ a column edge.
    retry costs one restart attempt (~10 ms fault timer) before the core
    reacts; acceptable, the slots' own hot-swaps behave the same.
 
-4. **Chain link**: a short cable between neighbouring boards, the same
-   latching header at both edges of a unit and at the core's right
-   edge. 14 pins (user 2026-10-29, docs/press-deadline-line.md; was 12):
-   P0..P3 SDA/SCL (8), 3V3, GND x 3, PRESS_EN, EXP_RSTN. JST PH 2.0 mm
-   (user 2026-10-29: sturdier than GH in the fluid), side entry
-   S14B-PH-K-S, ~30 mm along the edge. The rotating channel goes
-   through the board unchanged: the left connector's P0 is this unit's
-   segment, its P1..P3 are wired to the right connector's P0..P2, the
-   right connector's P3 is not connected. At the core connector Pk =
-   mux channel k (4 used, as rev1). PRESS_EN and EXP_RSTN are bused
-   (straight through every unit). Cable: flat and straight, ~50-100 mm,
-   made by the user (PHR-14 housing + SPH-002T-P0.5 crimps). No VBUS in
-   the chain.
-   Pinout (power/pp-48/tools/sch/blocks/chain.py): the facing headers
-   are turned 180 deg to each other, so a flat cable joins pin n to pin
-   15 - n. IN headers (unit left edge): 1 3V3, 2 / 3 P0 SDA / SCL, 4
-   GND, 5 / 6 P1, 7 GND, 8 / 9 P2, 10 GND, 11 / 12 P3, 13 PRESS_EN, 14
-   EXP_RSTN. OUT headers (core, unit right edge) are the same read
-   backwards (pin n = IN pin 15 - n); on B the IN pin 1 and the OUT pin
-   14 are at the bottom, by the In2 channel; pins at v 35..61 on every
-   board. LCSC: S14B-PH-K-S C157938 (THT, 381 in stock 2026-10-29; the
-   SMD S14B-PH-SM4-TB C5305708 had 2944).
+4. **Chain link**: the boards plug straight into each other, in the
+   plane of the boards, no cable (user 2026-11-02: no cable; was a JST
+   PH 2.0 14-pin flat cable, 2026-10-29). A right-angle 2x7 2.54 mm pin
+   header (the plug) at a unit's left edge mates a right-angle 2x7
+   socket at the core's and a unit's right edge, both on B, both CJT
+   A2541 (gold over nickel; one series, so the two rows sit at the same
+   heights: 5.08 / 5.00 mm bodies on the board). Plug A2541WR-2x7P
+   (C5136987, 87 in stock 2026-11-02; KiCad PinHeader_2x07_P2.54mm_Horizontal):
+   body flush with the edge, pins 6 mm past it. Socket A2541HWR-2x7P
+   (C19100281, 430; KiCad PinSocket_2x07_P2.54mm_Horizontal, 8.5 mm deep):
+   face 4 mm past the edge, so its pads clear the parts behind it on
+   the core (U6, U301, L1) and in the unit's strip. Fully mated the
+   boards stand 4 mm apart; 4..6 mm of gap = 6..4 mm of the pins
+   inside: the bar (decision 7) sets the gap, the joint takes +-1 mm of
+   it. No latch: the boards are screwed down, the joint carries no
+   load. 14 pins (user 2026-10-29, docs/press-deadline-line.md): P0..P3
+   SDA/SCL (8), 3V3, GND x 3, PRESS_EN, EXP_RSTN. The rotating channel
+   goes through the board unchanged: the left connector's P0 is this
+   unit's segment, its P1..P3 are wired to the right connector's
+   P0..P2, the right connector's P3 is not connected. At the core
+   connector Pk = mux channel k (4 used, as rev1). PRESS_EN and
+   EXP_RSTN are bused (straight through every unit). No VBUS in the
+   chain.
+   Pinout (power/pp-48/tools/sch/blocks/chain.py): pin 1 at the top on
+   both, the even pins in the row nearer the edge, so plug pin n meets
+   socket pin n and IN and OUT share one pinout, top to bottom (odd /
+   even): 1 EXP_RSTN / 2 PRESS_EN, 3 / 4 P3 SDA / SCL, 5 / 6 P2, 7 / 8
+   GND, 9 / 10 P1, 11 / 12 P0, 13 3V3 / 14 GND; pins at v 42.5..57.74
+   on every board (3V3 and P0 at the bottom, by the unit's In2 channel).
+   Removing a middle unit means sliding the ones after it 6 mm away.
    Press deadline (docs/press-deadline-line.md, option B, user
    2026-10-29): every unit's four photoMOS LED cathodes return through
    one 2N7002 (Q10) whose gate is PRESS_EN (100k pull-down R31): no
@@ -147,8 +158,10 @@ a column edge.
 
 7. **Mounting**: every board on its own holes (unit: two in the input
    strip plus two at the left edge, positions to fit around slot A's
-   standoffs; core: four corners). Boards ~2-5 mm apart in a row; the
-   chain cable takes the gap and any misalignment.
+   standoffs; core: four corners), all on one mounting bar (user
+   2026-11-02). Boards 4-6 mm apart in a row (decision 4: nominal 5,
+   5 mm of the plug's pins in the socket); the bar holds the boards'
+   height and the pin rows' line within ~0.2 mm.
 
 ### What changes in ADR 0004
 
@@ -156,7 +169,7 @@ a column edge.
 |---|---|
 | 3 Stackup and VBUS | per unit board: In2 VBUS from the unit hot-swap |
 | 4 Family | 1 core + 1-4 identical unit boards, no per-N board |
-| 5 Rotating channel | same scheme, through the chain cable; 4 positions |
+| 5 Rotating channel | same scheme, through the chain joints; 4 positions |
 | 7 Input current scales with N | one 14 A input per unit; no 30 A tile, no end cap, no VBUS split |
 | 8 Plane mounting | holes per board |
 | 1, 1a, 2, 6, 9 | unchanged |
@@ -173,10 +186,10 @@ a column edge.
    - MCU, mux (I2C2 upstream), RS-485 link with the isolators, 12 V
      isolated module, 3V3 buck.
    - Interfaces: XT30 48 V in, link connectors, 12 V out, chain
-     connector (P0..P3, 3V3, GND).
+     socket (P0..P3, 3V3, GND).
 2. **Unit board** (tools/sch/blocks/unit.py + a unit input block)
    - Two slots, TCA6424A, In2 bus, input strip with hot-swap and INA238.
-   - Interfaces: XT60 48 V in, chain in (left), chain out (right),
+   - Interfaces: XT60 48 V in, chain plug (left), chain socket (right),
      per slot the node terminal and the front-panel GH.
 
 ### Data Flow / Interaction
@@ -184,7 +197,7 @@ a column edge.
 ```
  48 V bus (breaker outside the fluid, ADR 0003 decision 8)
    |XT30          |XT60               |XT60               |XT60
- +------+  PH12 +-------------+  PH12 +-------------+  PH12 +---- ...
+ +------+  2x7  +-------------+  2x7  +-------------+  2x7  +---- ...
  | core |------>| unit 1      |------>| unit 2      |------>| unit 3
  | MCU  | P0..3 | P0 = own    | P1..3 | P0 = own    | P2..3 |
  | mux  | 3V3   | P1..3 -> out| -> P0..2 ...        |       |
@@ -213,13 +226,23 @@ a column edge.
   bus bars or heavy connectors per joint.
 - **Bets on**: N staying at 2-4.
 
-### Direct board-to-board mating
-- **The idea**: right-angle header mates a right-angle socket in-plane,
-  boards butt together.
-- **Optimizes for**: no loose cables.
-- **Sharpest tradeoff**: alignment and flex load the contacts at every
-  joint, and the boards must be mounted as one rigid row.
-- **Bets on**: a precise, stiff carrier frame in the box.
+### Short cable between the boards (the 2026-10-29 choice)
+- **The idea**: JST PH 2.0 14-pin side-entry header at each edge, a flat
+  ~50-100 mm cable per joint.
+- **Optimizes for**: loose mounting; the cable takes the gap and any
+  misalignment.
+- **Sharpest tradeoff**: a hand-made cable per joint (no stock 14-pin PH
+  cables; 12-pin ones exist), wired pin n to 15 - n; the user would not
+  crimp them (2026-11-02).
+- **Bets on**: boards held on their own holes without a common carrier.
+
+### Bridge board across the seam
+- **The idea**: vertical 2x7 headers at both board edges, a small PCB
+  with two sockets plugged across the seam.
+- **Optimizes for**: any board lifts out on its own.
+- **Sharpest tradeoff**: an extra part per joint, ~11 mm tall on the
+  board.
+- **Bets on**: room above the seams.
 
 ### Input stage in a top strip
 - **The idea**: ~14 mm strip along the top, board ~50 x 86 mm.
@@ -240,7 +263,8 @@ a column edge.
 - The core board no longer carries 30 A copper.
 
 ### Negative
-- Connectors in the fluid at every joint (signal only, latching).
+- Connectors in the fluid at every joint (signal only, gold, no latch:
+  the boards are screwed to the bar).
 - One hot-swap and one XT60 cable per 2 slots instead of per 4.
 - The plane row gets longer: units ~66 mm instead of 50 mm, plus gaps;
   N = 8 is ~40 + 4 x 66 + gaps, ~315 mm.
@@ -250,14 +274,17 @@ a column edge.
   input moves into the unit).
 
 ### Risks
-- **I2C over cables**: the worst segment (unit 4) crosses 4 cables and 3
-  boards, ~0.5 m. At 100 kHz with 4.7k pull-ups per segment this is
+- **I2C over the joints**: the worst segment (unit 4) crosses 4 joints
+  and 4 boards, ~0.3 m. At 100 kHz with 4.7k pull-ups per segment this is
   well inside 400 pF; keep the GND pins between the pairs.
-- **PH contacts in the fluid over years**: tin-plated 2.0 mm contacts
-  with a friction lock, no positive latch. Mitigation: soak test, a
-  dab of retention (strain relief tie to the board hole); fallback a
-  latching XH / Micro-Fit with the same pinout.
-- **3V3 drop over 4 cables**: ~0.2 A x 4 joints x ~40 mOhm per contact
+- **Header contacts in the fluid over years**: gold-flash 2.54 mm
+  pins in a friction socket, no latch. Mitigation: soak test; the bar
+  holds the boards so nothing pulls on the joint.
+- **Bar tolerance**: the plug's pins bend if the bar puts the rows more
+  than a few tenths of a mm apart in height or along the edge. The
+  boards' holes and the bar set it; check the first frame with the
+  boards screwed down and the joints unplugged.
+- **3V3 drop over 4 joints**: ~0.2 A x 4 joints x ~40 mOhm per contact
   pair is well under 50 mV.
 
 ---
@@ -265,8 +292,8 @@ a column edge.
 ## What an Expert Would Ask
 
 **Q: A unit is plugged in with the core already running. Does anything break?**
-A: The chain carries only 3V3, GND and I2C. Hot-plugging the chain
-cable can glitch the segment of that unit and the ones behind it; the
+A: The chain carries only 3V3, GND and I2C. Hot-plugging a chain
+joint can glitch the segment of that unit and the ones behind it; the
 mux isolates the other channels, and the firmware re-scans a channel
 that NAKs. The slots and the unit hot-swap stay on their hardware
 defaults meanwhile. Plugging the XT60 under power is what the unit
@@ -302,9 +329,10 @@ to size with the SOA check of decision 3.
 ## Implementation Plan
 
 ### Decisions you will probably want to tweak
-- **Chain connector**: JST PH 2.0 14-pin (decided). Alternative: JST GH
-  14-pin (latching, smaller). Cost to change later: one footprint per
-  board edge and the cables; pinout stays.
+- **Chain connector**: right-angle 2x7 2.54 mm plug / socket, boards
+  mated directly (decided 2026-11-02). Alternative: a bridge board
+  across the seam. Cost to change later: one footprint per board edge
+  and the In2 band heads on the unit (tools/route_unit.py).
 - **Unit shunt / limit**: ~3 mOhm, ~18 A. Alternative: 2.5 mOhm, 22 A.
   Cost to change: a resistor value, if the footprint is 2512.
 - **Strip side**: far side (right of slot B), next to the expander
@@ -313,7 +341,7 @@ to size with the SOA check of decision 3.
 - **Core input**: XT30PW. Alternative: a 2-pole screw terminal. Cheap.
 
 ### Known unknowns and how the plan absorbs them
-- LCSC stock of the PH 14-pin side-entry header, XT60PW-M, XT30PW-M,
+- LCSC stock of the chain plug (87 at 2026-11-02) and socket, XT60PW-M, XT30PW-M,
   the 6 mOhm 2512: checked before the schematic; pivot to a clone /
   screw terminals if missing.
 - Unit hot-swap SOA with one FET at the 530 W level: default two FETs
@@ -335,7 +363,8 @@ to size with the SOA check of decision 3.
   (R7-R9a, R21) checked against per-unit inputs.
 
 Review asks: none open. Decided by the user 2026-10-29: chain on JST
-PH 2.0; 3V3 from the core; unit hot-swap LM5069-1 latch-off (stays off
+PH 2.0 (2026-11-02: boards plug into each other, 2x7 plug / socket on a
+mounting bar); 3V3 from the core; unit hot-swap LM5069-1 latch-off (stays off
 after a fault until the MCU resets it over U_OFF or the 48 V cycles;
 2026-10-30: LM5069-2 auto-retry with the latch in the core firmware,
 decision 3);

@@ -2,6 +2,33 @@
 
 Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
 
+## 2026-11-02: plane chain without cables (ADR 0005 decisions 4, 7)
+
+- The boards plug into each other on a mounting bar: unit J301 = CJT
+  A2541WR-2x7P right-angle plug (C5136987, 87 in stock), body flush with
+  the left edge; core J301 / unit J302 = A2541HWR-2x7P right-angle socket
+  (C19100281, 430), face 4 mm past the right edge. Gap 4..6 mm. One
+  pinout for both (plug pin n = socket pin n, chain.py), pins v
+  42.5..57.74, pin 1 at the top. KiCad stock footprints
+  (PinHeader / PinSocket_2x07_P2.54mm_Horizontal) match the CJT drawings.
+- Swapped on the routed boards (not rebuilt): router copper on the chain
+  nets dropped, relink, core: krt-reroute --keep; unit: route_unit.py
+  (band heads for two columns, +3V3 trunk J301.13 -> J302.13, strip
+  pours off the socket's columns), route_unit.sh RESUME=1 HOLD=+3V3
+  with the chain nets and /Input/GATE, one mazefix +3V3 hop on In1 in
+  the strip, dangling stubs removed one by one under DRC (pcbkit prune
+  cut a live +3V3 link here). With KRT rip-up off the strip did not
+  route (3 open).
+- tools/boardfit.py link() places the pair for a rebuild; place_core.py /
+  place_unit.py use it. The chain footprints' silk lines are removed on
+  the boards (they hang past the edge): one lib_footprint_mismatch each.
+- DRC: core 0 unconnected, parity clean, 3 silk_edge (as before) + 1
+  lib mismatch; unit 0 unconnected, parity clean, 6 pth_inside_courtyard
+  + 3 silk_edge (as before) + 2 lib mismatch. ERC 0 both. jlcfab
+  corrections: plug 90, socket 270 (fitted on the body side).
+- Manual (site/) and ADR 0005 updated; check the first frame's bar with
+  the boards screwed down and the joints unplugged (ADR 0005 risks).
+
 ## 2026-10-30: repo merge, manual, 3D models, LCSC / stock pass
 
 - granite_controller and granite-plane merged (this repo, pushed to

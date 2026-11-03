@@ -40,11 +40,12 @@ follow them as well.
 
 ## Connectors in the fluid
 
-- Every plane joint is a JST PH 14-pin chain cable: tin-plated 2.0 mm
-  contacts with a friction lock, no positive latch. Seat each housing
-  fully and secure the cable (a strain relief tie through a board hole)
-  so it cannot work loose. A chain cable that comes off leaves the
-  units behind it on their hardware defaults (slots on, no control).
+- Every plane joint is a 2x7 2.54 mm pin header plugged into a socket,
+  gold-plated contacts, no latch. The boards are held by the mounting
+  bar they are screwed down to, not by the connector; keep every board
+  screwed down so a joint cannot work loose. A joint that comes apart
+  leaves the units behind it on their hardware defaults (slots on, no
+  control).
 - The port module's power runs through its four M2 screws; use the
   split lock washers so the clamping holds through thermal cycles.
 
@@ -87,7 +88,7 @@ The OCP immersion component compatibility guideline asks for at least
 uncertain material. Open items at the time of writing: on the
 controller the HanRun magjack (LED lenses and potting), the JST
 housings and the ESP32 module's shield can; on the planes the JST PH
-and GH housings and contacts, the XT30 / XT60 connectors, the screw
+and GH housings and contacts, the 2x7 chain pin header and socket, the XT30 / XT60 connectors, the screw
 terminals, the DIP switch, the photoMOS and isolator packages, and the
 port module's aux header and socket. Add your probes, floats and cable
 to that list for your fluid.

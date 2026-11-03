@@ -3,7 +3,7 @@
 **For**: the plane hardware (power/pp-48-core, power/pp-48-unit, chain.py)
 **From**: firmware ADR 0002 (firmware/docs/adr/0002-plane-core-firmware.md)
 **Date**: 2026-10-29
-**Status**: decided 2026-10-29 (user): option B + option A on a 14-pin chain (S14B-PH-K-S), core deadline = 74LVC1G123; drawn in chain.py / unit.py / mcu.py, ADR 0005 decision 4
+**Status**: decided 2026-10-29 (user): option B + option A on a 14-pin chain (S14B-PH-K-S), core deadline = 74LVC1G123; drawn in chain.py / unit.py / mcu.py, ADR 0005 decision 4. Since then the chain is no longer a PH cable: neighbouring boards plug into each other with a 2x7 2.54 mm right-angle plug / socket (ADR 0005 decision 4)
 
 ## Problem
 

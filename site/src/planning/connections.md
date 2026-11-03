@@ -184,7 +184,7 @@ shield or the probe ground to the bus ground anywhere.
 | J2 | Controller link in | JST PH 5p | 3V3 (controller side), GND (controller side), SCL, SDA, EXP_INT |
 | J3 | Controller link out (to the next plane) | JST PH 5p | as J2, same bus |
 | J4 | 12 V aux out, isolated | JST PH 2p | 1 +12 V, 2 controller-side ground |
-| J301 | Chain out, to unit 1 | JST PH 14p side entry | see [pinouts](../reference/pinouts.md) |
+| J301 | Chain out, to unit 1 | 2x7 2.54 mm right-angle socket (CJT A2541HWR-2x7P) | see [pinouts](../reference/pinouts.md) |
 | SW1 | Plane address | 3-way DIP switch | ON = 0, address 0x30 + ADR[2:0] |
 | J6 | SWD, bench programming | ARM Cortex 10-pin, 1.27 mm, keyed shroud | standard ARM 10-pin SWD |
 | J5 | SWD, bench programming | Tag-Connect TC2030-NL pads | standard TC2030 SWD |
@@ -202,8 +202,8 @@ next plane so the cabling reads the same on every plane.
 | Ref | Function | Connector | Pins (pin 1 first) |
 |---|---|---|---|
 | J201 | 48 V input | Amass XT60PW-M, keyed, cable from the top edge | 1 `-` bus ground, 2 `+` 48 V |
-| J301 | Chain in (from the core side, left edge) | JST PH 14p side entry | see [pinouts](../reference/pinouts.md) |
-| J302 | Chain out (to the next unit, right edge) | JST PH 14p side entry | see [pinouts](../reference/pinouts.md) |
+| J301 | Chain in (from the core side, left edge) | 2x7 2.54 mm right-angle pin header, plug (CJT A2541WR-2x7P) | see [pinouts](../reference/pinouts.md) |
+| J302 | Chain out (to the next unit, right edge) | 2x7 2.54 mm right-angle socket (CJT A2541HWR-2x7P) | see [pinouts](../reference/pinouts.md) |
 | J1 / J51 | Node 19 V, slot A / slot B | Degson DG128-5.0-02P screw terminal | 1 GND, 2 +19 V |
 | J2 / J52 | Front panel, slot A / slot B | JST GH 4p, latching | `PWR_SW` `RST_SW` `PLED+` `PLED-` |
 | J3 / J53 | Port module aux, slot A / slot B | 2x3 1.27 mm socket | mated by the module, not cabled |

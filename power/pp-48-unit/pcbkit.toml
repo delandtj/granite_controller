@@ -66,7 +66,8 @@ corrections = [
     ["^D_SMB$", "C353345", 0, 0.0, 0.0],
     ["^D_SMC$", "C2990209", 0, 0.0, 0.0],
     ["^JST_GH_SM04B-GHS-TB_1x04-1MP_P1.25mm_Horizontal$", "C189895", 0, 0.0, -0.25],
-    ["^JST_PH_S14B-PH-K_1x14_P2.00mm_Horizontal$", "C157938", 0, 0.0, 0.0],
+    ["^PinHeader_2x07_P2.54mm_Horizontal$", "C5136987", 90, 0.0, 0.0],      # chain plug: fitted on the body side (EasyEDA numbers the rows the other way; a header has no pin identity)
+    ["^PinSocket_2x07_P2.54mm_Horizontal$", "C19100281", 270, 0.0, 0.0],    # chain socket: as the plug
     ["^MSOP-10_3x3mm_P0.5mm$", "C111822", 270, 0.0, 0.0],
     ["^PM_Aux_Socket_2x03_P1.27$", "C41397112", 270, 0.0, 0.0],     # symmetric; our pins are numbered by function
     ["^PM_Standoff_M2x7_SMTSO$", "C2916355", 0, 0.0, 0.0],

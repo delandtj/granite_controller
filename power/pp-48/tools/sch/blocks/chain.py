@@ -1,35 +1,40 @@
-"""Chain sheet: the JST PH 2.0 14-pin link between neighbouring plane boards
-(docs/adr/0005-chained-plane-boards.md decision 4, docs/press-deadline-line.md).
+"""Chain sheet: the board-to-board link between neighbouring plane boards, a
+right-angle 2x7 2.54 mm plug / socket pair that mates directly in the plane
+of the boards, no cable (docs/adr/0005-chained-plane-boards.md decision 4,
+docs/press-deadline-line.md).
 
 Signals: the rotating channel P0..P3 (SDA / SCL each), +3V3 from the core,
-GND x 3 between the pairs, PRESS_EN (the press deadline, bused: one line
-for all units) and EXP_RSTN (the units' TCA6424A /RESET, bused, open drain
-from the core, pulled up by R30 on every unit). No VBUS.
+GND x 3, PRESS_EN (the press deadline, bused: one line for all units) and
+EXP_RSTN (the units' TCA6424A /RESET, bused, open drain from the core,
+pulled up by R30 on every unit). No VBUS.
 
-Pinouts. Both headers are side entry (S14B-PH-K-S) on the B side; the core's
-and a unit's right-hand header face right ("OUT"), a unit's left-hand
-header faces left ("IN"). The cable is flat and straight: every wire runs
-straight across, so header pin n at one end meets pin 15 - n at the other,
-and the OUT pinout is the IN pinout read backwards:
+Parts (CJT A2541 series, gold over nickel, one series so the rows mate at
+the same height): "IN" (a unit's left edge) is the plug, A2541WR-2x7P
+(C5136987), body flush with the edge, pins 6 mm out past it; "OUT" (the
+core's and a unit's right edge) is the socket, A2541HWR-2x7P (C19100281),
+its face 4 mm out past the edge. Mated fully the boards stand 4 mm apart;
+4..6 mm gap = 6..4 mm of the pins inside. Both on B with pin 1 at the top
+and the even pins in the row nearer the edge, so plug pin n meets socket
+pin n and IN and OUT share one pinout (top to bottom, odd / even row):
 
-    IN   1 3V3   2 P0_SDA  3 P0_SCL  4 GND  5 P1_SDA  6 P1_SCL  7 GND
-         8 P2_SDA  9 P2_SCL 10 GND 11 P3_SDA 12 P3_SCL 13 PRESS_EN 14 EXP_RSTN
-    OUT  pin n = IN pin 15 - n (1 EXP_RSTN ... 14 3V3)
+     1 EXP_RSTN   2 PRESS_EN
+     3 P3_SDA     4 P3_SCL
+     5 P2_SDA     6 P2_SCL
+     7 GND        8 GND
+     9 P1_SDA    10 P1_SCL
+    11 P0_SDA    12 P0_SCL
+    13 +3V3      14 GND
 
-On B the headers' handedness puts an IN header's pin 1 at the bottom
-(body to the left) and an OUT header's pin 1 at the top: 3V3 and P0 sit at
-the bottom end of every header, by the In2 channel; the two static lines
-at the top end, PRESS_EN next to the P3 pair.
+3V3 and P0 at the bottom, by the unit's In2 channel; the static lines at
+the top.
 
-Cable: two PHR-14 housings, 14 wires, wire k from pin k to pin 15 - k.
-
-Core: one OUT header J301, Pk = mux channel k (ports UNITk+1_SDA / SCL, as
+Core: one OUT socket J301, Pk = mux channel k (ports UNITk+1_SDA / SCL, as
 the Mux sheet names them), EXP_RSTN from the MCU (port), PRESS_EN from the
 deadline monostable U301 (74LVC1G123): every rising edge of PRESS_TRIG
 (MCU PB12, a GPIO the press task toggles) retriggers it, Q stays high for ~1 s (R301 x C301)
 after the last edge; a stuck-high, stuck-low or floating trigger (R302
-pull-down) ends in PRESS_EN low. Unit: IN header J301 (left edge) and OUT
-header J302 (strip, right edge); IN P0 is this unit's segment (ports SDA /
+pull-down) ends in PRESS_EN low. Unit: IN plug J301 (left edge) and OUT
+socket J302 (strip, right edge); IN P0 is this unit's segment (ports SDA /
 SCL), IN P1..P3 are wired to OUT P0..P2, OUT P3 is not connected; PRESS_EN
 and EXP_RSTN pass straight through (ports to the Unit sheet).
 
@@ -38,11 +43,14 @@ Coordinates are in grid units of 1.27 mm (P(x, y)).
 from sch.draw import Block
 
 G = 1.27
-PH14 = "Connector_JST:JST_PH_S14B-PH-K_1x14_P2.00mm_Horizontal"
-FIELDS = {"LCSC": "C157938", "MPN": "JST S14B-PH-K-S(LF)(SN)"}
-IN = {1: "+3V3", 2: "P0_SDA", 3: "P0_SCL", 4: "GND", 5: "P1_SDA", 6: "P1_SCL",
-      7: "GND", 8: "P2_SDA", 9: "P2_SCL", 10: "GND", 11: "P3_SDA", 12: "P3_SCL", 13: "PRESS_EN", 14: "EXP_RSTN"}
-OUT = {n: IN[15 - n] for n in IN}
+SYM = "Connector_Generic:Conn_02x07_Odd_Even"
+PLUG = "Connector_PinHeader_2.54mm:PinHeader_2x07_P2.54mm_Horizontal"
+SOCKET = "Connector_PinSocket_2.54mm:PinSocket_2x07_P2.54mm_Horizontal"
+PLUG_FIELDS = {"LCSC": "C5136987", "MPN": "CJT A2541WR-2x7P"}
+SOCKET_FIELDS = {"LCSC": "C19100281", "MPN": "CJT A2541HWR-2x7P"}
+IN = {1: "EXP_RSTN", 2: "PRESS_EN", 3: "P3_SDA", 4: "P3_SCL", 5: "P2_SDA", 6: "P2_SCL", 7: "GND",
+      8: "GND", 9: "P1_SDA", 10: "P1_SCL", 11: "P0_SDA", 12: "P0_SCL", 13: "+3V3", 14: "GND"}
+OUT = IN                              # plug pin n mates socket pin n
 STATIC = {"PRESS_EN": "input", "EXP_RSTN": "input"}      # unit side: port shapes
 
 
@@ -71,8 +79,8 @@ def block(kind):
     b = Block("Chain", date="2026-10-29")
     if kind == "core":
         nets = {str(n): ("UNIT%d_%s" % (int(v[1]) + 1, v[3:]) if pair(v) else v) for n, v in OUT.items()}
-        b.sym("J301", "Connector_Generic:Conn_01x14", "CHAIN OUT", PH14, nets, at=P(60, 40), mirror="y",
-              fields=FIELDS, desc="chain to unit 1 (right edge): Pk = mux channel k; OUT pinout, flat straight cable")
+        b.sym("J301", SYM, "CHAIN OUT", SOCKET, nets, at=P(60, 40), mirror="y",
+              fields=SOCKET_FIELDS, desc="chain to unit 1 (right edge socket): Pk = mux channel k")
         for n, net in nets.items():
             if net.startswith("UNIT"):
                 b.port(net, "bidirectional", side="left", pos=stub(b, "J301", n, net))
@@ -81,7 +89,7 @@ def block(kind):
             elif net == "PRESS_EN":
                 b.tie(net, stub(b, "J301", n, net))
         deadline(b)
-        b.text("CHAIN OUT  J301 JST PH 14, Pk = TCA9548A channel k (unit k + 1), PRESS_EN / EXP_RSTN bused", P(30, 30))
+        b.text("CHAIN OUT  J301 2x7 socket, Pk = TCA9548A channel k (unit k + 1), PRESS_EN / EXP_RSTN bused", P(30, 30))
         return b.finish()
 
     # unit: own segment = IN P0; IN P1..P3 -> OUT P0..P2; OUT P3 open
@@ -97,10 +105,10 @@ def block(kind):
 
     nin = {str(n): in_net(v) for n, v in IN.items()}
     nout = {str(n): out_net(v) for n, v in OUT.items()}
-    b.sym("J301", "Connector_Generic:Conn_01x14", "CHAIN IN", PH14, nin, at=P(40, 40), mirror="y",
-          fields=FIELDS, desc="chain from the core side (left edge, faces left): IN pinout; P0 = this unit's segment")
-    b.sym("J302", "Connector_Generic:Conn_01x14", "CHAIN OUT", PH14, nout, at=P(100, 40),
-          fields=FIELDS, desc="chain to the next unit (strip, right edge): OUT pinout; P0..P2 = IN P1..P3, P3 open")
+    b.sym("J301", SYM, "CHAIN IN", PLUG, nin, at=P(40, 40), mirror="y",
+          fields=PLUG_FIELDS, desc="chain from the core side (left edge plug): P0 = this unit's segment")
+    b.sym("J302", SYM, "CHAIN OUT", SOCKET, nout, at=P(100, 40),
+          fields=SOCKET_FIELDS, desc="chain to the next unit (right edge socket): P0..P2 = IN P1..P3, P3 open")
     for n, net in nin.items():
         if net in STATIC:
             b.port(net, STATIC[net], side="left", pos=stub(b, "J301", n, net))

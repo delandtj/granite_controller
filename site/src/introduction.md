@@ -15,7 +15,7 @@ Granite is the electronics of an immersion-cooled frame of motherboards
   each node's power and reset buttons and reads its power LED. A plane
   is one **core board** (microcontroller, isolated link, isolated 12 V
   aux output) and one to four identical **unit boards** of two slots
-  each, chained with short cables: 2, 4, 6 or 8 nodes per plane.
+  each, plugged into each other in a row: 2, 4, 6 or 8 nodes per plane.
 - **The controller.** One controller serves up to eight planes over an
   isolated I2C link. It measures fluid temperatures with DS18B20 probes,
   watches up to four dry contacts (leak float, lid switch), and reports
@@ -74,7 +74,7 @@ repository at tag `rev-c-demo`.
 | Item | Power plane |
 |---|---|
 | Bus | 48-60 V DC nominal (SELV), slots on above about 38 V, off above about 65 V |
-| Boards | 1 core board + 1-4 unit boards, 2 slots per unit, chained with JST PH 14-pin cables |
+| Boards | 1 core board + 1-4 unit boards, 2 slots per unit, plugged into each other in a row (2x7 2.54 mm pin header into socket, no cable) |
 | Core | STM32G070 MCU, I2C mux, isolated link to the controller, isolated 12 V aux out, XT30 48 V input, 3-way DIP switch for the plane address |
 | Unit | XT60 48 V input with its own hot-swap (auto-retry, about 18 A; the plane core latches a faulted unit off), two slots |
 | Slot | hot-swap front end with overvoltage latch and V / I / P monitor, port module PM-19V-250W (19 V, 250 W), node power screw terminal, front-panel JST GH 4p (PWR, RST, power LED) |
