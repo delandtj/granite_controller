@@ -112,3 +112,10 @@ def main():
 
 
 main()
+
+
+# The FCStd written here has no GUI data (headless), and the GUI showed it
+# empty; one STEP of the whole row opens reliably (File > Open in the GUI).
+_doc = App.ActiveDocument
+Import.export([_doc.getObject("Plane_8port")], OUT.replace(".FCStd", ".step"))
+print("saved", OUT.replace(".FCStd", ".step"))
