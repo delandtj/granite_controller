@@ -29,3 +29,8 @@ power/*/*.step
 attic/power/*/*.step
 power/*/production/
 attic/power/*/production/
+
+# kicad-mcp scratch (visual diffs, ERC reports, renders)
+.kicad-mcp/
+power/*/output/
+attic/power/*/output/
