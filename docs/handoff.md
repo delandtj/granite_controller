@@ -43,6 +43,23 @@ de43d06), d800949 (no `factory` partition), 7290a45 (dispatcher stack),
   has not fired yet: with the link down lwIP neither counts DHCP tries
   nor starts AutoIP, so a board-side replug cannot set it up; it needs
   the link up and DHCP unanswered for ~15 s (switch or router side).
+- Evening, all on master: stacks measured with lto under load (HTTPS x4
+  parallel, OTA upload, Modbus, MQTT; console `stacks`, 9a9f837, real
+  FreeRTOS task names via platform::spawn). dispatch was 83 % of 24 KB
+  (two PlaneClient copies) -> PlaneClient on the heap (8512 -> 464 B),
+  now 18 %; sys_evt had 956 B free of 2304 -> 4096, now 2.7 KB free.
+  Every task >= 1.2 KB free; dispatch must be re-measured with the real
+  plane link (still the stub).
+- DHCP / AutoIP race, root cause (432bb2b): lwIP 2.2 neither stops AutoIP
+  in dhcp_bind nor stops AutoIP's ACD in autoip_stop, so whichever ACD
+  probe finishes last sets the address. ESP-IDF's DISCOVER backoff (0,
+  0.5, 1.5, 3.5, 7.5 s, then 4 s) made TRIES=4 start AutoIP 7.5 s after
+  link-up, right where this switch's first answered DISCOVER lands.
+  Fix: components/granite_lwip (C: acd_remove + autoip_stop on the tcpip
+  thread on every routable address) + CONFIG_LWIP_AUTOIP_TRIES=10
+  (31.5 s). Bench: 13 boots, lease at 12.8-14.5 s, no 169.254. Upstream
+  issue drafted for the user (lwIP savannah + ESP-IDF), not filed; same
+  code on lwIP master and esp-lwip 2.2.0-esp.
 - Small firmware bugs seen, not fixed: `/api/v1/firmware` lists the
   other slot as `size 0, version ""` even when it holds a valid image;
   the rollback call answers with an empty body.
@@ -50,10 +67,7 @@ de43d06), d800949 (no `factory` partition), 7290a45 (dispatcher stack),
   - Order rev D (user); then bench the rev D link (clock stretch
     through the ISO1640, 8-plane rise time).
   - SixUnited answer -> R18 or not.
-  - Measure stack high-water marks of the other granite-fw threads with
-    lto = true (only the dispatcher overflowed so far).
-  - Test automatic rollback (an image that cannot validate), and the
-    DHCP restart path if a way to delay DHCP is at hand.
+  - Test automatic rollback (an image that cannot validate).
   - FD: JLC preview checks and 3D models before ordering.
 
 ## 2026-11-04: rev D safeguard, CAN FD generation started (ADR 0006)
