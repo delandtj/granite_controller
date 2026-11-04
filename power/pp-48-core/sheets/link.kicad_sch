@@ -1585,7 +1585,15 @@
 				)
 			)
 			(embedded_fonts no)
-				(property "ki_fp_filters" "SOT?23*" (at 0 0 0) (effects (font (size 1.27 1.27)) (hide yes)))
+			(property "ki_fp_filters" "SOT?23*"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
 		)
 		(symbol "power:+3V3"
 			(power global)
@@ -2734,23 +2742,25 @@
 		(dnp no)
 		(uuid "bf5dbb7b-c380-5314-8dbd-e05e0ccf5104")
 		(property "Reference" "U5"
-			(at 190.5 65.786 0)
+			(at 187.96 66.04 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
+				(justify left)
 			)
 		)
 		(property "Value" "ISO7721D"
-			(at 190.5 67.31 0)
+			(at 193.04 66.04 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
+				(justify right)
 			)
 		)
 		(property "Footprint" "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm"
@@ -2846,23 +2856,25 @@
 		(dnp no)
 		(uuid "d0a656e6-649f-5631-ab1b-4f42f3d8abb4")
 		(property "Reference" "U4"
-			(at 190.5 105.156 0)
+			(at 187.96 105.41 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
+				(justify right)
 			)
 		)
 		(property "Value" "ISO1640BD"
-			(at 190.5 106.68 0)
+			(at 193.04 105.41 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
+				(justify left)
 			)
 		)
 		(property "Footprint" "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm"
@@ -3714,7 +3726,7 @@
 		(dnp no)
 		(uuid "81acfa6a-5c37-5a07-88d6-65a03f2fd75c")
 		(property "Reference" "J2"
-			(at 272.415 106.426 0)
+			(at 274.32 104.14 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -3724,7 +3736,7 @@
 			)
 		)
 		(property "Value" "CTRL IN"
-			(at 272.415 107.95 0)
+			(at 274.32 106.68 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -3818,7 +3830,7 @@
 		(dnp no)
 		(uuid "de6d2883-f489-5f87-9c66-38012b5352bd")
 		(property "Reference" "J3"
-			(at 272.415 126.746 0)
+			(at 274.32 124.46 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -3828,7 +3840,7 @@
 			)
 		)
 		(property "Value" "CTRL OUT"
-			(at 272.415 128.27 0)
+			(at 274.32 127 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects

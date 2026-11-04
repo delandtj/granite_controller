@@ -1102,26 +1102,6 @@
 	)
 	(wire
 		(pts
-			(xy 50.8 60.96) (xy 63.5 60.96)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "1f77fdc5-3b17-5433-8741-4d52f376fe11")
-	)
-	(wire
-		(pts
-			(xy 63.5 60.96) (xy 63.5 64.77)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "d8007458-54e0-544b-920a-4bd7e5e97872")
-	)
-	(wire
-		(pts
 			(xy 58.42 138.43) (xy 58.42 140.97)
 		)
 		(stroke
@@ -1170,6 +1150,26 @@
 		)
 		(uuid "4e9c5a98-cc46-5267-864d-195dd33894d5")
 	)
+	(wire
+		(pts
+			(xy 50.8 60.96) (xy 71.12 60.96)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0438f59b-4ea8-4c72-8b2b-d50760a79b3c")
+	)
+	(wire
+		(pts
+			(xy 71.12 60.96) (xy 71.12 64.77)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "403c77a9-f255-4879-a714-bc9217c7b6de")
+	)
 	(junction
 		(at 35.56 60.96)
 		(diameter 0)
@@ -1188,6 +1188,12 @@
 		(color 0 0 0 0)
 		(uuid "d7673376-88ed-59e9-8e5a-b504a7035062")
 	)
+	(junction
+		(at 43.18 60.96)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "c74d07a3-f9ca-4085-9f83-62678bb30722")
+	)
 	(hierarchical_label "VIN_SNS"
 		(shape output)
 		(at 48.26 140.97 180)
@@ -1201,7 +1207,7 @@
 	)
 	(text "CORE INPUT  J1 XT30 -> TVS -> C1 / C2 -> VIN (3V3 buck, 12 V module)"
 		(exclude_from_sim no)
-		(at 15.24 15.24 0)
+		(at 15.24 22.86 0)
 		(effects
 			(font
 				(size 2 2)
@@ -1520,7 +1526,7 @@
 	)
 	(symbol
 		(lib_id "Device:C")
-		(at 63.5 68.58 0)
+		(at 71.12 68.58 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -1530,7 +1536,7 @@
 		(dnp no)
 		(uuid "4d973603-454c-50a9-9312-93c0a7b8162d")
 		(property "Reference" "C2"
-			(at 67.802 67.31 0)
+			(at 75.422 67.31 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -1540,7 +1546,7 @@
 			)
 		)
 		(property "Value" "2.2u 100V"
-			(at 71.302 69.85 0)
+			(at 78.922 69.85 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -1550,7 +1556,7 @@
 			)
 		)
 		(property "Footprint" "Capacitor_SMD:C_1210_3225Metric"
-			(at 63.5 68.58 0)
+			(at 71.12 68.58 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -1562,7 +1568,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 63.5 68.58 0)
+			(at 71.12 68.58 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -1574,7 +1580,7 @@
 			)
 		)
 		(property "Description" "input HF"
-			(at 63.5 68.58 0)
+			(at 71.12 68.58 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -1586,7 +1592,7 @@
 			)
 		)
 		(property "LCSC" "C338133"
-			(at 63.5 68.58 0)
+			(at 71.12 68.58 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2136,7 +2142,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 63.5 72.39 0)
+		(at 71.12 72.39 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -2146,7 +2152,7 @@
 		(dnp no)
 		(uuid "78dd0112-1cd7-589d-93c0-60ed6051566d")
 		(property "Reference" "#PWR7004"
-			(at 63.5 72.39 0)
+			(at 71.12 72.39 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2157,7 +2163,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 63.5 76.835 0)
+			(at 71.12 76.835 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -2167,7 +2173,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 63.5 72.39 0)
+			(at 71.12 72.39 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2179,7 +2185,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 63.5 72.39 0)
+			(at 71.12 72.39 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2191,7 +2197,7 @@
 			)
 		)
 		(property "Description" ""
-			(at 63.5 72.39 0)
+			(at 71.12 72.39 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2376,7 +2382,7 @@
 	)
 	(symbol
 		(lib_id "power:VBUS")
-		(at 27.94 60.96 270)
+		(at 43.18 60.96 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -2386,7 +2392,7 @@
 		(dnp no)
 		(uuid "be3541f7-9a62-5224-8ecf-f1bc77d8ec73")
 		(property "Reference" "#PWR7007"
-			(at 27.94 60.96 90)
+			(at 43.18 60.96 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2397,7 +2403,7 @@
 			)
 		)
 		(property "Value" "VIN"
-			(at 32.615 60.96 90)
+			(at 43.18 57.15 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -2407,7 +2413,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 27.94 60.96 0)
+			(at 43.18 60.96 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2419,7 +2425,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 27.94 60.96 0)
+			(at 43.18 60.96 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2431,7 +2437,7 @@
 			)
 		)
 		(property "Description" ""
-			(at 27.94 60.96 0)
+			(at 43.18 60.96 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
