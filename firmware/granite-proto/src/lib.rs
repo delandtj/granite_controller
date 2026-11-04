@@ -8,6 +8,8 @@
 //! use it.
 //!
 //! - [`crc`]: CRC-8 (SMBus PEC) over the address and the frame.
+//! - [`can`]: the CAN FD transport of ADR 0005 under the same frames:
+//!   identifiers, segmentation and reassembly.
 //! - [`frame`]: build a request, build a write, check and split an
 //!   answer; the plane's mirror of all three.
 //! - [`record`]: the TLV layer, [`RecordWriter`] and [`Records`].
@@ -55,6 +57,7 @@
 extern crate std;
 
 pub mod bits;
+pub mod can;
 pub mod config;
 pub mod crc;
 pub mod ctrl;
