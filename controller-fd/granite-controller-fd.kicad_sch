@@ -1,0 +1,273 @@
+(kicad_sch
+	(version 20260306)
+	(generator "eeschema")
+	(generator_version "10.0")
+	(uuid "bd3d1081-8fd5-561e-93ea-9d28b3145149")
+	(paper "A4")
+	(title_block
+		(title "Granite controller FD")
+		(date "2026-11-04")
+		(rev "FD")
+		(comment 1 "Ethernet controller and plane link master for frames with 48 V power planes")
+		(comment 2 "ESP32-C6 + W5500, CAN FD plane link (MCP2518FD + TCAN1044V, 2x3 socket with AUX_12V in), probes, dry contacts, Qwiic")
+	)
+	(lib_symbols)
+	(text "Granite controller rev D: Ethernet controller and plane link master for up to 8 power planes, immersion-cooled."
+		(exclude_from_sim no)
+		(at 31.75 22.86 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "045eacc2-e355-46bf-a599-8c5d82e8fc12")
+	)
+	(text "Powered from two planes' isolated 12 V aux (PH 2p). Node control lives on the planes. Spec: docs/controller-rev-d.md (delta to rev C docs/controller.md)"
+		(exclude_from_sim no)
+		(at 31.75 27.94 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "f72dcc57-4114-477a-8dc1-9b9425c652d4")
+	)
+	(sheet
+		(at 31.75 45.72)
+		(size 54.61 17.78)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "827be8ef-6a37-5395-8e48-6b8c9aee3791")
+		(property "Sheetname" "Power"
+			(at 31.75 45.0084 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "schematic/power.kicad_sch"
+			(at 31.75 64.0884 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "granite-controller-fd"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149"
+					(page "2")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 107.95 45.72)
+		(size 54.61 17.78)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "2ef8dae6-4cdd-56d2-b0d9-eaa0087a445f")
+		(property "Sheetname" "Ethernet"
+			(at 107.95 45.0084 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "schematic/ethernet.kicad_sch"
+			(at 107.95 64.0884 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "granite-controller-fd"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149"
+					(page "3")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 184.15 45.72)
+		(size 54.61 17.78)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "0e1bb3cd-6ff3-5424-825a-684fab3f6ce8")
+		(property "Sheetname" "MCU"
+			(at 184.15 45.0084 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "schematic/mcu.kicad_sch"
+			(at 184.15 64.0884 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "granite-controller-fd"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149"
+					(page "4")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 107.95 81.28)
+		(size 54.61 17.78)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "b0a29a8c-351d-55c9-a76a-359903750a26")
+		(property "Sheetname" "Sensors and dry contacts"
+			(at 107.95 80.5684 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "schematic/expansion.kicad_sch"
+			(at 107.95 99.6484 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "granite-controller-fd"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149"
+					(page "5")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 31.75 81.28)
+		(size 54.61 17.78)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "7c1d5a0e-3f2b-4e8a-9b61-2d4c8e5f0a17")
+		(property "Sheetname" "CAN link"
+			(at 31.75 80.5684 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "schematic/canlink.kicad_sch"
+			(at 31.75 99.6484 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "granite-controller-fd"
+				(path "/bd3d1081-8fd5-561e-93ea-9d28b3145149"
+					(page "6")
+				)
+			)
+		)
+	)
+	(sheet_instances
+		(path "/"
+			(page "1")
+		)
+	)
+	(embedded_fonts no)
+)

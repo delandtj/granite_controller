@@ -1,0 +1,90 @@
+# pcbkit settings for the granite controller FD (CAN FD generation; outline values from rev D) (4L JLC, 105 x 50 mm,
+# ESP32-C6 + W5500, CAN FD plane link with AUX_12V in). FD generation: schematic only so far,
+# layout values below are rev D's and still to revise. Board tools: ~/Electronics/pcbkit.
+
+[project]
+name = "granite-controller-fd"
+libs = { granite = "footprints/granite.pretty" }
+
+[outline]
+# rev D: 105 x 50 mm at (25, 28.6) on the sheet (rev C's origin, so the
+# blocks kept from rev C keep their coordinates)
+length = 105.0
+height = 50.0
+origin = [25.0, 28.6]
+
+[rules]
+stackup = "jlc04161h-7628"
+layers = { "In1.Cu" = ["power", "GND"], "In2.Cu" = ["mixed", "PWR"] }
+
+# Diff pairs (2D field solve, surface microstrip over In1 GND, 0.2104 mm 7628):
+# ETH 0.16/0.15 = 101 ohm in fluid (Er 2.1 above the mask), 106 ohm in air.
+# USB 0.25/0.15 = 89 ohm in air (service port, used out of the fluid).
+# Signal vias 0.5/0.2 (0.15 annular, JLC 4-layer standard); power/GND 0.6/0.3.
+[rules.netclasses]
+# name = [track, clearance, via_dia, via_drill, diff_width, diff_gap]
+Default              = [0.2,  0.15, 0.5, 0.2]
+GND                  = [0.4,  0.2,  0.6, 0.3]
+PWR_3V3              = [0.4,  0.2,  0.6, 0.3]
+PWR_5V               = [0.5,  0.2,  0.6, 0.3]
+PWR_BUCK_5V          = [0.5,  0.2,  0.6, 0.3]
+PWR_VBUS             = [0.5,  0.2,  0.6, 0.3]
+PWR_12V              = [0.5,  0.2,  0.6, 0.3]
+MAGJACK_TRANSFORMERS = [0.3,  0.2,  0.6, 0.3]
+ETH_Lines            = [0.16, 0.2,  0.5, 0.2, 0.16, 0.15]
+USB                  = [0.25, 0.2,  0.5, 0.2, 0.25, 0.15]
+IC2_1                = [0.2,  0.15, 0.5, 0.2]
+TEMP_DATA            = [0.2,  0.15, 0.5, 0.2]
+
+[gndpour]
+short_edge_inset = 1.0     # JLC rails with mouse bites on the short edges
+
+[silk]
+right_overhang = 7.0       # WROOM antenna overhang
+
+[connlabels]
+# placement is greedy in table order: keep this order
+names = { J1 = "ETHERNET", J2 = "USB", J15 = "LINK", J9 = "I2C", J10 = "DRY IN", J4 = "1-WIRE", J5 = "1-WIRE", J6 = "1-WIRE", J7 = "1-WIRE" }
+
+[connlabels.legends]
+J15 = ["H", "L", "G", "G", "12", "12"]
+J9 = ["G", "3V", "DA", "CL"]
+J10 = ["1", "2", "3", "4", "G"]
+J4 = ["3V", "DQ", "G"]
+J5 = ["3V", "DQ", "G"]
+J6 = ["3V", "DQ", "G"]
+J7 = ["3V", "DQ", "G"]
+
+[viaout]
+keep = [["U1", "29"]]      # ESP32 thermal-pad vias stay in the pad
+
+[krt]
+work = "~/.cache/pcbkit/granite-controller-fd/route"
+rework = "~/.cache/pcbkit/granite-controller-fd/reroute"
+keep_groups = ["hand"]             # copper carried over from rev C (tools/place.py)
+clearance = 0.2
+via = [0.5, 0.2]
+track_width = 0.2
+same_net_pad_clearance = 0.15     # no vias in SMD pads
+signal_layers = ["F.Cu", "B.Cu"]  # In1/In2 stay solid planes
+route_extra = ["--ordering", "mps"]
+power_nets = ["GND", "+3V3", "+5V", "*BUCK_5V", "*VIN_12V", "AUX_12V", "VBUS", "*SW_5V", "*SW_3V3"]
+power_widths = [0.4, 0.4, 0.5, 0.5, 0.4, 0.5, 0.5, 0.5, 0.5]
+planes = { nets = ["GND", "+3V3"], layers = ["In1.Cu", "In2.Cu"], via = [0.6, 0.3] }
+ground = { net = "GND", width = 0.4 }
+
+[[krt.diff]]
+desc = "Ethernet MDI 0.16/0.15 (101R in fluid)"
+nets = ["*ETH_TX*", "*ETH_RX*"]
+width = 0.16
+gap = 0.15
+
+[[krt.diff]]
+desc = "USB 0.25/0.15 (89R in air)"
+nets = ["*USB*D+", "*USB*D-"]
+width = 0.25
+gap = 0.15
+
+[jlcfab]
+# per-LCSC rotation corrections (see power/pp-48-unit/pcbkit.toml for the method, 2026-10-30)
+corrections = []

@@ -1,0 +1,10 @@
+(sym_lib_table
+	(version 7)
+	(lib
+		(name "granite")
+		(type "KiCad")
+		(uri "${KIPRJMOD}/schematic/granite_symbols.kicad_sym")
+		(options "")
+		(descr "granite_controller project symbols")
+	)
+)
