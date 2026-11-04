@@ -90,10 +90,13 @@ Same result as above. On the console: `factory-reset CONFIRM`.
 ## A controller that does not boot
 
 If an OTA image is bad, the bootloader already handles it: an image
-that cannot validate rolls back to the previous one, then to `factory`.
-If `factory` itself is broken the controller needs USB, which means
-lifting it out. Keep `factory` on a release you trust, and never
-overwrite it except on the bench.
+that cannot validate rolls back to the previous slot, which is never
+the slot the update wrote and therefore still holds the last image that
+validated. There is no `factory` partition behind that (its space went
+to the two OTA slots), so if both slots are invalid the controller
+needs USB, which means lifting it out. Two bad updates in a row cannot
+cause this - only losing the good slot as well, for instance to flash
+corruption.
 
 ## Replacing a controller
 

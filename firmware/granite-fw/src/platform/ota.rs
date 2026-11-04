@@ -63,7 +63,13 @@ const PROGRESS_STEP_PCT: u8 = 10;
 /// Reported OTA state of the running image.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum OtaState {
-    /// Running from the factory partition.
+    /// Running from a `factory` partition. The current table has none
+    /// (the slot went to the two OTA slots, user decision 2026-11-04),
+    /// so this is only ever reported by a board still on the old
+    /// layout - which is exactly the board that needs the wired
+    /// reflash from `README.md`. The variant and the `factory` wire
+    /// value stay so that case is visible instead of showing up as
+    /// `unknown`.
     Factory,
     /// Marked valid.
     Valid,
@@ -189,6 +195,9 @@ fn slot_label(slot: &Slot) -> String {
 
 fn state_name(state: SlotState) -> &'static str {
     match state {
+        // No `factory` partition in the current table, so this arm is
+        // only reachable on a board still on the old layout (and is
+        // required anyway: `SlotState` is esp-idf-svc's).
         SlotState::Factory => "factory",
         SlotState::Valid => "valid",
         SlotState::Invalid => "invalid",

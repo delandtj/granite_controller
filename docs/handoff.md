@@ -61,7 +61,8 @@ boards now live side by side:
   - ESP32-C6 flash: image 1.85 MB = 70.7 % of a 2.5 MB OTA slot (~750
     KB free, grew ~89 KB in two weeks). Levers: lto = true (not set),
     drop the factory partition (~3.9 MB slots, needs a wired reflash:
-    decide before boards ship).
+    decide before boards ship). Both done on 2026-11-04: see below,
+    1,654,816 B = 41.39 % of a 0x3D0000 slot.
 - Housekeeping: the second clone ~/Granite/Electronics/granite_controller
   moved to ~/Granite/attic/granite_controller-2026-11-04 (its recovery
   tokens copied to firmware/, gitignored). Work only in this checkout.
@@ -111,11 +112,20 @@ boards now live side by side:
   pp-48-core, pp-48-unit, controller): DRC 0 errors / 0 unconnected /
   parity clean, ERC 0, LCSC on every placed line, CPL = BOM. In JLC's
   preview check core Y1 (no rotation correction). J5 SWD hand-fit.
-- Firmware flash: granite-fw release has lto = true (1.65 MB, 63.1 %
-  of a 2.5 MB slot; full at ~89 KB / 2 weeks around 2027-04). Open
-  decision before boards ship: drop the factory partition (two
-  0x3D0000 slots, ~2027-10) at the cost of no last-resort boot when
-  both OTA slots fail (firmware ADR 0001: 69, 312-314).
+- Firmware flash: granite-fw release has lto = true (1.65 MB) and, as
+  of 2026-11-04, no `factory` partition - **decided and done**. Two
+  0x3D0000 (3,997,696 B) OTA slots at 0x50000 and 0x420000, 64 K free
+  at the top of the 8 MB. `espflash save-image` reports 1,654,816 /
+  3,997,696 B = 41.39 %; at ~89 KB / 2 weeks the slot fills around
+  2027-10 instead of 2027-04. Reasoning recorded in firmware ADR 0001
+  decision 11: rollback means an update never overwrites the running
+  slot, so one slot always holds the last image that self-validated and
+  two bad updates in a row cannot brick the board; `factory` only
+  covered both OTA images being invalid at once, and it never helped
+  with an image that validates but is subtly broken. Cost: both slots
+  invalid = USB. Bench boards move to the new layout with the ordinary
+  wired flash (`--target-app-partition ota_0 --erase-parts otadata`);
+  `nvs` keeps its offset, so settings, cert and recovery token survive.
 - Next, other: order rev D (core, unit, controller) for the bench; FD
   3D models and JLC preview checks (C492419, C34945, Y1); bench the rev D link (clock stretch
   through the ISO1640, 8-plane rise time).

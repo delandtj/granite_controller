@@ -117,10 +117,18 @@ The build output is `target/riscv32imac-esp-espidf/release/granite-fw`
 directory instead - the flash commands below assume the default, so
 substitute the path.
 
-Image size, release, default features (2026-10-10): 1,719,488 bytes of
-the 2,621,440-byte slot, 66 %. `cargo build --release` keeps
-`opt-level = "s"`; do not switch the release profile to `3` without
-checking that number again.
+Image size, release, default features (2026-11-04): 1,654,816 bytes of
+the 3,997,696-byte slot, 41.4 %. `cargo build --release` keeps
+`opt-level = "s"` and `lto = true`; do not switch the release profile to
+`3` without checking that number again. The number comes from
+
+```sh
+espflash save-image --chip esp32c6 --flash-size 8mb \
+    --partition-table partitions.csv \
+    target/riscv32imac-esp-espidf/release/granite-fw /tmp/granite-fw.bin
+```
+
+which prints `App/part. size` and the percentage.
 
 The host crates build and test normally:
 
@@ -141,36 +149,41 @@ cd firmware/granite-fw
 espflash flash --monitor --port /dev/ttyACM0 \
     --bootloader target/riscv32imac-esp-espidf/release/build/bootloader.bin \
     --partition-table partitions.csv \
+    --target-app-partition ota_0 \
+    --erase-parts otadata \
     target/riscv32imac-esp-espidf/release/granite-fw
 # monitor only (the --elf gives symbol names in a panic backtrace):
 espflash monitor --port /dev/ttyACM0 \
     --elf target/riscv32imac-esp-espidf/release/granite-fw
 ```
 
-Both extra flags matter. Without `--bootloader`, espflash flashes the
-bootloader it bundles itself (an ESP-IDF v6.1-beta build at espflash
-4.6.0) instead of the one the ESP-IDF build produced from
-`sdkconfig.defaults`, so `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` and
-the signature check would not be the ones in the bootloader on the chip.
-Without `--partition-table`, the default single-app table is flashed and
-there are no OTA slots.
+That is the whole bench flash: one invocation, no second pass. All four
+extra flags matter.
 
-With no `--target-app-partition`, espflash writes the app to `factory`,
-which is what the bootloader runs when `otadata` is empty:
+- Without `--bootloader`, espflash flashes the bootloader it bundles
+  itself (an ESP-IDF v6.1-beta build at espflash 4.6.0) instead of the
+  one the ESP-IDF build produced from `sdkconfig.defaults`, so
+  `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` and the signature check would
+  not be the ones in the bootloader on the chip.
+- Without `--partition-table`, the default single-app table is flashed
+  and there are no OTA slots.
+- `--target-app-partition ota_0` is now required: there is no `factory`
+  partition, so with no label espflash has no default app slot to write.
+- `--erase-parts otadata` makes the bootloader pick `ota_0` on the next
+  boot. On a board with OTA history (old layout or new), `otadata`
+  holds a sequence number that can select `ota_1`, so the bootloader
+  would otherwise boot that stale slot, not the image just flashed.
 
-```sh
-# bench image to factory (what the bootloader runs):
-espflash flash --port /dev/ttyACM0 --bootloader ... --partition-table partitions.csv <elf>
-# and the same image to ota_0, so the first OTA replaces ota_1:
-espflash flash --port /dev/ttyACM0 --partition-table partitions.csv \
-    --target-app-partition ota_0 <elf>
-```
-
-`nvs` is never written by `espflash flash`, so the device certificate,
-the recovery token and the configuration survive a reflash. Erase them
-on purpose with `espflash erase-parts nvs` or with the console's
-`factory-reset CONFIRM` (which keeps the `factory` namespace: the
-recovery token, the fleet key and the device key and certificate).
+`nvs` is never written by `espflash flash` and it sits at the same
+offset in the old and the new table, so the configuration, the device
+key and certificate and the recovery token survive a reflash - including
+the reflash that moves an existing bench board from the old layout to
+this one. That is the same wired flash as above; nothing else is needed.
+Erase NVS on purpose with `espflash erase-parts nvs` or with the
+console's `factory-reset CONFIRM` (which keeps the `factory` namespace:
+the recovery token, the fleet key and the device key and certificate -
+an NVS namespace that happens to share the name of the dropped
+partition and has nothing to do with it).
 
 If the board does not enter download mode by itself, pull the BOOT test
 pad (GPIO9) to GND while powering up.
@@ -184,16 +197,24 @@ pad (GPIO9) to GND while powering up.
 | nvs | data | nvs | 0x9000 | 192 K |
 | otadata | data | ota | 0x39000 | 8 K |
 | coredump | data | coredump | 0x3B000 | 64 K |
-| factory | app | factory | 0x50000 | 2.5 M |
-| ota_0 | app | ota_0 | 0x2D0000 | 2.5 M |
-| ota_1 | app | ota_1 | 0x550000 | 2.5 M |
+| ota_0 | app | ota_0 | 0x50000 | 0x3D0000 (3,997,696 B) |
+| ota_1 | app | ota_1 | 0x420000 | 0x3D0000 (3,997,696 B) |
 
-Last byte used is 0x7D0000, so 192 K of the 8 MB stays free. App
+Last byte used is 0x7F0000, so 64 K of the 8 MB stays free. App
 partitions need 64 K alignment, which leaves a 20 K hole between
-`coredump` (ends 0x4B000) and `factory` (starts 0x50000).
+`coredump` (ends 0x4B000) and `ota_0` (starts 0x50000).
 
-The bench image goes to `factory` and `ota_0`; OTA alternates
-`ota_0`/`ota_1`; `factory` is only ever rewritten over USB.
+There is no `factory` partition (user decision, 2026-11-04): its 2.5 MB
+went to the two OTA slots instead. With bootloader app rollback an
+update never overwrites the slot it is running from, so one OTA slot
+always holds the last image that passed self-validation and two bad
+updates in a row cannot brick the board. `factory` only covered both
+OTA images being invalid at the same time, and it did not help with an
+image that validates but is subtly broken. The cost: if both OTA slots
+are invalid the board needs USB.
+
+The bench image goes to `ota_0` (see the flash command above); OTA then
+alternates `ota_0`/`ota_1`.
 
 `esp-idf-sys` cannot hand the ESP-IDF build a partition CSV that lives
 outside its own generated project directory (its README, "Known
@@ -395,12 +416,12 @@ protocol will reuse the same semantics.
 
 ## OTA, signing and probation
 
-Two OTA slots plus `factory`, ESP-IDF `esp_ota_*`, rollback enabled in
-the bootloader.
+Two OTA slots of 0x3D0000 bytes each and no `factory` partition,
+ESP-IDF `esp_ota_*`, rollback enabled in the bootloader.
 
 - **Push**: the Firmware page uploads a `.bin` over HTTPS
   (`POST /api/v1/firmware/upload`, authenticated, streamed into the slot
-  in 2 KB chunks so a 2.5 MB image never sits in RAM).
+  in 2 KB chunks so the whole image never sits in RAM).
 - **Pull**: the `ota` command over MQTT (or the API) takes
   `{"url":..,"sha256":..}` and the controller fetches it over HTTPS
   itself, using the MQTT CA.
@@ -470,7 +491,9 @@ a board yet.
   expanders, (b) got link and an IP, and (c) either connected to the
   configured broker or served an authenticated HTTPS request. Then it
   marks itself valid; otherwise it marks itself invalid and reboots, and
-  the bootloader falls back to the other slot (and then to `factory`).
+  the bootloader falls back to the other slot - which, with no
+  `factory` partition, is the last resort: if it is invalid too, the
+  board needs USB.
   A step nobody can satisfy is not required: with MQTT disabled the
   broker step is not armed, so an authenticated HTTPS request is what
   confirms such an image. The LED blinks at 4 Hz while an image is on

@@ -24,7 +24,7 @@ typing a password into it:
 ```json
 {"device":"granite-37adc7","mac":"..","fw":"0.1.0",
  "cert_sha256":"..","password_set":false,"uptime_s":42,
- "ota":{"running":"factory","state":"valid","pending_verify":false},
+ "ota":{"running":"ota_0","state":"valid","pending_verify":false},
  "modbus_map_version":2,"nonce":"..","v":1}
 ```
 

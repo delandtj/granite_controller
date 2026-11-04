@@ -20,7 +20,7 @@
 //! Bodies are capped at [`granite_core::api::MAX_BODY`] (64 KB). The one
 //! exception is `POST /api/v1/firmware/upload`, which is authenticated
 //! first and then streamed into the [`OtaSink`] in
-//! [`CHUNK`]-byte pieces, so a 2.5 MB image never sits in RAM.
+//! [`CHUNK`]-byte pieces, so the whole image never sits in RAM.
 //!
 //! ### Locking
 //!

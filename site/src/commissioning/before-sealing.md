@@ -63,8 +63,8 @@ that is much cheaper to find now.
 
 ## Firmware verified
 
-- [ ] Controller: running image is the release you intend, `factory`
-      and `ota_0` hold it, nothing is `pending_verify`.
+- [ ] Controller: running image is the release you intend, `ota_0`
+      holds it, nothing is `pending_verify`.
 - [ ] Planes: every core runs the plane firmware release you intend.
       (**Current firmware**: the plane core firmware is not written yet
       at the time of writing; until it is, this item cannot be done and
