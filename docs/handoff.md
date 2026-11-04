@@ -126,6 +126,14 @@ boards now live side by side:
   invalid = USB. Bench boards move to the new layout with the ordinary
   wired flash (`--target-app-partition ota_0 --erase-parts otadata`);
   `nvs` keeps its offset, so settings, cert and recovery token survive.
+  Bench-checked 2026-11-04 on a rev C board (granite-cb374b, old layout
+  with OTA history, flash backup in ~/Granite/attic/): boots ota_0 on
+  the new table, same cert, link + DHCP + HTTPS up. The first LTO image
+  boot-looped: stack protection fault in the 12 KB "dispatch" thread
+  (PlaneClient 8.5 KB, inlined constructor = two copies in one frame);
+  DISPATCH_STACK = 24 KB fixed it (main.rs). Other threads' stack
+  margins with LTO not measured yet. OTA push / rollback on the new
+  layout not tested yet.
 - Next, other: order rev D (core, unit, controller) for the bench; FD
   3D models and JLC preview checks (C492419, C34945, Y1); bench the rev D link (clock stretch
   through the ISO1640, 8-plane rise time).

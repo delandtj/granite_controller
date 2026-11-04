@@ -263,7 +263,7 @@ fn main() -> anyhow::Result<()> {
             let dispatch_faults = Arc::clone(&faults);
             thread::Builder::new()
                 .name("dispatch".into())
-                .stack_size(12288)
+                .stack_size(DISPATCH_STACK)
                 .spawn(move || {
                     dispatcher(
                         dispatcher_platform,
@@ -283,7 +283,7 @@ fn main() -> anyhow::Result<()> {
             let dispatch_faults = Arc::clone(&faults);
             thread::Builder::new()
                 .name("dispatch".into())
-                .stack_size(12288)
+                .stack_size(DISPATCH_STACK)
                 .spawn(move || {
                     dispatcher(
                         dispatcher_platform,
@@ -471,6 +471,12 @@ fn main() -> anyhow::Result<()> {
 /// dispatcher would wait for each other. So: a local working copy,
 /// `try_write` to publish a change this thread made, `try_read` to pick
 /// up a change the HTTP task made, and never a blocking wait.
+/// Stack of the dispatcher thread. The PlaneClient (8.5 KB, MAX_PLANES
+/// plane states and an answer buffer) lives in its frame; with `lto = true`
+/// its constructor is inlined and the value briefly exists twice, which
+/// overflowed the old 12 KB stack on a rev C board (2026-11-04).
+const DISPATCH_STACK: usize = 24 * 1024;
+
 fn dispatcher<L: PlaneLink>(
     platform: Arc<Platform>,
     commands: Receiver<granite_fw::http::CommandRequest>,
