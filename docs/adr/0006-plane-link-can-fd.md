@@ -1,8 +1,8 @@
 # Plane link over isolated CAN FD, through the plane row
 
-**Status**: Proposed
+**Status**: Accepted (2026-11-04: review asks answered; board changes for the termination header and the controller box header pending)
 **Date**: 2026-11-04
-**Updated**: 2026-11-04 (boards laid out: core-fd 68.0 x 72.0 mm, 12 mm wider than rev D's 56.1 for the link domain's isolation; unit-fd 78.6 x 72.1 and controller-fd 105 x 50 unchanged); 2026-11-04 (schematics drawn: power/pp-48-core-fd, pp-48-unit-fd, controller-fd; two termination jumpers, regulator / diode / ESD picked); 2026-11-04 (user: no cables between the controller and the
+**Updated**: 2026-11-04 (review asks answered by the user: CAN FD for the new generation, rev D keeps the flipped I2C; separate 2x3 joint; G070 + MCP2518FD now, G0B1 later; termination by jumper caps on a 2x2 header; controller anywhere, on a ribbon cable to core 1 with a keyed box header; bus-off auto recovery; ESD picked. Board changes for the header and the box header pending); 2026-11-04 (boards laid out: core-fd 68.0 x 72.0 mm, 12 mm wider than rev D's 56.1 for the link domain's isolation; unit-fd 78.6 x 72.1 and controller-fd 105 x 50 unchanged); 2026-11-04 (schematics drawn: power/pp-48-core-fd, pp-48-unit-fd, controller-fd; two termination jumpers, regulator / diode / ESD picked); 2026-11-04 (user: no cables between the controller and the
 planes either; planes sit in one row on the bar, plane n+1's core
 plugs onto plane n's last unit, the link passes through every unit;
 was: PH 5p cables, controller in the middle of two chains)
@@ -89,7 +89,7 @@ ordered (handoff "Boards ordered": rev C only).
 
    | Board | Left edge | Right edge |
    |---|---|---|
-   | Controller | - | link socket |
+   | Controller | - | keyed 2x3 box header (decision 9), ribbon cable to core 1's plug |
    | Core | link plug (IN) | link socket (OUT), beside chain socket J301 |
    | Unit | link plug, beside chain plug J301 | link socket, beside chain socket J302 |
 
@@ -149,13 +149,15 @@ ordered (handoff "Boards ordered": rev C only).
 8. **Termination**: the controller always terminates the left end
    (split, 2 x 60R4 + 4.7 nF to LINK_GND). The right end: a split
    termination on every board's link socket side (core and unit),
-   behind two solder jumpers, one per leg (CANH and CANL), open by
-   default; both closed on the last board of the row. One jumper
-   would leave 60R4 + 4.7 nF on one line of every board, ~110 nF of
-   one-sided load on a full row. A standby controller at the right end (decision 13)
+   switched by two standard 2.54 mm jumper caps on a 2x2 pin header,
+   one per leg (CANH and CANL), no caps by default; both caps fitted
+   on the last board of the row (user 2026-11-04: no soldering at
+   commissioning; was two solder jumpers). One leg alone would leave
+   60R4 + 4.7 nF on one line of every board, ~110 nF of one-sided
+   load on a full row. A standby controller at the right end (decision 13)
    terminates instead.
 
-9. **Controller rev D**:
+9. **Controller (controller-fd)**:
    - **MCP2518FD on the W5500's SPI bus** (GPIO19 / 20 / 21), nCS on
      GPIO2, nINT on GPIO3 (freed by the I2C link); GPIO0 freed by
      EXP_INT. The MCP2518FD's SPI limit (~17 MHz at 40 MHz SYSCLK)
@@ -163,10 +165,18 @@ ordered (handoff "Boards ordered": rev C only).
      device.
    - **TCAN1044VDRQ1** (C1852061, 15487, $0.46), VIO 3V3, VCC 5 V, not
      isolated: the controller's ground is LINK_GND.
-   - One link socket on its right edge, at the bar height of the core's
-     link plug; the controller stands on the bar left of core 1.
+   - **Placed anywhere, on a ribbon cable to core 1** (user
+     2026-11-04): a keyed (shrouded) 2x3 2.54 mm box header (vertical
+     C9136, 15900 in stock; right-angle C9141) and a pre-made 6-way
+     2x3 IDC ribbon (the AVR-ISP 6-pin cable, female both ends, pin 1
+     to pin 1, no crimping, <= ~1 m) onto core 1's bare link plug.
+     Conductor order = pin order, so CANH / CANL are neighbours. Core
+     1's end is not keyed: a reversed cable puts AUX_12V on CANH /
+     CANL, which both transceivers survive (+-58 V bus pins) but the
+     link stays down; pin 1 marked in silk. Was: right-angle socket,
+     controller on the bar left of core 1.
      J11-J14 go; 12 V comes from AUX_12V (decision 4).
-   - ESD on CANH / CANL at the socket (part to pick, 2-line CAN TVS).
+   - ESD on CANH / CANL at the header: PESD2CANFD24V (C552486).
 
 10. **Message layer: blocks and tags of firmware ADR 0003 unchanged.**
     The transport changes:
@@ -205,9 +215,11 @@ ordered (handoff "Boards ordered": rev C only).
     return), LINK_GND and AUX_12V beside it; clearance to bus nets as
     for functional isolation at <= 60 V (0.5 mm on outer layers).
 
-13. **Standby controller: designed for, not built.** It plugs into the
-    last board's link socket at the right end of the row (and
-    terminates it). SYNC (type 0, highest priority) is the master's
+13. **Standby controller: designed for, not built.** It connects to
+    the last board's link socket at the right end of the row (and
+    terminates it; the socket is female, so its cable needs a male
+    end or a short 2x3 male-male adapter - to settle with the standby
+    ADR). SYNC (type 0, highest priority) is the master's
     keepalive with an epoch and the commanded slot states. The standby
     (node 15) listens; with no SYNC for T it polls and publishes
     monitoring only, never CTRL writes, until the master's SYNC
@@ -223,7 +235,7 @@ ordered (handoff "Boards ordered": rev C only).
 1. **Core link block** (power/pp-48/tools/sch/blocks/link.py)
    - ISO1044 U4, 12 V -> 5 V LDO on the link domain, OR diode from the
      12 V module onto AUX_12V, right-end split termination with its
-     solder jumper.
+     jumper-cap header.
    - Link plug (left edge) and socket (right edge), decision 3. J2, J3,
      J4 and U5 go.
 2. **Core MCU block** (power/pp-48/tools/sch/blocks/mcu.py)
@@ -233,7 +245,7 @@ ordered (handoff "Boards ordered": rev C only).
      regenerated.
 3. **Unit** (power/pp-48/tools/sch/blocks/unit.py, chain.py)
    - Link plug and socket beside J301 / J302, four nets straight
-     through, the split termination with its solder jumper.
+     through, the split termination with its jumper-cap header.
 4. **Controller rev D** (docs/controller-rev-d.md, the rev D session)
    - MCP2518FD on the W5500 SPI, TCAN1044V, fixed termination, one
      link socket, 12 V from AUX_12V.
@@ -322,8 +334,9 @@ ordered (handoff "Boards ordered": rev C only).
 ## Consequences
 
 ### Positive
-- No cables between the controller and the planes, or between planes:
-  the whole box is one row of boards on the bar.
+- No cables between planes or boards: the planes are one row on the
+  bar. One short pre-made ribbon (no crimping) from the controller to
+  core 1, so the controller can sit anywhere within ~1 m.
 - The isolators are used inside the vendor's rules; one isolated
   domain along the row, carrying no bus current.
 - Differential bus with bus-off fault confinement; a stuck transceiver
@@ -347,7 +360,7 @@ ordered (handoff "Boards ordered": rev C only).
 - Two CAN drivers on the plane (MCP2518FD and FDCAN), one per build.
 - A row is one mechanical unit: replacing a board in the middle means
   sliding its neighbours apart (true already within a plane).
-- Termination is a solder jumper the user must close on the right
+- Termination is two jumper caps the user must fit on the right
   board.
 
 ### Risks
@@ -423,9 +436,10 @@ LDOs a few hundred mW. One working core is enough.
   - **Alternative**: 2x10 chain with the link inside.
   - **Cost to change later**: a respin of core and unit.
 - **Right-end termination**
-  - **Choice**: solder jumper on every board's socket side.
-  - **Alternative**: a terminator plug (tiny 2x3 board), or a DIP on
-    the units.
+  - **Choice**: jumper caps on a 2x2 header on every board's socket
+    side (user 2026-11-04).
+  - **Alternative**: solder jumpers (first layout), a terminator plug
+    (tiny 2x3 board), or a DIP on the units.
   - **Cost to change later**: a board rev; a terminator plug can be
     added at any time without one.
 - **G070 + MCP2518FD as the default build**
@@ -467,26 +481,25 @@ LDOs a few hundred mW. One working core is enough.
 
 ### Review asks
 
-1. CAN FD over the flipped-isolator I2C: yes / no?
-2. Separate 2x3 link joint beside the 2x7 (not a 2x10 chain): yes / no?
-3. G070 + MCP2518FD now, G0B1 as the drop-in later: yes / no (or the
-   G431 re-pin now)?
-4. Right-end termination: solder jumper on every board, or a
-   terminator plug?
+Answered by the user 2026-11-04:
+1. CAN FD over the flipped-isolator I2C: CAN FD for this generation;
+   rev D keeps the flipped I2C (power/pp-48-core 9fd8541).
+2. Separate 2x3 link joint beside the 2x7: yes (boards laid out so).
+3. G070 + MCP2518FD now, G0B1 as the drop-in later: yes.
+4. Right-end termination: jumper caps on a 2x2 header on every board
+   (decision 8), not solder jumpers, not a terminator plug.
 
 ---
 
 ## Open Questions
 
 **Architecture-changers**
-- [ ] Controller rev D on the bar: its board (105 x 50 mm) must put
-      its link socket at the core's link-plug height; does it stand
-      on the bar like a core, or hang off a bracket? (rev D session)
+- [x] Controller placement: anywhere, on a ribbon cable to core 1
+      with a keyed box header (decision 9, user 2026-11-04).
 
 **Behavior definers**
 - [ ] SYNC period and the standby's takeover timeout T (later ADR).
-- [ ] Plane behaviour on bus-off: auto recovery after 128 x 11
-      recessive bits (CAN default) and a counter in STATUS, or stay
-      off until reset. Default: auto recovery and count.
-- [ ] ESD part for CANH / CANL on the core and the controller (LCSC
-      stock check).
+- [x] Plane behaviour on bus-off: auto recovery after 128 x 11
+      recessive bits and a counter in STATUS (user 2026-11-04).
+- [x] ESD part: NUP2105L (C14486) on the core, PESD2CANFD24V
+      (C552486) on the controller.

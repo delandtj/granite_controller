@@ -1,8 +1,8 @@
 # Plane link transport over CAN FD
 
-**Status**: Proposed
+**Status**: Accepted (2026-11-04)
 **Date**: 2026-11-04
-**Updated**: 2026-11-04 (as built: granite-proto::can 7c39a71, plane-fw 8d898e6, mcp2518fd 0af8d56 as a facade over mcp251xfd, granite-core / sim 7319d12)
+**Updated**: 2026-11-04 (open questions answered by the user: EVENT stays a bare flag, bus-off auto recovery); 2026-11-04 (as built: granite-proto::can 7c39a71, plane-fw 8d898e6, mcp2518fd 0af8d56 as a facade over mcp251xfd, granite-core / sim 7319d12)
 
 Related: docs/adr/0006-plane-link-can-fd.md (hardware: ISO1044 per
 core, MCP2518FD on the G070 or FDCAN on the G0B1, MCP2518FD on the
@@ -136,5 +136,8 @@ written and tested on the host before the boards exist.
 ---
 
 ## Open Questions
-- [ ] EVENT payload richer than 0x01 (the event head seq), to save the
-      STATUS read? Default: no, keep ADR 0003's flow.
+- [x] EVENT payload richer than 0x01? No (user 2026-11-04): a bare
+      flag, the controller reads STATUS then EVENTS as on rev D; one
+      code path for both builds.
+- [x] Bus-off: automatic recovery, counted (user 2026-11-04;
+      decision 8).
