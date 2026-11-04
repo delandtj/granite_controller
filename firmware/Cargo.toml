@@ -11,7 +11,7 @@
 # (riscv32 ESP-IDF and thumbv6m embassy respectively), and must not share
 # this workspace's build settings.
 [workspace]
-members = ["granite-core", "granite-proto", "granite-sim", "plane-logic"]
+members = ["granite-core", "granite-proto", "granite-sim", "mcp2518fd", "plane-logic"]
 exclude = ["granite-fw", "plane-fw"]
 resolver = "3"
 
