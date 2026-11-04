@@ -67,9 +67,35 @@ boards now live side by side:
   tokens copied to firmware/, gitignored). Work only in this checkout.
   .claude/worktrees/ is gitignored. GPG pinentry and the SSH key unlock
   time out now and then: retry.
-- Next: answer ADR 0006 / firmware ADR 0005 review asks; order rev D
-  (core, unit, controller) for the bench; FD 3D / preview checks; bench
-  the rev D link (clock stretch through the ISO1640, 8-plane rise time).
+- Open questions walked with the user (972ef5c, 918f21c). ADR 0006
+  and firmware ADR 0005 are Accepted:
+  - FD: G070 + MCP2518FD now, G0B1 drop-in later; bus-off auto
+    recovery, counted; EVENT stays a bare flag.
+  - FD right-end termination: jumper caps on a 2x2 pin header per
+    board (was two solder jumpers), both caps on the last board.
+  - FD controller sits anywhere: keyed 2x3 box header (vertical C9136
+    or right-angle C9141) and a pre-made 6-pin 2x3 IDC ribbon (AVR-ISP
+    type, <= ~1 m) onto core 1's bare link plug (was the right-angle
+    socket J15 on the bar).
+  - Every future plane type provides the isolated 12 V aux; the core
+    keeps the TCA9548A.
+  - The node has no DC-ATX converter: the slot's 19 V goes into the
+    Halo Gorgon board's own DC input (R1). The 2026-10-28 wording was
+    wrong and is fixed everywhere.
+- Next, board changes the answers need (FD only, DRC + stock again):
+  - core-fd / unit-fd: JP1 / JP2 and JP301 / JP302 solder jumpers ->
+    a 2x2 2.54 mm pin header + two jumper caps (pick parts at JLC).
+  - controller-fd: J15 right-angle socket -> keyed 2x3 box header,
+    pin 1 marked; core-fd's link plug gets a pin-1 silk mark.
+- Next, checks still open (ADR checklists):
+  - OV_KILL 22.7 V vs the Halo Gorgon board's maximum DC input (not
+    known: board spec or vendor; lower the TPS3701 threshold if < ~24 V).
+  - DG128 drawing and second source; node connector soak test; unit
+    hot-swap power limit / timer vs two slot insertions; where the slot
+    output voltage is read (ADR 0001).
+- Next, other: order rev D (core, unit, controller) for the bench; FD
+  3D models and JLC preview checks; bench the rev D link (clock stretch
+  through the ISO1640, 8-plane rise time).
 
 ## 2026-11-02: plane chain without cables (ADR 0005 decisions 4, 7)
 
