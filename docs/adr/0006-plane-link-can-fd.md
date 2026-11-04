@@ -2,7 +2,7 @@
 
 **Status**: Proposed
 **Date**: 2026-11-04
-**Updated**: 2026-11-04 (user: no cables between the controller and the
+**Updated**: 2026-11-04 (schematics drawn: power/pp-48-core-fd, pp-48-unit-fd, controller-fd; two termination jumpers, regulator / diode / ESD picked); 2026-11-04 (user: no cables between the controller and the
 planes either; planes sit in one row on the bar, plane n+1's core
 plugs onto plane n's last unit, the link passes through every unit;
 was: PH 5p cables, controller in the middle of two chains)
@@ -99,8 +99,11 @@ ordered (handoff "Boards ordered": rev C only).
    whose module fails costs nothing while one other core runs.
 
 5. **ISO1044 side 2 supply is local**: each core makes 5 V on the link
-   domain from its own isolated 12 V (small LDO, ~70 mA peak while its
-   node drives dominant). No 5 V on the link, no load switches on the
+   domain from its own isolated 12 V (ISO_12V, before the OR diode):
+   HT7550-1 (C16106, SOT-89, 24 V max in, 100 mA), ~70 mA peak while
+   its node drives dominant (~0.5 W, tab copper). OR diode B5819W
+   (C8598); ESD NUP2105L (C14486) at each core link connector, the
+   controller PESD2CANFD24V (C552486). No 5 V on the link, no load switches on the
    controller.
 
 6. **Plane CAN controller: either MCU, one layout.**
@@ -138,8 +141,10 @@ ordered (handoff "Boards ordered": rev C only).
 8. **Termination**: the controller always terminates the left end
    (split, 2 x 60R4 + 4.7 nF to LINK_GND). The right end: a split
    termination on every board's link socket side (core and unit),
-   behind a solder jumper, open by default; closed on the last board
-   of the row. A standby controller at the right end (decision 13)
+   behind two solder jumpers, one per leg (CANH and CANL), open by
+   default; both closed on the last board of the row. One jumper
+   would leave 60R4 + 4.7 nF on one line of every board, ~110 nF of
+   one-sided load on a full row. A standby controller at the right end (decision 13)
    terminates instead.
 
 9. **Controller rev D**:

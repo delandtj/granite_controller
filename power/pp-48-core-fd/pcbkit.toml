@@ -1,0 +1,78 @@
+# pcbkit settings for the PP-48 CORE board, CAN FD link generation (docs/adr/0006-plane-link-can-fd.md, 0005).
+# Copied from power/pp-48-core; schematic only so far (no .kicad_pcb yet): outline, rules, KRT keep groups,
+# power nets and the JLC corrections below are the I2C generation's and get revised with the layout.
+# 4L JLC 1.6 mm: F parts and pours, In1 GND, In2 the VIN plane, B parts and pours.
+#
+# 56 x 72 mm: the rev1 core (x 52-100) without the tile input plus an 8 mm right margin (x 100-108) for
+# the chain OUT header
+# J301 on B (same height as the units' headers) and the right-hand holes; XT30 at the bottom edge.
+# Board flow (tools in ../pp-48-fd/tools): gensch.py core -> netlist -> mkboard -> outline -> setrules ->
+# place_core.py -> route_core.sh.
+
+[project]
+name = "pp-48-core-fd"
+libs = { pp48 = "../pp-48-fd/pp48.pretty" }
+
+[mkboard]
+copper_layers = 4
+stage_x = -120.0
+sheet_pitch = 90.0
+cell = 14.0
+per_row = 6
+
+[outline]
+length = 56.0
+height = 72.0
+origin = [52.0, 100.0]
+hole_refs = ["H1", "H2", "H3", "H4"]
+
+[rules]
+stackup = "jlc04161h-7628"
+layers = { "In1.Cu" = ["power", "GND"], "In2.Cu" = ["mixed", "VIN"] }
+
+[rules.netclasses]
+# name = [track, clearance, via_dia, via_drill]
+Default = [0.2, 0.15, 0.5, 0.2]
+GND     = [0.4, 0.2, 0.6, 0.3]
+
+[krt]
+work = "~/.cache/pcbkit/pp-48-core-fd/route"
+rework = "~/.cache/pcbkit/pp-48-core-fd/reroute"
+clearance = 0.15
+via = [0.5, 0.2]
+track_width = 0.2
+same_net_pad_clearance = 0.15
+signal_layers = ["F.Cu", "B.Cu"]
+# tools/route_core.py copper (CTRL_GND island pours, L2's CTRL_GND pocket and its vias, isolation bands, GND
+# pours)
+keep_groups = ["hand"]
+# the 3V3 buck's and the Fly-Buck's switch / output loops wider, the rails at power width
+power_nets = ["+3V3", "ISO_12V", "AUX_12V", "LINK_5V", "*SW1", "*SW2", "*VOUT1", "*SEC2"]
+power_widths = [0.4, 0.4, 0.5, 0.3, 0.5, 0.4, 0.4, 0.4]
+# VIN: In2 plane (krt-route's plane pass; no fill under the controller island, tools/route_core.py)
+planes = { nets = ["VIN"], layers = ["In2.Cu"], via = [0.6, 0.3] }
+# GND: F / In1 / B pours drawn by tools/route_core.py (kept group): KRT skips GND tracks
+ground = { net = "GND", width = 0.4 }
+
+[jlcfab]
+# KiCad -> EasyEDA rotation / centroid per LCSC part (pcbkit jlc.py convention: rotation delta, then
+# dx, dy in mm, KiCad frame at rotation 0, y down; THT from the pad centre). Derived 2026-10-30 by
+# fitting each EasyEDA footprint's numbered pads onto ours (method checked against pcbkit's own
+# LQFP-48 / SOIC-8 / SOIC-4 entries). Still check the JLC placement preview.
+corrections = [
+    # ISO1044 (C2878225), MCP2518FD (C626758), the 2x3 link plug / socket (C239334, C5333425), HT7550-1 SOT-89: to derive with the layout
+    ["^AMASS_XT30PW-M_1x02_P2.50mm_Horizontal$", "C431092", 180, 0.0, -5.0],
+    ["^CP_Elec_10x10$", "C87862", 0, 0.0, 0.0],                     # pad 1 = + on both
+    ["^D_SMC$", "C2990209", 0, 0.0, 0.0],
+    ["^D_SOD-123$", "C917030", 0, 0.0, 0.0],
+    ["^HSOP-8-1EP_3.9x4.9mm_P1.27mm_EP2.41x3.1mm$", "C477928", 270, 0.0, 0.0],
+    ["^SOIC-8-1EP_3.9x4.9mm_P1.27mm_EP2.95x4.9mm_Mask2.71x3.4mm_ThermalVias$", "C471040", 270, 0.0, 0.0],
+    ["^PinSocket_2x07_P2.54mm_Horizontal$", "C19100281", 270, 0.0, 0.0],    # chain socket: fitted on the body side (EasyEDA numbers the rows the other way; a socket has no pin identity)
+    ["^L_Bourns_SRR1260$", "C840528", 0, 0.0, 0.0],
+    ["^L_Coilcraft_LPD5030V$", "C5441621", 0, 0.0, 0.0],
+    ["^PinHeader_2x05_P1.27mm_Vertical_SMD$", "C5155080", 270, 0.0, 0.0],
+    ["^SOT-23$", "C8545", 180, 0.0, 0.0],
+    ["^SSOP-8_2.95x2.8mm_P0.65mm$", "C123302", 180, 0.0, 0.0],
+    ["^SW_DIP_SPSTx03_Slide_KingTek_DSHP03TS_W7.62mm_P1.27mm$", "C50844", 270, 0.0, 0.0],
+    ["^TSSOP-24_4.4x7.8mm_P0.65mm$", "C130026", 270, 0.0, 0.0],
+]
