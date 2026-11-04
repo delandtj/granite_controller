@@ -1,6 +1,6 @@
 //! Platform layer (ADR 0001 components 6, 10, 11, 12, 13): NVS store,
 //! identity and recovery, network with commit-confirm, SNTP, console on USB
-//! Serial/JTAG, OTA with probation, log ring.
+//! Serial/JTAG, OTA with probation, log ring, named tasks.
 //!
 //! [`Platform`] is what `main.rs` builds once and hands around. Everything
 //! in it is either `Send + Sync` on its own or behind a `Mutex`, so the
@@ -17,8 +17,14 @@ pub mod logring;
 pub mod net;
 pub mod ota;
 pub mod store;
+pub mod tasks;
 #[cfg(feature = "wifi-dev")]
 pub mod wifi_dev;
+
+/// Spawn a thread whose FreeRTOS task carries a real name and a known
+/// stack size. Every thread this firmware starts goes through here; see
+/// [`tasks`] for why.
+pub use tasks::spawn;
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::Sender;
@@ -316,15 +322,12 @@ impl EventBus {
     pub fn sender(self: &Arc<Self>) -> Sender<Event> {
         let (tx, rx) = std::sync::mpsc::channel();
         let bus = Arc::clone(self);
-        std::thread::Builder::new()
-            .name("event-relay".into())
-            .stack_size(3072)
-            .spawn(move || {
-                while let Ok(ev) = rx.recv() {
-                    bus.publish(ev);
-                }
-            })
-            .ok();
+        spawn(c"event-relay", 3072, move || {
+            while let Ok(ev) = rx.recv() {
+                bus.publish(ev);
+            }
+        })
+        .ok();
         tx
     }
 

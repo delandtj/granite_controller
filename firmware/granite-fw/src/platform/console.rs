@@ -52,6 +52,7 @@ commands:
   ota-mark-valid        confirm the running image
   reboot                restart through the planned-reboot path
   log [n]               last n lines of the log ring (default 40)
+  stacks                per-task stack headroom, worst first
   help                  this list";
 
 /// Start the console thread.
@@ -60,10 +61,7 @@ pub fn start(platform: Arc<Platform>) {
         log::error!("console: usb serial/jtag driver could not be installed ({e}); no console");
         return;
     }
-    let spawned = thread::Builder::new()
-        .name("console".into())
-        .stack_size(STACK)
-        .spawn(move || run(platform));
+    let spawned = super::spawn(c"console", STACK, move || run(platform));
     if let Err(e) = spawned {
         log::error!("console thread could not start: {e}");
     }
@@ -190,6 +188,11 @@ fn handle(platform: &Platform, input: &str) {
                 say(&line);
             }
             say(&format!("-- {} lines kept", super::logring::len()));
+        }
+        "stacks" => {
+            for line in super::tasks::lines() {
+                say(&line);
+            }
         }
         other => say(&format!("err: unknown command `{other}`; try `help`")),
     }

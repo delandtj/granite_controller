@@ -344,10 +344,7 @@ pub fn start(t_validate_s: u32, events: Option<Sender<Event>>, nvs: Option<EspDe
     );
     emit(&events, "pending_verify", &format!("{window} s to confirm"));
 
-    let spawned = thread::Builder::new()
-        .name("ota-probation".into())
-        .stack_size(4096)
-        .spawn(move || probation(window, events));
+    let spawned = super::spawn(c"ota-probation", 4096, move || probation(window, events));
     if let Err(e) = spawned {
         log::error!("ota: probation thread could not start ({e}); marking the image valid");
         let _ = mark_valid();

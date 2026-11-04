@@ -261,56 +261,53 @@ fn claim(gpio: u8) -> anyhow::Result<(TxChannelDriver<'static>, BytesEncoder)> {
 /// A WS2812 that cannot be driven is logged and dropped: it is a bench
 /// convenience and must never be the reason a board does not come up.
 pub fn start(led: LedHandle, broker_up: fn() -> bool) -> anyhow::Result<()> {
-    thread::Builder::new()
-        .name("granite-rgb".into())
-        .stack_size(STACK_SIZE)
-        .spawn(move || {
-            // The channel and its encoder are built here, in the thread
-            // that uses them: the IDF byte encoder is a raw handle and is
-            // not `Send`.
-            let (mut channel, encoder) = match claim(GPIO) {
-                Ok(parts) => parts,
-                Err(err) => {
-                    log::error!("rgb: WS2812 on GPIO{GPIO} could not be claimed: {err:#}");
+    crate::platform::spawn(c"granite-rgb", STACK_SIZE, move || {
+        // The channel and its encoder are built here, in the thread
+        // that uses them: the IDF byte encoder is a raw handle and is
+        // not `Send`.
+        let (mut channel, encoder) = match claim(GPIO) {
+            Ok(parts) => parts,
+            Err(err) => {
+                log::error!("rgb: WS2812 on GPIO{GPIO} could not be claimed: {err:#}");
+                return;
+            }
+        };
+        log::info!(
+            "rgb: WS2812 status mirror on GPIO{GPIO} (RMT tx, {} MHz ticks, max {MAX}/255)",
+            RMT_HZ / 1_000_000
+        );
+        let tx = TransmitConfig::default();
+        // One encoder, reused for the life of the thread: frames are
+        // 20 ms apart and 30 us long, so the queue is never full.
+        let mut queue = channel.queue([encoder]);
+        let mut shown: Option<(u8, u8, u8)> = None;
+        let mut announced: Option<LedPattern> = None;
+        let mut phase_ms: u32 = 0;
+        loop {
+            let pattern = led.pattern();
+            if announced != Some(pattern) {
+                log::info!("rgb: {}", describe(pattern));
+                announced = Some(pattern);
+                // Start every blink and every breath on its rising
+                // edge, so a transition is visible immediately.
+                phase_ms = 0;
+            }
+
+            let want = colour(pattern, phase_ms, broker_up());
+            if shown != Some(want) {
+                let (r, g, b) = want;
+                // GRB on the wire.
+                if let Err(err) = queue.push(&[g, r, b], &tx) {
+                    log::error!("rgb: GPIO{GPIO} frame failed: {err}");
                     return;
                 }
-            };
-            log::info!(
-                "rgb: WS2812 status mirror on GPIO{GPIO} (RMT tx, {} MHz ticks, max {MAX}/255)",
-                RMT_HZ / 1_000_000
-            );
-            let tx = TransmitConfig::default();
-            // One encoder, reused for the life of the thread: frames are
-            // 20 ms apart and 30 us long, so the queue is never full.
-            let mut queue = channel.queue([encoder]);
-            let mut shown: Option<(u8, u8, u8)> = None;
-            let mut announced: Option<LedPattern> = None;
-            let mut phase_ms: u32 = 0;
-            loop {
-                let pattern = led.pattern();
-                if announced != Some(pattern) {
-                    log::info!("rgb: {}", describe(pattern));
-                    announced = Some(pattern);
-                    // Start every blink and every breath on its rising
-                    // edge, so a transition is visible immediately.
-                    phase_ms = 0;
-                }
-
-                let want = colour(pattern, phase_ms, broker_up());
-                if shown != Some(want) {
-                    let (r, g, b) = want;
-                    // GRB on the wire.
-                    if let Err(err) = queue.push(&[g, r, b], &tx) {
-                        log::error!("rgb: GPIO{GPIO} frame failed: {err}");
-                        return;
-                    }
-                    shown = Some(want);
-                }
-
-                thread::sleep(TICK);
-                phase_ms = phase_ms.wrapping_add(TICK.as_millis() as u32);
+                shown = Some(want);
             }
-        })?;
+
+            thread::sleep(TICK);
+            phase_ms = phase_ms.wrapping_add(TICK.as_millis() as u32);
+        }
+    })?;
 
     Ok(())
 }

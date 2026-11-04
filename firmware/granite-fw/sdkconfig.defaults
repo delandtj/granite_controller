@@ -100,6 +100,13 @@ CONFIG_MBEDTLS_PEM_WRITE_C=y
 CONFIG_ESP_MAIN_TASK_STACK_SIZE=12288
 CONFIG_PTHREAD_TASK_STACK_SIZE_DEFAULT=8192
 CONFIG_COMPILER_OPTIMIZATION_SIZE=y
+# uxTaskGetSystemState() is compiled only with configUSE_TRACE_FACILITY,
+# and that is how the firmware reads per-task stack high-water marks
+# (src/platform/tasks.rs, the console's `stacks` command and one log block
+# 120 s after boot). Needed because `lto = true` inlines large
+# constructors into caller frames, so a stack that was ample without LTO
+# can overflow with it - the dispatcher did, on a rev C board.
+CONFIG_FREERTOS_USE_TRACE_FACILITY=y
 
 # --- I2C -----------------------------------------------------------------
 # Both buses use the ESP-IDF v5 I2C master driver (driver/i2c_master.h):

@@ -18,7 +18,8 @@
 //!      `// INTEGRATION:`: HTTPS and the JSON API, the MQTT worker, the
 //!      Modbus supervisor, and the config watcher that connects a saved
 //!      `sec.modbus` to the running listener,
-//!   8. one free-heap line once everything is up, then the heartbeat.
+//!   8. one free-heap line once everything is up, then the heartbeat,
+//!      with one per-task stack census 120 s in.
 //!
 //! Pin map: docs/controller.md, section "MCU".
 
@@ -53,6 +54,12 @@ use granite_fw::{http, hw, modbus, mqtt};
 
 /// Heartbeat interval of the idle loop.
 const HEARTBEAT: Duration = Duration::from_secs(10);
+/// Heartbeat tick at which the one stack census is logged: 120 s after
+/// boot. Late enough that the servers have run their deep paths (a TLS
+/// handshake, an OTA probation window, a Modbus connection), early enough
+/// to still be in the log ring of a board somebody is watching. The
+/// console's `stacks` command repeats it on demand.
+const STACK_CENSUS_TICK: u64 = 120 / HEARTBEAT.as_secs();
 /// Dispatcher tick: the plane client and the rule engine both need
 /// regular ticks, and a command may arrive between two of them. 50 ms is
 /// the poll cadence ADR 0004 decision 5 asks of the plane client.
@@ -261,18 +268,15 @@ fn main() -> anyhow::Result<()> {
             }
 
             let dispatch_faults = Arc::clone(&faults);
-            thread::Builder::new()
-                .name("dispatch".into())
-                .stack_size(DISPATCH_STACK)
-                .spawn(move || {
-                    dispatcher(
-                        dispatcher_platform,
-                        commands_rx,
-                        plane,
-                        dispatch_faults,
-                        fallback_sections,
-                    )
-                })?;
+            platform::spawn(c"dispatch", DISPATCH_STACK, move || {
+                dispatcher(
+                    dispatcher_platform,
+                    commands_rx,
+                    plane,
+                    dispatch_faults,
+                    fallback_sections,
+                )
+            })?;
         }
         Err(e) => {
             log::error!(
@@ -281,18 +285,15 @@ fn main() -> anyhow::Result<()> {
             );
             faults.fetch_or(fault_bits::NO_PLANE, Ordering::Relaxed);
             let dispatch_faults = Arc::clone(&faults);
-            thread::Builder::new()
-                .name("dispatch".into())
-                .stack_size(DISPATCH_STACK)
-                .spawn(move || {
-                    dispatcher(
-                        dispatcher_platform,
-                        commands_rx,
-                        platform::NoPlaneLink,
-                        dispatch_faults,
-                        fallback_sections,
-                    )
-                })?;
+            platform::spawn(c"dispatch", DISPATCH_STACK, move || {
+                dispatcher(
+                    dispatcher_platform,
+                    commands_rx,
+                    platform::NoPlaneLink,
+                    dispatch_faults,
+                    fallback_sections,
+                )
+            })?;
         }
     }
 
@@ -438,6 +439,11 @@ fn main() -> anyhow::Result<()> {
 
     let mut ticks: u64 = 0;
     loop {
+        if ticks == STACK_CENSUS_TICK {
+            for line in platform::tasks::lines() {
+                log::info!("stacks: {line}");
+            }
+        }
         let net = platform.net.status();
         log::info!(
             "heartbeat {ticks} ({} s uptime), {}, link {}, ip {}, ota {}",
@@ -916,39 +922,36 @@ fn apply_effect(
         },
         SideEffect::Ota { url, sha256 } => {
             let platform = Arc::clone(platform);
-            let spawned = thread::Builder::new()
-                .name("ota-pull".into())
-                .stack_size(10240)
-                .spawn(move || {
-                    let ca = platform.config().mqtt.ca_pem;
-                    match platform::ota::pull(&url, &sha256, &ca) {
-                        Ok(written) => {
-                            platform.publish(Event::new(
-                                platform::now_ms(),
-                                EventKind::Ota {
-                                    phase: String::from("verified"),
-                                    progress: Some(100),
-                                    detail: Some(format!(
-                                        "{} bytes into {}",
-                                        written.len, written.slot
-                                    )),
-                                },
-                            ));
-                            platform::ota::reboot_into_new_image();
-                        }
-                        Err(e) => {
-                            log::error!("ota pull failed: {e}");
-                            platform.publish(Event::new(
-                                platform::now_ms(),
-                                EventKind::Ota {
-                                    phase: String::from("failed"),
-                                    progress: None,
-                                    detail: Some(e.to_string()),
-                                },
-                            ));
-                        }
+            let spawned = platform::spawn(c"ota-pull", 10240, move || {
+                let ca = platform.config().mqtt.ca_pem;
+                match platform::ota::pull(&url, &sha256, &ca) {
+                    Ok(written) => {
+                        platform.publish(Event::new(
+                            platform::now_ms(),
+                            EventKind::Ota {
+                                phase: String::from("verified"),
+                                progress: Some(100),
+                                detail: Some(format!(
+                                    "{} bytes into {}",
+                                    written.len, written.slot
+                                )),
+                            },
+                        ));
+                        platform::ota::reboot_into_new_image();
                     }
-                });
+                    Err(e) => {
+                        log::error!("ota pull failed: {e}");
+                        platform.publish(Event::new(
+                            platform::now_ms(),
+                            EventKind::Ota {
+                                phase: String::from("failed"),
+                                progress: None,
+                                detail: Some(e.to_string()),
+                            },
+                        ));
+                    }
+                }
+            });
             if let Err(e) = spawned {
                 log::error!("ota: pull thread could not start: {e}");
             }
@@ -978,155 +981,152 @@ fn start_sense(
     mut vin: hw::vin::Vin,
     faults: Arc<AtomicU16>,
 ) {
-    let spawned = thread::Builder::new()
-        .name("sense".into())
-        .stack_size(6144)
-        .spawn(move || {
-            // Probe list: the configured ROM ids if there are any, else
-            // whatever the bus reports. A missing probe is reported, not
-            // an error (ADR component 4).
-            let cfg = platform.config();
-            let mut roms: Vec<(u64, String)> = cfg
-                .nodes
-                .probes
-                .iter()
-                .filter_map(|p| {
-                    granite_core::hal::rom_id_from_hex(&p.rom).map(|rom| (rom, p.name.clone()))
-                })
-                .collect();
-            // True while the list came from the configuration: only a
-            // probe an operator asked for can go missing (fault bit 2).
-            let mut configured = !roms.is_empty();
-            // What the bus reported at boot, kept so a configuration that
-            // loses its probe list falls back to it without a rescan.
-            let mut scanned: Vec<u64> = Vec::new();
-            if roms.is_empty() {
-                match probes.scan() {
-                    Ok(found) => {
-                        log::info!("probes: {} on the bus", found.len());
-                        scanned = found;
-                        roms = scanned
-                            .iter()
-                            .map(|rom| (*rom, granite_core::hal::rom_id_hex(*rom)))
-                            .collect();
-                    }
-                    Err(e) => log::warn!("probes: bus scan failed: {e}"),
+    let spawned = platform::spawn(c"sense", 6144, move || {
+        // Probe list: the configured ROM ids if there are any, else
+        // whatever the bus reports. A missing probe is reported, not
+        // an error (ADR component 4).
+        let cfg = platform.config();
+        let mut roms: Vec<(u64, String)> = cfg
+            .nodes
+            .probes
+            .iter()
+            .filter_map(|p| {
+                granite_core::hal::rom_id_from_hex(&p.rom).map(|rom| (rom, p.name.clone()))
+            })
+            .collect();
+        // True while the list came from the configuration: only a
+        // probe an operator asked for can go missing (fault bit 2).
+        let mut configured = !roms.is_empty();
+        // What the bus reported at boot, kept so a configuration that
+        // loses its probe list falls back to it without a rescan.
+        let mut scanned: Vec<u64> = Vec::new();
+        if roms.is_empty() {
+            match probes.scan() {
+                Ok(found) => {
+                    log::info!("probes: {} on the bus", found.len());
+                    scanned = found;
+                    roms = scanned
+                        .iter()
+                        .map(|rom| (*rom, granite_core::hal::rom_id_hex(*rom)))
+                        .collect();
+                }
+                Err(e) => log::warn!("probes: bus scan failed: {e}"),
+            }
+        }
+        let mut probe_period_ms = u64::from(cfg.nodes.t_probe_s.max(1)) * 1000;
+        let mut vin_min_mv = cfg.nodes.vin_min_mv;
+        let mut vin_max_mv = cfg.nodes.vin_max_mv;
+        // Where apply_config leaves a change to any of the four.
+        let mut cfg_generation = SENSE_CFG.lock().map(|c| c.generation).unwrap_or(0);
+        let mut last_probe_ms = 0u64;
+        let mut vin_warned = false;
+        drop(cfg);
+
+        // Watched from here, after the one-off bus scan.
+        platform::watch_this_thread("sense");
+        loop {
+            platform::feed_task_watchdog();
+            let now = platform::now_ms();
+
+            // Pick up a `nodes` save: probe names and ROM ids, the
+            // probe period and the VIN window all apply here, no
+            // reboot (the trim is picked up by hw::vin itself).
+            if let Ok(live) = SENSE_CFG.lock()
+                && live.generation != cfg_generation
+            {
+                cfg_generation = live.generation;
+                probe_period_ms = live.probe_period_ms;
+                vin_min_mv = live.vin_min_mv;
+                vin_max_mv = live.vin_max_mv;
+                configured = !live.probes.is_empty();
+                roms = if configured {
+                    live.probes.clone()
+                } else {
+                    scanned
+                        .iter()
+                        .map(|rom| (*rom, granite_core::hal::rom_id_hex(*rom)))
+                        .collect()
+                };
+                drop(live);
+                log::info!(
+                    "sense: {} probe(s) every {} ms, vin window {}..{} mV",
+                    roms.len(),
+                    probe_period_ms,
+                    vin_min_mv,
+                    vin_max_mv
+                );
+            }
+
+            let dry = dry_inputs.read_dry().ok();
+            let temp = board_temp.read_centi_c().ok();
+            let mv = vin.read_mv().ok();
+
+            let read_probes = now.saturating_sub(last_probe_ms) >= probe_period_ms;
+            let probe_obs: Option<Vec<ProbeObs>> = if read_probes {
+                last_probe_ms = now;
+                Some(
+                    roms.iter()
+                        .map(|(rom, name)| {
+                            // A conversion is up to 750 ms; eight
+                            // probes must not add up to a timeout.
+                            platform::feed_task_watchdog();
+                            ProbeObs {
+                                rom: *rom,
+                                name: name.clone(),
+                                centi_c: probes.read(*rom).ok(),
+                                ts_ms: now,
+                            }
+                        })
+                        .collect(),
+                )
+            } else {
+                None
+            };
+
+            // Modbus fault bit 2: a probe the configuration names did
+            // not answer this cycle. A list that came from the bus
+            // scan cannot go missing, so it never sets the bit.
+            if let Some(list) = &probe_obs {
+                let missing = configured && list.iter().any(|p| p.centi_c.is_none());
+                if missing {
+                    faults.fetch_or(fault_bits::PROBE_MISSING, Ordering::Relaxed);
+                } else {
+                    faults.fetch_and(!fault_bits::PROBE_MISSING, Ordering::Relaxed);
                 }
             }
-            let mut probe_period_ms = u64::from(cfg.nodes.t_probe_s.max(1)) * 1000;
-            let mut vin_min_mv = cfg.nodes.vin_min_mv;
-            let mut vin_max_mv = cfg.nodes.vin_max_mv;
-            // Where apply_config leaves a change to any of the four.
-            let mut cfg_generation = SENSE_CFG.lock().map(|c| c.generation).unwrap_or(0);
-            let mut last_probe_ms = 0u64;
-            let mut vin_warned = false;
-            drop(cfg);
-
-            // Watched from here, after the one-off bus scan.
-            platform::watch_this_thread("sense");
-            loop {
-                platform::feed_task_watchdog();
-                let now = platform::now_ms();
-
-                // Pick up a `nodes` save: probe names and ROM ids, the
-                // probe period and the VIN window all apply here, no
-                // reboot (the trim is picked up by hw::vin itself).
-                if let Ok(live) = SENSE_CFG.lock()
-                    && live.generation != cfg_generation
-                {
-                    cfg_generation = live.generation;
-                    probe_period_ms = live.probe_period_ms;
-                    vin_min_mv = live.vin_min_mv;
-                    vin_max_mv = live.vin_max_mv;
-                    configured = !live.probes.is_empty();
-                    roms = if configured {
-                        live.probes.clone()
-                    } else {
-                        scanned
-                            .iter()
-                            .map(|rom| (*rom, granite_core::hal::rom_id_hex(*rom)))
-                            .collect()
-                    };
-                    drop(live);
-                    log::info!(
-                        "sense: {} probe(s) every {} ms, vin window {}..{} mV",
-                        roms.len(),
-                        probe_period_ms,
+            // Modbus fault bit 3: the input voltage is outside the
+            // window from the `nodes` section. A VIN the ADC could not read
+            // is not "out of window"; that is bit 1's territory.
+            let vin_bad = mv.is_some_and(|mv| {
+                granite_core::config::vin_out_of_window(mv, vin_min_mv, vin_max_mv)
+            });
+            if vin_bad {
+                faults.fetch_or(fault_bits::VIN, Ordering::Relaxed);
+                if !vin_warned {
+                    vin_warned = true;
+                    log::warn!(
+                        "vin {} mV is outside {}..{} mV",
+                        mv.unwrap_or(0),
                         vin_min_mv,
                         vin_max_mv
                     );
                 }
-
-                let dry = dry_inputs.read_dry().ok();
-                let temp = board_temp.read_centi_c().ok();
-                let mv = vin.read_mv().ok();
-
-                let read_probes = now.saturating_sub(last_probe_ms) >= probe_period_ms;
-                let probe_obs: Option<Vec<ProbeObs>> = if read_probes {
-                    last_probe_ms = now;
-                    Some(
-                        roms.iter()
-                            .map(|(rom, name)| {
-                                // A conversion is up to 750 ms; eight
-                                // probes must not add up to a timeout.
-                                platform::feed_task_watchdog();
-                                ProbeObs {
-                                    rom: *rom,
-                                    name: name.clone(),
-                                    centi_c: probes.read(*rom).ok(),
-                                    ts_ms: now,
-                                }
-                            })
-                            .collect(),
-                    )
-                } else {
-                    None
-                };
-
-                // Modbus fault bit 2: a probe the configuration names did
-                // not answer this cycle. A list that came from the bus
-                // scan cannot go missing, so it never sets the bit.
-                if let Some(list) = &probe_obs {
-                    let missing = configured && list.iter().any(|p| p.centi_c.is_none());
-                    if missing {
-                        faults.fetch_or(fault_bits::PROBE_MISSING, Ordering::Relaxed);
-                    } else {
-                        faults.fetch_and(!fault_bits::PROBE_MISSING, Ordering::Relaxed);
-                    }
-                }
-                // Modbus fault bit 3: the input voltage is outside the
-                // window from the `nodes` section. A VIN the ADC could not read
-                // is not "out of window"; that is bit 1's territory.
-                let vin_bad = mv.is_some_and(|mv| {
-                    granite_core::config::vin_out_of_window(mv, vin_min_mv, vin_max_mv)
-                });
-                if vin_bad {
-                    faults.fetch_or(fault_bits::VIN, Ordering::Relaxed);
-                    if !vin_warned {
-                        vin_warned = true;
-                        log::warn!(
-                            "vin {} mV is outside {}..{} mV",
-                            mv.unwrap_or(0),
-                            vin_min_mv,
-                            vin_max_mv
-                        );
-                    }
-                } else {
-                    faults.fetch_and(!fault_bits::VIN, Ordering::Relaxed);
-                    vin_warned = false;
-                }
-
-                if let Ok(mut observed) = platform.observed.write() {
-                    observed.dry_in = Stamped::new(dry, now);
-                    observed.board_temp = Stamped::new(temp, now);
-                    observed.vin_mv = Stamped::new(mv, now);
-                    if let Some(probes) = probe_obs {
-                        observed.probes = probes;
-                    }
-                }
-                thread::sleep(SENSE_TICK);
+            } else {
+                faults.fetch_and(!fault_bits::VIN, Ordering::Relaxed);
+                vin_warned = false;
             }
-        });
+
+            if let Ok(mut observed) = platform.observed.write() {
+                observed.dry_in = Stamped::new(dry, now);
+                observed.board_temp = Stamped::new(temp, now);
+                observed.vin_mv = Stamped::new(mv, now);
+                if let Some(probes) = probe_obs {
+                    observed.probes = probes;
+                }
+            }
+            thread::sleep(SENSE_TICK);
+        }
+    });
     if let Err(e) = spawned {
         log::error!("sense thread could not start: {e}");
     }
@@ -1160,77 +1160,74 @@ fn start_config_watch(
     modbus: Option<modbus::ModbusHandle>,
     faults: Arc<AtomicU16>,
 ) {
-    let spawned = thread::Builder::new()
-        .name("config-watch".into())
-        // 8 KB, not 4: this thread now also parses a stored config section
-        // back into the live configuration when a staged one is reverted,
-        // and serde_json wants room for that.
-        .stack_size(8192)
-        .spawn(move || {
-            let mut last: Option<granite_core::config::ModbusCfg> = None;
-            loop {
-                if let Some(cfg) = platform.try_config() {
-                    if last.as_ref() != Some(&cfg.sec.modbus) {
-                        if let Some(handle) = modbus.as_ref() {
-                            handle.set_config(&cfg.sec.modbus);
-                        }
-                        last = Some(cfg.sec.modbus.clone());
+    // 8 KB, not 4: this thread also parses a stored config section back
+    // into the live configuration when a staged one is reverted, and
+    // serde_json wants room for that.
+    let spawned = platform::spawn(c"config-watch", 8192, move || {
+        let mut last: Option<granite_core::config::ModbusCfg> = None;
+        loop {
+            if let Some(cfg) = platform.try_config() {
+                if last.as_ref() != Some(&cfg.sec.modbus) {
+                    if let Some(handle) = modbus.as_ref() {
+                        handle.set_config(&cfg.sec.modbus);
                     }
-
-                    let connected = mqtt::connected();
-                    let mut status = platform.mqtt_status();
-                    status.enabled = cfg.mqtt.enabled;
-                    status.connected = connected;
-                    status.broker = if cfg.mqtt.host.is_empty() {
-                        String::new()
-                    } else {
-                        format!("{}:{}", cfg.mqtt.host, cfg.mqtt.port)
-                    };
-                    platform.set_mqtt_status(status);
-
-                    let mut set = 0u16;
-                    let mut clear = 0u16;
-                    if cfg.mqtt.enabled && !connected {
-                        set |= fault_bits::MQTT_DOWN;
-                    } else {
-                        clear |= fault_bits::MQTT_DOWN;
-                    }
-                    if platform::ota::ota_state() == platform::ota::OtaState::Pending {
-                        set |= fault_bits::OTA_PENDING;
-                    } else {
-                        clear |= fault_bits::OTA_PENDING;
-                    }
-                    faults.fetch_or(set, Ordering::Relaxed);
-                    faults.fetch_and(!clear, Ordering::Relaxed);
+                    last = Some(cfg.sec.modbus.clone());
                 }
 
-                // The one staged-section deadline (ADR component 6). `net`
-                // reverts by rebooting into the stored configuration -
-                // the live interface was already changed, so nothing else
-                // is sure. `mqtt` and `sec` only need their stored section
-                // back in the live config: the MQTT worker rebuilds its
-                // client and the Modbus supervisor rebinds, both within
-                // one refresh, and no node loses power for a broker typo.
-                let due = platform::api_impl::take_due_staged(platform::now_ms());
-                if !due.is_empty() {
-                    log::error!(
-                        "config: {} was not confirmed in time; putting the stored value back",
-                        section_list(&due)
-                    );
-                    platform::api_impl::revert_sections(&platform, &due);
-                }
-                // Restores queued by a revert, here because this thread
-                // holds no guard: the API cannot take the config lock it
-                // is already holding (see platform::api_impl).
-                let restore = platform::api_impl::take_restore();
-                if !restore.is_empty() && !restore_live_sections(&platform, &restore) {
-                    // The config guard was busy; try again next pass.
-                    platform::api_impl::queue_restore(&restore);
-                }
+                let connected = mqtt::connected();
+                let mut status = platform.mqtt_status();
+                status.enabled = cfg.mqtt.enabled;
+                status.connected = connected;
+                status.broker = if cfg.mqtt.host.is_empty() {
+                    String::new()
+                } else {
+                    format!("{}:{}", cfg.mqtt.host, cfg.mqtt.port)
+                };
+                platform.set_mqtt_status(status);
 
-                thread::sleep(CONFIG_WATCH);
+                let mut set = 0u16;
+                let mut clear = 0u16;
+                if cfg.mqtt.enabled && !connected {
+                    set |= fault_bits::MQTT_DOWN;
+                } else {
+                    clear |= fault_bits::MQTT_DOWN;
+                }
+                if platform::ota::ota_state() == platform::ota::OtaState::Pending {
+                    set |= fault_bits::OTA_PENDING;
+                } else {
+                    clear |= fault_bits::OTA_PENDING;
+                }
+                faults.fetch_or(set, Ordering::Relaxed);
+                faults.fetch_and(!clear, Ordering::Relaxed);
             }
-        });
+
+            // The one staged-section deadline (ADR component 6). `net`
+            // reverts by rebooting into the stored configuration -
+            // the live interface was already changed, so nothing else
+            // is sure. `mqtt` and `sec` only need their stored section
+            // back in the live config: the MQTT worker rebuilds its
+            // client and the Modbus supervisor rebinds, both within
+            // one refresh, and no node loses power for a broker typo.
+            let due = platform::api_impl::take_due_staged(platform::now_ms());
+            if !due.is_empty() {
+                log::error!(
+                    "config: {} was not confirmed in time; putting the stored value back",
+                    section_list(&due)
+                );
+                platform::api_impl::revert_sections(&platform, &due);
+            }
+            // Restores queued by a revert, here because this thread
+            // holds no guard: the API cannot take the config lock it
+            // is already holding (see platform::api_impl).
+            let restore = platform::api_impl::take_restore();
+            if !restore.is_empty() && !restore_live_sections(&platform, &restore) {
+                // The config guard was busy; try again next pass.
+                platform::api_impl::queue_restore(&restore);
+            }
+
+            thread::sleep(CONFIG_WATCH);
+        }
+    });
     if let Err(e) = spawned {
         log::error!("config watch thread could not start: {e}");
     }
@@ -1312,33 +1309,30 @@ fn fault_pattern(_faults: &AtomicU16) -> Option<LedPattern> {
 
 /// Drive the status LED from the ADR's pattern table (component 13).
 fn start_led(platform: Arc<Platform>, mut led: hw::led::LedHandle, faults: Arc<AtomicU16>) {
-    let spawned = thread::Builder::new()
-        .name("led-pattern".into())
-        .stack_size(3072)
-        .spawn(move || {
-            let mut last = None;
-            loop {
-                let net = platform.net.status();
-                let want = if let Some(fault) = fault_pattern(&faults) {
-                    fault
-                } else if platform::ota::ota_state() == platform::ota::OtaState::Pending {
-                    LedPattern::OtaPending
-                } else if !net.link {
-                    LedPattern::NoLink
-                } else {
-                    LedPattern::Heartbeat
-                };
-                // A press takes the LED solid, and the actuator owns that;
-                // only change the pattern when it is not pressing.
-                if last != Some(want) && led.pattern() != LedPattern::Busy {
-                    if let Err(e) = led.set(want) {
-                        log::error!("status led: {e}");
-                    }
-                    last = Some(want);
+    let spawned = platform::spawn(c"led-pattern", 3072, move || {
+        let mut last = None;
+        loop {
+            let net = platform.net.status();
+            let want = if let Some(fault) = fault_pattern(&faults) {
+                fault
+            } else if platform::ota::ota_state() == platform::ota::OtaState::Pending {
+                LedPattern::OtaPending
+            } else if !net.link {
+                LedPattern::NoLink
+            } else {
+                LedPattern::Heartbeat
+            };
+            // A press takes the LED solid, and the actuator owns that;
+            // only change the pattern when it is not pressing.
+            if last != Some(want) && led.pattern() != LedPattern::Busy {
+                if let Err(e) = led.set(want) {
+                    log::error!("status led: {e}");
                 }
-                thread::sleep(Duration::from_millis(500));
+                last = Some(want);
             }
-        });
+            thread::sleep(Duration::from_millis(500));
+        }
+    });
     if let Err(e) = spawned {
         log::error!("led pattern thread could not start: {e}");
     }

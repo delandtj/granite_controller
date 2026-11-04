@@ -224,17 +224,13 @@ pub fn start(ctx: ModbusCtx) -> anyhow::Result<ModbusHandle> {
     });
 
     let worker = Arc::clone(&shared);
-    thread::Builder::new()
-        .name("modbus".into())
-        .stack_size(SUPERVISOR_STACK)
-        .spawn(move || supervisor(worker))?;
+    crate::platform::spawn(c"modbus", SUPERVISOR_STACK, move || supervisor(worker))?;
 
     let watcher = Arc::clone(&shared);
     let events = ctx.events;
-    thread::Builder::new()
-        .name("modbus-events".into())
-        .stack_size(EVENTS_STACK)
-        .spawn(move || completions(&watcher, &events))?;
+    crate::platform::spawn(c"modbus-events", EVENTS_STACK, move || {
+        completions(&watcher, &events)
+    })?;
 
     Ok(ModbusHandle { shared })
 }
@@ -592,15 +588,12 @@ fn accept_one(
     shared.conns.fetch_add(1, Ordering::SeqCst);
     let worker = Arc::clone(shared);
     let unit_id = desired.unit_id;
-    let spawned = thread::Builder::new()
-        .name("modbus-conn".into())
-        .stack_size(CONN_STACK)
-        .spawn(move || {
-            log::debug!("modbus: {peer} connected");
-            connection(&worker, stream, peer, unit_id);
-            worker.conns.fetch_sub(1, Ordering::SeqCst);
-            log::debug!("modbus: {peer} closed");
-        });
+    let spawned = crate::platform::spawn(c"modbus-conn", CONN_STACK, move || {
+        log::debug!("modbus: {peer} connected");
+        connection(&worker, stream, peer, unit_id);
+        worker.conns.fetch_sub(1, Ordering::SeqCst);
+        log::debug!("modbus: {peer} closed");
+    });
     if let Err(e) = spawned {
         shared.conns.fetch_sub(1, Ordering::SeqCst);
         log::error!("modbus: no thread for {peer} ({e})");

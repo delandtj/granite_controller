@@ -317,8 +317,19 @@ granite> help
   ota-mark-valid        confirm the running image
   reboot                restart through the planned-reboot path
   log [n]               last n lines of the log ring (default 40)
+  stacks                per-task stack headroom, worst first
   help                  this list
 ```
+
+`stacks` lists every FreeRTOS task with its stack high-water mark in
+bytes (ESP-IDF reports bytes, not the words upstream FreeRTOS
+documents), least headroom first, plus the size and the percentage used
+where the size is known - the threads the firmware spawns through
+`platform::spawn` and the ESP-IDF main task. The same block is logged
+once at info level 120 s after boot. It needs
+`CONFIG_FREERTOS_USE_TRACE_FACILITY=y`, and it is how to check a stack
+budget under `lto = true`: LTO inlines large constructors into caller
+frames, which is what overflowed the dispatcher's old 12 KB stack.
 
 `espflash monitor` does not forward keystrokes in non-interactive mode;
 use it interactively, or any serial terminal (`picocom /dev/ttyACM0`).

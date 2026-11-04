@@ -281,12 +281,9 @@ pub fn init(
     }));
     let (tx, rx) = channel();
     let thread_status = Arc::clone(&status);
-    let spawned = thread::Builder::new()
-        .name("net".into())
-        .stack_size(8192)
-        .spawn(move || {
-            run(hw, mac, device_id, cfg, sysloop, thread_status, rx);
-        });
+    let spawned = super::spawn(c"net", 8192, move || {
+        run(hw, mac, device_id, cfg, sysloop, thread_status, rx);
+    });
     if let Err(e) = spawned {
         log::error!("network thread could not start: {e}");
         if let Ok(mut s) = status.write() {
