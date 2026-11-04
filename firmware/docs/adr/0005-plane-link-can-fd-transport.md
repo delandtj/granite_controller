@@ -2,6 +2,7 @@
 
 **Status**: Proposed
 **Date**: 2026-11-04
+**Updated**: 2026-11-04 (as built: granite-proto::can 7c39a71, plane-fw 8d898e6, mcp2518fd 0af8d56 as a facade over mcp251xfd, granite-core / sim 7319d12)
 
 Related: docs/adr/0006-plane-link-can-fd.md (hardware: ISO1044 per
 core, MCP2518FD on the G070 or FDCAN on the G0B1, MCP2518FD on the
@@ -55,7 +56,10 @@ written and tested on the host before the boards exist.
    index that is not the next one, or a gap of more than 50 ms
    between segments, drops the partial message and counts it. A
    segment 0 always starts a new message. No allocation: fixed buffers
-   of 320 bytes.
+   of 320 bytes. The index byte carries no message identity: a message
+   that loses its segment 0 within 50 ms of a partial of the same id
+   splices onto it; ADR 0003's CRC-8 refuses the result (pinned by a
+   test in granite-proto::can).
 
 5. **Transactions.**
    - Read: controller sends REQ (or BULK for LOG) to node n, waits for
@@ -91,9 +95,12 @@ written and tested on the host before the boards exist.
      `MsgType`, a segmenter (message -> frames) and a reassembler
      (frames -> message) as above. Host tests and a fuzz-style test
      (no panic on any frame sequence).
-   - `mcp2518fd` (new crate, no_std): driver over embedded-hal 1.0
-     `SpiDevice`, used by both the plane (G070 build) and the
-     controller. Configure (clock, bit timing, TDC, one TX FIFO, one RX
+   - `mcp2518fd` (new crate, no_std): a thin facade over the
+     maintained `mcp251xfd` crate (embedded-hal 1.0 `SpiDevice`,
+     errata work-arounds), fixing this link's one configuration; used
+     by both the plane (G070 build) and the controller. INT0 / INT1:
+     inputs on the plane (pulled up), outputs driven low on the
+     controller (open there). Configure (clock, bit timing, TDC, one TX FIFO, one RX
      FIFO, accept filter), send, receive, interrupt status, error
      counters, bus-off. Host tests against a mock SPI.
    - `granite-core`: `PlaneLink::event_nodes`, the client reads the
