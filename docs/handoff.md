@@ -1,6 +1,75 @@
-# Handoff - granite-plane (updated 2026-10-29)
+# Handoff - granite-plane (updated 2026-11-04)
 
 Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
+
+## 2026-11-04: rev D safeguard, CAN FD generation started (ADR 0006)
+
+State: master = origin/master, all pushed, tree clean. Two lines of
+boards now live side by side:
+
+- **Rev D (cabled, isolated I2C)**: power/pp-48-core, pp-48-unit,
+  controller/. Buildable. Changes today:
+  - Core ISO1640 U4 turned round (9fd8541): side 1 (single node, 80 pF,
+    static output offset) on the plane MCU, side 2 (shareable, 400 pF)
+    on the cable. Before, up to 8 planes' side 1 shared the cable bus,
+    which TI rules out. DRC / ERC clean, R26 / R27 are the side 1
+    pull-ups. Rev D doc: capacitance budget for both link connectors
+    together (one bus): 10 pF + 15 pF per plane + ~50 pF/m <= 350 pF.
+  - Controller D4 LED -> KT-0603G C12624 (old part had 2 in stock).
+    Stock check of all 128 parts on core / unit / controller: fine for
+    5 / 20 / 5 boards.
+  - Docs synced with the boards (a0c87f8): ADR 0005 sizes (core 56.1 x
+    72.1, unit 78.6 x 72.1), LM5069-2 + firmware latch, no chain cable
+    wording left.
+- **CAN FD generation (no cables at all)**: docs/adr/0006-plane-link-can-fd.md
+  (hardware) and firmware/docs/adr/0005-plane-link-can-fd-transport.md
+  (transport), both Proposed; their review asks are still open.
+  - One row on the bar: controller, core 1, its units, core 2, ... The
+    link (CANH, CANL, LINK_GND, AUX_12V) runs through every board on a
+    2x3 A2541 joint beside the 2x7 chain joint, pin 1 at top + 30.0 mm
+    on every board. ISO1044 per core, MCP2518FD on the G070 (G0B1
+    FDCAN1 on the same PB8 / PB9 as a drop-in build), controller
+    MCP2518FD on the W5500 SPI + TCAN1044V. AUX_12V OR'ed from every
+    core feeds the controller. Right-end termination: two solder
+    jumpers on the last board.
+  - Projects: power/pp-48-fd/tools (copied generator), power/pp-48-core-fd
+    (68.0 x 72.0 mm: 12 mm wider for the link domain's >= 2 mm
+    isolation channels), power/pp-48-unit-fd (78.6 x 72.1),
+    controller-fd/ (105 x 50). Schematics ERC 0; boards DRC 0
+    unconnected / parity clean (unit: rev D's 6 pth_inside_courtyard);
+    every part in JLC stock. Rebuild: pp-48-fd/tools/fd_layout.sh,
+    controller-fd/tools/fd_build.sh (KRT steps not bit-exact).
+  - Before ordering any FD board: 3D models of the new parts, JLC
+    placement preview of the bottom-side 2x3 / 2x7 rotations, the open
+    review asks of ADR 0006.
+- **Firmware** (all on master, `cargo test --workspace` 479 pass, clippy
+  clean):
+  - granite-proto::can: ids, segmenter, reassembler (7c39a71).
+  - mcp2518fd: facade over the mcp251xfd crate (0af8d56). INT0 / INT1:
+    inputs on the plane (pulled up), outputs low on the controller
+    (open there). mcp251xfd pulls RUSTSEC-2024-0370 at build time only.
+  - plane-fw (8d898e6): STM32G070 binary, embassy 0.6, rev D I2C1 slave
+    link, bus / status tasks, 46.3 KB flash of a ~56 KB slot. DFU and
+    MCU temperature are stubs; nothing run on hardware. One mutex
+    around Plane: a request mid-poll can stretch SCL ~25 ms at four
+    units (bench-measure).
+  - granite-core / sim (7319d12): PlaneLink::event_nodes (was
+    int_asserted), SYNC sender, sim CAN transport with frame loss
+    (`granite-sim serve --link can --drop-every 12`).
+  - The controller's real plane link (I2C or CAN) is still the stub,
+    on purpose, until a board can be measured.
+  - ESP32-C6 flash: image 1.85 MB = 70.7 % of a 2.5 MB OTA slot (~750
+    KB free, grew ~89 KB in two weeks). Levers: lto = true (not set),
+    drop the factory partition (~3.9 MB slots, needs a wired reflash:
+    decide before boards ship).
+- Housekeeping: the second clone ~/Granite/Electronics/granite_controller
+  moved to ~/Granite/attic/granite_controller-2026-11-04 (its recovery
+  tokens copied to firmware/, gitignored). Work only in this checkout.
+  .claude/worktrees/ is gitignored. GPG pinentry and the SSH key unlock
+  time out now and then: retry.
+- Next: answer ADR 0006 / firmware ADR 0005 review asks; order rev D
+  (core, unit, controller) for the bench; FD 3D / preview checks; bench
+  the rev D link (clock stretch through the ISO1640, 8-plane rise time).
 
 ## 2026-11-02: plane chain without cables (ADR 0005 decisions 4, 7)
 
