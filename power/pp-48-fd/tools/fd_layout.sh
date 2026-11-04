@@ -13,6 +13,10 @@
 #   VIN (the Fly-Buck's VIN pads) -> solid U4.7 / C23.2 (place_core.py SOLID) -> gndstitch.py (LINK_GND /
 #   GND islands) -> route_core.py (adds the pocket) -> krt-reroute /Supplies/SW2 (out of the pocket) ->
 #   prune (3 rounds) -> pcbkit silk -> nosilk J2 / J3 / J301. Checks: isocheck.py <filled board> 2.0.
+#   Termination header (2026-11-04, ADR 0006 decision 8: 2x2 jumper-cap header JP1 for the solder jumpers
+#   JP1 / JP2) and J2's pin 1 silk mark: on the routed board, fdsync.py -> fd/core_term.py (places D9 / JP1 /
+#   R25 / R26 / C32 from place_core.py, redraws the channel's CANH / CANL / TERM_* / AUX_12V copper and the
+#   mark); a fresh run of the sequence above places them by place_core.py and lets KRT route them instead.
 # unit: rev D board -> fdsync.py -> place_unit.py (J303 / J304 at v 30, C201 turned, C202 / H3 / Q10 / R31 /
 #   R58 moved, termination in the margin) -> fdstrip.py fd/unit-regions.json -> route_unit.py (link() band
 #   on B, link_term(), margin_press(), EXP_RSTN jog, strip vias) -> solid C201.2. Then by hand, with the
@@ -24,7 +28,9 @@
 #   "fd-taps": GND vias for Q204.2 / R214.2, U51.5's GND track); prune2.py (dangling stubs; the SEG_SCL
 #   junction via at 139.7 / 145.7 replaced by a track), pcbkit silk. Decision 12's 0.5 mm: rule "link to
 #   bus" in pp-48-unit-fd.kicad_dru (net class LINK of the .kicad_pro), checked by DRC; KRT does not read
-#   it, hence the keepouts while it runs.
+#   it, hence the keepouts while it runs. Termination header (2026-11-04): JP301 / JP302 -> the 2x2 jumper-cap
+#   header JP301, on the routed board by fdsync.py -> fd/unit_term.py (place_unit.py TERM + route_unit.py
+#   link_term(), old term copper deleted first); a fresh run gets both from the steps above.
 # The KRT steps are not bit-for-bit repeatable; the scripted steps are.
 set -euo pipefail
 B=${1:?core|unit}; W=${2:?scratch dir}

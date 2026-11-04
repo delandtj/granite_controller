@@ -23,15 +23,15 @@ boards now live side by side:
     wording left.
 - **CAN FD generation (no cables at all)**: docs/adr/0006-plane-link-can-fd.md
   (hardware) and firmware/docs/adr/0005-plane-link-can-fd-transport.md
-  (transport), both Proposed; their review asks are still open.
+  (transport), both Accepted (see below).
   - One row on the bar: controller, core 1, its units, core 2, ... The
     link (CANH, CANL, LINK_GND, AUX_12V) runs through every board on a
     2x3 A2541 joint beside the 2x7 chain joint, pin 1 at top + 30.0 mm
     on every board. ISO1044 per core, MCP2518FD on the G070 (G0B1
     FDCAN1 on the same PB8 / PB9 as a drop-in build), controller
     MCP2518FD on the W5500 SPI + TCAN1044V. AUX_12V OR'ed from every
-    core feeds the controller. Right-end termination: two solder
-    jumpers on the last board.
+    core feeds the controller. Right-end termination: two jumper
+    caps on a 2x2 header on the last board.
   - Projects: power/pp-48-fd/tools (copied generator), power/pp-48-core-fd
     (68.0 x 72.0 mm: 12 mm wider for the link domain's >= 2 mm
     isolation channels), power/pp-48-unit-fd (78.6 x 72.1),
@@ -84,12 +84,22 @@ boards now live side by side:
     Halo Gorgon board's own DC input (R1). The 2026-10-28 wording was
     wrong and is fixed everywhere.
 - Next, board changes the answers need (FD only, DRC + stock again):
-  - core-fd / unit-fd: JP1 / JP2 and JP301 / JP302 solder jumpers ->
-    a 2x2 2.54 mm pin header + two jumper caps (pick parts at JLC).
-  - controller-fd: J15 right-angle socket -> keyed 2x3 box header:
-    done (C34945 right-angle on B, same pad grid, pin 1 at the bottom
-    of the column, ERC 0, DRC 0 errors / 0 unconnected / parity clean).
-    Still: core-fd's link plug gets a pin-1 silk mark.
+  - Done: core-fd / unit-fd termination is now one 2x2 2.54 mm header
+    each (JP1 / JP301, C492419 XFCN PZ254V-12-4P, extended, ~59.7k in
+    stock): 1 CANH / 2 TERM_H, 3 CANL / 4 TERM_L, caps on 1-2 and 3-4.
+    Caps: C5305 (2.54 mm open-top, ~911k in stock), not assembled,
+    two per row (last board). core-fd's link plug J2 has a pin-1 silk
+    mark (F and B). Scripts: pp-48-fd/tools/fd/core_term.py,
+    unit_term.py (fd_layout.sh header). ERC 0; DRC 0 errors / 0
+    unconnected / parity clean (unit: rev D's 6 pth_inside_courtyard);
+    core isocheck 2.0: 0 pairs. Add C492419 to the JLC rotation check.
+  - Done: controller-fd J15 is a keyed 2x3 right-angle box header
+    (C34945 BOOMELE, ~2.7k in stock; C9136 / C9141 were 2x6 parts) on
+    B, same pad grid, face 4.8 mm past the edge, pin 1 at the bottom of
+    the column. Straight IDC ribbon = pin n to pin n (link.py pinout).
+    ERC 0, DRC 0 errors / 0 unconnected / parity clean. JLC rotation
+    90 in pcbkit.toml. Core 1's plug is not keyed: fit by the pin-1
+    mark.
 - Next, checks still open (ADR checklists):
   - OV_KILL 22.7 V vs the Halo Gorgon board's maximum DC input (not
     known: asked SixUnited 2026-11-04; if < ~24 V, R18 on PM-19V-250W-B
@@ -97,8 +107,17 @@ boards now live side by side:
   - DG128 drawing and second source; node connector soak test; unit
     hot-swap power limit / timer vs two slot insertions; where the slot
     output voltage is read (ADR 0001).
+- Rev D fab sets regenerated 2026-11-04 (pcbkit jlcfab, fab/ of
+  pp-48-core, pp-48-unit, controller): DRC 0 errors / 0 unconnected /
+  parity clean, ERC 0, LCSC on every placed line, CPL = BOM. In JLC's
+  preview check core Y1 (no rotation correction). J5 SWD hand-fit.
+- Firmware flash: granite-fw release has lto = true (1.65 MB, 63.1 %
+  of a 2.5 MB slot; full at ~89 KB / 2 weeks around 2027-04). Open
+  decision before boards ship: drop the factory partition (two
+  0x3D0000 slots, ~2027-10) at the cost of no last-resort boot when
+  both OTA slots fail (firmware ADR 0001: 69, 312-314).
 - Next, other: order rev D (core, unit, controller) for the bench; FD
-  3D models and JLC preview checks; bench the rev D link (clock stretch
+  3D models and JLC preview checks (C492419, C34945, Y1); bench the rev D link (clock stretch
   through the ISO1640, 8-plane rise time).
 
 ## 2026-11-02: plane chain without cables (ADR 0005 decisions 4, 7)

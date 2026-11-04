@@ -12,7 +12,7 @@ was), a strip along the top edge to the right edge, a channel down each edge to 
 - Left: J2 plug (body flush with the edge), NUP2105L D8 above it; the new 8.5 mm keeps 2 mm between the
   link channel and the crystal Y1 / U3.
 - Right: J3 socket (face 4 mm past the edge) above the chain socket J301, D9 and the split termination
-  (R25 / R26 / C32, solder jumpers JP1 / JP2) above it; 3.5 mm more keep 2 mm from L1.
+  (R25 / R26 / C32 over the 2x2 jumper-cap header JP1) above it; 3.5 mm more keep 2 mm from L1.
 - The Fly-Buck primary (U2 and its parts) moved from the top right corner into the bus world under the
   strip: the whole cluster turned 90 deg clockwise about L2, which now straddles the strip's bottom edge
   (secondary pads up, primary down) at v 10.
@@ -91,9 +91,11 @@ LINKP = {
     'U7': (9.0, 13.0, 0, F), 'C27': (9.0, 8.6, 0, F), 'C26': (5.0, 17.0, 180, F),
     'D10': (17.0, 13.0, 180, F),
     # link ESD at each connector, the termination above the socket
-    'D8': (-5.0, 25.0, 270, F), 'D9': (53.6, 25.0, 90, F),
-    'JP1': (51.5, 20.6, 90, F), 'JP2': (55.3, 20.6, 90, F),
-    'R25': (51.5, 16.6, 90, F), 'R26': (55.3, 16.6, 90, F), 'C32': (53.4, 14.0, 0, F),
+    # the termination: 2x2 jumper-cap header JP1 (origin = pin 1 CANH; rot 90: pin 2 TERM_H above it, pins 3 / 4
+    # CANL / TERM_L to the right), R25 / R26 over its TERM row, C32 above them (courtyards: D9 0.6 mm down)
+    'D8': (-5.0, 25.0, 270, F), 'D9': (53.6, 25.6, 90, F),
+    'JP1': (51.5, 21.8, 90, F),
+    'R25': (51.5, 15.9, 90, F), 'R26': (54.04, 15.9, 270, F), 'C32': (52.77, 13.3, 0, F),
     # MCP2518FD bottom left (SPI on its right column, toward U3's PA4-PA7), crystal under OSC1 / OSC2
     'U5': (-2.0, 48.0, 0, F), 'C35': (2.6, 42.8, 0, F),
     'Y2': (-2.0, 55.6, 0, F), 'C33': (-5.6, 55.6, 90, F), 'C34': (1.6, 55.6, 90, F),

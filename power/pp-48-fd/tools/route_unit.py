@@ -247,24 +247,24 @@ def link(k):
 
 
 def link_term(k):
-    """the split termination (ADR 0006 decision 8) in the margin above J303 (tools/place_unit.py TERM), on F,
-    tied to the B rows of link() by vias: CANL on its row, CANH on its row, LINK_GND on its left vertical"""
-    F = pcbnew.F_Cu
+    """the split termination (ADR 0006 decision 8) in the margin above J303 (tools/place_unit.py TERM), on F:
+    the 2x2 jumper-cap header JP301 (CANH / TERM_H column left, CANL / TERM_L column right, TERM row up), the
+    resistors above it, C301 above them. Tied to the B rows of link(): CANH by a via on its row, CANL straight
+    down on B from the header's through-hole pad to its row, LINK_GND by a via on its left vertical"""
+    F, B = pcbnew.F_Cu, pcbnew.B_Cu
     h1, h2 = pad_at(k.b, 'JP301', '1'), pad_at(k.b, 'JP301', '2')       # CANH, TERM_H
-    l1, l2 = pad_at(k.b, 'JP302', '1'), pad_at(k.b, 'JP302', '2')       # TERM_L, CANL
+    l1, l2 = pad_at(k.b, 'JP301', '3'), pad_at(k.b, 'JP301', '4')       # CANL, TERM_L
     r1h, r1m = pad_at(k.b, 'R301', '1'), pad_at(k.b, 'R301', '2')
     r2m, r2l = pad_at(k.b, 'R302', '1'), pad_at(k.b, 'R302', '2')
     cm, cg = pad_at(k.b, 'C301', '1'), pad_at(k.b, 'C301', '2')
-    xl, xh = pad_at(k.b, 'J303', '2')[0], pad_at(k.b, 'J303', '1')[0]
-    vl = (xl + 1.26, LINK_Y['CANL'])                     # on the CANL row
+    xh = pad_at(k.b, 'J303', '1')[0]
     vh = (xh + 1.02, LINK_Y['CANH'])                     # on the CANH row
     vg = (xh + 1.62, 124.0)                              # on the LINK_GND vertical
-    k.track('/Chain/CANL', [l2, vl], 0.3, F)
-    k.via('/Chain/CANL', vl)
-    k.track('/Chain/CANH', [h1, vh], 0.3, F)
+    k.track('/Chain/CANL', [l1, (l1[0], LINK_Y['CANL'])], 0.3, B)
+    k.track('/Chain/CANH', [h1, (h1[0], vh[1] - 1.4), (h1[0] + 1.4, vh[1]), vh], 0.3, F)
     k.via('/Chain/CANH', vh)
     k.track('/Chain/TERM_H', [r1h, h2], 0.3, F)
-    k.track('/Chain/TERM_L', [r2l, l1], 0.3, F)
+    k.track('/Chain/TERM_L', [r2l, l2], 0.3, F)
     k.track('/Chain/TERM_MID', [r1m, r2m], 0.3, F)
     k.track('/Chain/TERM_MID', [cm, (cm[0], r1m[1])], 0.3, F)
     k.track('/Chain/LINK_GND', [cg, (vg[0] + 0.4, cg[1]), (vg[0] + 0.4, vg[1] - 0.4), vg], 0.4, F)

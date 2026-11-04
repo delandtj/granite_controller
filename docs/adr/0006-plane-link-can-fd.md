@@ -1,6 +1,6 @@
 # Plane link over isolated CAN FD, through the plane row
 
-**Status**: Accepted (2026-11-04: review asks answered; board changes for the termination header and the controller box header pending)
+**Status**: Accepted (2026-11-04: review asks answered; termination header on core-fd / unit-fd and the controller box header done)
 **Date**: 2026-11-04
 **Updated**: 2026-11-04 (review asks answered by the user: CAN FD for the new generation, rev D keeps the flipped I2C; separate 2x3 joint; G070 + MCP2518FD now, G0B1 later; termination by jumper caps on a 2x2 header; controller anywhere, on a ribbon cable to core 1 with a keyed box header; bus-off auto recovery; ESD picked. Board changes for the header and the box header pending); 2026-11-04 (boards laid out: core-fd 68.0 x 72.0 mm, 12 mm wider than rev D's 56.1 for the link domain's isolation; unit-fd 78.6 x 72.1 and controller-fd 105 x 50 unchanged); 2026-11-04 (schematics drawn: power/pp-48-core-fd, pp-48-unit-fd, controller-fd; two termination jumpers, regulator / diode / ESD picked); 2026-11-04 (user: no cables between the controller and the
 planes either; planes sit in one row on the bar, plane n+1's core
@@ -155,7 +155,9 @@ ordered (handoff "Boards ordered": rev C only).
    commissioning; was two solder jumpers). One leg alone would leave
    60R4 + 4.7 nF on one line of every board, ~110 nF of one-sided
    load on a full row. A standby controller at the right end (decision 13)
-   terminates instead.
+   terminates instead. Parts: header JP1 (core) / JP301 (unit), C492419
+   (PZ254V-12-4P): 1 CANH / 2 TERM_H, 3 CANL / 4 TERM_L, caps on 1-2
+   and 3-4; caps C5305, not assembled (two per row, an accessory).
 
 9. **Controller (controller-fd)**:
    - **MCP2518FD on the W5500's SPI bus** (GPIO19 / 20 / 21), nCS on
