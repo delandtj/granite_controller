@@ -278,7 +278,10 @@ ordered (handoff "Boards ordered": rev C only).
 - **Sharpest tradeoff**: 3.2 m of board trace and 8 isolators on one
   I2C bus is at the 400 pF limit; single ended, one stuck slave
   blocks the row, one master, ~10 kB/s.
-- **Bets on**: rows of 2-3 planes, never 8, and no standby controller.
+- **Bets on**: rows of at most ~5 planes (per plane ~400 mm of trace
+  at 100-150 pF/m, the ISO1640's 10 pF and ~5 pF of joints: 55-75 pF,
+  against side 2's 400 pF; 8 planes are 440-600 pF), and no standby
+  controller.
 
 ### Link pins inside a larger chain connector (2x10)
 - **The idea**: one joint per board edge; the chain grows from 2x7 to
