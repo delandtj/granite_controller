@@ -59,8 +59,8 @@ planes' isolated 12 V aux, never from the 48 V bus.
 - Budget: 3V3 ~0.6 A worst case (radio off: ~0.25 A typical) incl. the
   plane link supply below; ~2 W from 12 V, inside one 6 W module.
 - Ground: CTRL_GND of both planes meet at the controller GND. That is
-  the isolated side of each plane (iso module, ISO1640 side 1,
-  ISO7721), never the bus ground (R20a).
+  the isolated side of each plane (iso module, ISO1640 side 2,
+  ISO7721 side 1), never the bus ground (R20a).
 
 ## Plane link
 
@@ -70,15 +70,20 @@ planes' isolated 12 V aux, never from the 48 V bus.
 - Connectors: two JST PH 5p (B5B-PH-K-S), same bus on both, pin 1
   CTRL_3V3, 2 CTRL_GND, 3 SCL, 4 SDA, 5 EXP_INT: the plane J2 / J3
   pinout (power/pp-48 link.py), cable pin 1 to pin 1. Two connectors
-  so a box can run two shorter daisy chains (half the capacitance
-  each) instead of one long one.
+  so a box can run two shorter daisy chains; they are one bus, so the
+  capacitance budget below is for both together.
 - Pull-ups on the controller only (the planes' R28 / R29 are DNP):
-  SDA / SCL 2.2k to 3V3. With ~0.5 nF on a long chain the rise time
-  stays inside 1000 ns at 100 kHz; 1.5 mA sink is within the ISO1640
-  side 1 rating (3.5 mA). Value to confirm on the bench with 8 planes.
+  SDA / SCL 2.2k to 3V3. Each plane's ISO1640 has side 2 on the cable
+  (shareable, 400 pF, 50 mA sink) and side 1 on its own MCU (side 1
+  is single-node: static output offset, 80 pF; 2026-11-04, was the
+  other way round). Budget for the whole bus, both connectors:
+  10 pF (controller) + 15 pF per plane (ISO1640 10 pF, connectors,
+  trace) + ~50 pF per metre of PH cable <= 350 pF; e.g. 8 planes on
+  up to ~4.4 m of cable in total. 2.2k x 400 pF gives 745 ns rise
+  time, inside 1000 ns at 100 kHz. Confirm on the bench with 8 planes.
 - EXP_INT: GPIO0 (unchanged), 10k pull-up to 3V3; every plane pulls it
   low through its own open-drain Q1 (wired OR).
-- 3V3 to the planes' isolator side 1 (ISO1640 + ISO7721, ~6 mA per
+- 3V3 to the planes' isolators' cable side (ISO1640 side 2, ISO7721 side 1; ~6 mA per
   plane, ~50 mA for 8): through one current-limited load switch per
   connector (~100-200 mA limit class, part to pick at LCSC), so a
   shorted cable does not drop the controller's 3V3.

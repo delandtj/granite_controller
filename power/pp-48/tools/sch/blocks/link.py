@@ -2,8 +2,12 @@
 
 Parts and pin -> net tables copied from gensch.py "# controller link".
 Plane side (+3V3 / GND, I2C1 pull-ups, ports) on the left, controller
-side (CTRL_3V3 / CTRL_GND from the cable) on the right; the isolators are
-drawn mirrored so that side 2 (plane) faces left. U5 sits above U4 so
+side (CTRL_3V3 / CTRL_GND from the cable) on the right. U4 (ISO1640) has
+side 1 on the plane and side 2 on the cable: side 1 has a static output
+offset and is single-node only (80 pF), side 2 may share a bus (400 pF,
+50 mA sink), and up to 8 planes share the cable bus; so U4 is drawn
+unmirrored (side 1 left). U5 (ISO7721, unidirectional, side 2 in from the
+plane) is drawn mirrored so that its side 2 faces left. U5 sits above U4 so
 that INT, SDA, SCL arrive at J2 top to bottom (J2 / J3 drawn flipped:
 pin 5 on top) without crossing. J3 is the daisy-chain twin of J2.
 """
@@ -26,9 +30,9 @@ def block(N=2):
           at=(X, Y5), mirror="y", fields={"LCSC": "C366164"},
           desc="EXP_INT plane -> controller (channel A, side 2 in, side 1 out); channel B unused")
     b.sym("U4", "Isolator:ISO1540", "ISO1640BD", "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
-          {"1": "CTRL_3V3", "2": "CTRL_SDA", "3": "CTRL_SCL", "4": "CTRL_GND", "5": "GND", "6": "SCL1", "7": "SDA1", "8": "+3V3"},
-          at=(X, Y4), mirror="y", fields={"LCSC": "C5122339"},
-          desc="isolated I2C; side 1 = controller cable, side 2 = plane. ISO1540 symbol, ISO1640 pin compatible")
+          {"1": "+3V3", "2": "SDA1", "3": "SCL1", "4": "GND", "5": "CTRL_GND", "6": "CTRL_SCL", "7": "CTRL_SDA", "8": "CTRL_3V3"},
+          at=(X, Y4), fields={"LCSC": "C5122339"},
+          desc="isolated I2C; side 1 = plane (single node), side 2 = shared controller cable. ISO1540 symbol, ISO1640 pin compatible")
 
     # ---------------------------------------------------------- supply taps with their decoupling
     def vcc(u, pin, cap, net, gnd, side, desc):
@@ -42,26 +46,26 @@ def block(N=2):
 
     vcc("U5", "8", "C27", "+3V3", "GND", "left", "U5 VCC2")
     vcc("U5", "1", "C26", "CTRL_3V3", "CTRL_GND", "right", "U5 VCC1")
-    vcc("U4", "8", "C25", "+3V3", "GND", "left", "U4 VCC2")
-    vcc("U4", "1", "C24", "CTRL_3V3", "CTRL_GND", "right", "U4 VCC1")
-    for u, pin in (("U5", "5"), ("U4", "5")):
+    vcc("U4", "1", "C25", "+3V3", "GND", "left", "U4 VCC1")
+    vcc("U4", "8", "C24", "CTRL_3V3", "CTRL_GND", "right", "U4 VCC2")
+    for u, pin in (("U5", "5"), ("U4", "4")):
         px, py = b.syms[u].pin_xy(pin)
         b.wire("GND", [(px - 2 * G, py + 2 * G), (u, pin)])
-    px, py = b.syms["U4"].pin_xy("4")
-    b.wire("CTRL_GND", [(px + 2 * G, py + 2 * G), ("U4", "4")])
+    px, py = b.syms["U4"].pin_xy("5")
+    b.wire("CTRL_GND", [(px + 2 * G, py + 2 * G), ("U4", "5")])
     px, py = b.syms["U5"].pin_xy("4")
     b.wire("CTRL_GND", [(px + 2 * G, py + 2 * G), ("U5", "4"), ("U5", "3")])
 
     # ---------------------------------------------------------- plane side: ports and I2C1 pull-ups
     XL = X - 8 * G
-    ysda, yscl = b.syms["U4"].pin_xy("7")[1], b.syms["U4"].pin_xy("6")[1]
+    ysda, yscl = b.syms["U4"].pin_xy("2")[1], b.syms["U4"].pin_xy("3")[1]
     xa, xb = X - 30 * G, X - 44 * G
-    b.sym("R26", "Device:R", "4.7k", R0402, {"1": "+3V3", "2": "SDA1"}, at=(xa, ysda - 6 * G), desc="I2C1 pull-up, isolator side 2")
+    b.sym("R26", "Device:R", "4.7k", R0402, {"1": "+3V3", "2": "SDA1"}, at=(xa, ysda - 6 * G), desc="I2C1 pull-up, isolator side 1 (needs its own)")
     b.sym("R27", "Device:R", "4.7k", R0402, {"1": "+3V3", "2": "SCL1"}, at=(xb, ysda - 6 * G))
-    b.wire("SDA1", [("U4", "7"), (xa - 4 * G, ysda)])
+    b.wire("SDA1", [("U4", "2"), (xa - 4 * G, ysda)])
     b.wire("SDA1", [(xa, ysda), ("R26", "2")])
     b.port("SDA1", "bidirectional", side="left", pos=(xa - 4 * G, ysda))
-    b.wire("SCL1", [("U4", "6"), (xb - 4 * G, yscl)])
+    b.wire("SCL1", [("U4", "3"), (xb - 4 * G, yscl)])
     b.wire("SCL1", [(xb, yscl), ("R27", "2")])
     b.port("SCL1", "bidirectional", side="left", pos=(xb - 4 * G, yscl))
     yint = b.syms["U5"].pin_xy("7")[1]
@@ -93,11 +97,11 @@ def block(N=2):
     # DNP controller-side pull-ups
     xr28, xr29 = X + 29 * G, X + 37 * G
     b.sym("R28", "Device:R", "4.7k", R0402, {"1": "CTRL_3V3", "2": "CTRL_SDA"}, at=(xr28, ysda - 7 * G), dnp=True,
-          desc="DNP: the controller's J8 bus carries the pull-ups")
+          desc="DNP: the controller's J8 bus carries the pull-ups (2.2k, on ISO1640 side 2)")
     b.sym("R29", "Device:R", "4.7k", R0402, {"1": "CTRL_3V3", "2": "CTRL_SCL"}, at=(xr29, ysda - 7 * G), dnp=True)
-    b.wire("CTRL_SDA", [("U4", "2"), ("J2", "4")])
+    b.wire("CTRL_SDA", [("U4", "7"), ("J2", "4")])
     b.wire("CTRL_SDA", [(xr28, ysda), ("R28", "2")])
-    b.wire("CTRL_SCL", [("U4", "3"), ("J2", "3")])
+    b.wire("CTRL_SCL", [("U4", "6"), ("J2", "3")])
     b.wire("CTRL_SCL", [(xr29, yscl), ("R29", "2")])
     # daisy chain J2 -> J3: INT innermost (closest to the connectors)
     for net, pin, x in (("CTRL_INT", "5", xj - 18 * G), ("CTRL_SDA", "4", xj - 20 * G), ("CTRL_SCL", "3", xj - 22 * G)):
