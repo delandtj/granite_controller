@@ -4070,7 +4070,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "DNP: the controller's J8 bus carries the pull-ups (2.2k, on ISO1640 side 2)"
 			(at 237.49 104.14 0)
 			(hide yes)
 			(show_name no)
