@@ -30,8 +30,8 @@ boards now live side by side:
     on every board. ISO1044 per core, MCP2518FD on the G070 (G0B1
     FDCAN1 on the same PB8 / PB9 as a drop-in build), controller
     MCP2518FD on the W5500 SPI + TCAN1044V. AUX_12V OR'ed from every
-    core feeds the controller. Right-end termination: two solder
-    jumpers on the last board.
+    core feeds the controller. Right-end termination: two jumper
+    caps on a 2x2 header on the last board.
   - Projects: power/pp-48-fd/tools (copied generator), power/pp-48-core-fd
     (68.0 x 72.0 mm: 12 mm wider for the link domain's >= 2 mm
     isolation channels), power/pp-48-unit-fd (78.6 x 72.1),
@@ -83,10 +83,17 @@ boards now live side by side:
     Halo Gorgon board's own DC input (R1). The 2026-10-28 wording was
     wrong and is fixed everywhere.
 - Next, board changes the answers need (FD only, DRC + stock again):
-  - core-fd / unit-fd: JP1 / JP2 and JP301 / JP302 solder jumpers ->
-    a 2x2 2.54 mm pin header + two jumper caps (pick parts at JLC).
+  - Done: core-fd / unit-fd termination is now one 2x2 2.54 mm header
+    each (JP1 / JP301, C492419 XFCN PZ254V-12-4P, extended, ~59.7k in
+    stock): 1 CANH / 2 TERM_H, 3 CANL / 4 TERM_L, caps on 1-2 and 3-4.
+    Caps: C5305 (2.54 mm open-top, ~911k in stock), not assembled,
+    two per row (last board). core-fd's link plug J2 has a pin-1 silk
+    mark (F and B). Scripts: pp-48-fd/tools/fd/core_term.py,
+    unit_term.py (fd_layout.sh header). ERC 0; DRC 0 errors / 0
+    unconnected / parity clean (unit: rev D's 6 pth_inside_courtyard);
+    core isocheck 2.0: 0 pairs. Add C492419 to the JLC rotation check.
   - controller-fd: J15 right-angle socket -> keyed 2x3 box header,
-    pin 1 marked; core-fd's link plug gets a pin-1 silk mark.
+    pin 1 marked.
 - Next, checks still open (ADR checklists):
   - OV_KILL 22.7 V vs the Halo Gorgon board's maximum DC input (not
     known: board spec or vendor; lower the TPS3701 threshold if < ~24 V).

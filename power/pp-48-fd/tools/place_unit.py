@@ -9,7 +9,7 @@ connectors J301 / J302. The four link nets cross the board on B in the pad-free 
 (tools/route_unit.py link()). To make room: the margin's Q10 / R31 move up above the plug; in the strip
 the bulk cap C201 turns 270 (its VIN pad up into the XT60's pour, GND pad down; the body clears the
 socket's pins and stays out of slot B's module outline), C202 moves left beside it on B, hole H3 moves
-1.5 mm up. Termination (JP301 / JP302, R301 / R302, C301): on F in the margin above the plug (the strip by the socket
+1.5 mm up. Termination (2x2 jumper-cap header JP301, R301 / R302, C301): on F in the margin above the plug (the strip by the socket
 has no room left: the XT60's VIN pour, C201, H3); the pair runs on to the socket, a ~65 mm stub beyond the
 termination on the last board (~0.4 ns, nothing at 2 Mbit/s).
 
@@ -83,8 +83,10 @@ HOLES = {'H1': (LEFT + 4.0, Y0 + 4.0), 'H2': (LEFT + 4.0, Y0 + 68.0)}   # left m
 MARGIN = {'Q10': (LEFT + 4.5, Y0 + 25.5, 0, F), 'R31': (LEFT + 4.5, Y0 + 22.7, 0, F)}
 # CAN FD split termination (ADR 0006 decision 8) in the margin above the link plug J303, on F (the strip by the
 # socket J304 has no room: XT60 VIN pour, C201, H3); tools/route_unit.py link_term() ties it to the B rows
-TERM = {'JP301': (98.0, 116.5, 90, F), 'JP302': (95.0, 116.5, 270, F), 'R301': (98.0, 112.4, 90, F),
-        'R302': (95.0, 112.4, 270, F), 'C301': (96.5, 109.6, 0, F)}
+# (2x2 jumper-cap header JP301, origin = pin 1 CANH; rot 90: pin 2 TERM_H above it, pins 3 / 4 CANL / TERM_L
+# to the right; the resistors over its TERM row, C301 above them)
+TERM = {'JP301': (95.0, 117.4, 90, F), 'R301': (95.0, 111.4, 90, F), 'R302': (97.54, 111.4, 270, F),
+        'C301': (96.27, 108.6, 0, F)}
 # slot B's LED resistors (rev1 COL R21 / R22 + 50) sit right under the expander's bottom row in slot B: down
 # 1.8 mm on B, so U_OFF (pin 12) gets its escape via there (tools/route_unit.py escapes())
 SLOT_B = {'R71': (X0 + rev1.PITCH + 11.4, Y0 + 43.4, 90, B), 'R72': (X0 + rev1.PITCH + 12.8, Y0 + 43.4, 90, B),

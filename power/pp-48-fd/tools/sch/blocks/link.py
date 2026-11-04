@@ -23,10 +23,12 @@ the controller, never tied to the plane's GND.
 - D8 / D9 NUP2105L: 2-line CAN TVS (24 V working) on CANH / CANL at each
   connector.
 - Right-end split termination (decision 8): R25 / R26 2 x 60.4R, C32 4.7 nF
-  from the mid point to LINK_GND, behind JP1 / JP2 (one solder jumper in
-  each leg, open by default, both closed on the last board of the row).
-  Two jumpers so that an open termination leaves no capacitive load on one
-  line only.
+  from the mid point to LINK_GND, behind the 2x2 2.54 mm pin header JP1
+  (C492419): 1 CANH / 2 TERM_H and 3 CANL / 4 TERM_L, one jumper cap per
+  leg (1-2, 3-4). No caps by default; both caps fitted on the last board of
+  the row (two standard 2.54 mm caps, e.g. C5305, not assembled, not in the
+  board BOM). Two legs so that an open termination leaves no capacitive
+  load on one line only.
 
 Coordinates are in grid units of 1.27 mm (P(x, y)).
 """
@@ -39,7 +41,10 @@ PLUG = "Connector_PinHeader_2.54mm:PinHeader_2x03_P2.54mm_Horizontal"
 SOCKET = "Connector_PinSocket_2.54mm:PinSocket_2x03_P2.54mm_Horizontal"
 PLUG_FIELDS = {"LCSC": "C239334", "MPN": "CJT A2541WR-2x3P"}
 SOCKET_FIELDS = {"LCSC": "C5333425", "MPN": "CJT A2541HWR-2x3P"}
-JUMPER = "Jumper:SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm"
+TERM_SYM = "Connector_Generic:Conn_02x02_Odd_Even"
+TERM_FP = "Connector_PinHeader_2.54mm:PinHeader_2x02_P2.54mm_Vertical"
+TERM_HDR = {"LCSC": "C492419", "MPN": "XFCN PZ254V-12-4P"}
+TERM_CAP = "C5305"                                # 2.54 mm jumper cap (accessory: 2 per row, last board)
 PINS = {"1": "CANH", "2": "CANL", "3": "LINK_GND", "4": "LINK_GND", "5": "AUX_12V", "6": "AUX_12V"}
 ESD = ("Power_Protection:NUP2105L", "NUP2105L", "Package_TO_SOT_SMD:SOT-23",
        {"LCSC": "C14486", "MPN": "onsemi NUP2105LT1G"})
@@ -64,24 +69,25 @@ def connectors(b, j_in, j_out, x, y_in, y_out, nets=PINS):
 
 
 def termination(b, refs, x, y, lgnd="LINK_GND"):
-    """split termination behind two solder jumpers; refs = (JP CANH, R, R, C, JP CANL), row at y"""
-    jh, ra, rb, c, jl = refs
-    b.sym(jh, "Jumper:SolderJumper_2_Open", "TERM", JUMPER, {"1": "CANH", "2": "TERM_H"}, at=P(x, y), bom=False,
-          desc="right-end termination, CANH leg: open by default; close %s and %s on the last board of the row" % (jh, jl))
-    b.sym(ra, "Device:R", "60.4", R0603, {"1": "TERM_H", "2": "TERM_MID"}, at=P(x + 14, y), rot=90, fields=TERM_R,
+    """split termination behind a 2x2 jumper-cap header; refs = (JP header, R CANH leg, R CANL leg, C), header at
+    (x, y): 1 CANH / 2 TERM_H on row y, 3 CANL / 4 TERM_L on row y + 2; a cap on 1-2 and one on 3-4 close it"""
+    j, ra, rb, c = refs
+    b.sym(j, TERM_SYM, "TERM", TERM_FP, {"1": "CANH", "2": "TERM_H", "3": "CANL", "4": "TERM_L"}, at=P(x, y),
+          fields=TERM_HDR,
+          desc="right-end termination, 2x2 2.54 mm header: jumper caps on 1-2 (CANH) and 3-4 (CANL), both on the "
+               "last board of the row only, none elsewhere (caps %s, not assembled)" % TERM_CAP)
+    xr = x + 6                                       # header pins 2 / 4
+    b.sym(ra, "Device:R", "60.4", R0603, {"1": "TERM_H", "2": "TERM_MID"}, at=P(xr + 13, y), rot=90, fields=TERM_R,
           desc="split termination 2 x 60.4R 0603 (dominant ~2 V: ~17 mW each)")
-    b.sym(rb, "Device:R", "60.4", R0603, {"1": "TERM_MID", "2": "TERM_L"}, at=P(x + 30, y), rot=90, fields=TERM_R)
-    b.sym(c, "Device:C", "4.7n", C0402, {"1": "TERM_MID", "2": lgnd}, at=P(x + 22, y + 6), fields=TERM_C,
+    b.sym(rb, "Device:R", "60.4", R0603, {"1": "TERM_MID", "2": "TERM_L"}, at=P(xr + 13, y + 4), rot=270, fields=TERM_R)
+    b.sym(c, "Device:C", "4.7n", C0402, {"1": "TERM_MID", "2": lgnd}, at=P(xr + 30, y + 2), rot=90, fields=TERM_C,
           desc="split termination common-mode cap to LINK_GND")
-    b.sym(jl, "Jumper:SolderJumper_2_Open", "TERM", JUMPER, {"1": "TERM_L", "2": "CANL"}, at=P(x + 44, y), bom=False,
-          desc="right-end termination, CANL leg (closed together with %s)" % jh)
-    b.wire("TERM_H", [(jh, "2"), (ra, "1")])
-    b.wire("TERM_MID", [(ra, "2"), (rb, "1")])
-    b.wire("TERM_MID", [P(x + 22, y), (c, "1")])
-    b.name("TERM_MID", at=P(x + 18, y))
-    b.wire("TERM_L", [(rb, "2"), (jl, "1")])
-    b.tie("CANH", (jh, "1"), 180)
-    b.tie("CANL", (jl, "2"), 0)
+    b.wire("TERM_H", [(j, "2"), (ra, "1")])
+    b.wire("TERM_L", [(j, "4"), P(xr + 1, y + 2), P(xr + 1, y + 4), (rb, "2")])
+    b.wire("TERM_MID", [(ra, "2"), P(xr + 18, y), P(xr + 18, y + 4), (rb, "1")])
+    b.wire("TERM_MID", [P(xr + 18, y + 2), (c, "1")])
+    b.tie("CANH", (j, "1"), 180)
+    b.tie("CANL", (j, "3"), 180)
 
 
 def block(N=2):
@@ -139,7 +145,7 @@ def block(N=2):
               desc="CAN ESD / TVS (24 V working) on CANH / CANL at %s" % ("J2 LINK IN" if d == "D8" else "J3 LINK OUT"))
         b.tie("CANH", (d, "1"), 90)
         b.tie("CANL", (d, "2"), 90)
-    termination(b, ("JP1", "R25", "R26", "C32", "JP2"), XJ - 10, Y + 34)
+    termination(b, ("JP1", "R25", "R26", "C32"), XJ - 10, Y + 34)
 
     for ref, mpn in (("C24", "Samsung CL05B104KO5NNNC"), ("C25", "Samsung CL05B104KO5NNNC"),
                      ("C26", "Samsung CL10A475KO8NNNC"), ("C27", "Samsung CL10A105KB8NNNC")):
@@ -151,5 +157,5 @@ def block(N=2):
     b.text("PLANE (+3V3 / GND)", P(X - 22, Y - 20))
     b.text("LINK DOMAIN (LINK_GND)", P(X + 4, Y - 20))
     b.text("LINK  J2 IN plug / J3 OUT socket: 1 CANH 2 CANL 3/4 LINK_GND 5/6 AUX_12V", P(XJ - 10, Y - 24))
-    b.text("TERMINATION  close JP1 + JP2 on the last board of the row only", P(XJ - 10, Y + 28))
+    b.text("TERMINATION  JP1: jumper caps on 1-2 and 3-4 on the last board of the row only", P(XJ - 10, Y + 28))
     return b.finish()

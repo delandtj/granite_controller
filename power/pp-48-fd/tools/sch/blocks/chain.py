@@ -43,7 +43,7 @@ chain the unit carries the plane link, a 2x3 plug J303 (left, by J301) and
 a 2x3 socket J304 (right, by J302) of the same CJT A2541 series, CANH,
 CANL, LINK_GND, AUX_12V straight through (pin n = pin n), plus the
 right-end split termination (R301 / R302 60.4R, C301 4.7 nF) behind the
-solder jumpers JP301 / JP302 (plane_link(); parts and pinout in link.py).
+2x2 jumper-cap header JP301 (plane_link(); parts and pinout in link.py).
 
 Coordinates are in grid units of 1.27 mm (P(x, y)).
 """
@@ -136,17 +136,18 @@ def plane_link(b):
     """unit: the CAN FD plane link straight through (docs/adr/0006-plane-link-can-fd.md decision 3): link plug
     J303 beside the chain plug J301 (left edge), link socket J304 beside the chain socket J302 (right edge),
     pin n = pin n, four nets by name (local to this board: no part but the termination touches them), and the
-    right-end split termination on the socket side behind JP301 / JP302 (open; closed on the last board)."""
+    right-end split termination on the socket side behind the 2x2 jumper-cap header JP301 (no caps; both caps
+    on the last board)."""
     link.connectors(b, "J303", "J304", 40, 72, 92)
     for j in ("J303", "J304"):
         for num in ("3", "5"):
             b.tie(link.PINS[num], (j, num), 180)
         for num in ("4", "6"):
             b.tie(link.PINS[num], (j, num), 0)
-    link.termination(b, ("JP301", "R301", "R302", "C301", "JP302"), 80, 92)
-    b.tie("LINK_GND", ("C301", "2"), 270)
+    link.termination(b, ("JP301", "R301", "R302", "C301"), 80, 92)
+    b.tie("LINK_GND", ("C301", "2"), 0)
     b.text("PLANE LINK  J303 IN plug / J304 OUT socket, 1 CANH 2 CANL 3/4 LINK_GND 5/6 AUX_12V straight through (ADR 0006)", P(20, 62))
-    b.text("TERMINATION  close JP301 + JP302 on the last board of the row only", P(70, 86))
+    b.text("TERMINATION  JP301: jumper caps on 1-2 and 3-4 on the last board of the row only", P(70, 86))
 
 
 def deadline(b):
