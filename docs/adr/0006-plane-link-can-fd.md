@@ -270,6 +270,22 @@ ordered (handoff "Boards ordered": rev C only).
 7. **Controller firmware** (firmware/granite-fw)
    - MCP2518FD driver on the shared SPI, the same transport, EVENT
      frames in place of the EXP_INT GPIO.
+   - One link per image, chosen at build time (user, 2026-11-04):
+     cargo features `link-i2c` (rev D) and `link-canfd` (FD
+     generation), exactly one set (`compile_error!` otherwise). Both
+     drivers sit behind `granite_core::hal::PlaneLink`; nothing above
+     the link layer knows which is built. Same rule as plane-fw, which
+     builds rev D I2C, FD G070 + MCP2518FD, or FD G0B1 FDCAN.
+   - Wrong-image guard: the image carries its link kind; the OTA
+     upload refuses an image whose kind differs from the board's
+     (strap or NVS board id), and an image that never sees its link
+     hardware (no MCP2518FD on SPI, no ISO1640 side) does not validate
+     and rolls back after probation.
+   - Not chosen: one image that probes for the MCP2518FD at boot and
+     picks the driver at run time. Saves the mix-up, costs both drivers
+     in every image and both paths in every test.
+   - First batch: FD generation only (user, 2026-11-04). The rev D
+     link driver and image are not built until rev D is ordered.
 
 ### Data Flow / Interaction
 

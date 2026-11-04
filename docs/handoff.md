@@ -64,8 +64,12 @@ de43d06), d800949 (no `factory` partition), 7290a45 (dispatcher stack),
   other slot as `size 0, version ""` even when it holds a valid image;
   the rollback call answers with an empty body.
 - Next:
-  - Order rev D (user); then bench the rev D link (clock stretch
-    through the ISO1640, 8-plane rise time).
+  - First batch is the CAN FD generation (user, 2026-11-04), not rev D.
+    Rev D fab sets stay ready; order and bench (clock stretch through
+    the ISO1640, 8-plane rise time) only if rev D comes back.
+  - Firmware builds one link per image (ADR 0006 component 7):
+    `link-canfd` first; `link-i2c` waits for rev D. OTA guard on the
+    link kind.
   - SixUnited answer -> R18 or not.
   - Test automatic rollback (an image that cannot validate).
   - FD: JLC preview checks and 3D models before ordering.
