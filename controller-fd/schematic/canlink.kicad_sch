@@ -5851,7 +5851,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Connector_PinSocket_2.54mm:PinSocket_2x03_P2.54mm_Horizontal"
+		(property "Footprint" "Connector_IDC:IDC-Header_2x03_P2.54mm_Horizontal"
 			(at 314.96 96.52 0)
 			(hide yes)
 			(show_name no)
@@ -5862,7 +5862,7 @@
 				)
 			)
 		)
-		(property "Datasheet" "https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2212141009_CJT-Changjiang-Connectors-A2541HWR-2x3P_C5333425.pdf"
+		(property "Datasheet" "https://www.lcsc.com/datasheet/lcsc_datasheet_1810161728_BOOMELE-Boom-Precision-Elec-2-54-2-3P_C34945.pdf"
 			(at 314.96 96.52 0)
 			(hide yes)
 			(show_name no)
@@ -5873,7 +5873,7 @@
 				)
 			)
 		)
-		(property "Description" "Plane link socket, right edge: 1 CANH, 2 CANL, 3/4 LINK_GND, 5/6 AUX_12V"
+		(property "Description" "Plane link, keyed 2x3 right-angle box header at the right edge (6-pin IDC ribbon to core 1): 1 CANH, 2 CANL, 3/4 LINK_GND, 5/6 AUX_12V"
 			(at 314.96 96.52 0)
 			(hide yes)
 			(show_name no)
@@ -5884,7 +5884,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "CJT"
+		(property "MANUFACTURER" "BOOMELE"
 			(at 314.96 96.52 0)
 			(hide yes)
 			(show_name no)
@@ -5895,7 +5895,7 @@
 				)
 			)
 		)
-		(property "MPN" "A2541HWR-2x3P"
+		(property "MPN" "2.54-2*3P Bent Header"
 			(at 314.96 96.52 0)
 			(hide yes)
 			(show_name no)
@@ -5906,7 +5906,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C5333425"
+		(property "LCSC" "C34945"
 			(at 314.96 96.52 0)
 			(hide yes)
 			(show_name no)
@@ -6224,7 +6224,7 @@
 			)
 		)
 	)
-	(text "J15: CJT A2541 2x3 right-angle socket, mates the core link plug (ADR 0006 decision 3)."
+	(text "J15: keyed 2x3 right-angle box header; pre-made 6-pin IDC ribbon to core 1 link plug (ADR 0006 decision 9)."
 		(exclude_from_sim no)
 		(at 284.48 76.2 0)
 		(effects
@@ -6235,7 +6235,7 @@
 		)
 		(uuid "36bb8082-bf92-5048-a4a2-9d378d538e1d")
 	)
-	(text "Pin n to pin n: 1 CANH, 2 CANL, 3 / 4 LINK_GND (= controller GND), 5 / 6 AUX_12V."
+	(text "Ribbon pin n to plug pin n: 1 CANH, 2 CANL, 3 / 4 LINK_GND (= controller GND), 5 / 6 AUX_12V."
 		(exclude_from_sim no)
 		(at 284.48 80.01 0)
 		(effects

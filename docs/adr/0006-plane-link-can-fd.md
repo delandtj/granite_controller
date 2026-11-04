@@ -166,15 +166,24 @@ ordered (handoff "Boards ordered": rev C only).
    - **TCAN1044VDRQ1** (C1852061, 15487, $0.46), VIO 3V3, VCC 5 V, not
      isolated: the controller's ground is LINK_GND.
    - **Placed anywhere, on a ribbon cable to core 1** (user
-     2026-11-04): a keyed (shrouded) 2x3 2.54 mm box header (vertical
-     C9136, 15900 in stock; right-angle C9141) and a pre-made 6-way
-     2x3 IDC ribbon (the AVR-ISP 6-pin cable, female both ends, pin 1
-     to pin 1, no crimping, <= ~1 m) onto core 1's bare link plug.
-     Conductor order = pin order, so CANH / CANL are neighbours. Core
-     1's end is not keyed: a reversed cable puts AUX_12V on CANH /
-     CANL, which both transceivers survive (+-58 V bus pins) but the
-     link stays down; pin 1 marked in silk. Was: right-angle socket,
-     controller on the bar left of core 1.
+     2026-11-04): a keyed (shrouded) 2x3 2.54 mm box header and a
+     pre-made 6-way 2x3 IDC ribbon (the AVR-ISP 6-pin cable, female
+     both ends, pin 1 to pin 1, no crimping, <= ~1 m) onto core 1's
+     bare link plug. Conductor order = pin order, so CANH / CANL are
+     neighbours. Core 1's end is not keyed: a reversed cable puts
+     AUX_12V on CANH / CANL, which both transceivers survive (+-58 V
+     bus pins) but the link stays down; pin 1 marked in silk. Was:
+     right-angle socket, controller on the bar left of core 1.
+     J15 (done 2026-11-04): right-angle **BOOMELE 2.54-2*3P Bent
+     Header** (C34945, 2717 in stock, $0.13; vertical sibling C11214,
+     50257) on B at the right edge, on the old socket's pad grid, shroud
+     face 4.8 mm past the edge so the ribbon leaves in the board plane
+     through an enclosure wall. C9136 / C9141 (named here before) are
+     2x6 (12-pin) parts. Pin n of J15 = pin n of core 1's plug: both
+     ends are the same mating interface (female IDC on a male 2x3 with
+     the same odd / even numbering), so a straight cable maps n to n;
+     a row swap only happens where one end mates a different kind of
+     connector or the cable has one IDC turned round.
      J11-J14 go; 12 V comes from AUX_12V (decision 4).
    - ESD on CANH / CANL at the header: PESD2CANFD24V (C552486).
 

@@ -308,21 +308,21 @@ cap('C61', '4.7u', 213.36, 68.58, P5V, GND, 'C19666', 'CL10A475KO8NNNC', 'Samsun
 cap('C62', '100n', 223.52, 68.58, P3V3, GND, 'C1525', 'CL05B104KO5NNNC', 'Samsung')
 text('U24 VCC / VIO', 200.66, 60.96)
 
-# ---------------------------------------------------------------- link socket
+# ---------------------------------------------------------------- link box header
 JX, JY = 314.96, 96.52
 part('Connector_Generic:Conn_02x03_Odd_Even', 'J15', 'PLANE_LINK', JX, JY, {
     '1': ('net', 'CANH'), '2': ('net', 'CANL'),
     '3': GND, '4': GND,
     '5': ('g', 'AUX_12V', 'output'), '6': ('g', 'AUX_12V', 'output'),
-}, {'Footprint': 'Connector_PinSocket_2.54mm:PinSocket_2x03_P2.54mm_Horizontal',
-    'Datasheet': 'https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2212141009_CJT-Changjiang-Connectors-A2541HWR-2x3P_C5333425.pdf',
-    'Description': 'Plane link socket, right edge: 1 CANH, 2 CANL, 3/4 LINK_GND, 5/6 AUX_12V',
-    'MANUFACTURER': 'CJT', 'MPN': 'A2541HWR-2x3P', 'LCSC': 'C5333425'},
+}, {'Footprint': 'Connector_IDC:IDC-Header_2x03_P2.54mm_Horizontal',
+    'Datasheet': 'https://www.lcsc.com/datasheet/lcsc_datasheet_1810161728_BOOMELE-Boom-Precision-Elec-2-54-2-3P_C34945.pdf',
+    'Description': 'Plane link, keyed 2x3 right-angle box header at the right edge (6-pin IDC ribbon to core 1): 1 CANH, 2 CANL, 3/4 LINK_GND, 5/6 AUX_12V',
+    'MANUFACTURER': 'BOOMELE', 'MPN': '2.54-2*3P Bent Header', 'LCSC': 'C34945'},
     stub=7.62, ref_off=(0, -6.35), val_off=(0, 7.62))
-text('J15: CJT A2541 2x3 right-angle socket, mates the core link plug (ADR 0006 decision 3).', 284.48, 76.2)
-text('Pin n to pin n: 1 CANH, 2 CANL, 3 / 4 LINK_GND (= controller GND), 5 / 6 AUX_12V.', 284.48, 80.01)
+text('J15: keyed 2x3 right-angle box header; pre-made 6-pin IDC ribbon to core 1 link plug (ADR 0006 decision 9).', 284.48, 76.2)
+text('Ribbon pin n to plug pin n: 1 CANH, 2 CANL, 3 / 4 LINK_GND (= controller GND), 5 / 6 AUX_12V.', 284.48, 80.01)
 
-# ESD at the socket
+# ESD at the header
 part('Power_Protection:NUP2105L', 'D13', 'PESD2CANFD24V-TR', 287.02, 134.62, {
     '1': ('net', 'CANH'), '2': ('net', 'CANL'), '3': GND,
 }, {'Footprint': 'Package_TO_SOT_SMD:SOT-23',

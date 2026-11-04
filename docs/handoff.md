@@ -73,8 +73,9 @@ boards now live side by side:
     recovery, counted; EVENT stays a bare flag.
   - FD right-end termination: jumper caps on a 2x2 pin header per
     board (was two solder jumpers), both caps on the last board.
-  - FD controller sits anywhere: keyed 2x3 box header (vertical C9136
-    or right-angle C9141) and a pre-made 6-pin 2x3 IDC ribbon (AVR-ISP
+  - FD controller sits anywhere: keyed 2x3 box header (right-angle
+    C34945 fitted as J15; C9136 / C9141 were 2x6 parts) and a
+    pre-made 6-pin 2x3 IDC ribbon (AVR-ISP
     type, <= ~1 m) onto core 1's bare link plug (was the right-angle
     socket J15 on the bar).
   - Every future plane type provides the isolated 12 V aux; the core
@@ -85,8 +86,10 @@ boards now live side by side:
 - Next, board changes the answers need (FD only, DRC + stock again):
   - core-fd / unit-fd: JP1 / JP2 and JP301 / JP302 solder jumpers ->
     a 2x2 2.54 mm pin header + two jumper caps (pick parts at JLC).
-  - controller-fd: J15 right-angle socket -> keyed 2x3 box header,
-    pin 1 marked; core-fd's link plug gets a pin-1 silk mark.
+  - controller-fd: J15 right-angle socket -> keyed 2x3 box header:
+    done (C34945 right-angle on B, same pad grid, pin 1 at the bottom
+    of the column, ERC 0, DRC 0 errors / 0 unconnected / parity clean).
+    Still: core-fd's link plug gets a pin-1 silk mark.
 - Next, checks still open (ADR checklists):
   - OV_KILL 22.7 V vs the Halo Gorgon board's maximum DC input (not
     known: board spec or vendor; lower the TPS3701 threshold if < ~24 V).

@@ -62,7 +62,7 @@ def main(argv):
         b.Add(t)
         grp.AddItem(t)
     # C62 (VIO 100n) straight onto U24 pin 5 below it, its own plane vias
-    # beside it (the gap to J15 pin 5 is too tight for viaout)
+    # beside it (the gap to J15 pin 1 is too tight for viaout)
     c1, c2, vio = pad("C62", "1"), pad("C62", "2"), pad("U24", "5")
     x1, y1 = c1.GetPosition().x, c1.GetPosition().y
     x2, y2 = c2.GetPosition().x, c2.GetPosition().y
