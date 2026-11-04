@@ -2157,7 +2157,7 @@
 		)
 		(uuid "bf3ef7fa-acb9-5f84-987f-9df3a68e17cd")
 	)
-	(text "MCP2518FD: SPI <= 17 MHz at SYSCLK 40 MHz (its own transactions; W5500 nCS GPIO18 stays). nINT push-pull after reset (IOCON.INTOD = 0), 10k pull-up holds it high before init. GPIO0 / GPIO1 / CLKO unused: firmware sets INT0 / INT1 as outputs."
+	(text "MCP2518FD: SPI <= 17 MHz at SYSCLK 40 MHz (its own transactions; W5500 nCS GPIO18 stays). nINT push-pull after reset (IOCON.INTOD = 0), 10k pull-up holds it high before init. GPIO0 / GPIO1 / CLKO unused; INT0 / INT1 have no pull-ups here: firmware sets them as outputs, low."
 		(exclude_from_sim no)
 		(at 20.32 33.02 0)
 		(effects

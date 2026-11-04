@@ -237,7 +237,7 @@ text('CAN link (ADR 0006 decision 9): MCP2518FD CAN FD controller on the W5500 S
      'nCS GPIO2, nINT GPIO3; TCAN1044V transceiver, STB on GPIO0.', 20.32, 25.4)
 text('Not isolated: the controller ground is LINK_GND (link pins 3 / 4); its 12 V is AUX_12V (pins 5 / 6), OR-ed from every core.', 20.32, 29.21)
 text('MCP2518FD: SPI <= 17 MHz at SYSCLK 40 MHz (its own transactions; W5500 nCS GPIO18 stays). nINT push-pull after reset (IOCON.INTOD = 0), '
-     '10k pull-up holds it high before init. GPIO0 / GPIO1 / CLKO unused: firmware sets INT0 / INT1 as outputs.', 20.32, 33.02)
+     '10k pull-up holds it high before init. GPIO0 / GPIO1 / CLKO unused; INT0 / INT1 have no pull-ups here: firmware sets them as outputs, low.', 20.32, 33.02)
 text('Symbol: KiCad MCP2517FD-xSL (MCP2518FD is the pin-compatible successor, SOIC-14).', 20.32, 36.83)
 
 # ---------------------------------------------------------------- MCP2518FD

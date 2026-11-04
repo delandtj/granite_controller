@@ -1,6 +1,6 @@
 # pcbkit settings for the granite controller FD (CAN FD generation; outline values from rev D) (4L JLC, 105 x 50 mm,
-# ESP32-C6 + W5500, CAN FD plane link with AUX_12V in). FD generation: schematic only so far,
-# layout values below are rev D's and still to revise. Board tools: ~/Electronics/pcbkit.
+# ESP32-C6 + W5500, CAN FD plane link with AUX_12V in). Board: tools/fd_build.sh rebuilds it
+# from the routed rev D board. Board tools: ~/Electronics/pcbkit.
 
 [project]
 name = "granite-controller-fd"
@@ -86,5 +86,13 @@ width = 0.25
 gap = 0.15
 
 [jlcfab]
-# per-LCSC rotation corrections (see power/pp-48-unit/pcbkit.toml for the method, 2026-10-30)
-corrections = []
+# per-LCSC rotation corrections (see power/pp-48-unit/pcbkit.toml for the method, 2026-10-30).
+# FD parts fitted 2026-11-04 from the easyeda2kicad footprints (numbered pads onto ours at
+# rotation 0; the same fit gives pcbkit's generic SOIC-8 270, which also covers U24 C1852061;
+# Y3 C9010 matches pcbkit's generic ABM8G entry, 0).
+corrections = [
+    ["^PinSocket_2x03_P2.54mm_Horizontal$", "C5333425", 270, 0.0, 0.0],     # J15: EasyEDA origin = pad-array centre = jlcfab THT reference
+    ["^SOIC-14_3.9x8.7mm_P1.27mm$", "C626758", 270, 0.0, 0.0],             # U23 MCP2518FD
+    ["^SOIC-8_3.9x4.9mm_P1.27mm$", "C1852061", 270, 0.0, 0.0],             # U24 TCAN1044V
+    ["^SOT-23$", "C552486", 180, 0.0, 0.0],                                 # D13 PESD2CANFD24V
+]

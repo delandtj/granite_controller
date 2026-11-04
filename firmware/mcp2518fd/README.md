@@ -51,13 +51,13 @@ the first `len` bytes.
 
 ## Deliberate omissions
 
-**No INT0 / INT1 as GPIO outputs.** Both boards pull those pins up (the
-core's R35 / R36, the controller's 10k), so their power-on state -- GPIO
-inputs -- already leaves them defined, and driving them would only fight
-the pull-up. The controller schematic note "firmware sets INT0 / INT1 as
-outputs" (`controller-fd/tools/gen_canlink.py`) predates that reading and
-is worth revisiting rather than implementing. The pins are unused on both
-designs.
+**No INT0 / INT1 helper.** The pins are unused on both designs. The
+plane core pulls them up (R35 / R36), so their power-on state -- GPIO
+inputs -- is defined there. The controller (controller-fd U23 pins 8 / 9)
+leaves them unconnected, so its firmware should make them outputs driven
+low after init. That case is reachable without a helper: a 32-bit
+`IOCON` write through `inner()` clears `LAT0` / `LAT1` (see below), which
+gives outputs at low; only "outputs at high" would need the byte write.
 
 Reaching them would need `IOCON` byte writes anyway: a 32-bit write to
 `IOCON` clears `LAT0` / `LAT1` (erratum DS80000789F item 5), and
