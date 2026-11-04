@@ -89,7 +89,8 @@ boards now live side by side:
     pin 1 marked; core-fd's link plug gets a pin-1 silk mark.
 - Next, checks still open (ADR checklists):
   - OV_KILL 22.7 V vs the Halo Gorgon board's maximum DC input (not
-    known: board spec or vendor; lower the TPS3701 threshold if < ~24 V).
+    known: asked SixUnited 2026-11-04; if < ~24 V, R18 on PM-19V-250W-B
+    84.5k -> 76.8k, see ADR 0003. U2 MCP65R46 sets it, not the TPS3701).
   - DG128 drawing and second source; node connector soak test; unit
     hot-swap power limit / timer vs two slot insertions; where the slot
     output voltage is read (ADR 0001).

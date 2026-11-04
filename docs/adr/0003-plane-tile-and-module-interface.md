@@ -507,7 +507,12 @@ Review asks (answered 2026-10-26):
 - [ ] OV_KILL at 22.7 V against the node's input rating: the node is
   the Halo Gorgon board's own 19 V DC input (R1). Its maximum input
   voltage is not known yet (user 2026-11-04): find it in the board's
-  spec or ask the vendor; lower the TPS3701 threshold if it is under
-  ~24 V.
+  spec or ask the vendor (asked SixUnited 2026-11-04). OV_KILL is U2
+  (MCP65R46-2.4) on PM-19V-250W-B with R18 84.5k / R19 10k; the TPS3701
+  there is the 66.6 V VIN OVLO, not this trip. If the limit is under
+  ~24 V: R18 76.8k gives 20.83 V nominal (20.06-21.63 V worst case at
+  +/-2 % reference, 1 % resistors, reference accuracy still to check
+  in the MCP65R46 datasheet), still clear of the module's 19.31 V
+  maximum output.
 - [x] Spare aux contact: the second GND (A6, docs/pm-interface.md).
 - [ ] Node connector fluid compatibility (soak test).

@@ -67,6 +67,8 @@ remote_component = { name = "espressif/mdns", version = "^1.8.2" }
 # lwIP (ADR 0001, "Two OTA slots of 2.5 MB each").
 [profile.release]
 opt-level = "s"
+# -199 KB on 2026-11-04 (1.85 -> 1.65 MB, 70.7 -> 63.1 % of a slot).
+lto = true
 
 [profile.dev]
 debug = true
