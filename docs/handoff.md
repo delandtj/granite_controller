@@ -1,10 +1,64 @@
-# Handoff - granite-plane (updated 2026-11-04)
+# Handoff - granite-plane (updated 2026-11-04, evening)
 
 Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
 
+## 2026-11-04 (afternoon): FD board changes done, factory partition dropped, rev C bench
+
+State: master = origin/master (1c9876c), tree clean. Commits today
+after a497b0e: aadc3c6 (OV_KILL part named right, lto), 794cd51 /
+75cc383 (FD box header, FD termination header, merges c09c53d /
+de43d06), d800949 (no `factory` partition), 7290a45 (dispatcher stack),
+1c9876c (DHCP restart after AutoIP).
+
+- Rev D is ready to order: fab sets in fab/ of pp-48-core, pp-48-unit,
+  controller regenerated and checked (details below). Not ordered.
+- FD boards: termination header, controller box header, J2 pin-1 mark
+  done (details below). Before an FD order: JLC preview of C492419,
+  C34945, 3D models.
+- OV_KILL: asked SixUnited for the Halo Gorgon board's maximum barrel
+  jack voltage (user, 2026-11-04). Waiting. The trip is U2 MCP65R46 +
+  R18 / R19 on PM-19V-250W-B; fallback R18 84.5k -> 76.8k (20.8 V
+  nominal; MCP65R46 reference accuracy still to check in its
+  datasheet). Plane boards do not change.
+- Rev C bench board (granite-cb374b, 192.168.64.115 by DHCP, on
+  /dev/ttyACM0; admin password: ask the user). Flash backup of its old
+  layout: ~/Granite/attic/revc-90649bcb3748-flash-2026-11-04.bin
+  (`espflash write-bin 0 <file>` restores it). Tested on it:
+  - New partition layout, wired migration from the old one: works,
+    settings / cert / recovery token kept.
+  - OTA push over HTTPS (`POST /api/v1/firmware/upload`, session cookie
+    from `POST /api/v1/session`), probation, confirm via the broker
+    (mosquitto here, ~/.local/share/granite-mqtt/mosquitto.conf, on
+    192.168.64.99:8883): works, into both
+    slots. `POST /api/v1/firmware/rollback`: works (ota_0 -> ota_1).
+  - Not tested: automatic rollback of an image that never validates.
+- DHCP / AutoIP race (fixed in 1c9876c, platform/net.rs): after a cable
+  replug, a lease arrived at 17.1 s just as lwIP started AutoIP, and
+  169.254.x replaced it 0.6 s later; DHCP then thought it was bound and
+  the lease only came back at ~270 s (most of the 600 s OTA
+  probation). The firmware now watches IP events, and when AutoIP
+  displaces a lease it restarts the DHCP client (at most once per
+  30 s). Normal boots, 8 soft / OTA / rollback reboots and two cable
+  replugs: lease in 1-14 s, no false restart. The recovery path itself
+  has not fired yet: with the link down lwIP neither counts DHCP tries
+  nor starts AutoIP, so a board-side replug cannot set it up; it needs
+  the link up and DHCP unanswered for ~15 s (switch or router side).
+- Small firmware bugs seen, not fixed: `/api/v1/firmware` lists the
+  other slot as `size 0, version ""` even when it holds a valid image;
+  the rollback call answers with an empty body.
+- Next:
+  - Order rev D (user); then bench the rev D link (clock stretch
+    through the ISO1640, 8-plane rise time).
+  - SixUnited answer -> R18 or not.
+  - Measure stack high-water marks of the other granite-fw threads with
+    lto = true (only the dispatcher overflowed so far).
+  - Test automatic rollback (an image that cannot validate), and the
+    DHCP restart path if a way to delay DHCP is at hand.
+  - FD: JLC preview checks and 3D models before ordering.
+
 ## 2026-11-04: rev D safeguard, CAN FD generation started (ADR 0006)
 
-State: master = origin/master, all pushed, tree clean. Two lines of
+Morning state (see the afternoon section for now). Two lines of
 boards now live side by side:
 
 - **Rev D (cabled, isolated I2C)**: power/pp-48-core, pp-48-unit,
@@ -132,11 +186,8 @@ boards now live side by side:
   boot-looped: stack protection fault in the 12 KB "dispatch" thread
   (PlaneClient 8.5 KB, inlined constructor = two copies in one frame);
   DISPATCH_STACK = 24 KB fixed it (main.rs). Other threads' stack
-  margins with LTO not measured yet. OTA push / rollback on the new
-  layout not tested yet.
-- Next, other: order rev D (core, unit, controller) for the bench; FD
-  3D models and JLC preview checks (C492419, C34945, Y1); bench the rev D link (clock stretch
-  through the ISO1640, 8-plane rise time).
+  margins with LTO not measured yet. OTA on the new layout: see the
+  afternoon section above.
 
 ## 2026-11-02: plane chain without cables (ADR 0005 decisions 4, 7)
 
