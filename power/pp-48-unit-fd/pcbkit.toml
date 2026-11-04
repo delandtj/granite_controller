@@ -1,6 +1,8 @@
 # pcbkit settings for the PP-48 UNIT board, CAN FD link generation (docs/adr/0006-plane-link-can-fd.md, 0005).
-# Copied from power/pp-48-unit; schematic only so far (no .kicad_pcb yet): the outline and rules are the I2C
-# generation's; the link plug J303 / socket J304 and the link nets (decision 12) come with the layout.
+# Copied from power/pp-48-unit; the board is the rev D layout brought onto the CAN FD schematic (2026-11-04,
+# tools/place_unit.py, route_unit.py link()): link plug J303 / socket J304 on B at v 30, the four link nets on B
+# across the board; net class LINK (.kicad_pro) + rule "link to bus" (pp-48-unit-fd.kicad_dru): 0.5 mm to bus nets
+# (decision 12). Steps: ../pp-48-fd/tools/fd_layout.sh.
 # 4L JLC 1.6 mm: F parts and pours, In1 GND, In2 VBUS + the SDA/SCL channel, B parts and pours.
 #
 # 78.5 x 72 mm: 9 mm left margin (chain IN header J301 on B, two M3 holes), slot A (x 100-125), slot B
@@ -33,6 +35,7 @@ layers = { "In1.Cu" = ["power", "GND"], "In2.Cu" = ["mixed", "VBUS"] }
 # name = [track, clearance, via_dia, via_drill]
 Default = [0.2, 0.15, 0.5, 0.2]
 GND     = [0.4, 0.2, 0.6, 0.3]
+LINK    = [0.2, 0.15, 0.5, 0.2]    # CAN FD link nets (patterns in the .kicad_pro); the 0.5 mm to bus nets (ADR 0006 decision 12) is rule "link to bus" in pp-48-unit-fd.kicad_dru
 
 [krt]
 work = "~/.cache/pcbkit/pp-48-unit-fd/route"
@@ -70,6 +73,8 @@ corrections = [
     ["^JST_GH_SM04B-GHS-TB_1x04-1MP_P1.25mm_Horizontal$", "C189895", 0, 0.0, -0.25],
     ["^PinHeader_2x07_P2.54mm_Horizontal$", "C5136987", 90, 0.0, 0.0],      # chain plug: fitted on the body side (EasyEDA numbers the rows the other way; a header has no pin identity)
     ["^PinSocket_2x07_P2.54mm_Horizontal$", "C19100281", 270, 0.0, 0.0],    # chain socket: as the plug
+    ["^PinHeader_2x03_P2.54mm_Horizontal$", "C239334", 270, 0.0, 0.0],      # CAN FD link plug J303: fitted on the body side (EasyEDA numbers the rows the other way; its body is drawn the other way round from the 2x7's, hence 270)
+    ["^PinSocket_2x03_P2.54mm_Horizontal$", "C5333425", 270, 0.0, 0.0],     # CAN FD link socket J304: pads and body both fit
     ["^MSOP-10_3x3mm_P0.5mm$", "C111822", 270, 0.0, 0.0],
     ["^PM_Aux_Socket_2x03_P1.27$", "C41397112", 270, 0.0, 0.0],     # symmetric; our pins are numbered by function
     ["^PM_Standoff_M2x7_SMTSO$", "C2916355", 0, 0.0, 0.0],

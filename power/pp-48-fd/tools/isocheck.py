@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
-"""Check the controller island's isolation on a routed (zone-filled) core board (ADR 0003 decision 14).
-Usage: isocheck.py <board.kicad_pcb> [gap_mm]
+"""Check the link domain's isolation on a routed (zone-filled) core board (ADR 0006 decision 2, ADR 0003
+decision 14). Usage: isocheck.py <board.kicad_pcb> [gap_mm]
 
-Every copper item of the controller world (CTRL_* nets, the link side, L2's secondary SEC2, the 12 V LED)
+Every copper item of the link domain (LINK_GND, the CAN pair and its termination, AUX_12V, ISO_12V, LINK_5V,
+L2's secondary SEC2, the 12 V LED)
 against every bus-world item on the same layer: pads, tracks, vias, zone fills. Lists the pairs closer than
-gap (default 1.0 mm) and the closest pair per layer. The isolators U4 / U5 and L2's own pads are the
+gap (default 1.0 mm) and the closest pair per layer. The isolator U4 and L2's own pads are the
 barrier parts and are left out against each other; their pads still count against everything else.
 """
 import sys
 
 import pcbnew
 
-CTRL_PREFIX = ('CTRL_', '/Link/CTRL_', '/Link/ISO_OUTA')
-CTRL_NETS = ('/Supplies/SEC2', '/Supplies/LED12_A')
-BARRIER = ('U4', 'U5', 'L2')
+CTRL_PREFIX = ('/Link/',)
+CTRL_NETS = ('LINK_GND', 'AUX_12V', 'ISO_12V', 'LINK_5V', '/Supplies/SEC2', '/Supplies/LED12_A')
+BARRIER = ('U4', 'L2')
 
 
 def ctrl(net):

@@ -1,6 +1,7 @@
 # pcbkit settings for the PP-48 CORE board, CAN FD link generation (docs/adr/0006-plane-link-can-fd.md, 0005).
-# Copied from power/pp-48-core; schematic only so far (no .kicad_pcb yet): outline, rules, KRT keep groups,
-# power nets and the JLC corrections below are the I2C generation's and get revised with the layout.
+# Copied from power/pp-48-core; the board is the rev D layout brought onto the CAN FD schematic (2026-11-04,
+# tools/place_core.py, route_core.py): 68 x 72 mm now (grown 8.5 mm left, 3.5 mm right for the link connectors and
+# the link domain's edge channels), origin x 43.5.
 # 4L JLC 1.6 mm: F parts and pours, In1 GND, In2 the VIN plane, B parts and pours.
 #
 # 56 x 72 mm: the rev1 core (x 52-100) without the tile input plus an 8 mm right margin (x 100-108) for
@@ -21,9 +22,9 @@ cell = 14.0
 per_row = 6
 
 [outline]
-length = 56.0
+length = 68.0
 height = 72.0
-origin = [52.0, 100.0]
+origin = [43.5, 100.0]
 hole_refs = ["H1", "H2", "H3", "H4"]
 
 [rules]
@@ -43,8 +44,7 @@ via = [0.5, 0.2]
 track_width = 0.2
 same_net_pad_clearance = 0.15
 signal_layers = ["F.Cu", "B.Cu"]
-# tools/route_core.py copper (CTRL_GND island pours, L2's CTRL_GND pocket and its vias, isolation bands, GND
-# pours)
+# tools/route_core.py copper (LINK_GND pours of the link domain, L2's pocket, isolation bands, GND pours)
 keep_groups = ["hand"]
 # the 3V3 buck's and the Fly-Buck's switch / output loops wider, the rails at power width
 power_nets = ["+3V3", "ISO_12V", "AUX_12V", "LINK_5V", "*SW1", "*SW2", "*VOUT1", "*SEC2"]
@@ -60,7 +60,15 @@ ground = { net = "GND", width = 0.4 }
 # fitting each EasyEDA footprint's numbered pads onto ours (method checked against pcbkit's own
 # LQFP-48 / SOIC-8 / SOIC-4 entries). Still check the JLC placement preview.
 corrections = [
-    # ISO1044 (C2878225), MCP2518FD (C626758), the 2x3 link plug / socket (C239334, C5333425), HT7550-1 SOT-89: to derive with the layout
+    # CAN FD parts, fitted 2026-11-04 (EasyEDA pads onto ours):
+    ["^SOIC-8_3.9x4.9mm_P1.27mm$", "C2878225", 270, 0.0, 0.0],    # ISO1044 U4 (pcbkit's generic SOIC-8 entry, made explicit)
+    ["^SOIC-14_3.9x8.7mm_P1.27mm$", "C626758", 270, 0.0, 0.0],    # MCP2518FD U5
+    ["^SOT-89-3$", "C16106", 180, -0.59, 0.0],                    # HT7550-1 U7: fitted on pins 1 / 3 (the tab pad anchors differ); EasyEDA origin 0.59 mm toward the pins
+    ["^SOT-23$", "C14486", 270, 0.0, 0.0],                        # NUP2105L D8 / D9
+    ["^D_SOD-123$", "C8598", 0, 0.0, 0.0],                        # B5819W D10
+    ["^Crystal_SMD_3225-4Pin_3.2x2.5mm$", "C9010", 0, 0.0, 0.0],  # 40 MHz Y2
+    ["^PinHeader_2x03_P2.54mm_Horizontal$", "C239334", 270, 0.0, 0.0],   # link plug J2: fitted on the body side (EasyEDA numbers the rows the other way, as the 2x7; its body is drawn the other way round from the 2x7's, hence 270, not 90)
+    ["^PinSocket_2x03_P2.54mm_Horizontal$", "C5333425", 270, 0.0, 0.0],  # link socket J3: pads and body both fit
     ["^AMASS_XT30PW-M_1x02_P2.50mm_Horizontal$", "C431092", 180, 0.0, -5.0],
     ["^CP_Elec_10x10$", "C87862", 0, 0.0, 0.0],                     # pad 1 = + on both
     ["^D_SMC$", "C2990209", 0, 0.0, 0.0],

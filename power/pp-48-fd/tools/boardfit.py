@@ -4,7 +4,7 @@ put(): a part at (x, y) absolute, rotation, side. fit(): a part by its
 courtyard box (one edge or centre given per axis), for connectors whose
 origin is a pin. chain(): a JST PH side-entry chain header on B with its
 pin row vertical, pin 1 at the top or bottom and the mating face at the
-given board edge. link(): a right-angle 2x7 chain plug / socket on B, pin 1
+given board edge. link(): a right-angle 2x7 chain or 2x3 link plug / socket on B, pin 1
 at the top, its front (the plug's body, the socket's face) a given distance
 past the board edge.
 """
@@ -73,19 +73,22 @@ def chain(board, ref, edge_x, face, pin1_y, pin1_top):
     raise SystemExit('%s: no orientation fits' % ref)
 
 
-# right-angle 2x7 2.54 mm: the front (plug: body face, the pins go on 6 mm; socket: entry face) from the
-# outer pad row (the even pins, nearer the edge); KiCad's footprints, which match CJT A2541WR / A2541HWR
-FRONT = {'PinHeader_2x07_P2.54mm_Horizontal': 4.04, 'PinSocket_2x07_P2.54mm_Horizontal': 10.03}
+# right-angle 2x7 / 2x3 2.54 mm: the front (plug: body face, the pins go on 6 mm; socket: entry face) from
+# the outer pad row (the even pins, nearer the edge); KiCad's footprints, which match CJT A2541WR / A2541HWR
+# (the 2x3 footprints have the same row geometry as the 2x7: checked 2026-11-04)
+FRONT = {'PinHeader_2x07_P2.54mm_Horizontal': 4.04, 'PinSocket_2x07_P2.54mm_Horizontal': 10.03,
+         'PinHeader_2x03_P2.54mm_Horizontal': 4.04, 'PinSocket_2x03_P2.54mm_Horizontal': 10.03}
 
 
 def link(board, ref, edge_x, face, pin1_y, past=0.0):
-    """2x7 right-angle chain plug / socket on B: pin 1 at pin1_y at the top, rows vertical, the front
-    `past` mm beyond the board edge edge_x, facing 'left' or 'right'"""
+    """2x7 chain / 2x3 link right-angle plug / socket on B: pin 1 at pin1_y at the top, rows vertical, the
+    front `past` mm beyond the board edge edge_x, facing 'left' or 'right'"""
     fp = get(board, ref)
+    last = str(max(int(p.GetNumber()) for p in fp.Pads() if p.GetNumber().isdigit()) - 1)   # last odd pin
     front = FRONT[fp.GetFPID().GetLibItemName().wx_str()]
     for rot in (0, 90, 180, 270):
         fp = put(board, ref, 0.0, 0.0, rot, B)
-        (ax, ay), (bx, by), (ox, _) = pad_xy(fp, '1'), pad_xy(fp, '13'), pad_xy(fp, '2')
+        (ax, ay), (bx, by), (ox, _) = pad_xy(fp, '1'), pad_xy(fp, last), pad_xy(fp, '2')
         outer = ox > ax if face == 'right' else ox < ax
         if abs(ax - bx) < 1e-3 and ay < by and outer:
             s = 1 if face == 'right' else -1
@@ -98,3 +101,12 @@ def solid(board, ref, num):
     for pad in get(board, ref).Pads():
         if pad.GetNumber() == num:
             pad.SetLocalZoneConnection(pcbnew.ZONE_CONNECTION_FULL)
+
+
+def nosilk(board, ref):
+    """drop a footprint's own silkscreen drawing (the right-angle chain / link connectors' bodies hang over
+    the board edge; their outlines stay on Fab)"""
+    fp = get(board, ref)
+    for g in list(fp.GraphicalItems()):
+        if g.GetLayer() in (pcbnew.F_SilkS, pcbnew.B_SilkS) and g.Type() != pcbnew.PCB_FIELD_T:
+            fp.Delete(g)

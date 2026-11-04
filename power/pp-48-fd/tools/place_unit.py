@@ -1,6 +1,19 @@
 #!/usr/bin/env python3
-"""Placement of the PP-48 unit board (docs/adr/0005-chained-plane-boards.md decision 2).
+"""Placement of the PP-48 unit board, CAN FD link generation (docs/adr/0006-plane-link-can-fd.md decisions 3,
+8, 12; docs/adr/0005-chained-plane-boards.md decision 2).
 Usage: place_unit.py <in.kicad_pcb> <out.kicad_pcb>
+
+CAN FD (2026-11-04): the 2x3 link plug J303 (left edge, body flush) and socket J304 (right edge, face 4 mm
+past it), both on B, pin 1 at the top at v 30.0 (the common link height of ADR 0006), above the chain
+connectors J301 / J302. The four link nets cross the board on B in the pad-free band v 19.5-22.5
+(tools/route_unit.py link()). To make room: the margin's Q10 / R31 move up above the plug; in the strip
+the bulk cap C201 turns 270 (its VIN pad up into the XT60's pour, GND pad down; the body clears the
+socket's pins and stays out of slot B's module outline), C202 moves left beside it on B, hole H3 moves
+1.5 mm up. Termination (JP301 / JP302, R301 / R302, C301): on F in the margin above the plug (the strip by the socket
+has no room left: the XT60's VIN pour, C201, H3); the pair runs on to the socket, a ~65 mm stub beyond the
+termination on the last board (~0.4 ns, nothing at 2 Mbit/s).
+
+Rev D notes follow.
 
 DRAFT for review (2026-10-29). 78.5 x 72 mm, board x 91-169.5, y 100-172:
 
@@ -26,13 +39,14 @@ import pcbnew
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import place as rev1                     # noqa: E402  (slot table, module outline)
-from boardfit import F, B, put, fit, link, solid   # noqa: E402
+from boardfit import F, B, put, fit, link, solid, nosilk   # noqa: E402
 
 X0, Y0 = rev1.X0, rev1.Y0                # slot A origin (100, 100)
 LEFT, RIGHT = X0 - 9.0, X0 + 69.5        # board edges
 SX = X0 + 50.0                           # strip origin
 PIN1 = Y0 + 42.5                         # chain pin 1 (top) v 42.5, 7 rows at 2.54 to v 57.74 (as the core)
 PAST = 4.0                               # OUT socket face past the edge (tools/sch/blocks/chain.py)
+LINK1 = Y0 + 30.0                        # link plug / socket pin 1 (top) v 30.0 on every board (ADR 0006)
 
 # strip, (u, v) from the strip's top-left corner (x = SX). Power path top-down on F (VIN column on
 # the left, tools/route_unit.py): XT60 -> C201 -> D201 -> shunts R201 / R202 stacked (VIN pads left,
@@ -40,14 +54,15 @@ PAST = 4.0                               # OUT socket face past the edge (tools/
 # J302, tabs up) -> sources at the bottom edge -> VBUS pour along the bottom and up the column right of
 # J302's pins, via field to In2. The chain band's via ladder sits at u 0.4-3.4, v 57-59.4 (F / B free).
 STRIP = {
-    'C201': (6.4, 29.3, 0, F), 'H3': (16.3, 26.5, 0, F),
+    'C201': (4.5, 27.0, 270, F), 'H3': (16.3, 25.0, 0, F),
     'D201': (6.5, 40.5, 90, F),
     'R201': (4.5, 47.7, 0, F), 'R202': (4.5, 51.7, 0, F),
     'Q202': (3.8, 66.2, 90, F), 'Q203': (9.6, 66.2, 90, F),
     'H4': (16.0, 68.5, 0, F),
     # B: hot-swap controller and monitor behind the shunts, dividers above them (VIN pads of R233 /
     # R235 at u 1.2 / 3.0, under the VIN column)
-    'C202': (7.6, 27.0, 90, B),
+    'C202': (2.6, 26.6, 0, B),
+
     # LM5069 U207 right under the UVLO / OVLO dividers (their outputs drop straight to its left pins), its
     # TIMER cap and PWR / PGD resistors above its right pins; INA238 U208 below it, I2C / +3V3 pins facing
     # slot B (free B space between the slot and the strip), Kelvin taps by R201 / R202's pads
@@ -64,11 +79,18 @@ STRIP = {
 HOLES = {'H1': (LEFT + 4.0, Y0 + 4.0), 'H2': (LEFT + 4.0, Y0 + 68.0)}   # left margin corners
 # press deadline (docs/press-deadline-line.md): LED return FET Q10 and PRESS_EN pull-down R31 on F in the
 # margin, above J301's PRESS_EN pin (13, v 37)
-MARGIN = {'Q10': (LEFT + 4.5, Y0 + 30.0, 0, F), 'R31': (LEFT + 4.5, Y0 + 27.2, 0, F)}
+# (CAN FD: moved up 4.5 mm, out of the link plug J303's pins)
+MARGIN = {'Q10': (LEFT + 4.5, Y0 + 25.5, 0, F), 'R31': (LEFT + 4.5, Y0 + 22.7, 0, F)}
+# CAN FD split termination (ADR 0006 decision 8) in the margin above the link plug J303, on F (the strip by the
+# socket J304 has no room: XT60 VIN pour, C201, H3); tools/route_unit.py link_term() ties it to the B rows
+TERM = {'JP301': (98.0, 116.5, 90, F), 'JP302': (95.0, 116.5, 270, F), 'R301': (98.0, 112.4, 90, F),
+        'R302': (95.0, 112.4, 270, F), 'C301': (96.5, 109.6, 0, F)}
 # slot B's LED resistors (rev1 COL R21 / R22 + 50) sit right under the expander's bottom row in slot B: down
 # 1.8 mm on B, so U_OFF (pin 12) gets its escape via there (tools/route_unit.py escapes())
-SLOT_B = {'R71': (X0 + rev1.PITCH + 11.4, Y0 + 43.4, 90, B), 'R72': (X0 + rev1.PITCH + 12.8, Y0 + 43.4, 90, B)}
-SOLID = [('J201', '1'), ('J201', '2')]
+SLOT_B = {'R71': (X0 + rev1.PITCH + 11.4, Y0 + 43.4, 90, B), 'R72': (X0 + rev1.PITCH + 12.8, Y0 + 43.4, 90, B),
+          # CAN FD: 0.35 mm left, clear of the turned bulk cap C201's courtyard
+          'R58': (X0 + rev1.PITCH + 23.45, Y0 + 25.2, 90, F)}
+SOLID = [('J201', '1'), ('J201', '2'), ('C201', '2')]   # C201 GND: CAN FD, between the VIN column and its vias
 
 
 def main(src, dst):
@@ -98,13 +120,17 @@ def main(src, dst):
     # chain on B, pin 1 at the top: IN plug at the left edge (body flush), OUT socket at the right (face 4 mm out)
     link(board, 'J301', LEFT, 'left', PIN1)
     link(board, 'J302', RIGHT, 'right', PIN1, PAST)
+    link(board, 'J303', LEFT, 'left', LINK1)
+    link(board, 'J304', RIGHT, 'right', LINK1, PAST)
+    for ref in ('J301', 'J302', 'J303', 'J304'):
+        nosilk(board, ref)
     # strip: XT60 mating face at the top edge, then the table
     fit(board, 'J201', 0, F, cx=SX + 8.5, top=Y0 - 0.4)
     for ref, (u, v, rot, side) in STRIP.items():
         put(board, ref, SX + u, Y0 + v, rot, side)
     for ref, (x, y) in HOLES.items():
         put(board, ref, x, y, 0, F)
-    for ref, (x, y, rot, side) in list(MARGIN.items()) + list(SLOT_B.items()):
+    for ref, (x, y, rot, side) in list(MARGIN.items()) + list(SLOT_B.items()) + list(TERM.items()):
         put(board, ref, x, y, rot, side)
     n += len(STRIP) + 4
     for ref, num in SOLID:

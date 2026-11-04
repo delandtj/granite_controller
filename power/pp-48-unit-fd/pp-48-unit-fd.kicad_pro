@@ -515,6 +515,25 @@
         "via_diameter": 0.5,
         "via_drill": 0.2,
         "wire_width": 6
+      },
+      {
+        "bus_width": 12,
+        "clearance": 0.15,
+        "diff_pair_gap": 0.25,
+        "diff_pair_via_gap": 0.25,
+        "diff_pair_width": 0.2,
+        "line_style": 0,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
+        "name": "LINK",
+        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "priority": 0,
+        "schematic_color": "rgba(0, 0, 0, 0.000)",
+        "track_width": 0.2,
+        "tuning_profile": "",
+        "via_diameter": 0.5,
+        "via_drill": 0.2,
+        "wire_width": 6
       }
     ],
     "meta": {
@@ -522,7 +541,28 @@
     },
     "net_colors": {},
     "netclass_assignments": {},
-    "netclass_patterns": []
+    "netclass_patterns": [
+      {
+        "netclass": "LINK",
+        "pattern": "/Chain/CANH"
+      },
+      {
+        "netclass": "LINK",
+        "pattern": "/Chain/CANL"
+      },
+      {
+        "netclass": "LINK",
+        "pattern": "/Chain/LINK_GND"
+      },
+      {
+        "netclass": "LINK",
+        "pattern": "/Chain/AUX_12V"
+      },
+      {
+        "netclass": "LINK",
+        "pattern": "/Chain/TERM_*"
+      }
+    ]
   },
   "pcbnew": {
     "last_paths": {

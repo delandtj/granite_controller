@@ -2,7 +2,13 @@
 """Scripted copper of the PP-48 unit board (group "hand", kept by krt-route).
 Usage: route_unit.py <in.kicad_pcb> <out.kicad_pcb>
 
-docs/adr/0005-chained-plane-boards.md. Run after tools/place_unit.py.
+docs/adr/0005-chained-plane-boards.md, docs/adr/0006-plane-link-can-fd.md. Run after tools/place_unit.py.
+
+- CAN FD link (link()): the link plug J303 to the socket J304 on B in the pad-free band v 19.5-22.5,
+  top-down CANL / CANH (0.2 mm, 0.6 mm apart: the pair), LINK_GND and AUX_12V (0.5 mm), one straight run
+  per net, down to the pins at both ends (the inner column directly, the outer one by a tie between the
+  same-net pins); net class LINK (.kicad_pro) keeps 0.5 mm to everything else (decision 12). B has no
+  bus GND plane under it (In2 is the VBUS plane); the B GND pour keeps the class clearance.
 
 - Slots A (x 100) and B (x 125): tools/route_hand.py's column copper (power
   pours, gate hops, Kelvin, OV latch / arm FF escapes, node pours) and slot
@@ -60,6 +66,7 @@ LAD_U, LAD_DU, LAD_V, LAD_DV = 0.4, 0.6, 59.35, 0.45   # ladder via i at (SX + L
 TRUNK_Y = Y0 + 64.95                    # +3V3 trunk (rev1 height)
 TAPS = (X0 + 11.6, X0 + 36.6)           # trunk tap vias, slot A / B, left of the node terminals J1 / J51
 RST_Y, RST_TAP = Y0 + 31.9, (136.0, Y0 + 31.9)   # EXP_RSTN row J301 pin 14 -> tap by U5 / R30 (above slot A's escapes)
+RST_X = 99.4                            # its vertical (CAN FD: right of the link plug J303's pins)
 
 
 class Unit(rh.Col):
@@ -133,11 +140,16 @@ def band(k):
             k.pad_via(net, (tx, ty), 'SV%d' % i)
     # EXP_RSTN to the expander: its own In2 row from J301 pin 1 up and right to a tap by U5 / R30
     px, py = pad_at(k.b, 'J301', '1')
-    k.track('/EXP_RSTN', [(px, py), (px, RST_Y + 0.4), (px + 0.4, RST_Y), RST_TAP], 0.15, IN2)
+    # (CAN FD: the link plug J303's pins stand on x = px above pin 1: up by a jog to RST_X first)
+    k.track('/EXP_RSTN', [(px, py), (px, py - 1.6), (RST_X, py - 1.6 - (RST_X - px)), (RST_X, RST_Y + 0.4),
+                          (RST_X + 0.4, RST_Y), RST_TAP], 0.15, IN2)
     k.pad_via('/EXP_RSTN', RST_TAP, 'RV1')
     k.track('/EXP_RSTN', [RST_TAP, pad_at(k.b, 'R30', '1')], 0.2, pcbnew.B_Cu)   # tap -> /RESET pull-up (krt-route on to U5)
-    rh.rule_area(k.b, 'band rst', (IN2,), [(px - 0.4, RST_Y - 0.4), (RST_TAP[0] - 0.4, RST_Y - 0.4), (RST_TAP[0] - 0.4, RST_Y + 0.4),
-                                           (px + 0.4, RST_Y + 0.4), (px + 0.4, py - 0.9), (px - 0.4, py - 0.9)],
+    jy = py - 1.6 - (RST_X - px)
+    rh.rule_area(k.b, 'band rst', (IN2,), [(RST_X - 0.4, RST_Y - 0.4), (RST_TAP[0] - 0.4, RST_Y - 0.4), (RST_TAP[0] - 0.4, RST_Y + 0.4),
+                                           (RST_X + 0.4, RST_Y + 0.4), (RST_X + 0.4, jy + 0.17), (px + 0.4, py - 1.6 + 0.17),
+                                           (px + 0.4, py - 0.9), (px - 0.4, py - 0.9), (px - 0.4, py - 1.6 - 0.17),
+                                           (RST_X - 0.4, jy - 0.17)],
                  keep_tracks=True, no_vias=True)
     # +3V3 trunk on In2 (rev1's, 0.4 mm): J301 pin 13 down below the band, right to J302 pin 13, one tap pad
     # via per slot (tools/unitsplit.py gives KRT one +3V3 section per slot and one in the strip)
@@ -208,6 +220,68 @@ def escapes(k):
                  keep_tracks=True, no_vias=True)
 
 
+LINK_Y = {'CANL': 119.6, 'CANH': 120.4, 'LINK_GND': 121.4, 'AUX_12V': 122.4}   # band rows (absolute y)
+LINK_W = {'CANL': 0.2, 'CANH': 0.2, 'LINK_GND': 0.5, 'AUX_12V': 0.5}
+# where each row turns down to its pins: left end (J303) / right end (J304); the outer column (even pins) of the
+# CAN pair is met from above, LINK_GND / AUX_12V reach the inner pin and tie across to the outer one
+LINK_PIN = {'CANL': '2', 'CANH': '1', 'LINK_GND': '3', 'AUX_12V': '5'}
+
+
+def link(k):
+    B = pcbnew.B_Cu
+    xl = {'CANL': pad_at(k.b, 'J303', '2')[0], 'CANH': pad_at(k.b, 'J303', '1')[0]}
+    xl['LINK_GND'], xl['AUX_12V'] = xl['CANH'] + 1.62, xl['CANH'] + 2.62
+    xr = {'CANL': pad_at(k.b, 'J304', '2')[0], 'CANH': pad_at(k.b, 'J304', '1')[0]}
+    xr['LINK_GND'], xr['AUX_12V'] = xr['CANH'] - 1.73, xr['CANH'] - 2.73
+    for n, y in LINK_Y.items():
+        net, w = '/Chain/' + n, LINK_W[n]
+        for ref, x in (('J303', xl[n]), ('J304', xr[n])):
+            px, py = pad_at(k.b, ref, LINK_PIN[n])
+            pts = [(x, y), (x, py)] + ([(px, py)] if abs(px - x) > 1e-3 else [])
+            k.track(net, pts, w, B)
+        k.track(net, [(xl[n], y), (xr[n], y)], w, B)
+    for ref in ('J303', 'J304'):
+        for a, c in (('3', '4'), ('5', '6')):
+            n = '/Chain/LINK_GND' if a == '3' else '/Chain/AUX_12V'
+            k.track(n, [pad_at(k.b, ref, a), pad_at(k.b, ref, c)], 0.5, B)
+
+
+def link_term(k):
+    """the split termination (ADR 0006 decision 8) in the margin above J303 (tools/place_unit.py TERM), on F,
+    tied to the B rows of link() by vias: CANL on its row, CANH on its row, LINK_GND on its left vertical"""
+    F = pcbnew.F_Cu
+    h1, h2 = pad_at(k.b, 'JP301', '1'), pad_at(k.b, 'JP301', '2')       # CANH, TERM_H
+    l1, l2 = pad_at(k.b, 'JP302', '1'), pad_at(k.b, 'JP302', '2')       # TERM_L, CANL
+    r1h, r1m = pad_at(k.b, 'R301', '1'), pad_at(k.b, 'R301', '2')
+    r2m, r2l = pad_at(k.b, 'R302', '1'), pad_at(k.b, 'R302', '2')
+    cm, cg = pad_at(k.b, 'C301', '1'), pad_at(k.b, 'C301', '2')
+    xl, xh = pad_at(k.b, 'J303', '2')[0], pad_at(k.b, 'J303', '1')[0]
+    vl = (xl + 1.26, LINK_Y['CANL'])                     # on the CANL row
+    vh = (xh + 1.02, LINK_Y['CANH'])                     # on the CANH row
+    vg = (xh + 1.62, 124.0)                              # on the LINK_GND vertical
+    k.track('/Chain/CANL', [l2, vl], 0.3, F)
+    k.via('/Chain/CANL', vl)
+    k.track('/Chain/CANH', [h1, vh], 0.3, F)
+    k.via('/Chain/CANH', vh)
+    k.track('/Chain/TERM_H', [r1h, h2], 0.3, F)
+    k.track('/Chain/TERM_L', [r2l, l1], 0.3, F)
+    k.track('/Chain/TERM_MID', [r1m, r2m], 0.3, F)
+    k.track('/Chain/TERM_MID', [cm, (cm[0], r1m[1])], 0.3, F)
+    k.track('/Chain/LINK_GND', [cg, (vg[0] + 0.4, cg[1]), (vg[0] + 0.4, vg[1] - 0.4), vg], 0.4, F)
+    k.via('/Chain/LINK_GND', vg)
+
+
+def margin_press(k):
+    """PRESS_EN in the margin (CAN FD: Q10 / R31 moved above the link plug J303): from J301 pin 2 on F round
+    the left of J303's pins up to Q10 pin 1 and R31 pin 1"""
+    F = pcbnew.F_Cu
+    p2 = pad_at(k.b, 'J301', '2')
+    q1, r1 = pad_at(k.b, 'Q10', '1'), pad_at(k.b, 'R31', '1')
+    x = pad_at(k.b, 'J303', '2')[0] - 2.44                # 0.5 mm + clear of J303's outer pins
+    k.track('/PRESS_EN', [p2, (x, p2[1] - (p2[0] - x)), (x, q1[1] + 1.0), (x + 1.0, q1[1]), q1], 0.2, F)
+    k.track('/PRESS_EN', [q1, (q1[0], r1[1] + 0.6), r1], 0.2, F)
+
+
 def strip(k):
     """strip power path, Kelvin and gate escapes (absolute coordinates; the right-hand parts follow
     J302's pin columns and the board edge RIGHT)"""
@@ -218,8 +292,10 @@ def strip(k):
     q3 = max(pad_at(k.b, 'Q203', n)[0] for n in '1234') + 0.7
     ur, vl = xin - 1.16, xout + 1.24               # USENSE column right edge, VBUS column left edge
     top = pin14 + 0.95                             # below the last pin: the drain tabs' row
+    # (CAN FD: C201 turned, its GND pad in the column at v 29-33: the column widens left to the module outline there)
     vin = [(xt[0] - 2.6, 113.9), (xt[0] + 2.6, 113.9), (xt[0] + 2.6, 123.5), (154.6, 123.5), (154.6, 142.3), (158.6, 142.3),
-           (158.6, 145.5), (154.4, 145.5), (154.4, 154.0), (150.3, 154.0), (150.3, 119.5), (xt[0] - 2.6, 119.5)]
+           (158.6, 145.5), (154.4, 145.5), (154.4, 154.0), (150.3, 154.0), (150.3, 134.2), (149.3, 134.2), (149.3, 127.8),
+           (150.3, 127.8), (150.3, 119.5), (xt[0] - 2.6, 119.5)]
     usense = [(155.6, 145.75), (ur, 145.75), (ur, top), (q3, top), (q3, 167.5), (151.4, 167.5), (151.4, top), (155.6, top)]
     vbus = [(vl, 137.2), (RIGHT - 0.3, 137.2), (RIGHT - 0.3, BOTTOM - 0.3), (150.3, BOTTOM - 0.3), (150.3, 168.0),
             (q3 + 0.4, 168.0), (q3 + 0.4, top), (vl, top)]
@@ -278,8 +354,8 @@ def strip(k):
         x, y = pad_at(k.b, r, '1')
         k.track('VIN', [(x, y), (x, y + 1.3)], 0.3, B)
         k.via('VIN', (x, y + 1.3))
-    # GND vias at the TVS and the bulk cap
-    for at in ((159.0, 136.0), (159.0, 137.3), (159.6, 133.2), (161.0, 133.2)):
+    # GND vias at the TVS and the bulk cap (CAN FD: clear of the link rows down to J304, beside C201's GND pad)
+    for at in ((158.9, 136.9), (158.9, 138.2), (156.7, 130.3), (156.7, 131.7)):
         k.via('GND', at, 0.6, 0.3)
 
 
@@ -340,6 +416,9 @@ def main(src, dst):
     band(k)
     escapes(k)
     strip(k)
+    link(k)
+    link_term(k)
+    margin_press(k)
     gnd_pours(board, g)
     board.Save(dst)
     print('hand copper:', len(list(g.GetItems())), 'items')

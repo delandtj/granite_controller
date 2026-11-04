@@ -120,6 +120,7 @@ class Col:
         v = pcbnew.PCB_VIA(self.b)
         v.SetPosition(self.p(*at)); v.SetWidth(mm(size)); v.SetDrill(mm(drill))
         v.SetNet(self.net(net) if isinstance(net, str) else net)
+        v.SetIsFree(True)       # keep its net: KiCad re-nets unconnected vias to the zone they stand in
         self.b.Add(v); self.g.AddItem(v)
 
     def pad_via(self, net, at, ref, size=0.5, drill=0.2):

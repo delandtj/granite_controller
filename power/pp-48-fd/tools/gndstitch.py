@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tie floating F / B GND (and CTRL_GND) pour islands to In1 with one via each.
+"""Tie floating F / B GND (and LINK_GND) pour islands to In1 with one via each.
 Usage: gndstitch.py <in.kicad_pcb> <out.kicad_pcb>
 
 Run after tools/copycol.py. The GND pours of tools/route_hand.py are in the
@@ -19,7 +19,7 @@ import sys
 import pcbnew
 
 GROUP = 'gnd-stitch'
-NETS = ('GND', 'CTRL_GND')          # CTRL_GND: the controller world's pours (core top left)
+NETS = ('GND', 'LINK_GND')          # LINK_GND: the CAN FD link domain's pours (core top edge and edge channels)
 VIA, DRILL, CLR, STEP = 0.6, 0.3, 0.2, 0.1
 
 
@@ -108,6 +108,8 @@ def main(src, dst):
     board.Add(g)
     placed, stuck = 0, []
     for name in NETS:
+        if board.FindNet(name) is None:          # the unit has no LINK_GND pour net
+            continue
         p, st = stitch(board, board.FindNet(name), zones, g)
         placed += p
         stuck += st

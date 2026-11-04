@@ -32,7 +32,7 @@ for block in re.split(r'\n(?=\[)', txt):
     head = block.split('\n', 1)[0]
     if head.startswith(('[shorting_items]', '[clearance]', '[tracks_crossing]', '[unconnected_items]')):
         for n in re.findall(r'\[([^\]]+)\] (?:on|of)', block):
-            if n not in ('GND', 'VIN', 'CTRL_GND') and n not in hold:
+            if n not in ('GND', 'VIN', 'LINK_GND') and n not in hold:
                 nets.add(n)
 print('\n'.join(sorted(nets)))
 PY
