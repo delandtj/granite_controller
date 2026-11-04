@@ -477,10 +477,19 @@ fn main() -> anyhow::Result<()> {
 /// dispatcher would wait for each other. So: a local working copy,
 /// `try_write` to publish a change this thread made, `try_read` to pick
 /// up a change the HTTP task made, and never a blocking wait.
-/// Stack of the dispatcher thread. The PlaneClient (8.5 KB, MAX_PLANES
-/// plane states and an answer buffer) lives in its frame; with `lto = true`
-/// its constructor is inlined and the value briefly exists twice, which
-/// overflowed the old 12 KB stack on a rev C board (2026-11-04).
+/// Stack of the dispatcher thread.
+///
+/// The PlaneClient used to be 8.5 KB of this frame (MAX_PLANES plane
+/// states and an answer buffer), and with `lto = true` its constructor is
+/// inlined here, so the value briefly existed twice: that overflowed a
+/// 12 KB stack on a rev C board, and a measurement on 2026-11-04 (console
+/// `stacks`) still showed 20.4 KB of 24 KB used, 83 %. Those two members
+/// are boxed now (`granite_core::plane::PlaneClient`), so the client is
+/// under 512 bytes of frame and nothing here scales with MAX_PLANES.
+/// The 24 KB stays: what is left is the dispatcher's own working set -
+/// the rule engine, the job log and a `Config` working copy - plus
+/// whatever mbedTLS and the JSON paths reached from here need, and none of
+/// that has been measured on its own.
 const DISPATCH_STACK: usize = 24 * 1024;
 
 fn dispatcher<L: PlaneLink>(

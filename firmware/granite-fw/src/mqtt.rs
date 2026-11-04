@@ -227,8 +227,9 @@ const OUT_BUFFER: usize = 4096;
 /// Cap on the QoS 1 outbox, so a long outage cannot eat the heap.
 const OUTBOX_LIMIT: usize = 8192;
 
-/// esp-mqtt task stack.
-const MQTT_TASK_STACK: usize = 6144;
+/// esp-mqtt task stack. Read by `platform::tasks` too, so the `stacks`
+/// report can put a percentage on the `mqtt_task` it did not spawn.
+pub(crate) const MQTT_TASK_STACK: usize = 6144;
 
 /// Worker thread stack: it serialises JSON.
 const WORKER_STACK: usize = 10240;
