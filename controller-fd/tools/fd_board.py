@@ -23,9 +23,13 @@ Steps here:
     beside it in the strip below the W5500 bus, so only I2C_LOC_* cross the
     bus. Their nets (HDR_*, I2C_LOC_*) lose all copper and are rerouted.
  3. New parts from the stock libraries:
-    J15 2x3 right-angle socket on B at the right edge, rows vertical, pin 1
-        at the top at Y0 + 30.0 mm, socket face 4.0 mm past the edge (the
-        plane boards' link geometry, power/pp-48/tools/boardfit.py link()).
+    J15 keyed 2x3 right-angle box header (BOOMELE C34945) on B at the right
+        edge, rows vertical, pin 2 row toward the edge at X1 - 6.03, pin 1 at
+        the bottom (Y0 + 35.08: on B the footprint is mirrored, so pin 1
+        cannot be at the top with the shroud toward the edge), shroud face
+        4.8 mm past the edge. A pre-made 6-pin IDC ribbon goes from it to
+        core 1's link plug (ADR 0006 decision 9). Pad grid = the earlier
+        right-angle socket's (bar mating geometry, boardfit.py link()).
     U24 TCAN1044V below J15 (CANH / CANL toward J15, STB facing U1 pin 8,
         VCC / GND toward the edge with C60 / C61), C62 on VIO, D13
         PESD2CANFD24V and the split termination R77 / R78 / C63 beside J15.
@@ -53,7 +57,7 @@ POWER = {"GND", "+3V3", "+5V", "VBUS", "/Power/VIN_12V", "/Power/BUCK_5V"}
 
 NEW = {
     # ref: (lib, footprint, value)
-    "J15": ("Connector_PinSocket_2.54mm", "PinSocket_2x03_P2.54mm_Horizontal", "PLANE_LINK"),
+    "J15": ("Connector_IDC", "IDC-Header_2x03_P2.54mm_Horizontal", "PLANE_LINK"),
     "U23": ("Package_SO", "SOIC-14_3.9x8.7mm_P1.27mm", "MCP2518FDT-E/SL"),
     "U24": ("Package_SO", "SOIC-8_3.9x4.9mm_P1.27mm", "TCAN1044VDRQ1"),
     "Y3": ("Crystal", "Crystal_SMD_Abracon_ABM8G-4Pin_3.2x2.5mm", "40MHz 15pF YXC"),
@@ -72,11 +76,11 @@ NEW = {
     "R79": ("Resistor_SMD", "R_0402_1005Metric", "33"),
 }
 
-# J15: plane-board link geometry (boardfit.py FRONT: the 2x3 socket has the
-# 2x7's body depth, face 10.03 mm from the outer pad row)
-J15_FRONT = 10.03
-J15_PAST = 4.0
-J15_PIN1_Y = Y0 + 30.0
+# J15: the pad grid of the earlier bar socket (boardfit.py link(): outer
+# row 10.03 mm behind a face 4.0 mm past the edge, top pin at Y0 + 30.0);
+# the box header keeps it, pin 1 at the bottom of the column
+J15_PIN2_X = X1 + 4.0 - 10.03
+J15_PIN1_Y = Y0 + 30.0 + 2 * 2.54
 
 # ref -> (rot, courtyard centre x, y); F side
 PLACE = {
@@ -91,7 +95,7 @@ PLACE = {
     "C57": (180, 86.0, 58.3), "R75": (0, 88.6, 58.3), "R76": (90, 80.4, 61.6),
     "R79": (0, 90.6, 62.6),
     # transceiver below J15, caps on the edge side
-    # (C62 on VIO sits in the 1.3 mm gap between J15 pin 5 and U24 pin 5,
+    # (C62 on VIO sits in the 1.3 mm gap between J15 pin 1 and U24 pin 5,
     # keeping the channel beside U1's right pad column free for its escapes)
     "U24": (180, 124.5, 68.35),
     "C60": (270, 129.0, 68.35), "C61": (90, 129.0, 65.6), "C62": (0, 122.5, 65.1),
@@ -120,9 +124,10 @@ def place_c(fp, rot, cx, cy):
     fp.SetPosition(pcbnew.VECTOR2I(MM(cx) - c.GetCenter().x, MM(cy) - c.GetCenter().y))
 
 
-def link(fp, edge_x, pin1_y, past):
-    """boardfit.py link() for face 'right': on B, rows vertical, pin 1 at
-    the top, outer row (pin 2) toward the edge"""
+def link(fp, pin2_x, pin1_y):
+    """box header at the right edge: on B, rows vertical, pin 1 at the
+    bottom (mirrored footprint), outer row (pin 2, shroud side) toward the
+    edge"""
     if not fp.IsFlipped():
         fp.Flip(fp.GetPosition(), pcbnew.FLIP_DIRECTION_TOP_BOTTOM)
     n = len(list(fp.Pads()))
@@ -130,8 +135,8 @@ def link(fp, edge_x, pin1_y, past):
         fp.SetOrientationDegrees(rot)
         fp.SetPosition(pcbnew.VECTOR2I(0, 0))
         (ax, ay), (bx, by), (ox, _) = pad_xy(fp, "1"), pad_xy(fp, str(n - 1)), pad_xy(fp, "2")
-        if abs(ax - bx) < 1e-3 and ay < by and ox > ax:
-            fp.SetPosition(pcbnew.VECTOR2I(MM(edge_x + past - J15_FRONT - ox), MM(pin1_y - ay)))
+        if abs(ax - bx) < 1e-3 and ay > by and ox > ax:
+            fp.SetPosition(pcbnew.VECTOR2I(MM(pin2_x - ox), MM(pin1_y - ay)))
             return rot
     raise SystemExit("J15: no orientation fits")
 
@@ -190,12 +195,12 @@ def main(argv):
         fp.Value().SetVisible(False)
         b.Add(fp)
         fps[r] = fp
-    rot = link(fps["J15"], X1, J15_PIN1_Y, J15_PAST)
+    rot = link(fps["J15"], J15_PIN2_X, J15_PIN1_Y)
     for r, (rr, cx, cy) in PLACE.items():
         place_c(fps[r], rr, cx, cy)
     j = fps["J15"]
-    print("J15 on B rot %d, pin 1 at (%.3f, %.3f) = top + %.3f, pin 2 x %.3f, face x %.3f" % (
-        rot, *pad_xy(j, "1"), pad_xy(j, "1")[1] - Y0, pad_xy(j, "2")[0], pad_xy(j, "2")[0] + J15_FRONT))
+    print("J15 on B rot %d, pin 1 at (%.3f, %.3f) = top + %.3f, pin 2 x %.3f" % (
+        rot, *pad_xy(j, "1"), pad_xy(j, "1")[1] - Y0, pad_xy(j, "2")[0]))
 
     # 4. foreign copper on the new / moved parts
     moved = list(NEW) + ["J9", "U6", "RN1", "F1", "D6"]

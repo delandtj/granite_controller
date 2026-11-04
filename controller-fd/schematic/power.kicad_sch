@@ -7320,7 +7320,7 @@
 		)
 		(uuid "941770b7-81d7-4c1b-a484-21ca42ff2957")
 	)
-	(text "12 V input: AUX_12V from the plane link socket J15 pins 5 / 6 (OR-ed from every core, ADR 0006 decision 4) -> SS34 D10 (reverse polarity) -> SMAJ15A -> LMR51430 buck (1.1 MHz) -> 5.2 V. No fuse: the cores' iso modules limit their own output. GND = LINK_GND."
+	(text "12 V input: AUX_12V from the plane link box header J15 pins 5 / 6 (OR-ed from every core, ADR 0006 decision 4) -> SS34 D10 (reverse polarity) -> SMAJ15A -> LMR51430 buck (1.1 MHz) -> 5.2 V. No fuse: the cores' iso modules limit their own output. GND = LINK_GND."
 		(exclude_from_sim no)
 		(at 20.32 101.6 0)
 		(effects
