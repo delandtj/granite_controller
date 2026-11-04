@@ -63,6 +63,11 @@ remote_component = { name = "espressif/onewire_bus", version = "^1.0.2" }
 [[package.metadata.esp-idf-sys.extra_components]]
 remote_component = { name = "espressif/mdns", version = "^1.8.2" }
 
+# Local C helpers that need lwIP's own struct layouts (platform/net.rs:
+# stop AutoIP once DHCP holds the netif).
+[[package.metadata.esp-idf-sys.extra_components]]
+component_dirs = "components"
+
 # Size matters: an OTA slot (0x3D0000 = 3,997,696 B) must hold TLS, MQTT,
 # HTTP assets and lwIP (ADR 0001 decision 11).
 [profile.release]

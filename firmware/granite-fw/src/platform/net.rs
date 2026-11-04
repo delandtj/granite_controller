@@ -10,12 +10,17 @@
 //!
 //! What lwIP does by itself and what this module drives:
 //!
-//! - **AutoIP** is lwIP's, not ours. `CONFIG_LWIP_AUTOIP=y` plus
-//!   `CONFIG_LWIP_AUTOIP_TRIES=4` makes lwIP start IPv4 link-local
-//!   alongside DHCP after four failed DISCOVERs, which with lwIP's
-//!   doubling backoff (2 + 4 + 8 + 16 s) is the 30 s the ADR asks for, and
-//!   DHCP keeps retrying underneath. This module only *reports* the state
-//!   by recognising a 169.254/16 address.
+//! - **AutoIP** is lwIP's. `CONFIG_LWIP_AUTOIP=y` plus
+//!   `CONFIG_LWIP_AUTOIP_TRIES=10` makes lwIP start IPv4 link-local
+//!   alongside DHCP 31.5 s after link-up (ESP-IDF's DISCOVER backoff, see
+//!   sdkconfig.defaults), the 30 s the ADR asks for, and DHCP keeps
+//!   retrying underneath. lwIP 2.2 never stops AutoIP when DHCP binds,
+//!   and its `autoip_stop` leaves the address probe running, so a probe
+//!   that finishes after the lease overwrites it with 169.254/16. This
+//!   module stops AutoIP on every routable address
+//!   (`granite_autoip_yield`, components/granite_lwip) and, as a backstop,
+//!   restarts DHCP if a link-local address still replaced a lease. It
+//!   reports the AutoIP state by recognising a 169.254/16 address.
 //! - **SNTP** is `esp_netif_sntp_*` rather than esp-idf-svc's `EspSntp`,
 //!   because only the former can take the server from DHCP option 42
 //!   (`CONFIG_LWIP_DHCP_GET_NTP_SRV=y`). The clock is set to the firmware
@@ -62,8 +67,9 @@ use esp_idf_svc::sys::{
     ESP_IPADDR_TYPE_V4, esp, esp_ip4_addr_t, esp_ip6_addr_t, esp_netif_create_ip6_linklocal,
     esp_netif_dhcpc_start, esp_netif_dhcpc_stop, esp_netif_dns_info_t,
     esp_netif_dns_type_t_ESP_NETIF_DNS_BACKUP, esp_netif_dns_type_t_ESP_NETIF_DNS_MAIN,
-    esp_netif_get_ip6_linklocal, esp_netif_ip_info_t, esp_netif_set_dns_info,
-    esp_netif_set_hostname, esp_netif_set_ip_info, esp_netif_t, esp_sntp_config_t,
+    esp_netif_get_ip6_linklocal, esp_netif_get_netif_impl, esp_netif_ip_info_t, esp_netif_set_dns_info,
+    esp_netif_set_hostname, esp_netif_set_ip_info, esp_netif_t, esp_netif_tcpip_exec,
+    esp_sntp_config_t,
     esp_netif_sntp_deinit, esp_netif_sntp_init, ip_event_t_IP_EVENT_ETH_GOT_IP, settimeofday,
     sntp_get_sync_status, sntp_sync_status_t_SNTP_SYNC_STATUS_COMPLETED, timeval,
 };
@@ -332,12 +338,24 @@ fn run(
     // reinserted at boot put the DHCP answer on lwIP's AutoIP start), so
     // polling the netif would miss it. Subscribed before bring-up, which
     // is where the first lease lands.
+    //
+    // The same watch stops AutoIP as soon as the address is routable, so
+    // its probe cannot overwrite the lease later (see the module doc). This
+    // runs on the event loop task; esp_netif_tcpip_exec hands the call to
+    // the tcpip thread and waits for it.
     let _lease_watch = sysloop
         .subscribe::<IpEvent, _>(|event: IpEvent| {
             if let IpEvent::DhcpIpAssigned(a) = event {
                 let ip = a.ip();
                 if !is_link_local(ip) {
                     LAST_LEASE.store(u32::from(ip), Ordering::Relaxed);
+                    let lwip = unsafe { esp_netif_get_netif_impl(a.netif_handle()) };
+                    if !lwip.is_null()
+                        && let Err(e) =
+                            unsafe { esp!(esp_netif_tcpip_exec(Some(granite_autoip_yield), lwip)) }
+                    {
+                        log::warn!("net: autoip could not be stopped: {e}");
+                    }
                 }
             }
         })
@@ -639,6 +657,12 @@ fn run(
             }
         }
     }
+}
+
+unsafe extern "C" {
+    /// components/granite_lwip: take AutoIP's ACD off the list and stop
+    /// AutoIP. Must run on the tcpip thread; `ctx` is the lwIP `struct netif`.
+    fn granite_autoip_yield(ctx: *mut core::ffi::c_void) -> esp_idf_svc::sys::esp_err_t;
 }
 
 fn is_link_local(ip: ipv4::Ipv4Addr) -> bool {
