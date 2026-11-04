@@ -13,7 +13,7 @@ Collect these before the boards go into the frame. Items marked
 | Mounting bar | One bar per plane that holds the core and the units in a row, each board screwed down to it, 4 mm apart. The boards plug into each other (a 2x7 pin header into a 2x7 socket), so there are no chain cables to make; the bar holds the boards, the connector carries no load. See [Assembling and cabling planes](../commissioning/planes.md). |
 | Link cables | JST PH 5-pin, pin 1 to pin 1: controller J13 or J14 to the first plane's J2, then plane J3 to the next plane's J2. |
 | 12 V aux cables | JST PH 2-pin, pin 1 to pin 1: a plane core's J4 to controller J11, and a second plane's J4 to J12 when there is more than one plane. |
-| Node cables | Per node two cables, both made by the installer: a 14 AWG pair from the slot's screw terminal to the node's 19 V DC-ATX converter, and a 4-wire front-panel cable (JST GH) to the motherboard's power switch, reset switch and power LED pins. See [Connections](connections.md). |
+| Node cables | Per node two cables, both made by the installer: a 14 AWG pair from the slot's screw terminal to the node motherboard's 19 V DC input, and a 4-wire front-panel cable (JST GH) to the motherboard's power switch, reset switch and power LED pins. See [Connections](connections.md). |
 | Port modules | One PM-19V-250W per populated slot, with four M2 x 5 screws and split lock washers. |
 | Temperature probes | DS18B20 probes on 3-wire cables to controller J4..J7. The four connectors share one bus; the firmware tracks up to eight probes by ROM id. |
 | Dry contacts (optional) | Potential-free contacts (leak float, lid switch, door) to controller J10, closing to GND. |

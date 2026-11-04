@@ -483,9 +483,9 @@ Review asks (answered 2026-10-26):
 ## Open Questions
 
 **Architecture-changers**
-- [ ] Pod envelope and how tiles sit in the box (confirms 1x4).
-- [ ] Slot GPIO through TCA9535 vs direct MCU pins (pin count check
-  on the G070 with 4 columns).
+- [x] Pod envelope and how tiles sit in the box: superseded by ADR
+  0005 / 0006 (core and units in one row on a mounting bar).
+- [x] Slot GPIO: one TCA6424A per 2-slot unit (ADR 0005).
 
 **Behavior definers**
 - [x] PGOOD-loss latch start-up blanking: arm on first PGOOD, no timer
@@ -504,6 +504,10 @@ Review asks (answered 2026-10-26):
   trips at 67.5 V, so "plane first" holds nominally, not worst case;
   the +/-4 % threshold leaves no setting that clears both 60 V and
   66.7 V (D1 breakdown) worst case. Both trips are safe.
-- [ ] OV_KILL at 22.7 V against the node's input rating.
-- [ ] Spare aux contact: second GND or something useful.
+- [ ] OV_KILL at 22.7 V against the node's input rating: the node is
+  the Halo Gorgon board's own 19 V DC input (R1). Its maximum input
+  voltage is not known yet (user 2026-11-04): find it in the board's
+  spec or ask the vendor; lower the TPS3701 threshold if it is under
+  ~24 V.
+- [x] Spare aux contact: the second GND (A6, docs/pm-interface.md).
 - [ ] Node connector fluid compatibility (soak test).

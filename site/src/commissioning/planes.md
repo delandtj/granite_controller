@@ -147,8 +147,8 @@ button presses. It carries no 48 V.
 Per slot:
 
 - **Node power**: a 14 AWG pair from the slot's screw terminal (J1 on
-  slot A, J51 on slot B; pin 1 GND, pin 2 +19 V) to the node's 19 V
-  DC-ATX converter.
+  slot A, J51 on slot B; pin 1 GND, pin 2 +19 V) to the node
+  motherboard's 19 V DC input.
 - **Front panel**: a 4-wire JST GH cable from J2 (slot A) or J52
   (slot B) to the motherboard: 1 PWR_SW, 2 RST_SW, 3 PLED+, 4 PLED-.
   The power LED input is polarised. The button contacts close to the

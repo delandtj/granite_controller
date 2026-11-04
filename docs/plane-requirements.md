@@ -90,7 +90,7 @@ middle of drawing.
   safety: the bus is SELV at or below 60 V DC).
 - R21. Node connector: power and front-panel signals split. Power on
   a 2-pole screw terminal, >= 15 A, 14 AWG; the user makes the cables
-  to the node's 19 V DC-ATX converter (amended 2026-10-28, ADR 0004;
+  to the node motherboard's 19 V DC input (R1; amended 2026-10-28, ADR 0004;
   was Mini-Fit Jr 2x3). Front panel (PWR_SW, RST_SW, PLED) on a small
   separate latching connector.
 - R22. Commercial eighth bricks do not need to fit a slot. The module

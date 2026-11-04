@@ -374,12 +374,12 @@ input strip on the far side (right of slot B).
 ## Open Questions
 
 **Architecture-changers**
-- [ ] Two KiCad projects (power/pp-48-core, power/pp-48-unit) or one
-  project with two boards? Default: two projects, shared tools.
+- [x] Two KiCad projects (power/pp-48-core, power/pp-48-unit), shared
+  tools: built that way (the FD generation the same).
 
 **Behavior definers**
 - [ ] Unit hot-swap power limit and timer vs two slot insertions.
-- [ ] Firmware: chain topology discovery (which channel answers) and
-  re-scan on a NAK.
-- [ ] Unit present signal on the chain (a pin pulled low by the unit)
-  or presence by I2C only. Default: I2C only.
+- [x] Firmware: chain topology discovery and re-scan: plane-logic
+  discovery.rs (probe 0x22 per channel, 2 s re-scan, lost after two
+  NAKs).
+- [x] Unit presence: I2C only (no present pin on the 2x7 chain).
