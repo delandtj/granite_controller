@@ -2,6 +2,7 @@
 //! and the host-side tools that go with it.
 //!
 //!   granite-sim serve [--port 8443] [--scenario file.toml]
+//!                     [--link i2c|can] [--drop-every N]
 //!   granite-sim recover --key ~/.config/granite/fleet-recovery.key <host>
 //!   granite-sim keygen
 //!   granite-sim modbus-map > firmware/docs/modbus_map.md
@@ -11,6 +12,7 @@ use std::sync::{Arc, Mutex};
 
 use clap::{Parser, Subcommand};
 use granite_sim::http::ServeOptions;
+use granite_sim::scenario::LinkTransport;
 use granite_sim::{Scenario, Sim, http, keys};
 
 #[derive(Parser)]
@@ -44,6 +46,13 @@ enum Commands {
         /// copy, so edits show up on reload.
         #[arg(long)]
         assets: Option<PathBuf>,
+        /// Plane link transport (firmware ADR 0005), overriding the
+        /// scenario: i2c is the rev D bus, can the CAN FD one.
+        #[arg(long, value_enum)]
+        link: Option<LinkTransport>,
+        /// On a CAN link, lose every Nth frame; 0 loses nothing.
+        #[arg(long)]
+        drop_every: Option<u32>,
     },
     /// Factory reset a controller with the fleet recovery key.
     Recover {
@@ -78,7 +87,16 @@ fn main() -> anyhow::Result<()> {
             scenario,
             no_tls,
             assets,
-        } => serve(port, bind, scenario, !no_tls, assets),
+            link,
+            drop_every,
+        } => serve(
+            port,
+            bind,
+            scenario,
+            !no_tls,
+            assets,
+            LinkOptions { link, drop_every },
+        ),
         Commands::Recover {
             host,
             key,
@@ -99,14 +117,21 @@ fn main() -> anyhow::Result<()> {
     }
 }
 
+/// What the command line said about the plane link, if anything.
+struct LinkOptions {
+    link: Option<LinkTransport>,
+    drop_every: Option<u32>,
+}
+
 fn serve(
     port: u16,
     bind: String,
     scenario_path: Option<PathBuf>,
     tls: bool,
     assets: Option<PathBuf>,
+    link: LinkOptions,
 ) -> anyhow::Result<()> {
-    let scenario = match &scenario_path {
+    let mut scenario = match &scenario_path {
         Some(path) => Scenario::load(path)?,
         None => {
             let mut s = Scenario::default();
@@ -114,6 +139,14 @@ fn serve(
             s
         }
     };
+    // The command line wins over the file, so one scenario can be run
+    // over either transport.
+    if let Some(transport) = link.link {
+        scenario.link = transport;
+    }
+    if let Some(drop_every) = link.drop_every {
+        scenario.can.drop_every = drop_every;
+    }
     let certified = rcgen::generate_simple_self_signed(vec![
         String::from("localhost"),
         scenario.device_id.clone(),
@@ -121,6 +154,13 @@ fn serve(
     ])?;
     let cert_pem = certified.cert.pem();
     let key_pem = certified.signing_key.serialize_pem();
+    let link_line = match scenario.link {
+        LinkTransport::I2c => String::from("i2c (rev D)"),
+        LinkTransport::Can if scenario.can.drop_every > 0 => {
+            format!("can fd, losing 1 frame in {}", scenario.can.drop_every)
+        }
+        LinkTransport::Can => String::from("can fd"),
+    };
 
     let sim = Arc::new(Mutex::new(Sim::new(scenario, &cert_pem, &key_pem)));
     {
@@ -162,6 +202,7 @@ fn serve(
         } else {
             println!("planes   {}", planes.join(", "));
         }
+        println!("link     {link_line}");
         if let Some(path) = &scenario_path {
             println!("scenario {}", path.display());
         }

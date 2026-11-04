@@ -62,9 +62,15 @@ impl PlaneLink for StubPlaneLink {
         Err(LinkError::Nak)
     }
 
-    fn int_asserted(&mut self) -> bool {
-        // Open drain with a pull-up: low means someone has events. With
-        // nothing on the line it reads high, which is "no events".
-        self.int.as_ref().is_some_and(|pin| pin.is_low())
+    fn event_nodes(&mut self) -> u8 {
+        // Open drain with a pull-up: low means someone has events, and
+        // the line cannot say which plane (ADR 0005 decision 6), so
+        // every plane is in the mask. With nothing on the line it reads
+        // high, which is "no events".
+        if self.int.as_ref().is_some_and(|pin| pin.is_low()) {
+            0xFF
+        } else {
+            0
+        }
     }
 }

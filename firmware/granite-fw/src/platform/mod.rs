@@ -385,8 +385,10 @@ impl PlaneLink for NoPlaneLink {
         Err(LinkError::Nak)
     }
 
-    fn int_asserted(&mut self) -> bool {
-        false
+    fn event_nodes(&mut self) -> u8 {
+        // No link, so no plane ever raised anything (ADR 0005
+        // decision 6).
+        0
     }
 }
 

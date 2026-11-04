@@ -41,6 +41,20 @@
 //! unit = 1
 //! ```
 //!
+//! The transport under those messages is a choice of its own
+//! (firmware ADR 0005): the default is the rev D I2C link, and
+//!
+//! ```toml
+//! link = "can"             # i2c | can
+//!
+//! [can]
+//! drop_every = 0           # lose every Nth frame on the bus
+//! ```
+//!
+//! runs them over the fake CAN FD bus instead, which segments and
+//! reassembles with `granite_proto::can` and can be told to lose
+//! frames.
+//!
 //! Everything is optional; the defaults are one plane at 0x30 with its
 //! four units populated and a module in every slot (nodes 1-8, every
 //! host off), one probe at 40 C and 12 V in.
@@ -273,6 +287,33 @@ impl PlaneScenario {
     }
 }
 
+/// Which transport the plane link uses (firmware ADR 0005).
+///
+/// The default is the rev D I2C bus: the boards that exist. `can` runs
+/// the same messages over the fake CAN FD bus of [`crate::can`], which
+/// segments and reassembles them with `granite_proto::can` and can be
+/// told to lose frames.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, clap::ValueEnum)]
+#[serde(rename_all = "snake_case")]
+#[value(rename_all = "snake_case")]
+pub enum LinkTransport {
+    /// The isolated I2C link of rev D (controller ADR 0004 decision 9).
+    #[default]
+    I2c,
+    /// CAN FD (ADR 0005): identifiers, segmentation, EVENT and SYNC.
+    Can,
+}
+
+/// The CAN FD link, used when `link = "can"`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct CanScenario {
+    /// Drop every Nth frame on the bus; 0 drops nothing. Deterministic,
+    /// so a test that needs the retries of ADR 0003 to recover loses the
+    /// same frames every run.
+    pub drop_every: u32,
+}
+
 /// The board-level sensors.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
@@ -317,6 +358,10 @@ pub struct Scenario {
     pub recovery_token: String,
     /// Board sensors.
     pub hardware: HardwareScenario,
+    /// Which transport the planes are reached over (ADR 0005).
+    pub link: LinkTransport,
+    /// The CAN FD link's knobs, when `link = "can"`.
+    pub can: CanScenario,
     /// Probes on the bus.
     pub probes: Vec<ProbeScenario>,
     /// Planes on the link, `[[plane]]` in the file.
@@ -332,6 +377,8 @@ impl Default for Scenario {
             fw: String::from(concat!("sim-", env!("CARGO_PKG_VERSION"))),
             recovery_token: String::new(),
             hardware: HardwareScenario::default(),
+            link: LinkTransport::default(),
+            can: CanScenario::default(),
             probes: vec![ProbeScenario::default()],
             // One plane with every unit on the chain and a module in
             // every slot: nodes 1-8 on plane 0, which is what a single

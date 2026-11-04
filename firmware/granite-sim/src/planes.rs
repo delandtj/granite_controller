@@ -1,5 +1,6 @@
 //! The fake plane link: up to eight simulated planes on one isolated
-//! I2C bus (controller ADR 0004 architecture item 3).
+//! I2C bus (controller ADR 0004 architecture item 3), or on a CAN FD bus
+//! (firmware ADR 0005).
 //!
 //! Each plane is a real [`plane_logic::Plane`] over plane-logic's own
 //! fake devices (`plane-logic/src/sim`): the expander with pin
@@ -10,10 +11,17 @@
 //! the answer bytes back. Framing, CRC, records and retries are
 //! granite-proto and the plane client's business (ADR 0003).
 //!
+//! The transport is the scenario's choice ([`crate::scenario::Scenario`]
+//! `link`): the default is the rev D I2C bus, where a request reaches
+//! the plane as one transaction and EXP_INT is the wired OR of every
+//! plane's event flag; `link = "can"` puts a [`CanBus`] in between, and
+//! then the same bytes travel as segmented CAN FD frames with EVENT and
+//! SYNC of their own.
+//!
 //! A plane is a separate MCU: [`FakePlaneLink::tick`] advances every
 //! plane at its own 20 Hz cadence whether or not the controller talks to
-//! it, which is why a sequence finishes and an event shows up on EXP_INT
-//! with nobody polling.
+//! it, which is why a sequence finishes and an event shows up with
+//! nobody polling.
 //!
 //! The fault knobs ([`FakePlane::inject`]) are the point of the whole
 //! thing: they are what a plane client's tests need and what a bench
@@ -26,8 +34,9 @@ use plane_logic::model::POLL_PERIOD_MS;
 use plane_logic::reset_cause;
 use plane_logic::sim::{FakeSlot, FakeUnit, Fakes, Sim};
 
+use crate::can::{CanBus, FrameLoss};
 use crate::scenario::{
-    FaultKind, PlaneFault, PlaneRespond, PlaneScenario, PlaneSlotScenario, Scenario,
+    FaultKind, LinkTransport, PlaneFault, PlaneRespond, PlaneScenario, PlaneSlotScenario, Scenario,
 };
 
 /// One step of a plane's own cycle \[ms\]: the 20 Hz bus task of
@@ -337,7 +346,7 @@ impl FakePlane {
     }
 
     /// Answer a read request.
-    fn answer(&mut self, request: &[u8], resp: &mut [u8]) -> Result<usize, LinkError> {
+    pub(crate) fn answer(&mut self, request: &[u8], resp: &mut [u8]) -> Result<usize, LinkError> {
         if self.dropping() {
             return Err(LinkError::Nak);
         }
@@ -368,7 +377,7 @@ impl FakePlane {
     }
 
     /// Take a write frame.
-    fn take(&mut self, bytes: &[u8]) -> Result<(), LinkError> {
+    pub(crate) fn take(&mut self, bytes: &[u8]) -> Result<(), LinkError> {
         if self.dropping() {
             return Err(LinkError::Nak);
         }
@@ -414,15 +423,23 @@ pub struct FakePlaneLink {
     pub transactions: u64,
     /// Transactions to an address no plane answers on.
     pub unanswered: u64,
+    /// The CAN FD transport (firmware ADR 0005), when the scenario asks
+    /// for one. `None` is the rev D I2C link.
+    pub can: Option<CanBus>,
+    /// Simulated now \[ms\], from [`FakePlaneLink::tick`]: the
+    /// reassemblers and the EVENT cadence need a clock, and the link has
+    /// no other way to know the time.
+    now_ms: u64,
 }
 
 impl FakePlaneLink {
-    /// A link with no planes on it.
+    /// A link with no planes on it, over I2C.
     pub fn new() -> Self {
         FakePlaneLink::default()
     }
 
-    /// The planes a scenario describes, booted.
+    /// The planes a scenario describes, booted, on the transport it
+    /// asks for.
     pub fn from_scenario(scenario: &Scenario) -> Self {
         let mut link = FakePlaneLink::new();
         for section in &scenario.planes {
@@ -430,7 +447,25 @@ impl FakePlaneLink {
                 link.planes[n as usize] = Some(FakePlane::new(section));
             }
         }
+        if scenario.link == LinkTransport::Can {
+            link.can = Some(CanBus::new(FrameLoss {
+                every: scenario.can.drop_every,
+                burst: 0,
+            }));
+        }
         link
+    }
+
+    /// Put a CAN FD bus under the link, whatever the scenario said.
+    /// For a test that wants one transport with one scenario.
+    pub fn with_can(mut self, loss: FrameLoss) -> Self {
+        self.can = Some(CanBus::new(loss));
+        self
+    }
+
+    /// The CAN FD bus under the link, if the transport is CAN.
+    pub fn can(&self) -> Option<&CanBus> {
+        self.can.as_ref()
     }
 
     /// Every address a plane answers on, lowest first.
@@ -454,6 +489,15 @@ impl FakePlaneLink {
         self.planes[n as usize].as_mut()
     }
 
+    /// The plane at `address`, its node number and the bus in front of
+    /// it, borrowed apart: a CAN transaction needs the plane and the
+    /// bus at the same time.
+    fn at(&mut self, address: u8) -> Option<(u8, &mut FakePlane, Option<&mut CanBus>)> {
+        let n = plane_of_address(address)?;
+        let plane = self.planes[n as usize].as_mut()?;
+        Some((n, plane, self.can.as_mut()))
+    }
+
     /// Every plane on the link.
     pub fn planes(&self) -> impl Iterator<Item = &FakePlane> {
         self.planes.iter().flatten()
@@ -467,9 +511,22 @@ impl FakePlaneLink {
     /// Advance every plane to `now_ms`. Called from the simulator's main
     /// loop: a plane runs on its own clock, not on the controller's
     /// attention.
+    ///
+    /// On a CAN link this is also where a plane with unacknowledged
+    /// events puts its EVENT on the bus (ADR 0005 decision 6): the frame
+    /// goes out on the plane's own cadence, not when the controller asks
+    /// for it.
     pub fn tick(&mut self, now_ms: u64) {
         for plane in self.planes.iter_mut().flatten() {
             plane.advance_to(now_ms);
+        }
+        self.now_ms = now_ms;
+        if let Some(bus) = self.can.as_mut() {
+            for (n, plane) in self.planes.iter().enumerate() {
+                if let Some(plane) = plane {
+                    bus.note_event(n as u8, plane.event_pending(), now_ms);
+                }
+            }
         }
     }
 
@@ -489,27 +546,56 @@ impl FakePlaneLink {
 impl PlaneLink for FakePlaneLink {
     fn write_read(&mut self, addr: u8, req: &[u8], resp: &mut [u8]) -> Result<usize, LinkError> {
         self.transactions += 1;
-        match self.plane_mut(addr) {
-            Some(plane) => plane.answer(req, resp),
-            None => {
-                self.unanswered += 1;
-                Err(LinkError::Nak)
-            }
+        let now_ms = self.now_ms;
+        // An address with no plane NAKs on either transport. On I2C that
+        // is the hardware's answer; on CAN a controller would wait for
+        // its timeout instead, and the client reads both as absence
+        // (ADR 0004 decision 5), so the faster one is kept.
+        let Some((node, plane, can)) = self.at(addr) else {
+            self.unanswered += 1;
+            return Err(LinkError::Nak);
+        };
+        match can {
+            Some(bus) => bus.write_read(node, plane, req, resp, now_ms),
+            None => plane.answer(req, resp),
         }
     }
 
     fn write(&mut self, addr: u8, frame: &[u8]) -> Result<(), LinkError> {
         self.transactions += 1;
-        match self.plane_mut(addr) {
-            Some(plane) => plane.take(frame),
+        let now_ms = self.now_ms;
+        let Some((node, plane, can)) = self.at(addr) else {
+            self.unanswered += 1;
+            return Err(LinkError::Nak);
+        };
+        match can {
+            Some(bus) => bus.write(node, plane, frame, now_ms),
+            None => plane.take(frame),
+        }
+    }
+
+    fn event_nodes(&mut self) -> u8 {
+        match self.can.as_mut() {
+            // The planes that sent EVENT since the last poll
+            // (ADR 0005 decision 6).
+            Some(bus) => bus.take_event_nodes(),
+            // EXP_INT is the wired OR of every plane's: the line cannot
+            // say which plane pulled it, so every plane is in the mask.
             None => {
-                self.unanswered += 1;
-                Err(LinkError::Nak)
+                if self.planes().any(FakePlane::event_pending) {
+                    0xFF
+                } else {
+                    0
+                }
             }
         }
     }
 
-    fn int_asserted(&mut self) -> bool {
-        self.planes().any(FakePlane::event_pending)
+    fn sync(&mut self, epoch: u32) -> Result<(), LinkError> {
+        match self.can.as_mut() {
+            Some(bus) => bus.sync(epoch),
+            // The rev D bus has no SYNC (ADR 0005 decision 7).
+            None => Ok(()),
+        }
     }
 }

@@ -12,6 +12,7 @@ therefore the same ones the firmware serves, without a board.
 ```
 granite-sim serve [--port 8443] [--bind 127.0.0.1] [--scenario file.toml]
                   [--no-tls] [--assets ../web]
+                  [--link i2c|can] [--drop-every N]
 granite-sim recover [--key ~/.config/granite/fleet-recovery.key] [--port N]
                     [--no-tls] <host>
 granite-sim keygen [--key ~/.config/granite/fleet-recovery.key]
@@ -90,8 +91,10 @@ A `[[plane]]` section puts a simulated plane on the link
 link in front of them (`src/planes.rs`) implements
 `granite_core::hal::PlaneLink`: it hands the request bytes to
 `Plane::handle_frame` and gives the answer back. Framing, CRC and
-records stay in `granite-proto`; an address with no plane NAKs, and
-`int_asserted()` is the wired OR of every plane's `event_pending()`.
+records stay in `granite-proto`; an address with no plane NAKs, and on
+the I2C link `event_nodes()` answers 0xFF while any plane's
+`event_pending()` holds, because EXP_INT is their wired OR and cannot
+say which plane pulled it (ADR 0005 decision 6).
 
 Every plane runs at its own 20 Hz from the simulator's main loop, so a
 sequence finishes and an event shows up on EXP_INT with nobody polling.
@@ -136,6 +139,34 @@ Nothing in `granite-core` reads the link yet: the plane client is the
 next step (ADR 0004 decision 5), and `tests/plane_link.rs` is a
 hand-written stand-in for it.
 
+## The CAN FD link
+
+The transport under those messages is a choice (firmware ADR 0005). The
+default is the rev D I2C bus; `--link can`, or `link = "can"` in the
+scenario, puts the fake CAN FD bus of `src/can.rs` in between instead:
+
+```toml
+link = "can"            # i2c | can
+
+[can]
+drop_every = 12         # lose 1 frame in 12; 0 loses nothing
+```
+
+Every request, answer, EVENT and SYNC then goes through
+`granite_proto::can::segment` and comes back out of a `Reassembler` -
+one for the controller, one per plane - so the simulator runs the real
+segmentation (decision 3) and the real reassembly rules (decision 4),
+not a model of them. A plane with unacknowledged events sends EVENT
+from its own node once a second until EV_ACK covers them, which is what
+`event_nodes()` reports (decision 6); the controller's SYNC is counted
+with its epoch (decision 7).
+
+`--drop-every N` loses every Nth frame on the bus. A message that loses
+a segment is never reassembled, so the transaction times out and
+ADR 0003's retries are what recovers: `tests/can_link.rs` runs the
+client over a bus losing one frame in twelve and asserts it keeps both
+planes, their telemetry and its verbs.
+
 ## What is not simulated
 
 - Pull OTA (`{"url":..,"sha256":..}`) is logged and ignored; pushed
@@ -148,3 +179,6 @@ hand-written stand-in for it.
   clock, so the ~20 ms per plane per second of ADR 0003 decision 5 is
   not something the simulator can show. Dropped and corrupted
   transactions are injected, not earned.
+- CAN bit timing, arbitration and the error counters of ADR 0005
+  decision 8: on the fake bus the frames arrive in the order they were
+  sent, or not at all.
