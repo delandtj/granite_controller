@@ -103,6 +103,12 @@ CONFIG_MBEDTLS_PEM_WRITE_C=y
 
 # --- runtime -------------------------------------------------------------
 CONFIG_ESP_MAIN_TASK_STACK_SIZE=12288
+# The default event loop task (`sys_evt`) runs esp_netif's and esp_eth's
+# handlers as well as ours, including the IpEvent subscription of
+# src/platform/net.rs. The default 2304 bytes left it 956 free on a rev C
+# board (console `stacks`, 2026-11-04): 59 % used, and the deepest of
+# those handlers is not ours to bound.
+CONFIG_ESP_SYSTEM_EVENT_TASK_STACK_SIZE=4096
 CONFIG_PTHREAD_TASK_STACK_SIZE_DEFAULT=8192
 CONFIG_COMPILER_OPTIMIZATION_SIZE=y
 # uxTaskGetSystemState() is compiled only with configUSE_TRACE_FACILITY,

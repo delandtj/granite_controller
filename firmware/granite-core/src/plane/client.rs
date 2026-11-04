@@ -306,8 +306,18 @@ impl PlaneState {
 }
 
 /// The controller's side of the plane link.
+///
+/// The two big members are boxed, and are built on the heap rather than
+/// moved there: this value is constructed inside the dispatcher thread's
+/// frame, `lto = true` inlines the constructor into it, and a 7.8 KB
+/// array of plane states then exists twice in one frame - which overflowed
+/// a 12 KB stack on a rev C board, and still used 83 % of 24 KB
+/// (measured 2026-11-04). With them boxed `size_of::<PlaneClient>()` goes
+/// from 8512 to 464 bytes on the host, and the frame no longer scales with
+/// `MAX_PLANES`. Nothing else in here is over 512 bytes: `Transactions` is
+/// the next largest at 232.
 pub struct PlaneClient {
-    planes: [PlaneState; MAX_PLANES],
+    planes: Box<[PlaneState; MAX_PLANES]>,
     tx: Transactions,
     events: VecDeque<ClientEvent>,
     finished: VecDeque<FinishedJob>,
@@ -325,8 +335,9 @@ pub struct PlaneClient {
     intent: IntendedOff,
     update: Option<UpdateJob>,
     policy: UpdatePolicy,
-    /// Scratch for one answer; no read allocates.
-    buf: [u8; frame::MAX_ANSWER],
+    /// Scratch for one answer; no read allocates. Boxed with `planes`,
+    /// for the same reason.
+    buf: Box<[u8; frame::MAX_ANSWER]>,
 }
 
 impl core::fmt::Debug for PlaneClient {
@@ -351,11 +362,25 @@ impl PlaneClient {
     /// decision 7 starts there too, for the same reason: a standby
     /// controller must be able to tell a restarted keepalive from the
     /// one it was watching.
+    ///
+    /// `planes` and `buf` are grown on the heap, element by element,
+    /// instead of being built as an array and moved: an array literal or
+    /// `core::array::from_fn` would put all 7.8 KB of plane state in the
+    /// caller's frame first (see the type's own note).
     pub fn new(seed: u32) -> Self {
+        let planes: Vec<PlaneState> = (0..MAX_PLANES)
+            .map(|n| PlaneState::new(granite_proto::ADDR_BASE + n as u8, seq_start(seed, n as u8)))
+            .collect();
+        let planes: Box<[PlaneState; MAX_PLANES]> = planes
+            .into_boxed_slice()
+            .try_into()
+            .expect("MAX_PLANES plane states");
+        let buf: Box<[u8; frame::MAX_ANSWER]> = alloc::vec![0u8; frame::MAX_ANSWER]
+            .into_boxed_slice()
+            .try_into()
+            .expect("MAX_ANSWER bytes");
         PlaneClient {
-            planes: core::array::from_fn(|n| {
-                PlaneState::new(granite_proto::ADDR_BASE + n as u8, seq_start(seed, n as u8))
-            }),
+            planes,
             tx: Transactions::new(),
             events: VecDeque::new(),
             finished: VecDeque::new(),
@@ -369,7 +394,7 @@ impl PlaneClient {
             intent: IntendedOff::new(),
             update: None,
             policy: UpdatePolicy::Manual,
-            buf: [0u8; frame::MAX_ANSWER],
+            buf,
         }
     }
 
@@ -455,7 +480,7 @@ impl PlaneClient {
             *budget -= 1;
             match self
                 .tx
-                .read(link, address, BLK_INFO, INDEX_NONE, &mut self.buf)
+                .read(link, address, BLK_INFO, INDEX_NONE, &mut self.buf[..])
             {
                 Ok(n) => {
                     let payload_len = n;
@@ -530,7 +555,7 @@ impl PlaneClient {
         let address = self.planes[i].plane.address;
         match self
             .tx
-            .read(link, address, BLK_INFO, INDEX_NONE, &mut self.buf)
+            .read(link, address, BLK_INFO, INDEX_NONE, &mut self.buf[..])
         {
             Ok(n) => {
                 let change = self.planes[i].plane.apply_info(now_ms, &self.buf[..n]);
@@ -589,7 +614,7 @@ impl PlaneClient {
         let before = self.planes[i].plane.uptime_s;
         match self
             .tx
-            .read(link, address, BLK_STATUS, INDEX_NONE, &mut self.buf)
+            .read(link, address, BLK_STATUS, INDEX_NONE, &mut self.buf[..])
         {
             Ok(n) => {
                 // The command results travel in this block; take them
@@ -698,7 +723,7 @@ impl PlaneClient {
         let address = self.planes[i].plane.address;
         match self
             .tx
-            .read(link, address, BLK_SUMMARY, INDEX_NONE, &mut self.buf)
+            .read(link, address, BLK_SUMMARY, INDEX_NONE, &mut self.buf[..])
         {
             Ok(n) => {
                 let changed = self.planes[i].plane.apply_summary(now_ms, &self.buf[..n]);
@@ -733,7 +758,7 @@ impl PlaneClient {
             if !spend(budget) {
                 return;
             }
-            match self.tx.read(link, address, block, index, &mut self.buf) {
+            match self.tx.read(link, address, block, index, &mut self.buf[..]) {
                 Ok(n) => {
                     if block == BLK_UNIT {
                         self.planes[i]
@@ -764,7 +789,7 @@ impl PlaneClient {
         let address = self.planes[i].plane.address;
         let n = match self
             .tx
-            .read(link, address, BLK_EVENTS, INDEX_NONE, &mut self.buf)
+            .read(link, address, BLK_EVENTS, INDEX_NONE, &mut self.buf[..])
         {
             Ok(n) => n,
             Err(_) => {
@@ -1680,6 +1705,22 @@ fn mix(mut x: u32) -> u32 {
 mod tests {
     use super::*;
     use crate::hal::LinkError;
+
+    /// The dispatcher thread builds a `PlaneClient` in its own frame, and
+    /// `lto = true` inlines the constructor there, so every byte of this
+    /// type is a byte of that stack - twice over, while the value is
+    /// being moved into place. It was 8512 bytes on the host (7808 of
+    /// plane states and a 256-byte answer buffer) and 83 % of the
+    /// dispatcher's 24 KB stack was in use on a rev C board
+    /// (2026-11-04). Keep the big members boxed.
+    #[test]
+    fn the_client_is_small_enough_to_build_on_a_stack() {
+        assert!(
+            core::mem::size_of::<PlaneClient>() < 1024,
+            "PlaneClient is {} bytes; the big members belong on the heap",
+            core::mem::size_of::<PlaneClient>()
+        );
+    }
 
     /// A link nothing answers on, which counts the SYNCs it carried and
     /// reports the events it is told to.
