@@ -23,10 +23,16 @@ Problems:
 1. **The isolator topology is outside TI's rules.** The ISO164x side 1
    uses a static output offset against latch-up; TI states side 1 must
    connect to exactly one node and only side 2 may be shared. Today 8
-   side 1 ports share the cable bus, and side 1 has a small capacitive
-   load limit (TI quotes 40 pF for the ISO1540 side 1) against the
-   ~0.5 nF rev D expects for a long chain. Expected to fail on the
-   bench with more than one plane.
+   side 1 ports share the cable bus. ISO1640 datasheet numbers: side 1
+   capacitive load 80 pF max (rev D expects ~0.5 nF for a long chain;
+   side 2 allows 400 pF); side 1 output low 570-710 mV, which the
+   ESP32-C6 must read as low (VIL max 0.825 V: ~0.1 V margin before
+   any ground shift on the cable); another plane's side 1 input
+   threshold is only guaranteed 50 mV under its own output low, so it
+   can take a neighbour's offset low for a real low. One plane on a
+   short cable is in spec; two or more is out of spec, likely to work
+   on a short bench chain and to turn marginal with 8 planes on long
+   cables.
 2. **I2C on cables in the fluid**: single ended, capacitance bound,
    next to 250 W converters. One stuck SDA (hung slave, damaged
    isolator) stops every plane on the chain.
