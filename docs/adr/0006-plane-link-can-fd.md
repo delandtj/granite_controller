@@ -2,7 +2,7 @@
 
 **Status**: Proposed
 **Date**: 2026-11-04
-**Updated**: 2026-11-04 (schematics drawn: power/pp-48-core-fd, pp-48-unit-fd, controller-fd; two termination jumpers, regulator / diode / ESD picked); 2026-11-04 (user: no cables between the controller and the
+**Updated**: 2026-11-04 (boards laid out: core-fd 68.0 x 72.0 mm, 12 mm wider than rev D's 56.1 for the link domain's isolation; unit-fd 78.6 x 72.1 and controller-fd 105 x 50 unchanged); 2026-11-04 (schematics drawn: power/pp-48-core-fd, pp-48-unit-fd, controller-fd; two termination jumpers, regulator / diode / ESD picked); 2026-11-04 (user: no cables between the controller and the
 planes either; planes sit in one row on the bar, plane n+1's core
 plugs onto plane n's last unit, the link passes through every unit;
 was: PH 5p cables, controller in the middle of two chains)
@@ -42,8 +42,9 @@ Problems with keeping the current link on that row:
    VIL max 0.825 V, ~0.1 V margin), and another side 1's input
    threshold is only guaranteed 50 mV under its own output low. One
    plane is in spec; several on one bus are not.
-2. **Bus length**: 8 planes of a core and 4 units are ~8 x 375 mm,
-   ~3 m of board trace through ~45 joints. I2C on side 2 (if the
+2. **Bus length**: 8 planes of a core and 4 units are ~8 x 400 mm
+   (core 68 + 4 units of 78.6 + five 4 mm gaps), ~3.2 m of board
+   trace through ~45 joints. I2C on side 2 (if the
    isolators were flipped) allows 400 pF; 3 m of trace plus 8
    isolators reaches that. One stuck SDA still stops every plane.
 3. **Throughput**: ~10 kB/s shared by 8 planes, plus a side wire for
@@ -73,6 +74,13 @@ ordered (handoff "Boards ordered": rev C only).
    CANL, AUX_12V) is one isolated net set along the row, shared with
    the controller; it never touches the bus ground. Units carry it
    through without parts.
+   On the core the link domain (ISO1044 side 2, its 5 V regulator,
+   the AUX_12V OR diode, both link connectors, the Fly-Buck
+   secondary) runs along the top edge with a channel down each side
+   edge to the connectors, >= 2 mm from GND copper on every layer;
+   the Fly-Buck primary sits under that strip. This makes the core
+   68.0 x 72.0 mm (rev D 56.1 x 72.1): left edge +8.5 mm for the
+   channel past Y1 / U3, right edge +3.5 mm for the socket past L1.
 
 3. **Link connector: a separate 2x3 right-angle plug / socket beside
    the 2x7 chain joint**, same family as the chain (CJT A2541, 2.54 mm):
@@ -267,7 +275,7 @@ ordered (handoff "Boards ordered": rev C only).
   faces the row bus and side 1 the plane MCU alone; the same 2x3
   joint carries SCL, SDA, EXP_INT, 3V3, GND.
 - **Optimizes for**: the fewest new parts; the G070 stays alone.
-- **Sharpest tradeoff**: 3 m of board trace and 8 isolators on one
+- **Sharpest tradeoff**: 3.2 m of board trace and 8 isolators on one
   I2C bus is at the 400 pF limit; single ended, one stuck slave
   blocks the row, one master, ~10 kB/s.
 - **Bets on**: rows of 2-3 planes, never 8, and no standby controller.
@@ -327,6 +335,9 @@ ordered (handoff "Boards ordered": rev C only).
 ### Negative
 - Every unit carries the link: two more connectors and four nets
   across a routed 4-layer board; a respin of the unit and its route.
+- The core grows 12 mm (56.1 -> 68.0 mm wide) for the isolation
+  channels: a plane is ~402 mm long instead of ~387 mm, a row of 8
+  ~3.2 m plus the controller.
 - Per core in the G070 build: ISO1044, MCP2518FD, crystal, LDO, OR
   diode (~+$2 per core); per unit two connectors and a termination
   (~$0.30).
@@ -339,7 +350,7 @@ ordered (handoff "Boards ordered": rev C only).
 ### Risks
 - **Loop delay at 2 Mbit/s through the ISO1044**: transmitter delay
   compensation on both controllers; 1 Mbit/s data phase as fallback.
-- **~45 joints and ~3 m of trace**: each joint is a small impedance
+- **~45 joints and ~3.2 m of trace**: each joint is a small impedance
   step. Bench test the longest row; 1 Mbit/s data phase if the error
   counters climb.
 - **Wrong termination**: none or three. The controller reads the
