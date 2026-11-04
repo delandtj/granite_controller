@@ -51,7 +51,7 @@ instead of a column edge.
    one core and 1-4 units in a row: N = 2, 4, 6, 8. No end strip, no
    end cap, no per-N board.
 
-2. **Unit board**, ~66 x 72 mm:
+2. **Unit board**, 78.6 x 72.1 mm (as routed):
    - The rev1 unit unchanged in content: two 25 mm slot columns
      (front end under each module, ADR 0004 decisions 1, 1a, 2), one
      I2C segment, TCA6424A 0x22 in slot B, In2 bus for slot A's lines,
@@ -154,7 +154,7 @@ instead of a column edge.
    decision 8: no fuses in the fluid; the 12 V module and the 3V3
    buck limit on their own). Mux U6 TCA9548A channels 0-3 to the chain
    connector at the right edge, 4-7 open. Size set by its parts
-   (~40 x 72 mm), mounting holes in its corners.
+   (56.1 x 72.1 mm as routed), mounting holes in its corners.
 
 7. **Mounting**: every board on its own holes (unit: two in the input
    strip plus two at the left edge, positions to fit around slot A's
@@ -183,8 +183,8 @@ instead of a column edge.
 1. **Core board** (power/pp-48 core sheets: tools/sch/blocks/mcu.py,
    mux.py, link.py, supplies.py; the input block shrinks to the small
    core input)
-   - MCU, mux (I2C2 upstream), RS-485 link with the isolators, 12 V
-     isolated module, 3V3 buck.
+   - MCU, mux (I2C2 upstream), controller link (ISO1640 I2C +
+     ISO7721 EXP_INT, link.py), 12 V isolated module, 3V3 buck.
    - Interfaces: XT30 48 V in, link connectors, 12 V out, chain
      socket (P0..P3, 3V3, GND).
 2. **Unit board** (tools/sch/blocks/unit.py + a unit input block)
@@ -364,10 +364,9 @@ to size with the SOA check of decision 3.
 
 Review asks: none open. Decided by the user 2026-10-29: chain on JST
 PH 2.0 (2026-11-02: boards plug into each other, 2x7 plug / socket on a
-mounting bar); 3V3 from the core; unit hot-swap LM5069-1 latch-off (stays off
-after a fault until the MCU resets it over U_OFF or the 48 V cycles;
-2026-10-30: LM5069-2 auto-retry with the latch in the core firmware,
-decision 3);
+mounting bar); 3V3 from the core; unit hot-swap LM5069-2 auto-retry
+with the latch in the core firmware (decision 3; 2026-10-30, was
+LM5069-1 latch-off on 2026-10-29);
 input strip on the far side (right of slot B).
 
 ---

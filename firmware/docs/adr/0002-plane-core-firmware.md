@@ -69,8 +69,8 @@ Two things in the hardware shape the firmware more than the ADRs say:
    of a PWR press leaves the photoMOS on. The rev C controller solved
    this with a hardware deadline (expander held in reset when no press
    runs); the plane has no such line.
-2. **A unit can lose and regain 3V3 on its own** (chain cable, core
-   input glitch). Its expander then comes back as all inputs: every
+2. **A unit can lose and regain 3V3 on its own** (unplugged from
+   the chain, core input glitch). Its expander then comes back as all inputs: every
    slot ON, the unit hot-swap ON, latches as the hardware left them.
 
 ---
@@ -136,7 +136,7 @@ Two things in the hardware shape the firmware more than the ADRs say:
    stuck (SDA low) gets nine SCL clocks, then a MUX_RST pulse, then
    the channel is skipped until the next re-scan.
 
-5. **Polling.** I2C2 at 100 kHz (cable lengths, ADR 0005 risks). One
+5. **Polling.** I2C2 at 100 kHz (chain length, ADR 0005 risks). One
    cycle every 50 ms (20 Hz) over every present unit: expander inputs
    (3 bytes), each slot's INA238 bus voltage, current, power and die
    temperature, DIAG_ALRT on change of ALERT state; the unit INA238
@@ -392,8 +392,8 @@ Two things in the hardware shape the firmware more than the ADRs say:
   at worst, so the stage sees one restart attempt. A core that is not
   there at all (no 3V3 on the chain, expander in reset) leaves the unit
   retrying for ever, which is the hardware default and the safe one.
-- **I2C on the chain**: 4 cables to unit 4. The 2 s re-scan and the
-  stuck-bus recovery keep one bad cable to one unit.
+- **I2C on the chain**: 4 board-to-board joints to unit 4. The 2 s
+  re-scan and the stuck-bus recovery keep one bad joint to one unit.
 
 ---
 
@@ -417,12 +417,12 @@ not only by the timer that set it. A hardware deadline through the chain
 (PRESS_EN, docs/press-deadline-line.md) is asked from the hardware;
 until it exists this is the only bound.
 
-**Q: Unit 2's chain cable is pulled and replugged. What do the slots
+**Q: Unit 2 is unplugged from the chain and plugged back. What do the slots
 on units 2-4 see?**
 A: Units 2-4 lose 3V3: their expanders reset to inputs, so every slot
 there goes ON (and a slot that was OFF powers up its node) for as long
-as the cable is out. When the units come back the firmware turns the
-OFF slots back OFF (decision 4). The plane cannot prevent the ON while the cable is out; that is
+as it is out. When the units come back the firmware turns the
+OFF slots back OFF (decision 4). The plane cannot prevent the ON while it is out; that is
 the hardware default by design. Events record it.
 
 **Q: How long does it take to see a node's LED blink pattern, and can
@@ -472,7 +472,7 @@ link load and to keep one failure at a time.
 - ISO1640 with clock stretching at 100 kHz across several planes:
   default the response is ready before the read starts; measure
   stretch on the bench.
-- Chain I2C with 4 cables: default 100 kHz; drop to 50 kHz per channel
+- Chain I2C over 4 joints: default 100 kHz; drop to 50 kHz per channel
   if unit 4 shows errors.
 
 ### The mechanical work

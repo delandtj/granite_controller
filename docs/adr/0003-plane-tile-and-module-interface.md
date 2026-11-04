@@ -2,7 +2,10 @@
 
 **Status**: Accepted; decisions 1, 2, 3 (INT_n, ID_n lines) and 4
 (ID read path), and 11 (node connector) superseded by ADR 0004 (proposed 2026-10-28: N = 2/4/6/8
-columns at 25 mm, front end under the module, rotating channel)
+columns at 25 mm, front end under the module, rotating channel);
+decision 8's tile input row (LM5069-1 latch-off) superseded by ADR
+0005 decision 3: one hot-swap per 2-slot unit, LM5069-2 auto-retry,
+the latch in the core firmware
 **Date**: 2026-10-26
 **Updated**: 2026-10-26 (review asks answered: names, LM5069-1, new
 module project, INT per column; decision 14 isolated aux added);
@@ -490,7 +493,8 @@ Review asks (answered 2026-10-26):
 - [x] INA238 ALERT latches: open drain straight onto the OV_KILL line,
   so it sets the slot latch. Threshold (210-220 W input) is firmware
   (power limit register, ALATCH), set at boot.
-- [ ] Tile hot-swap reset path (LM5069-1 latch-off, decided).
+- [x] Tile hot-swap reset path: superseded, ADR 0005 decision 3 (unit
+  LM5069-2, latch in firmware).
 - [x] D1 SMBJ60A at 60 V standoff vs the new range: kept (2026-10-28).
   Breakdown >= 66.7 V, so no conduction at 60 V; SMBJ64A clamps at
   103 V, over the 100 V FET and module parts; no SMBJ62A at LCSC.
