@@ -103,11 +103,17 @@ def expander(b):
           at=P(80, 190), fields={"LCSC": "C80692"},
           desc="unit GPIO in slot B, address 0x22 (ADDR GND); 11 lines per slot: slot A P00-P07 / P10-P12 (to slot A over "
                "the In2 bus), slot B P14-P17 / P20-P26; INT unused (polled); all inputs after reset")
-    b.sym("C9", "Device:C", "100n", C0402, {"1": "+3V3", "2": "GND"}, at=P(66, 154), desc="TCA6424A VCCI")
-    b.sym("C13", "Device:C", "100n", C0402, {"1": "+3V3", "2": "GND"}, at=P(96, 154), desc="TCA6424A VCCP")
-    b.sym("R30", "Device:R", "10k", R0402, {"1": "EXP_RSTN", "2": "+3V3"}, at=P(66, 182), desc="TCA6424A /RESET pull-up")
-    b.wire("EXP_RSTN", [("R30", "1"), (66 * G, 173 * G), ("U5", "28")])
-    b.port("EXP_RSTN", "input", side="left", pos=P(66, 177))
+    b.sym("C9", "Device:C", "100n", C0402, {"1": "+3V3", "2": "GND"}, at=P(72, 154), desc="TCA6424A VCCI")
+    b.sym("C13", "Device:C", "100n", C0402, {"1": "+3V3", "2": "GND"}, at=P(86, 154), desc="TCA6424A VCCP")
+    # VCCI / VCCP caps on one rail over the supply pins; its symbol points left, clear of the note above
+    top = P(70, 151) + ((-1, 0),)
+    b.wire("+3V3", [top, ("C9", "1"), P(78, 151), ("U5", "31")])
+    b.wire("+3V3", [top, P(82, 151), ("U5", "27")])
+    b.wire("+3V3", [top, ("C13", "1")])
+    b.sym("R30", "Device:R", "10k", R0402, {"1": "EXP_RSTN", "2": "+3V3"}, at=P(64, 182), desc="TCA6424A /RESET pull-up")
+    b.wire("EXP_RSTN", [("R30", "1"), (64 * G, 173 * G), ("U5", "28")])     # riser left of the ADDR GND text
+    b.port("EXP_RSTN", "input", side="left", pos=P(64, 177))
+
     # press deadline (docs/press-deadline-line.md): the four photoMOS LED cathodes return through Q10, gate =
     # PRESS_EN from the core's deadline monostable over the chain; low or open (R31) = no LED current, no press
     b.sym(PRESS_FET, "Transistor_FET:2N7002", "2N7002", "Package_TO_SOT_SMD:SOT-23", {"1": "PRESS_EN", "2": "GND", "3": "PRESS_RTN"},
@@ -203,7 +209,7 @@ def slot(b, s):
         {"1": "GND", "2": "GND", "3": "NC", "4": "GND", "5": "LQ", "6": "CLRN", "7": "OVK", "8": "+3V3"},
         (112, 100), mirror="y", fields={"LCSC": "C70285"},
         desc="OV latch: /PRE = module OV_KILL (low = set), /CLR = RC power-on clear + expander; Q holds UVLO low until cleared")
-    C(4, "100n", C0402, {"1": "+3V3", "2": "GND"}, (104, 84), desc="latch VCC")
+    C(4, "100n", C0402, {"1": "+3V3", "2": "GND"}, (104, 85), desc="latch VCC")
     R(11, "100k", R0402, {"1": "+3V3", "2": "CLRN"}, (128, 111), desc="power-on clear RC (10 ms)")
     C(5, "100n", C0402, {"1": "CLRN", "2": "GND"}, (122, 118))
     sym("Q4", FET, "2N7002", SOT23, {"1": "LCLR", "2": "GND", "3": "CLRN"}, (132, 127),
@@ -213,9 +219,9 @@ def slot(b, s):
     # ========================================================== PGOOD-loss trip with blanking
     sym("U10", "74xGxx:74AUC1G74", "74LVC1G74", "Package_SO:VSSOP-8_2.3x2mm_P0.5mm",
         {"1": "GND", "2": "GND", "3": "NC", "4": "GND", "5": "ARM", "6": "PGD", "7": "ARMS_N", "8": "+3V3"},
-        (130, 170), fields={"LCSC": "C70285"},
+        (130, 170), fields={"LCSC": "C70285"}, ref_at=(25.63, -15.494), val_at=(28.63, -13.97),
         desc="PGOOD-loss arm: set while PG and PGD are high, cleared while PGD is low")
-    C(12, "100n", C0402, {"1": "+3V3", "2": "GND"}, (148, 160), desc="arm FF VCC")
+    C(12, "100n", C0402, {"1": "+3V3", "2": "GND"}, (138, 155), desc="arm FF VCC")
     R(28, "100k", R0402, {"1": "+3V3", "2": "ARMS_N"}, (112, 156), desc="arm set pull-up")
     sym("Q8", FET, "2N7002", SOT23, {"1": "PG", "2": "ARMS_M", "3": "ARMS_N"}, (112, 170),
         fields={"LCSC": "C8545"}, desc="arm set, upper: module PGOOD high")
@@ -225,7 +231,7 @@ def slot(b, s):
         fields={"LCSC": "C8545"}, desc="PGOOD-loss trip: armed and PG low -> OVK low -> slot latch set")
     sym("Q7", FET, "2N7002", SOT23, {"1": "DISARM", "2": "GND", "3": "PGD"}, (176, 160),
         fields={"LCSC": "C8545"}, desc="expander DISARM high -> PGD low -> arm cleared (around RUNOFF)")
-    R(29, "100k", R0402, {"1": "DISARM", "2": "GND"}, (170, 172), desc="Q7 gate pull-down: expander in reset = armed path live")
+    R(29, "100k", R0402, {"1": "DISARM", "2": "GND"}, (172, 172), desc="Q7 gate pull-down: expander in reset = armed path live")
 
     # ========================================================== module mount: standoffs and aux socket
     sym("SO1", "Connector_Generic:Conn_01x01", "S1 VIN", STANDOFF, {"1": "OUT"}, (150, 32),
@@ -277,11 +283,11 @@ def slot(b, s):
         R(27, "4.7k", R0402, {"1": "+3V3", "2": "SCL"}, (26, 132), desc="segment SCL pull-up")
     sym("U4", "Analog_ADC:ADC101C021CIMK", "ADC121C027CIMK", "Package_TO_SOT_SMD:TSOT-23-6",
         {"1": "+3V3", "2": "GND", "3": "ID_F", "4": strap, "5": "SCL", "6": "SDA"}, (40, 175),
-        fields={"LCSC": "C2670157", "MPN": "TI ADC121C027CIMKX/NOPB"},
+        fields={"LCSC": "C2670157", "MPN": "TI ADC121C027CIMKX/NOPB"}, ref_at=(13.97, -11.43), val_at=(13.97, -8.89),
         desc="ID ADC, 12 bit, VA = reference (reads ID / 3V3), address 0x51 slot A (ADR0 GND) / 0x52 slot B (ADR0 VA); symbol of the pin-equal ADC101C021CIMK, pin 4 = ADR0")
     C(6, "100n", C0402, {"1": "ID_F", "2": "GND"}, (26, 179), desc="ID filter at the ADC input")
-    C(10, "100n", C0402, {"1": "+3V3", "2": "GND"}, (12, 164), desc="ADC VA (its reference)")
-    C(11, "1u", C0402, {"1": "+3V3", "2": "GND"}, (22, 164), fields={"LCSC": "C52923"}, desc="ADC VA bulk")
+    C(10, "100n", C0402, {"1": "+3V3", "2": "GND"}, (32, 164), desc="ADC VA (its reference)")
+    C(11, "1u", C0402, {"1": "+3V3", "2": "GND"}, (24, 164), fields={"LCSC": "C52923"}, desc="ADC VA bulk")
 
     # ========================================================== wiring: power path
     wire("VBUS", (16, 32), ("R1", "1"), (30, 32), ("R2", "1"))      # one VBUS symbol, both shunts
@@ -314,6 +320,7 @@ def slot(b, s):
     # ========================================================== INA237 supply, alert, I2C segment
     wire("+3V3", (58, 56), ("C3", "1"), ("U2", "6"))
     wire("GND", (32, 64), ("U2", "7"))
+    wire("GND", (50, 74), ("U2", "1"))                              # A1 below A0: their symbols' texts apart
     tie("OVK", ("U2", "3"))                                         # ALERT (open drain) sets the slot latch
     wire("SDA", ("U2", "4"), (44, 138), (12, 138))                  # segment along the bottom
     wire("SCL", ("U2", "5"), (42, 140), (12, 140))
@@ -336,6 +343,9 @@ def slot(b, s):
     tie("LQ", (90, 104), 180)
     wire("GND", (100, 84), ("Q3", "2"))
     wire("GND", (124, 108), ("U3", "1"), ("U3", "2"))
+    wire("+3V3", (110, 80), (110, 82), (104, 82), ("C4", "1"), (104, 82), (110, 82), ("U3", "8"))   # C4 at the VCC pin
+    wire("+3V3", (132, 150), (132, 152), (138, 152), ("C12", "1"), (138, 152), (132, 152), ("U10", "8"))   # C12 likewise
+
     wire("CLRN", ("U3", "6"), (114, 114), ("R11", "2"))            # latch /CLR node
     wire("CLRN", (128, 114), ("Q4", "3"))
     wire("CLRN", (122, 114), ("C5", "1"))
@@ -376,6 +386,9 @@ def slot(b, s):
     # ========================================================== ADC end of the ID tie
     wire("ID_F", ("U4", "3"), (26, 175), ("C6", "1"))
     tie("ID_F", (22, 175), 180)
+    wire("+3V3", (40, 161), ("U4", "1"))                            # VA caps on the VA pin
+    wire("+3V3", (40, 161), ("C10", "1"), ("C11", "1"))
+
 
     wire("ARMS_M", ("Q8", "2"), ("Q9", "3"))                       # arm set stack (labels would collide)
     for ref, pins in (("U10", "567"), ("R28", "2"), ("Q8", "13"), ("Q9", "1"), ("Q6", "123"), ("Q7", "13"), ("R29", "1")):

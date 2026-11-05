@@ -117,7 +117,7 @@ def block(N=2, tile=True):
     X, Y = 160 * G, 130 * G            # U3 origin
     nets = mcu_nets(N, tile)
     u = b.sym("U3", "MCU_ST_STM32G0:STM32G070CBTx", "STM32G070CBT6", "Package_QFP:LQFP-48_7x7mm_P0.5mm", nets,
-              at=(X, Y), fields={"LCSC": "C529338"},
+              at=(X, Y), fields={"LCSC": "C529338"}, ref_at=(5.08, -45.72, "left"), val_at=(8.89, -45.72, "left"),
               desc="plane MCU: I2C1 slave to the controller (PB8/PB9), I2C2 master to the mux and the units (PA11/PA12), SWD on PA13/PA14")
     pin = lambda n: u.pin_xy(n)
     XR, XL = X + 22 * G, X - 22 * G    # right / left pin ends
@@ -128,31 +128,34 @@ def block(N=2, tile=True):
     b.sym("C20", "Device:C", "100n", C0402, {"1": "+3V3", "2": "GND"}, at=(xc20, yr + 5 * G), desc="U3 VREF+/VBAT")
     b.sym("C18", "Device:C", "100n", C0402, {"1": "+3V3", "2": "GND"}, at=(xc18, yr + 5 * G), desc="U3 VDD")
     b.sym("C19", "Device:C", "4.7u", C0603, {"1": "+3V3", "2": "GND"}, at=(xc19, yr + 5 * G), desc="U3 VDD bulk")
-    xvr = XL - 2 * G                   # VREF+ drop
-    b.wire("+3V3", [(xvr - 2 * G, yr), (xvr, yr), ("U3", "5"), (xvr, yr), ("C20", "1"), ("C18", "1"),
+    b.wire("+3V3", [(XL - 4 * G, yr), (xc20, yr), ("C20", "1"), (xc20, yr), (xc18, yr), ("C18", "1"), (xc18, yr),
                     ("U3", "4"), (X, yr), ("U3", "6"), ("C19", "1")])
+    b.wire("+3V3", [(pin("5")[0] - 4 * G, pin("5")[1], (-1, 0)), ("U3", "5")])     # VREF+: its own symbol, clear of the OSC rows
 
-    # ---------------------------------------------------------- HSE crystal (left, above the OSC pins)
-    yc = Y - 42 * G
-    xy = X - 40 * G
+    # ---------------------------------------------------------- HSE crystal (left, in line with the OSC pins)
+    xy, yc = X - 39 * G, Y - 20 * G
     b.sym("Y1", "Device:Crystal_GND24", "8MHz", "Crystal:Crystal_SMD_3225-4Pin_3.2x2.5mm",
-          {"1": "OSC_IN", "2": "GND", "3": "OSC_OUT", "4": "GND"}, at=(xy, yc), mirror="y",
-          fields={"LCSC": "C7424755"}, desc="HSE, energy time base; 3225 20 pF 10 ppm")
-    b.sym("C22", "Device:C", "33p", C0402, {"1": "OSC_IN", "2": "GND"}, at=(xy + 8 * G, yc + 5 * G), desc="8 MHz crystal CL 20 pF")
-    b.sym("C23", "Device:C", "33p", C0402, {"1": "OSC_OUT", "2": "GND"}, at=(xy - 8 * G, yc + 5 * G))
+          {"1": "OSC_IN", "2": "GND", "3": "OSC_OUT", "4": "GND"}, at=(xy, yc),
+          fields={"LCSC": "C7424755"}, desc="HSE, energy time base; 3225 20 pF 10 ppm",
+          ref_at=(-1.27, -5.08, "right"), val_at=(1.27, -5.08, "left"))
+    b.sym("C22", "Device:C", "33p", C0402, {"1": "OSC_IN", "2": "GND"}, at=(xy - 6 * G, yc + 3 * G), desc="8 MHz crystal CL 20 pF",
+          ref_at=(-2.54, -1.27, "right"), val_at=(-2.54, 1.27, "right"))
+    b.sym("C23", "Device:C", "33p", C0402, {"1": "OSC_OUT", "2": "GND"}, at=(xy + 11 * G, yc + 3 * G),
+          ref_at=(-2.54, -1.27, "right"), val_at=(-2.54, 1.27, "right"))
+
     b.wire("GND", [("Y1", "2"), ("Y1", "4")])
-    xv = XL - 4 * G                    # OSC_IN riser
-    b.wire("OSC_IN", [("Y1", "1"), (xy + 8 * G, yc), ("C22", "1")])
-    b.wire("OSC_IN", [("U3", "8"), (xv, pin("8")[1]), (xv, yc), (xy + 8 * G, yc)])
-    xw = xy - 12 * G                   # OSC_OUT riser, outside the crystal
-    b.wire("OSC_OUT", [("Y1", "3"), (xy - 8 * G, yc), ("C23", "1")])
-    b.wire("OSC_OUT", [("U3", "9"), (xw, pin("9")[1]), (xw, yc), (xy - 8 * G, yc)])
+    yo = Y - 26 * G                    # OSC_IN over the crystal
+    b.wire("OSC_IN", [("U3", "8"), (X - 26 * G, pin("8")[1]), (X - 26 * G, yo), (xy - 6 * G, yo), ("C22", "1"), ("Y1", "1")])
+    b.name("OSC_IN", at=(X - 41 * G, yo))
+    b.wire("OSC_OUT", [("U3", "9"), ("C23", "1"), ("Y1", "3")])
+    b.name("OSC_OUT", at=(X - 35 * G, yc))
+    xw = X - 52 * G                    # NRST riser column
 
     # ---------------------------------------------------------- SWD header J5 (top left) and NRST
     xj, yj = X - 43 * G, Y - 60 * G
     b.sym("J5", "Connector:Conn_ARM_SWD_TagConnect_TC2030-NL", "SWD", "Connector:Tag-Connect_TC2030-IDC-NL_2x03_P1.27mm_Vertical",
           {"1": "+3V3", "2": "SWDIO", "3": "NRST", "4": "SWCLK", "5": "GND", "6": "NC"}, at=(xj, yj), rot=90,
-          desc="bench programming")
+          desc="bench programming", ref_at=(0, 8.89), val_at=(0, 11.43))
     j = b.syms["J5"]
     b.wire("+3V3", [(j.pin_xy("1")[0] - 2 * G, j.pin_xy("1")[1] - 2 * G), ("J5", "1")])
     b.wire("GND", [(j.pin_xy("5")[0] + 2 * G, j.pin_xy("5")[1] + 2 * G), ("J5", "5")])
@@ -160,66 +163,79 @@ def block(N=2, tile=True):
     b.sym("J6", "Connector_Generic:Conn_02x05_Odd_Even", "SWD", "Connector_PinHeader_1.27mm:PinHeader_2x05_P1.27mm_Vertical_SMD",
           {"1": "+3V3", "2": "SWDIO", "3": "GND", "4": "SWCLK", "5": "GND", "6": "NC", "7": "NC", "8": "NC", "9": "GND",
            "10": "NRST"}, at=(xj - 29 * G, yj + 4 * G),
-          fields={"LCSC": "C5155080", "MPN": "Samtec FTSH-105-01-L-DV-K"}, desc="bench programming, ARM Cortex 10-pin")
+          fields={"LCSC": "C5155080", "MPN": "Samtec FTSH-105-01-L-DV-K"}, desc="bench programming, ARM Cortex 10-pin",
+          ref_at=(0, -11.43), val_at=(0, -8.89))
+
     j6 = b.syms["J6"]                               # GND: 3 / 5 joined, 9 from below (clear of 7)
     xg = j6.pin_xy("5")[0] - 2 * G
     b.wire("GND", [("J6", "3"), ("J6", "5")])
     b.wire("GND", [(xg, j6.pin_xy("9")[1] + 3 * G), (xg, j6.pin_xy("9")[1]), ("J6", "9")])
     for num, net in (("2", "SWDIO"), ("4", "SWCLK"), ("10", "NRST")):   # 6 SWO, 7 key, 8 TDI open
         b.tie(net, ("J6", num), 0)
-    for num, net in (("2", "SWDIO"), ("4", "SWCLK"), ("3", "NRST")):
-        b.tie(net, ("J5", num), 90)
-    b.sym("C21", "Device:C", "100n", C0402, {"1": "NRST", "2": "GND"}, at=(X - 40 * G, pin("10")[1] + 5 * G), desc="NRST")
+    b.sym("C21", "Device:C", "100n", C0402, {"1": "NRST", "2": "GND"}, at=(xw, pin("10")[1] + 3 * G), desc="NRST")
     xn = xw - 4 * G
     yjt = j.pin_xy("3")[1]
     b.wire("NRST", [("U3", "10"), (xn, pin("10")[1]), (xn, yjt - 6 * G), (j.pin_xy("3")[0], yjt - 6 * G), ("J5", "3")])
-    b.wire("NRST", [(X - 40 * G, pin("10")[1]), ("C21", "1")])
+    b.wire("NRST", [(xw, pin("10")[1]), ("C21", "1")])
+    b.tie("NRST", (xn + G, yjt - 6 * G))
 
     # ---------------------------------------------------------- SWD fan-out (right-hand pins, over the top to J5)
     inv = {net: num for num, net in nets.items()}
-    x = XR + 10 * G                                   # outside the labels at the right-hand pins
-    yswd = j.pin_xy("2")[1] - 2 * G                   # SWD rows clear J5's pin tops
+    x = XR + 16 * G                                   # outside the pull-ups and ports at the right-hand pins
+    yswd = j.pin_xy("2")[1] - 4 * G                   # SWD rows clear J5's pin tops
     jx = {"SWDIO": j.pin_xy("2")[0], "SWCLK": j.pin_xy("4")[0]}
     for net in ("SWDIO", "SWCLK"):                    # SWDIO is the lower pin: outer column, lower row
         num = inv[net]
         x += 2 * G
         b.wire(net, [("U3", num), (x, pin(num)[1]), (x, yswd), (jx[net], yswd), ("J5", "2" if net == "SWDIO" else "4")])
-        yswd -= 2 * G
+        b.tie(net, (X - 30 * G, yswd))
+        yswd -= 4 * G
 
     # ---------------------------------------------------------- signal pins: ports for the sheet's nets, labels for
     # the local ones (straps, LED), on whichever side the pin is
+    pullup = {"SCL2": XR, "SDA2": XR + 10 * G}       # I2C2 ports past their pull-ups
+    wired = {"ADR1", "LED_RUN"}                      # drawn to their circuits below
     for num, net in sorted(nets.items(), key=lambda kv: int(kv[0])):
         if net in RIGHT_PORTS or net in SHAPES:
-            b.port(net, shape(net), side="right" if u.pin_out(num) == (1, 0) else "left", pos=("U3", num))
-        elif net.startswith("ADR") or net == "LED_RUN":
+            pos = (pullup[net], pin(num)[1]) if net in pullup else ("U3", num)
+            b.port(net, shape(net), side="right" if u.pin_out(num) == (1, 0) else "left", pos=pos)
+        elif (net.startswith("ADR") or net == "LED_RUN") and net not in wired:
             b.tie(net, ("U3", num), 0 if u.pin_out(num) == (1, 0) else 180)
 
     # ---------------------------------------------------------- run LED (right, below the pins)
-    yl = Y + 40 * G
-    b.sym("R19", "Device:R", "1k", R0402, {"1": "LED_RUN", "2": "LEDRUN_A"}, at=(XR + 11 * G, yl), rot=90,
+    yl = Y + 38 * G
+    b.sym("R19", "Device:R", "1k", R0402, {"1": "LED_RUN", "2": "LEDRUN_A"}, at=(XR - G, yl), rot=90,
           desc="firmware heartbeat LED")
-    b.sym("D4", "Device:LED", "GREEN RUN", LED0603, {"1": "GND", "2": "LEDRUN_A"}, at=(XR + 27 * G, yl), rot=180,
+    b.sym("D4", "Device:LED", "GREEN RUN", LED0603, {"1": "GND", "2": "LEDRUN_A"}, at=(XR + 14 * G, yl), rot=180,
           fields={"LCSC": "C2297"})
-    b.wire("GND", [(XR + 33 * G, yl), ("D4", "1")])     # GND clear of the LED arrows
-    b.tie("LED_RUN", ("R19", "1"), 180)
+    b.wire("GND", [(XR + 22 * G, yl), ("D4", "1")])     # GND clear of the LED arrows
+    num = inv["LED_RUN"]
+    b.wire("LED_RUN", [("U3", num), (XR - 6 * G, pin(num)[1]), (XR - 6 * G, yl), ("R19", "1")])
+    b.name("LED_RUN", at=(XR - 6 * G, yl - G), ang=90)
 
-    # ---------------------------------------------------------- I2C2 pull-ups (right, beside the SWD fan-out)
-    for k, (ref, net, desc) in enumerate((("R24", "SCL2", ""), ("R23", "SDA2", "I2C2 pull-up (mux upstream, units)"))):
-        b.sym(ref, "Device:R", "2.2k", R0402, {"1": "+3V3", "2": net}, at=(XR + (22 + 10 * k) * G, Y - 14 * G), desc=desc)
-        b.tie(net, (ref, "2"), 270)
+    # ---------------------------------------------------------- I2C2 pull-ups (right, on the pin rows)
+    for ref, net, x, y, desc in (("R24", "SCL2", XR - 2 * G, Y - 15 * G, ""),
+                                 ("R23", "SDA2", XR + 8 * G, Y - 13 * G, "I2C2 pull-up (mux upstream, units)")):
+        b.sym(ref, "Device:R", "2.2k", R0402, {"1": "+3V3", "2": net}, at=(x, y), desc=desc)
+        num = inv[net]
+        b.wire(net, [("U3", num), (ref, "2"), (pullup[net], pin(num)[1])])
 
-    # ---------------------------------------------------------- address straps (below left)
-    for i in range(3):
-        net = "ADR%d" % i
-        xa = XL - (4 + 10 * (2 - i)) * G
-        b.sym("R%d" % (20 + i), "Device:R", "100k", R0402, {"1": "+3V3", "2": net}, at=(xa - 6 * G, Y + 6 * G),
-              desc="address strap pull-up")
-        b.wire(net, [("R%d" % (20 + i), "2"), (xa - 6 * G, Y + 11 * G), (xa, Y + 11 * G)])
-        b.tie(net, (xa, Y + 11 * G), 0)
-        b.tie(net, ("SW1", str(1 + i)), 180)
+    # ---------------------------------------------------------- address straps (below left): SW1, pull-ups on the rows
     b.sym("SW1", "Switch:SW_DIP_x03", "ADR", "Button_Switch_SMD:SW_DIP_SPSTx03_Slide_KingTek_DSHP03TS_W7.62mm_P1.27mm",
-          {"1": "ADR0", "2": "ADR1", "3": "ADR2", "4": "GND", "5": "GND", "6": "GND"}, at=(XL - 14 * G, Y + 19 * G),
-          fields={"LCSC": "C50844", "MPN": "KingTek DSHP03TSGET"},
+          {"1": "ADR0", "2": "ADR1", "3": "ADR2", "4": "GND", "5": "GND", "6": "GND"}, at=(X - 52 * G, Y + 6 * G), mirror="y",
+          fields={"LCSC": "C50844", "MPN": "KingTek DSHP03TSGET"}, ref_at=(0, -10.16), val_at=(0, -7.62),
           desc="address straps, ON = 0; plane address 0x30 + ADR[2:0]")
+    fat = [dict(ref_at=(-1.905, -1.27, "right"), val_at=(-1.905, 1.27, "right")), {},
+           dict(ref_at=(1.905, -2.54, "left"), val_at=(1.905, 0, "left"))]
+    for i, dx in enumerate((-42, -32, -20)):
+        b.sym("R%d" % (20 + i), "Device:R", "100k", R0402, {"1": "+3V3", "2": "ADR%d" % i}, at=(X + dx * G, Y + (1 + 2 * i) * G),
+              desc="address strap pull-up", **fat[i])
+    b.wire("ADR0", [("SW1", "1"), ("R20", "2"), (X - 36 * G, Y + 4 * G)])
+    b.tie("ADR0", (X - 36 * G, Y + 4 * G), 180)
+    b.wire("ADR1", [("SW1", "2"), ("R21", "2"), (X - 24 * G, Y + 6 * G), (X - 24 * G, pin(inv["ADR1"])[1]), ("U3", inv["ADR1"])])
+    b.name("ADR1", at=(X - 24 * G, Y + G), ang=90)
+    b.wire("ADR2", [("SW1", "3"), ("R22", "2"), (X - 14 * G, Y + 8 * G)])
+    b.tie("ADR2", (X - 14 * G, Y + 8 * G), 180)
+
 
     return b.finish()

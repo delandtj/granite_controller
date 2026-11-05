@@ -40,15 +40,16 @@ def block():
     sym("D1", "Device:D_Zener", "SMDJ60A", "Diode_SMD:D_SMC", {"1": "VIN", "2": "GND"}, (2, 38), rot=270,
         fields={"LCSC": "C2990209"}, desc="bus TVS 3 kW, unidirectional: cathode (pad 1) on VIN; 60 V standoff, breakdown >= 66.7 V, clamp 96.8 V")
     sym("C1", "Device:C_Polarized", "47u 100V", "Capacitor_SMD:CP_Elec_10x10", {"1": "VIN", "2": "GND"}, (14, 38),
-        fields={"LCSC": "C87862", "MPN": "Lelon RVT2A470M1010"}, desc="input bulk, damps the ringing of a live plug-in")
-    sym("C2", "Device:C", "2.2u 100V", C1210, {"1": "VIN", "2": "GND"}, (24, 38), fields={"LCSC": "C338133"}, desc="input HF")
+        fields={"LCSC": "C87862", "MPN": "Lelon RVT2A470M1010"}, desc="input bulk, damps the ringing of a live plug-in", bulk=True)
+    sym("C2", "Device:C", "2.2u 100V", C1210, {"1": "VIN", "2": "GND"}, (30, 38), fields={"LCSC": "C338133"}, desc="input HF",
+        bulk=True)
     sym("R15", "Device:R", "220k", R0805, {"1": "VIN", "2": "VIN_SNS"}, (20, 90), desc="VIN sense: 3.3 V at 75.9 V")
     sym("R16", "Device:R", "10k", R0402, {"1": "VIN_SNS", "2": "GND"}, (20, 100))
     sym("C17", "Device:C", "100n", C0402, {"1": "VIN_SNS", "2": "GND"}, (28, 100), desc="ADC filter")
 
-    wire("VIN", ("J1", "2"), (2, 32), ("D1", "1"), (2, 32), (14, 32), ("C1", "1"), (14, 32), (24, 32), ("C2", "1"))
+    wire("VIN", (8, 32), ("J1", "2"), (2, 32), ("D1", "1"), (2, 32), (14, 32), ("C1", "1"), (14, 32), (30, 32), ("C2", "1"))
     wire("VIN_SNS", ("R15", "2"), (20, 95), ("R16", "1"))
     wire("VIN_SNS", (12, 95), (20, 95), (28, 95), ("C17", "1"))
     b.port("VIN_SNS", "output", side="left", pos=P(12, 95))
-    b.text("CORE INPUT  J1 XT30 -> TVS -> C1 / C2 -> VIN (3V3 buck, 12 V module)", P(-14, -4))
+    b.text("CORE INPUT  J1 XT30 -> TVS -> C1 / C2 -> VIN (3V3 buck, 12 V module)", P(-14, 2))
     return b.finish()

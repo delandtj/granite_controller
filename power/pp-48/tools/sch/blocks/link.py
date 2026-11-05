@@ -27,11 +27,11 @@ def block(N=2):
 
     b.sym("U5", "Isolator:ISO7721D", "ISO7721D", "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
           {"1": "CTRL_3V3", "2": "ISO_OUTA", "3": "CTRL_GND", "4": "CTRL_GND", "5": "GND", "6": "NC", "7": "INT_OUT", "8": "+3V3"},
-          at=(X, Y5), mirror="y", fields={"LCSC": "C366164"},
+          at=(X, Y5), mirror="y", fields={"LCSC": "C366164"}, ref_at=(-2.54, -10.16, "left"), val_at=(2.54, -10.16, "right"),
           desc="EXP_INT plane -> controller (channel A, side 2 in, side 1 out); channel B unused")
     b.sym("U4", "Isolator:ISO1540", "ISO1640BD", "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
           {"1": "+3V3", "2": "SDA1", "3": "SCL1", "4": "GND", "5": "CTRL_GND", "6": "CTRL_SCL", "7": "CTRL_SDA", "8": "CTRL_3V3"},
-          at=(X, Y4), fields={"LCSC": "C5122339"},
+          at=(X, Y4), fields={"LCSC": "C5122339"}, ref_at=(-2.54, -7.62, "right"), val_at=(2.54, -7.62, "left"),
           desc="isolated I2C; side 1 = plane (single node), side 2 = shared controller cable. ISO1540 symbol, ISO1640 pin compatible")
 
     # ---------------------------------------------------------- supply taps with their decoupling
@@ -89,16 +89,18 @@ def block(N=2):
     for j, y in (("J2", y2), ("J3", y3)):
         b.sym(j, "Connector_Generic:Conn_01x05", "CTRL " + ("IN" if j == "J2" else "OUT"), JST,
               {"1": "CTRL_3V3", "2": "CTRL_GND", "3": "CTRL_SCL", "4": "CTRL_SDA", "5": "CTRL_INT"}, at=(xj, y), mirror="x",
-              fields={"LCSC": "C157993"}, desc="controller link, daisy chain; 3V3 GND SCL SDA INT, from J8 of the controller")
+              fields={"LCSC": "C157993"}, desc="controller link, daisy chain; 3V3 GND SCL SDA INT, from J8 of the controller",
+              ref_at=(0, -11.43), val_at=(0, -8.89))
     J2, J3 = b.syms["J2"], b.syms["J3"]
     xi = X + 44 * G                       # INT riser from Q1
     qd = b.syms["Q1"].pin_xy("3")
     b.wire("CTRL_INT", [("Q1", "3"), (qd[0], qd[1] - 2 * G), (xi, qd[1] - 2 * G), (xi, J2.pin_xy("5")[1]), ("J2", "5")])
     # DNP controller-side pull-ups
     xr28, xr29 = X + 29 * G, X + 37 * G
-    b.sym("R28", "Device:R", "4.7k", R0402, {"1": "CTRL_3V3", "2": "CTRL_SDA"}, at=(xr28, ysda - 7 * G), dnp=True,
-          desc="DNP: the controller's J8 bus carries the pull-ups (2.2k, on ISO1640 side 2)")
-    b.sym("R29", "Device:R", "4.7k", R0402, {"1": "CTRL_3V3", "2": "CTRL_SCL"}, at=(xr29, ysda - 7 * G), dnp=True)
+    for r, x, net in (("R28", xr28, "CTRL_SDA"), ("R29", xr29, "CTRL_SCL")):
+        b.sym(r, "Device:R", "4.7k", R0402, {"1": "CTRL_3V3", "2": net}, at=(x, ysda - 7 * G), dnp=True,
+              desc="DNP: the controller's J8 bus carries the pull-ups (2.2k, on ISO1640 side 2)")
+
     b.wire("CTRL_SDA", [("U4", "7"), ("J2", "4")])
     b.wire("CTRL_SDA", [(xr28, ysda), ("R28", "2")])
     b.wire("CTRL_SCL", [("U4", "6"), ("J2", "3")])

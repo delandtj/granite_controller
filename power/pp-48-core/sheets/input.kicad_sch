@@ -1072,6 +1072,16 @@
 	)
 	(wire
 		(pts
+			(xy 35.56 60.96) (xy 43.18 60.96)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "1452bf36-3a03-5e44-8602-d39396e07959")
+	)
+	(wire
+		(pts
 			(xy 35.56 60.96) (xy 35.56 64.77)
 		)
 		(stroke
@@ -1082,13 +1092,13 @@
 	)
 	(wire
 		(pts
-			(xy 35.56 60.96) (xy 50.8 60.96)
+			(xy 43.18 60.96) (xy 50.8 60.96)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "5fd57473-1194-5cc1-9d5f-9987b0c7874a")
+		(uuid "5bdcf2e0-ac39-51c0-8800-8f44ed60e968")
 	)
 	(wire
 		(pts
@@ -1099,6 +1109,26 @@
 			(type default)
 		)
 		(uuid "43194079-53bc-5aec-a257-0ac0323beda8")
+	)
+	(wire
+		(pts
+			(xy 50.8 60.96) (xy 71.12 60.96)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "132fbb6a-49ba-5361-be79-f44e58e626a0")
+	)
+	(wire
+		(pts
+			(xy 71.12 60.96) (xy 71.12 64.77)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d078cc70-7b9c-590f-949f-2f17dc333259")
 	)
 	(wire
 		(pts
@@ -1150,31 +1180,17 @@
 		)
 		(uuid "4e9c5a98-cc46-5267-864d-195dd33894d5")
 	)
-	(wire
-		(pts
-			(xy 50.8 60.96) (xy 71.12 60.96)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "0438f59b-4ea8-4c72-8b2b-d50760a79b3c")
-	)
-	(wire
-		(pts
-			(xy 71.12 60.96) (xy 71.12 64.77)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "403c77a9-f255-4879-a714-bc9217c7b6de")
-	)
 	(junction
 		(at 35.56 60.96)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "c45cc4f8-a361-5619-aa5b-81aad4746b8a")
+	)
+	(junction
+		(at 43.18 60.96)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "60c9f5fc-81c8-54be-a28c-e3d8d208bd56")
 	)
 	(junction
 		(at 50.8 60.96)
@@ -1187,12 +1203,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "d7673376-88ed-59e9-8e5a-b504a7035062")
-	)
-	(junction
-		(at 43.18 60.96)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "c74d07a3-f9ca-4085-9f83-62678bb30722")
 	)
 	(hierarchical_label "VIN_SNS"
 		(shape output)
@@ -1215,7 +1225,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "8770036e-3290-59b6-a743-89b37e06b0e1")
+		(uuid "5a7fd5b8-eec8-5898-9399-720d55ce52fa")
 	)
 	(symbol
 		(lib_id "Connector_Generic:Conn_01x02")

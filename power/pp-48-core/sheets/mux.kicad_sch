@@ -1136,15 +1136,7 @@
 				)
 			)
 			(embedded_fonts no)
-			(property "ki_fp_filters" "SOT?23*"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
+				(property "ki_fp_filters" "SOT?23*" (at 0 0 0) (effects (font (size 1.27 1.27)) (hide yes)))
 		)
 		(symbol "power:+3V3"
 			(power global)
@@ -1401,23 +1393,55 @@
 			(embedded_fonts no)
 		)
 	)
-	(junction
-		(at 101.6 60.96)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "01fdca51-335a-4c0b-b290-8fd641491301")
+	(wire
+		(pts
+			(xy 101.6 60.96) (xy 101.6 66.04)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2b737141-c85a-5eb7-902f-816c4985b2a7")
 	)
-	(junction
-		(at 66.04 83.82)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "f4b739e1-b716-42a8-9318-c216b4c2f356")
+	(wire
+		(pts
+			(xy 101.6 60.96) (xy 129.54 60.96)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "55e86a88-2ff2-5dd5-a8f9-b013398ca260")
 	)
-	(junction
-		(at 45.72 93.98)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "11069ca4-d7e3-47ae-8cce-6a5edf5d66f0")
+	(wire
+		(pts
+			(xy 58.42 83.82) (xy 58.42 88.9)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e38badc5-8ad3-576f-8ae1-3737035ac4e9")
+	)
+	(wire
+		(pts
+			(xy 58.42 83.82) (xy 66.04 83.82)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0ef82839-a0f0-5b5c-8e83-9e75e3db1de6")
+	)
+	(wire
+		(pts
+			(xy 66.04 83.82) (xy 91.44 83.82)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "279961f2-db4f-54a8-b06b-f6da9634db6a")
 	)
 	(wire
 		(pts
@@ -1441,53 +1465,31 @@
 	)
 	(wire
 		(pts
-			(xy 101.6 60.96) (xy 101.6 66.04)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "f3e9823a-de4c-4419-9cf3-028d3bf63c38")
-	)
-	(wire
-		(pts
-			(xy 101.6 60.96) (xy 129.54 60.96)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "f7b846a2-7875-4c55-9cfc-a41d275b6856")
-	)
-	(wire
-		(pts
-			(xy 58.42 88.9) (xy 58.42 83.82)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "5062f50c-7670-40a3-9706-d4d23e723a3c")
-	)
-	(wire
-		(pts
-			(xy 58.42 83.82) (xy 91.44 83.82)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "e0312837-c722-4aca-8442-318435cedf9a")
-	)
-	(wire
-		(pts
 			(xy 40.64 93.98) (xy 45.72 93.98)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "56ebd019-ccdf-44e2-b33f-321e0ebb1586")
+		(uuid "b116b104-68e7-59d0-85df-a51fd0998b73")
+	)
+	(junction
+		(at 101.6 60.96)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "e0470e9c-2da6-516a-8cb1-54612564064e")
+	)
+	(junction
+		(at 66.04 83.82)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "186202c7-13a4-5552-b822-227db3d3ffa8")
+	)
+	(junction
+		(at 45.72 93.98)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "33e50609-ce68-5049-bd00-1c2161f6e035")
 	)
 	(no_connect
 		(at 111.76 93.98)
@@ -1521,16 +1523,6 @@
 		(at 111.76 106.68)
 		(uuid "46fd3e4d-b78d-5ba2-948c-6a63b3e845c1")
 	)
-	(label "MUX_RSTN"
-		(at 73.66 83.82 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "01ffee02-b948-42ff-90cd-e73bf8fa43c7")
-	)
 	(hierarchical_label "SCL2"
 		(shape bidirectional)
 		(at 91.44 71.12 180)
@@ -1562,7 +1554,7 @@
 			)
 			(justify right)
 		)
-		(uuid "3d2e4dcc-6b0f-50b1-8a10-edd0ae786809")
+		(uuid "b0baab24-0c73-584f-b7be-787633eb357e")
 	)
 	(hierarchical_label "UNIT1_SDA"
 		(shape bidirectional)
@@ -1651,6 +1643,16 @@
 			(justify left)
 		)
 		(uuid "0bf7854d-8ffb-5f93-8a29-d61f30b8eb9d")
+	)
+	(label "MUX_RSTN"
+		(at 73.66 83.82 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "2664bc43-662c-5844-9215-7f9608269a4f")
 	)
 	(text "I2C SWITCH  U6 TCA9548A 0x70, channel k = unit k + 1"
 		(exclude_from_sim no)
@@ -2853,8 +2855,8 @@
 		(on_board no)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "534b7441-bcb0-57b5-8642-00b90076044f")
-		(property "Reference" "#PWR4010"
+		(uuid "a924a514-735b-51f5-b906-aa0758cad62f")
+		(property "Reference" "#PWR4009"
 			(at 66.04 76.2 0)
 			(hide yes)
 			(show_name no)
@@ -2912,12 +2914,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "2bba2e73-f3b1-52ff-9129-5af0b1afd146")
+			(uuid "4987a578-e101-5624-b0b0-0d0263a2e4c0")
 		)
 		(instances
 			(project "pp-48-core"
 				(path "/2947a401-cd9a-5ee7-8a9d-b67547832ff9/8d54a034-4c7e-5e5e-bca6-8016c1571a18"
-					(reference "#PWR4010")
+					(reference "#PWR4009")
 					(unit 1)
 				)
 			)

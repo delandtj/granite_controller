@@ -96,13 +96,13 @@ def pins_of(block):
                         rot=float(m.group(4)), name=nm, num=num, len=float(ln.group(1)) if ln else 0.0))
     return out
 
-def body_pts(block):
+def body_pts(block, pins=True):
     """lib-space points spanning the drawn body: graphics, pin ends and pin roots"""
     pts = [(float(a), float(b)) for a, b in re.findall(r'\((?:xy|start|end|mid) ([-\d.]+) ([-\d.]+)\)', block)]
     for cx, cy, r in re.findall(r'\(center ([-\d.]+) ([-\d.]+)\)\s*\(radius ([-\d.]+)\)', block):
         cx, cy, r = float(cx), float(cy), float(r)
         pts += [(cx - r, cy - r), (cx + r, cy + r)]
-    for p in pins_of(block):
+    for p in pins_of(block) if pins else ():
         dx, dy = DIRS[int(p["rot"]) % 360]
         pts += [(p["x"], p["y"]), (p["x"] + dx * p["len"], p["y"] + dy * p["len"])]
     return pts
@@ -144,13 +144,14 @@ class Symbol:
     """one placed symbol; fields = hidden extra properties (LCSC, MPN, ...);
     instances = [(sheet path, reference)], None = this sheet's own path"""
     def __init__(self, ref, lib, value, fp="", at=(0, 0), rot=0, mirror=None, fields=None,
-                 desc="", dnp=False, power=False, instances=None):
+                 desc="", dnp=False, power=False, instances=None, fat=None):
         if rot not in (0, 90, 180, 270): raise ValueError("%s: rot %r" % (ref, rot))
         if mirror not in (None, "x", "y"): raise ValueError("%s: mirror %r" % (ref, mirror))
         self.ref, self.lib, self.value, self.fp = ref, lib, value, fp
         self.at, self.rot, self.mirror = (R(at[0]), R(at[1])), rot, mirror
         self.fields, self.desc, self.dnp, self.power = dict(fields or {}), desc, dnp, power
         self.instances = instances
+        self.fat = dict(fat or {})      # field spots set by hand: name -> (dx, dy[, justify])
         self.block, self.pins = sym(lib)
         self.pinmap = {}
         for p in self.pins: self.pinmap.setdefault(p["num"], p)
@@ -163,10 +164,84 @@ class Symbol:
         dx, dy = DIRS[int(self.pin(num)["rot"]) % 360]
         x, y = xform(dx, dy, self.rot, self.mirror)
         return (-round(x), -round(y))
-    def bbox(self):
-        pts = [xform(a, b, self.rot, self.mirror) for a, b in body_pts(self.block)] or [(0, 0)]
+    def bbox(self, pins=True):
+        """sheet box of the body; pins=False: the graphics alone"""
+        pts = [xform(a, b, self.rot, self.mirror) for a, b in body_pts(self.block, pins)] or [(0, 0)]
         xs = [self.at[0] + p[0] for p in pts]; ys = [self.at[1] + p[1] for p in pts]
         return R(min(xs)), R(min(ys)), R(max(xs)), R(max(ys))
+
+    def pin_lines(self):
+        """[(end, root)] of every pin, sheet coordinates"""
+        out = []
+        for p in self.pins:
+            dx, dy = xform(*DIRS[int(p["rot"]) % 360], self.rot, self.mirror)
+            (x, y), ln = pin_abs(self, p), p["len"]
+            out.append(((x, y), (R(x + dx * ln), R(y + dy * ln))))
+        return out
+
+    def field_pos(self, ref=None):
+        """visible fields: name -> (x, y, file angle, justify); self.fat overrides
+        the automatic spot: name -> (dx, dy) or (dx, dy, justify) from the origin"""
+        ref = ref or self.ref
+        x, y = self.at
+        x0, y0, x1, y1 = self.bbox()
+        cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+        # field angles compose with the symbol rotation: write 90 on a 90 / 270
+        # symbol to read horizontally; centred text is immune to the mirror
+        fa = 90 if self.rot in (90, 270) else 0
+        tw = lambda t: len(t) * 1.0 / 2           # half text width, 1.27 font
+        out = {}
+        if self.power:
+            ox, oy = self.pin_out(self.pins[0]["num"]) if self.pins else (0, 1)
+            ox, oy = -ox, -oy                     # value beyond the symbol, away from the host pin
+            vx, vy = {(0, 1): (cx, y1 + 1.905), (0, -1): (cx, y0 - 1.27),
+                      (1, 0): (x1 + 0.635 + tw(self.value), cy), (-1, 0): (x0 - 0.635 - tw(self.value), cy)}[(ox, oy)]
+            out["Value"] = (vx, vy)
+        else:
+            dirs = {self.pin_out(p["num"]) for p in self.pins}
+            if len(self.pins) <= 2:
+                side = "right" if (y1 - y0) >= (x1 - x0) else "split"
+            elif (0, -1) not in dirs: side = "above"
+            elif (0, 1) not in dirs: side = "below"
+            elif (1, 0) not in dirs: side = "right"
+            elif (-1, 0) not in dirs: side = "left"
+            else: side = "corner"          # pins on all four sides: top-right corner, outside
+            if side == "split":            # two-pin part lying flat: reference above, value below
+                rp, vp = (cx, y0 - 1.27), (cx, y1 + 1.905)
+            elif side == "above":
+                rp, vp = (cx, y0 - 2.794), (cx, y0 - 1.27)
+            elif side == "below":
+                rp, vp = (cx, y1 + 1.905), (cx, y1 + 3.429)
+            elif side == "right":
+                rp, vp = (x1 + 1.27 + tw(ref), cy - 1.27), (x1 + 1.27 + tw(self.value), cy + 1.27)
+            elif side == "left":
+                rp, vp = (x0 - 1.27 - tw(ref), cy - 1.27), (x0 - 1.27 - tw(self.value), cy + 1.27)
+            else:
+                rp, vp = (x1 + 1.27 + tw(ref), y0 - 2.794), (x1 + 1.27 + tw(self.value), y0 - 1.27)
+            out["Reference"], out["Value"] = rp, vp
+        res = {}
+        for name, (px, py) in out.items():
+            just = None
+            if name in self.fat:
+                f = self.fat[name]
+                px, py = x + f[0], y + f[1]
+                just = f[2] if len(f) > 2 else None
+            res[name] = (px, py, fa, just)
+        return res
+
+    def field_boxes(self, ref=None):
+        """sheet boxes of the visible Reference / Value texts: [(name, text, box)]"""
+        out = []
+        for name, (px, py, fa, just) in self.field_pos(ref).items():
+            text = (ref or self.ref) if name == "Reference" else self.value
+            w, h = len(text) * 1.1, 1.27            # stroke font at 1.27: ~1.1 mm a character
+            flip = (self.mirror == "y") != (self.rot == 180)     # left / right swap on the sheet
+            if just == "left": x0 = px - w if flip else px
+            elif just == "right": x0 = px if flip else px - w
+            else: x0 = px - w / 2
+            out.append((name, text, (R(x0), R(py - h / 2), R(x0 + w), R(py + h / 2))))
+        return out
+
 
 def pin_abs(s, num):
     p = s.pin(num) if not isinstance(num, dict) else num
@@ -239,42 +314,12 @@ class Sheet:
               "no" if pw else "yes", "no" if pw else "yes", "yes" if s.dnp else "no", self.U("sym/" + s.ref))
         inst = s.instances if s.instances is not None else [("/" + self.uuid, s.ref)]
         ref = inst[0][1]          # KiCad writes the first instance's reference here
-        x0, y0, x1, y1 = s.bbox()
-        cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
-        # field angles compose with the symbol rotation: write 90 on a 90 / 270
-        # symbol to read horizontally; centred text is immune to the mirror
-        fa = 90 if s.rot in (90, 270) else 0
-        tw = lambda t: len(t) * 1.0 / 2           # half text width, 1.27 font
-        if pw:
-            ox, oy = s.pin_out(s.pins[0]["num"]) if s.pins else (0, 1)
-            ox, oy = -ox, -oy                     # value beyond the symbol, away from the host pin
-            vx, vy = {(0, 1): (cx, y1 + 1.905), (0, -1): (cx, y0 - 1.27),
-                      (1, 0): (x1 + 0.635 + tw(s.value), cy), (-1, 0): (x0 - 0.635 - tw(s.value), cy)}[(ox, oy)]
-            o += prop("Reference", ref, x, y, hide=True, justify=None, ang=fa)
-            o += prop("Value", s.value, vx, vy, justify=None, ang=fa)
-        else:
-            dirs = {s.pin_out(p["num"]) for p in s.pins}
-            if len(s.pins) <= 2:
-                side = "right" if (y1 - y0) >= (x1 - x0) else "split"
-            elif (0, -1) not in dirs: side = "above"
-            elif (0, 1) not in dirs: side = "below"
-            elif (1, 0) not in dirs: side = "right"
-            elif (-1, 0) not in dirs: side = "left"
-            else: side = "corner"          # pins on all four sides: top-right corner, outside
-            if side == "split":            # two-pin part lying flat: reference above, value below
-                rp, vp = (cx, y0 - 1.27), (cx, y1 + 1.905)
-            elif side == "above":
-                rp, vp = (cx, y0 - 2.794), (cx, y0 - 1.27)
-            elif side == "below":
-                rp, vp = (cx, y1 + 1.905), (cx, y1 + 3.429)
-            elif side == "right":
-                rp, vp = (x1 + 1.27 + tw(ref), cy - 1.27), (x1 + 1.27 + tw(s.value), cy + 1.27)
-            elif side == "left":
-                rp, vp = (x0 - 1.27 - tw(ref), cy - 1.27), (x0 - 1.27 - tw(s.value), cy + 1.27)
-            else:
-                rp, vp = (x1 + 1.27 + tw(ref), y0 - 2.794), (x1 + 1.27 + tw(s.value), y0 - 1.27)
-            o += prop("Reference", ref, rp[0], rp[1], justify=None, ang=fa)
-            o += prop("Value", s.value, vp[0], vp[1], justify=None, ang=fa)
+        fp = s.field_pos(ref)
+        if pw: o += prop("Reference", ref, x, y, hide=True, justify=None, ang=fp["Value"][2])
+        for name, val in (("Reference", ref), ("Value", s.value)):
+            if name in fp:
+                fx, fy, fa, just = fp[name]
+                o += prop(name, val, fx, fy, justify=just, ang=fa)
         o += prop("Footprint", s.fp, x, y, hide=True)
         o += prop("Datasheet", "", x, y, hide=True)
         o += prop("Description", s.desc, x, y, hide=True)

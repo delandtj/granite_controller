@@ -77,11 +77,12 @@ def anchor(net, x, y, flag=True):
     """power symbol, global label and PWR_FLAG on one short wire (the net's ERC driver;
     no flag on nets a part drives)"""
     power_symbol(net, x, y)
-    root.wire((x, y), (x + (7.62 if flag else 3.81), y), net)
-    root.glabel(net, x + 3.81, y, 90)
+    root.wire((x, y), (x + 7.62, y), net)
+    root.glabel(net, x + 7.62, y, 90)             # label clear of both symbols' value texts
     if flag:
-        power_symbol(net, x + 7.62, y, flag=True)
-    seen(x + 7.62, y + 10)
+        root.wire((x + 7.62, y), (x + 15.24, y), net)
+        power_symbol(net, x + 15.24, y, flag=True)
+    seen(x + 15.24, y + 10)
 
 
 def place(name, file, blk, at, page, label):
@@ -135,7 +136,8 @@ for i, (name, fname, b, base) in enumerate(sheets):
     b.write(os.path.join(PROJ_DIR, SHEETS, fname + ".kicad_sch"), instances=[(ss.path, pwr_only(base))], project=PROJECT)
 
 ay = round((extent[1] + 15.24) / 1.27) * 1.27
-root.text("POWER ANCHORS", X0, ay - 5.08)
+root.text("POWER ANCHORS", X0, ay - 17.78)       # above the upright global labels
+
 for i, (net, flag) in enumerate(anchors):
     anchor(net, X0 + 38.1 * i, ay, flag=flag)
 root.text(note, X0, ay + 15.24, size=1.5)
