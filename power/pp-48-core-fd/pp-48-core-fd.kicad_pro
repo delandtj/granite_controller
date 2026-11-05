@@ -243,7 +243,7 @@
       "internal_id": "",
       "mfg": "",
       "mpn": "",
-      "sch_revision": ""
+      "sch_revision": "0.1"
     },
     "layer_pairs": [],
     "layer_presets": [],
@@ -662,13 +662,42 @@
       {
         "filename": "pp-48-core-fd.kicad_sch",
         "name": "pp-48-core-fd",
-        "uuid": "00000000-0000-0000-0000-000000000000"
+        "uuid": "e5bb253a-b09b-543d-a2f4-5ed9bcf7917b"
       }
     ],
     "used_designators": "",
     "variants": []
   },
-  "sheets": [],
+  "sheets": [
+    [
+      "e5bb253a-b09b-543d-a2f4-5ed9bcf7917b",
+      "pp-48-core-fd"
+    ],
+    [
+      "1eeb1408-e5b3-577d-a221-93bae90467eb",
+      "Input"
+    ],
+    [
+      "b9f16d01-56c1-58f9-884d-565ecb95c51d",
+      "Supplies"
+    ],
+    [
+      "35c9a518-b263-5fb9-9a0b-4b5185df8808",
+      "MCU"
+    ],
+    [
+      "48902577-8608-5b68-9c57-5bc4e867ba6c",
+      "Mux"
+    ],
+    [
+      "4515b1e4-f88c-5159-85c0-1e176a4437dc",
+      "Link"
+    ],
+    [
+      "2e5362cc-9e8c-5f07-aa17-f159ff484a27",
+      "Chain"
+    ]
+  ],
   "text_variables": {},
   "tuning_profiles": {
     "meta": {
