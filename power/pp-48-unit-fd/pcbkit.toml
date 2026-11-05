@@ -66,6 +66,7 @@ ground = { net = "GND", width = 0.4 }
 # fitting each EasyEDA footprint's numbered pads onto ours (method checked against pcbkit's own
 # LQFP-48 / SOIC-8 / SOIC-4 entries). Still check the JLC placement preview.
 corrections = [
+    ["^PinHeader_2x02_P2.54mm_Vertical$", "C492419", 270, 0.0, 0.0],      # termination header: fitted 2026-11-05 (EasyEDA pad 1 lower left); symmetric, so only the pin-1 mark turns
     ["^AMASS_XT60PW-M_1x02_P7.20mm_Horizontal$", "C98732", 270, 0.0, -3.0],
     ["^CP_Elec_10x10$", "C87862", 0, 0.0, 0.0],                     # pad 1 = + on both
     ["^D_SMB$", "C353345", 0, 0.0, 0.0],

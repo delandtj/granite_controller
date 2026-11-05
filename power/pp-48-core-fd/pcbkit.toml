@@ -60,6 +60,8 @@ ground = { net = "GND", width = 0.4 }
 # fitting each EasyEDA footprint's numbered pads onto ours (method checked against pcbkit's own
 # LQFP-48 / SOIC-8 / SOIC-4 entries). Still check the JLC placement preview.
 corrections = [
+    ["^PinHeader_2x02_P2.54mm_Vertical$", "C492419", 270, 0.0, 0.0],      # termination header: fitted 2026-11-05 (EasyEDA pad 1 lower left); symmetric, so only the pin-1 mark turns
+    ["^Crystal_SMD_3225-4Pin_3.2x2.5mm$", "C7424755", 0, 0.0, 0.0], # 8 MHz Y1: no EasyEDA footprint for this part; SMD3225-4P as C9010 (fitted, 0). JLC places it by package: check pin 1 in the preview
     # CAN FD parts, fitted 2026-11-04 (EasyEDA pads onto ours):
     ["^SOIC-8_3.9x4.9mm_P1.27mm$", "C2878225", 270, 0.0, 0.0],    # ISO1044 U4 (pcbkit's generic SOIC-8 entry, made explicit)
     ["^SOIC-14_3.9x8.7mm_P1.27mm$", "C626758", 270, 0.0, 0.0],    # MCP2518FD U5
