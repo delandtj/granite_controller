@@ -8,23 +8,29 @@ need a plane: USB-C powers the controller on its own.
 
 Build or obtain a release image of `granite-fw` for the board (not a
 devboard build with Wi-Fi or RGB features). Connect USB-C. Then flash
-the bootloader, the partition table and the application to the
-`factory` slot, and the same application to `ota_0`:
+the bootloader, the partition table and the application to `ota_0` in
+one go:
 
 ```sh
 cd firmware/granite-fw
-ELF=target/riscv32imac-esp-espidf/release/granite-fw
 espflash flash --port /dev/ttyACM0 \
     --bootloader target/riscv32imac-esp-espidf/release/build/bootloader.bin \
-    --partition-table partitions.csv $ELF
-espflash flash --port /dev/ttyACM0 --partition-table partitions.csv \
-    --target-app-partition ota_0 $ELF
+    --partition-table partitions.csv \
+    --target-app-partition ota_0 \
+    --erase-parts otadata \
+    target/riscv32imac-esp-espidf/release/granite-fw
 ```
 
-Both the `--bootloader` and the `--partition-table` flags are required:
-without them the chip gets espflash's own bootloader without rollback
-support and a partition table without OTA slots. The details are in
+All four flags are required. Without `--bootloader` and
+`--partition-table` the chip gets espflash's own bootloader without
+rollback support and a partition table without OTA slots. There is no
+`factory` partition, so `--target-app-partition ota_0` names the slot
+to write; `--erase-parts otadata` makes the bootloader boot it instead
+of whatever slot a board with OTA history last used. The details are in
 [Building and flashing](../reference/building.md).
+
+The same command moves a board that is still on the older layout (which
+had a `factory` partition and 2.5 MB slots) onto the current one.
 
 If the chip does not enter download mode by itself, hold the BOOT test
 pad (GPIO9) to GND while applying power, then release it.
@@ -113,8 +119,8 @@ Firmware page nevertheless shows `pending_verify`, confirm it by hand:
 granite> ota-mark-valid
 ```
 
-The Firmware page later shows `factory` as the running slot and `ota_0`
-holding the same version.
+The Firmware page later shows `ota_0` as the running slot and `ota_1`
+empty until the first update.
 
 ## Devboard builds
 

@@ -34,3 +34,6 @@ attic/power/*/production/
 .kicad-mcp/
 power/*/output/
 attic/power/*/output/
+
+# agent worktrees (Claude Code)
+.claude/worktrees/

@@ -260,6 +260,14 @@ impl Client {
         self.advance(PLANE_TICK_MS);
     }
 
+    /// True while a plane holds EXP_INT. The line is the wired OR of
+    /// every plane's, so on an I2C link the mask of
+    /// [`PlaneLink::event_nodes`] is every plane while it is low and
+    /// nothing while it is high (ADR 0005 decision 6).
+    fn int_asserted(&mut self) -> bool {
+        self.link.event_nodes() != 0
+    }
+
     /// Read and acknowledge everything the plane holds, the way the
     /// client does on EXP_INT, until it holds nothing.
     fn drain_events(&mut self, addr: u8) {
@@ -406,7 +414,7 @@ fn a_press_completes_through_exp_int_and_ev_ack_releases_the_line() {
     client.drain_events(0x30);
     client.drain_events(0x31);
     assert!(
-        !client.link.int_asserted(),
+        !client.int_asserted(),
         "the boot events have been acknowledged"
     );
 
@@ -421,7 +429,7 @@ fn a_press_completes_through_exp_int_and_ev_ack_releases_the_line() {
 
     client.advance(400);
     assert_eq!(client.result(0x30, 7), Some(ResultCode::Ok));
-    assert!(client.link.int_asserted(), "the sequence raised an event");
+    assert!(client.int_asserted(), "the sequence raised an event");
     assert!(
         client
             .events(0x30)
@@ -439,7 +447,7 @@ fn a_press_completes_through_exp_int_and_ev_ack_releases_the_line() {
     assert!(events.iter().any(|e| e.kind == EventKind::LedChanged));
     client.ev_ack(0x30, last);
     assert!(
-        !client.link.int_asserted(),
+        !client.int_asserted(),
         "EXP_INT drops when nothing is unacknowledged"
     );
     assert_eq!(

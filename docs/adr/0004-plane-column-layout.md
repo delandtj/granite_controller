@@ -54,8 +54,9 @@ connector edge).
      DG128-5.0-02P-14-00A(H), LCSC C711349 (16k stock). UL 15 A / 300
      V, IEC 18 A, 12-24 AWG; 10.0 wide, <= 10.2 deep, 14.1 tall; PA66,
      tin-plated brass pins, nickel-plated cage. 14 AWG pair. The user
-     makes the cables (screw terminal to the 19 V DC plug of the
-     node's DC-ATX converter). Second source to verify: Degson
+     makes the cables (screw terminal to the node motherboard's
+     19 V DC input; 2026-11-04: was "the DC plug of the node's DC-ATX
+     converter", an error - the board takes 19 V itself, R1). Second source to verify: Degson
      DG500-5.08 (C691859). Still to confirm on the part: rising clamp
      and side wire entry.
    - Front panel (PWR_SW, RST_SW, PLED+, PLED-): JST GH 1x4 side entry
@@ -281,5 +282,5 @@ Approximate sizes: N=2 ~106 x 72, N=4 ~156 x 72, N=6 ~225 x 72, N=8
 - [ ] DG128 drawing check (depth, clamp, entry) and second source.
 - [x] Repeated block: 2-slot unit with one 24-bit expander (decision 9,
   user 2026-10-29).
-- [ ] Mux: keep the TCA9548A (4 of 8 channels used) or move to the
-  4-channel TCA9546A (smaller, stock to check).
+- [x] Mux: keep the TCA9548A (user 2026-11-04; routed on both
+  cores, 4 channels spare).

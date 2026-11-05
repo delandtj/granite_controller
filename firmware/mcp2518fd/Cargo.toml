@@ -1,0 +1,14 @@
+[package]
+name = "mcp2518fd"
+description = "MCP2518FD CAN FD controller over embedded-hal 1.0 SPI, fixed to the Granite plane link's one configuration: a facade over the mcp251xfd driver"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+embedded-can = "0.4"
+embedded-hal = "1"
+mcp251xfd = "0.2"
+
+[dev-dependencies]
+embedded-hal-mock = { version = "0.11", default-features = false, features = ["eh1"] }

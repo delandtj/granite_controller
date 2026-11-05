@@ -50,8 +50,9 @@ addresses live on the planes' DIP switches and nowhere else.
 - **Controller firmware updates roll back.** A new image has 10 minutes
   to get an IP and reach you (broker connected or an authenticated
   HTTPS request). If it cannot, the bootloader returns to the previous
-  image, and finally to the factory image flashed over USB. A
-  controller whose planes are unplugged can still take an update.
+  image - the update never overwrote it, so it is still the last image
+  that proved itself. A controller whose planes are unplugged can still
+  take an update.
 - **Factory reset works without the password.** The per-device recovery
   token, or a fleet key you hold, resets a controller over the network.
   Both only work if you recorded the token or installed the key before

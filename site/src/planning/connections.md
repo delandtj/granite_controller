@@ -216,7 +216,7 @@ the input strip.
 
 - A 2-pole 5.0 mm screw terminal per slot: pin 1 GND, pin 2 +19 V from
   the port module (up to 250 W continuous, 13.2 A). Use a 14 AWG pair to
-  the node's 19 V DC-ATX converter.
+  the node motherboard's 19 V DC input.
 - The rail is switched, current-limited and metered by the slot, and
   an overvoltage on the module output latches the slot off in
   hardware. Nothing else is needed between the terminal and the node.
@@ -239,9 +239,8 @@ How it works, and what to check on your motherboard:
   `RST_SW`) to the slot's ground, which is also pin 1 of the node
   power terminal. There is no separate common wire: the press returns
   through the node's 19 V cable. This matches every motherboard whose
-  front-panel switch returns are its ground, the normal case, with a
-  DC-ATX converter whose input and output share ground. Check both on
-  your parts.
+  front-panel switch returns are its ground and whose 19 V DC input
+  shares that ground, the normal case. Check both on your board.
 - A press is possible only while the plane core keeps the press enable
   line alive; a hung or reset core ends every press within about a
   second. An unpowered or missing core means no presses at all, which

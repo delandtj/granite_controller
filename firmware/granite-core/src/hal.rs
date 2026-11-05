@@ -126,13 +126,16 @@ impl fmt::Display for LinkError {
 #[cfg(feature = "std")]
 impl std::error::Error for LinkError {}
 
-/// The isolated I2C link to the planes, plus their shared EXP_INT
-/// (controller ADR 0004 decision 5).
+/// The link to the planes: the isolated I2C bus of rev D (controller
+/// ADR 0004 decision 5) or the CAN FD bus of the FD generation
+/// (ADR 0005).
 ///
 /// Bytes only: the framing, the CRC, the records and the retries are
-/// `granite_proto` and the plane client's business (ADR 0003). An
-/// implementation does one I2C transaction per call, with a repeated
-/// start between the request and the read in [`Self::write_read`].
+/// `granite_proto` and the plane client's business (ADR 0003). An I2C
+/// implementation does one transaction per call, with a repeated start
+/// between the request and the read in [`Self::write_read`]; a CAN
+/// implementation segments the same bytes (ADR 0005 decision 3) and
+/// waits for the answer's segments.
 pub trait PlaneLink {
     /// Write `req` to `addr`, then read the answer into `resp`, and
     /// report how many bytes came back.
@@ -142,9 +145,27 @@ pub trait PlaneLink {
     /// read back from STATUS.
     fn write(&mut self, addr: u8, frame: &[u8]) -> Result<(), LinkError>;
 
-    /// True while EXP_INT is asserted. The line is the wired OR of every
-    /// plane's, so it says "someone has events", not which one.
-    fn int_asserted(&mut self) -> bool;
+    /// Which planes have raised events since the last call: bit *n* is
+    /// plane node *n* (ADR 0005 decision 6).
+    ///
+    /// On CAN a plane with unacknowledged events sends EVENT from its
+    /// own node, so the mask names the planes to read STATUS of. On I2C
+    /// there is no such frame: EXP_INT is the wired OR of every plane's,
+    /// so an implementation answers 0xFF while the line is low (any
+    /// plane may be the one) and 0 otherwise, and the client reads every
+    /// plane as it did before.
+    fn event_nodes(&mut self) -> u8;
+
+    /// Send SYNC with `epoch` (ADR 0005 decision 7): the controller's
+    /// keepalive, once per second, payload `epoch: u32` little endian.
+    ///
+    /// The default does nothing and reports success, which is what an
+    /// I2C link does: the rev D bus has no broadcast and no standby
+    /// controller to watch one.
+    fn sync(&mut self, epoch: u32) -> Result<(), LinkError> {
+        let _ = epoch;
+        Ok(())
+    }
 }
 
 /// A DS18B20 ROM id.

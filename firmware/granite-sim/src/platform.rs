@@ -99,22 +99,16 @@ impl SimPlatform {
                 validate_left_s: None,
                 slots: vec![
                     SlotInfo {
-                        label: String::from("factory"),
-                        state: String::from("valid"),
-                        version: scenario.fw.clone(),
-                        size: 2_621_440,
-                    },
-                    SlotInfo {
                         label: String::from("ota_0"),
                         state: String::from("running"),
                         version: scenario.fw.clone(),
-                        size: 2_621_440,
+                        size: 3_997_696,
                     },
                     SlotInfo {
                         label: String::from("ota_1"),
                         state: String::from("empty"),
                         version: String::new(),
-                        size: 2_621_440,
+                        size: 3_997_696,
                     },
                 ],
                 key_id: String::from("sim-no-signing-key"),

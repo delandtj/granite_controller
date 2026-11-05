@@ -560,23 +560,27 @@ Review asks, answered 2026-10-23:
 
 **Architecture-changers**
 - [x] Message encoding: TLV with CRC-8 (2026-10-23).
-- [ ] One plane type carries the 12 V aux; does every plane type have
-      to, or only PP-48?
-- [ ] Frames per controller and cable topology: daisy chain on the
-      plane or a star hub at J8.
+- [x] One plane type carries the 12 V aux; does every plane type have
+      to, or only PP-48? Every plane type (user 2026-11-04): in the CAN
+      FD generation every core feeds AUX_12V onto the link and the
+      controller lives off it (ADR 0006 decision 4).
+- [x] Frames per controller and cable topology: rev D daisy-chains up
+      to 8 planes on PH cables (two connectors, one bus); the CAN FD
+      generation runs one row through the boards (ADR 0006).
 
 **Behavior definers**
-- [ ] Retry policy defaults (count, window, action) and whether the
-      plane enforces a cap with the controller absent.
-- [ ] OFF across an MCU reset: plain default ON, or restored from
-      backup registers.
-- [ ] Stagger order and delay when a plane boots with the controller
-      absent.
-- [ ] Power-cycle primitive: press-if-dark timeout and what "dark"
-      means for a blinking LED.
+- [x] Retry policy defaults: 3 in 60 s, action 0, enforced by the
+      plane with or without the controller (plane-logic config.rs,
+      firmware ADR 0002).
+- [x] OFF across an MCU reset: restored from the TAMP backup
+      registers (firmware ADR 0002 decision 3, plane-logic backup.rs).
+- [x] Stagger at boot: dropped, a command only (firmware ADR 0002,
+      user 2026-10-29).
+- [x] Power-cycle primitive: the LED timeout is a CTRL 0x47 argument;
+      blinking = periods of 200-4000 ms (plane-logic config.rs).
 - [ ] Slot output voltage reading: on the slot side of the MOSFET as
       proposed, or the brick output (needs J2 pins 6-7).
 
 **Polish**
-- [ ] Names: PP-48-2S / 4S / 8S, controller "rev D". Proposed, not
-      contested.
+- [x] Names: PP-48 core / unit, controller rev D, the CAN FD
+      generation -fd (in use).

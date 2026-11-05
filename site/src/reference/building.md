@@ -69,23 +69,33 @@ Optional at build time:
 
 ```sh
 cd firmware/granite-fw
-ELF=target/riscv32imac-esp-espidf/release/granite-fw
 espflash flash --monitor --port /dev/ttyACM0 \
     --bootloader target/riscv32imac-esp-espidf/release/build/bootloader.bin \
-    --partition-table partitions.csv $ELF
-espflash flash --port /dev/ttyACM0 --partition-table partitions.csv \
-    --target-app-partition ota_0 $ELF
+    --partition-table partitions.csv \
+    --target-app-partition ota_0 \
+    --erase-parts otadata \
+    target/riscv32imac-esp-espidf/release/granite-fw
 ```
 
 - `--bootloader` is required so the chip gets the ESP-IDF-built
   bootloader with rollback enabled, not espflash's bundled one.
 - `--partition-table` is required because the table is applied at
   flash time; without it there are no OTA slots.
-- `nvs` is never written by a flash; `espflash erase-parts nvs` wipes
-  configuration and secrets on purpose.
+- `--target-app-partition ota_0` names the slot to write: there is no
+  `factory` partition, so espflash has no default app slot.
+- `--erase-parts otadata` makes the bootloader run the image just
+  flashed rather than the slot a board with OTA history last booted.
+  It is also what moves a board off the older layout (`factory` plus
+  2.5 M slots) onto the current one.
+- `nvs` is never written by a flash and keeps the same offset in both
+  layouts, so configuration, the device certificate and the recovery
+  token survive; `espflash erase-parts nvs` wipes them on purpose.
 
-Partitions (8 MB): `nvs` 192 K, `otadata` 8 K, `coredump` 64 K,
-`factory` 2.5 M, `ota_0` 2.5 M, `ota_1` 2.5 M.
+Partitions (8 MB): `nvs` 192 K at 0x9000, `otadata` 8 K at 0x39000,
+`coredump` 64 K at 0x3B000, `ota_0` 0x3D0000 (3,997,696 B) at 0x50000,
+`ota_1` 0x3D0000 at 0x420000. No `factory` partition: its space went to
+the two OTA slots, because rollback already guarantees that one slot
+holds the last image that validated.
 
 ## Producing an OTA image
 

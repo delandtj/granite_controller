@@ -210,8 +210,8 @@ const WIRE_DEPTH: usize = 16;
 /// the rest of the loop.
 const DRAIN_PER_TICK: usize = 16;
 
-/// Name of the worker thread.
-const WORKER_THREAD: &str = "mqtt";
+/// Name of the worker thread, as the FreeRTOS task carries it.
+const WORKER_THREAD: &core::ffi::CStr = c"mqtt";
 
 /// Events kept while there is no session, sent on the next connect. The
 /// oldest go first when it overflows.
@@ -227,8 +227,9 @@ const OUT_BUFFER: usize = 4096;
 /// Cap on the QoS 1 outbox, so a long outage cannot eat the heap.
 const OUTBOX_LIMIT: usize = 8192;
 
-/// esp-mqtt task stack.
-const MQTT_TASK_STACK: usize = 6144;
+/// esp-mqtt task stack. Read by `platform::tasks` too, so the `stacks`
+/// report can put a percentage on the `mqtt_task` it did not spawn.
+pub(crate) const MQTT_TASK_STACK: usize = 6144;
 
 /// Worker thread stack: it serialises JSON.
 const WORKER_STACK: usize = 10240;
@@ -253,7 +254,7 @@ static FLUSH_DONE: AtomicU32 = AtomicU32::new(0);
 /// explain it are not cut off. False at once without a session, and from
 /// the worker thread itself, which cannot wait for its own loop.
 pub fn flush(timeout: Duration) -> bool {
-    if !connected() || thread::current().name() == Some(WORKER_THREAD) {
+    if !connected() || thread::current().name() == WORKER_THREAD.to_str().ok() {
         return false;
     }
     let ticket = FLUSH_ASKED.fetch_add(1, Ordering::SeqCst).wrapping_add(1);
@@ -410,10 +411,9 @@ pub fn start(ctx: MqttCtx) -> anyhow::Result<MqttHandle> {
     let enabled = (ctx.config)().mqtt.enabled;
     let stop = Arc::new(AtomicBool::new(false));
     let worker_stop = Arc::clone(&stop);
-    let join = thread::Builder::new()
-        .name(WORKER_THREAD.into())
-        .stack_size(WORKER_STACK)
-        .spawn(move || supervise(ctx, &worker_stop))?;
+    let join = crate::platform::spawn(WORKER_THREAD, WORKER_STACK, move || {
+        supervise(ctx, &worker_stop)
+    })?;
 
     Ok(MqttHandle {
         stop,

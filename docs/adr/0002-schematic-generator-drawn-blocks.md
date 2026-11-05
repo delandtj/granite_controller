@@ -479,14 +479,14 @@ Review asks:
 ## Open Questions
 
 **Architecture-changers**
-- [ ] Any per-slot difference coming that is not a net at a pin (a
-      different part on slot 1)? That breaks the shared slot sheet.
+- [x] Any per-slot difference that is not a net at a pin? None so far
+      (rev D and FD units share one slot drawing).
 
 **Behavior definers**
-- [ ] Should DNP parts (R28, R29) be drawn greyed with the DNP flag,
+- [x] Should DNP parts (R28, R29) be drawn greyed with the DNP flag,
       or left out of the drawing and kept in the netlist only? Default:
       drawn, DNP flag set, as today.
-- [ ] Does the root sheet show a one-line block diagram (text arrows
+- [x] Does the root sheet show a one-line block diagram (text arrows
       between sheet symbols), or only the sheet symbols and labels?
       Default: sheet symbols placed in flow order, no arrows.
 

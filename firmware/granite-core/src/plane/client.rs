@@ -15,10 +15,16 @@
 //!   [`DETAIL_PERIOD_MS`] or at once when SUMMARY or an event shows a
 //!   change, INFO at discovery, after a reboot and whenever an event
 //!   says the config hash or the image state may have moved.
-//! - **EXP_INT**: the line is the wired OR of every plane's, so an
-//!   assertion brings every plane's STATUS forward; the `events
-//!   pending` flag says which ones to read EVENTS from, and EV_ACK
-//!   goes out once the events are in the client's queue.
+//! - **events**: [`PlaneLink::event_nodes`] says which planes raised
+//!   events since the last poll (ADR 0005 decision 6), and their STATUS
+//!   comes forward; on an I2C link the mask is every plane while EXP_INT
+//!   is low, because that line is the wired OR of every plane's. The
+//!   `events pending` flag in STATUS says which ones to read EVENTS
+//!   from, and EV_ACK goes out once the events are in the client's
+//!   queue.
+//! - **SYNC**: once a second the controller's keepalive goes out with
+//!   its epoch (ADR 0005 decision 7). A CAN link sends the frame; an
+//!   I2C link has nowhere to put it and does nothing.
 //! - **commands**: at most [`super::MAX_IN_FLIGHT`] CTRL writes per
 //!   plane, each under its own sequence number; a result that does not
 //!   show up in [`RESEND_AFTER_READS`] STATUS reads means the write
@@ -66,6 +72,10 @@ pub const STATUS_PERIOD_MS: u64 = 1_000;
 
 /// The slow sweep of the SLOT and UNIT blocks \[ms\].
 pub const DETAIL_PERIOD_MS: u64 = 10_000;
+
+/// How often the controller's SYNC goes out \[ms\] (ADR 0005
+/// decision 7).
+pub const SYNC_PERIOD_MS: u64 = 1_000;
 
 /// A backstop re-read of INFO \[ms\].
 ///
@@ -296,8 +306,18 @@ impl PlaneState {
 }
 
 /// The controller's side of the plane link.
+///
+/// The two big members are boxed, and are built on the heap rather than
+/// moved there: this value is constructed inside the dispatcher thread's
+/// frame, `lto = true` inlines the constructor into it, and a 7.8 KB
+/// array of plane states then exists twice in one frame - which overflowed
+/// a 12 KB stack on a rev C board, and still used 83 % of 24 KB
+/// (measured 2026-11-04). With them boxed `size_of::<PlaneClient>()` goes
+/// from 8512 to 464 bytes on the host, and the frame no longer scales with
+/// `MAX_PLANES`. Nothing else in here is over 512 bytes: `Transactions` is
+/// the next largest at 232.
 pub struct PlaneClient {
-    planes: [PlaneState; MAX_PLANES],
+    planes: Box<[PlaneState; MAX_PLANES]>,
     tx: Transactions,
     events: VecDeque<ClientEvent>,
     finished: VecDeque<FinishedJob>,
@@ -305,13 +325,19 @@ pub struct PlaneClient {
     next_job: JobId,
     next_scan_ms: u64,
     scan_due: bool,
+    /// The epoch of the next SYNC (ADR 0005 decision 7): random at
+    /// boot, one more on every send.
+    epoch: u32,
+    /// When the next SYNC is due \[ms\].
+    next_sync_ms: u64,
     /// Which plane is served first this poll.
     cursor: usize,
     intent: IntendedOff,
     update: Option<UpdateJob>,
     policy: UpdatePolicy,
-    /// Scratch for one answer; no read allocates.
-    buf: [u8; frame::MAX_ANSWER],
+    /// Scratch for one answer; no read allocates. Boxed with `planes`,
+    /// for the same reason.
+    buf: Box<[u8; frame::MAX_ANSWER]>,
 }
 
 impl core::fmt::Debug for PlaneClient {
@@ -332,12 +358,29 @@ impl PlaneClient {
     /// answer wants them to start at a random value, so a controller
     /// that reboots mid-command cannot collide with the sequence
     /// memory a plane still holds. The firmware passes something from
-    /// its RNG; a test passes a constant.
+    /// its RNG; a test passes a constant. The SYNC epoch of ADR 0005
+    /// decision 7 starts there too, for the same reason: a standby
+    /// controller must be able to tell a restarted keepalive from the
+    /// one it was watching.
+    ///
+    /// `planes` and `buf` are grown on the heap, element by element,
+    /// instead of being built as an array and moved: an array literal or
+    /// `core::array::from_fn` would put all 7.8 KB of plane state in the
+    /// caller's frame first (see the type's own note).
     pub fn new(seed: u32) -> Self {
+        let planes: Vec<PlaneState> = (0..MAX_PLANES)
+            .map(|n| PlaneState::new(granite_proto::ADDR_BASE + n as u8, seq_start(seed, n as u8)))
+            .collect();
+        let planes: Box<[PlaneState; MAX_PLANES]> = planes
+            .into_boxed_slice()
+            .try_into()
+            .expect("MAX_PLANES plane states");
+        let buf: Box<[u8; frame::MAX_ANSWER]> = alloc::vec![0u8; frame::MAX_ANSWER]
+            .into_boxed_slice()
+            .try_into()
+            .expect("MAX_ANSWER bytes");
         PlaneClient {
-            planes: core::array::from_fn(|n| {
-                PlaneState::new(granite_proto::ADDR_BASE + n as u8, seq_start(seed, n as u8))
-            }),
+            planes,
             tx: Transactions::new(),
             events: VecDeque::new(),
             finished: VecDeque::new(),
@@ -345,11 +388,13 @@ impl PlaneClient {
             next_job: 1,
             next_scan_ms: 0,
             scan_due: true,
+            epoch: epoch_start(seed),
+            next_sync_ms: 0,
             cursor: 0,
             intent: IntendedOff::new(),
             update: None,
             policy: UpdatePolicy::Manual,
-            buf: [0u8; frame::MAX_ANSWER],
+            buf,
         }
     }
 
@@ -359,12 +404,16 @@ impl PlaneClient {
     pub fn poll<L: PlaneLink>(&mut self, now_ms: u64, link: &mut L) {
         let mut budget = MAX_TRANSACTIONS_PER_POLL;
 
-        // EXP_INT is shared: it says "someone has events", not which
-        // one, so every plane's STATUS comes forward (ADR 0003
-        // decision 5).
-        if link.int_asserted() {
-            for state in &mut self.planes {
-                if state.present {
+        self.send_sync(now_ms, link);
+
+        // The planes in the mask raised events, so their STATUS comes
+        // forward (ADR 0003 decision 5, ADR 0005 decision 6). An I2C
+        // link cannot tell which plane pulled EXP_INT and answers with
+        // every one of them.
+        let raised = link.event_nodes();
+        if raised != 0 {
+            for (n, state) in self.planes.iter_mut().enumerate() {
+                if raised & (1 << n) != 0 && state.present {
                     state.next_status_ms = state.next_status_ms.min(now_ms);
                 }
             }
@@ -394,6 +443,28 @@ impl PlaneClient {
         self.expire_intents(now_ms);
     }
 
+    /// The keepalive of ADR 0005 decision 7: SYNC once per second, with
+    /// the epoch one higher on every send.
+    ///
+    /// It costs no transaction budget - it is one frame nobody answers -
+    /// and a link that refuses it is not an error worth reporting:
+    /// nothing retries a keepalive, the next second brings another one.
+    /// The epoch moves whether or not the frame got out, so a standby
+    /// controller counting them sees the gap.
+    fn send_sync<L: PlaneLink>(&mut self, now_ms: u64, link: &mut L) {
+        if now_ms < self.next_sync_ms {
+            return;
+        }
+        self.next_sync_ms = now_ms.saturating_add(SYNC_PERIOD_MS);
+        let _ = link.sync(self.epoch);
+        self.epoch = self.epoch.wrapping_add(1);
+    }
+
+    /// The epoch the next SYNC will carry.
+    pub const fn sync_epoch(&self) -> u32 {
+        self.epoch
+    }
+
     /// INFO on every address that has no plane.
     fn scan<L: PlaneLink>(&mut self, now_ms: u64, link: &mut L, budget: &mut u32) {
         for i in 0..MAX_PLANES {
@@ -409,7 +480,7 @@ impl PlaneClient {
             *budget -= 1;
             match self
                 .tx
-                .read(link, address, BLK_INFO, INDEX_NONE, &mut self.buf)
+                .read(link, address, BLK_INFO, INDEX_NONE, &mut self.buf[..])
             {
                 Ok(n) => {
                     let payload_len = n;
@@ -484,7 +555,7 @@ impl PlaneClient {
         let address = self.planes[i].plane.address;
         match self
             .tx
-            .read(link, address, BLK_INFO, INDEX_NONE, &mut self.buf)
+            .read(link, address, BLK_INFO, INDEX_NONE, &mut self.buf[..])
         {
             Ok(n) => {
                 let change = self.planes[i].plane.apply_info(now_ms, &self.buf[..n]);
@@ -543,7 +614,7 @@ impl PlaneClient {
         let before = self.planes[i].plane.uptime_s;
         match self
             .tx
-            .read(link, address, BLK_STATUS, INDEX_NONE, &mut self.buf)
+            .read(link, address, BLK_STATUS, INDEX_NONE, &mut self.buf[..])
         {
             Ok(n) => {
                 // The command results travel in this block; take them
@@ -652,7 +723,7 @@ impl PlaneClient {
         let address = self.planes[i].plane.address;
         match self
             .tx
-            .read(link, address, BLK_SUMMARY, INDEX_NONE, &mut self.buf)
+            .read(link, address, BLK_SUMMARY, INDEX_NONE, &mut self.buf[..])
         {
             Ok(n) => {
                 let changed = self.planes[i].plane.apply_summary(now_ms, &self.buf[..n]);
@@ -687,7 +758,7 @@ impl PlaneClient {
             if !spend(budget) {
                 return;
             }
-            match self.tx.read(link, address, block, index, &mut self.buf) {
+            match self.tx.read(link, address, block, index, &mut self.buf[..]) {
                 Ok(n) => {
                     if block == BLK_UNIT {
                         self.planes[i]
@@ -718,7 +789,7 @@ impl PlaneClient {
         let address = self.planes[i].plane.address;
         let n = match self
             .tx
-            .read(link, address, BLK_EVENTS, INDEX_NONE, &mut self.buf)
+            .read(link, address, BLK_EVENTS, INDEX_NONE, &mut self.buf[..])
         {
             Ok(n) => n,
             Err(_) => {
@@ -1609,18 +1680,107 @@ const fn status_phase(n: usize) -> u64 {
 /// xorshift-multiply mix, enough to spread a single seed over eight
 /// planes.
 fn seq_start(seed: u32, n: u8) -> u8 {
-    let mut x = seed ^ 0x9E37_79B9u32.wrapping_mul(n as u32 + 1);
+    (mix(seed ^ 0x9E37_79B9u32.wrapping_mul(n as u32 + 1)) & 0xFF) as u8
+}
+
+/// The first SYNC epoch from the client's seed (ADR 0005 decision 7:
+/// "random at boot"). The same mix, over a different constant, so the
+/// epoch is not a plane's sequence start.
+fn epoch_start(seed: u32) -> u32 {
+    mix(seed ^ 0x5BF0_3635)
+}
+
+/// The usual xorshift-multiply mix: enough to spread one seed over the
+/// values the client needs it for.
+fn mix(mut x: u32) -> u32 {
     x ^= x >> 16;
     x = x.wrapping_mul(0x7FEB_352D);
     x ^= x >> 15;
     x = x.wrapping_mul(0x846C_A68B);
     x ^= x >> 16;
-    (x & 0xFF) as u8
+    x
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::hal::LinkError;
+
+    /// The dispatcher thread builds a `PlaneClient` in its own frame, and
+    /// `lto = true` inlines the constructor there, so every byte of this
+    /// type is a byte of that stack - twice over, while the value is
+    /// being moved into place. It was 8512 bytes on the host (7808 of
+    /// plane states and a 256-byte answer buffer) and 83 % of the
+    /// dispatcher's 24 KB stack was in use on a rev C board
+    /// (2026-11-04). Keep the big members boxed.
+    #[test]
+    fn the_client_is_small_enough_to_build_on_a_stack() {
+        assert!(
+            core::mem::size_of::<PlaneClient>() < 1024,
+            "PlaneClient is {} bytes; the big members belong on the heap",
+            core::mem::size_of::<PlaneClient>()
+        );
+    }
+
+    /// A link nothing answers on, which counts the SYNCs it carried and
+    /// reports the events it is told to.
+    #[derive(Default)]
+    struct SilentLink {
+        syncs: Vec<u32>,
+        raised: u8,
+    }
+
+    impl PlaneLink for SilentLink {
+        fn write_read(
+            &mut self,
+            _addr: u8,
+            _req: &[u8],
+            _resp: &mut [u8],
+        ) -> Result<usize, LinkError> {
+            Err(LinkError::Nak)
+        }
+
+        fn write(&mut self, _addr: u8, _frame: &[u8]) -> Result<(), LinkError> {
+            Err(LinkError::Nak)
+        }
+
+        fn event_nodes(&mut self) -> u8 {
+            core::mem::take(&mut self.raised)
+        }
+
+        fn sync(&mut self, epoch: u32) -> Result<(), LinkError> {
+            self.syncs.push(epoch);
+            Ok(())
+        }
+    }
+
+    /// ADR 0005 decision 7: one SYNC per second, the epoch one higher
+    /// each time and not the same at two boots.
+    #[test]
+    fn sync_goes_out_once_a_second_with_a_rising_epoch() {
+        let mut client = PlaneClient::new(0x1234_5678);
+        let first = client.sync_epoch();
+        let mut link = SilentLink::default();
+        // Ten seconds of 50 ms polls are ten SYNCs, not two hundred.
+        for step in 1..=200u64 {
+            client.poll(step * 50, &mut link);
+        }
+        assert_eq!(link.syncs.len(), 10);
+        for (i, epoch) in link.syncs.iter().enumerate() {
+            assert_eq!(*epoch, first.wrapping_add(i as u32));
+        }
+        assert_eq!(client.sync_epoch(), first.wrapping_add(10));
+        assert_ne!(
+            epoch_start(1),
+            epoch_start(2),
+            "a different seed starts at a different epoch"
+        );
+        assert_ne!(
+            epoch_start(0x1234_5678),
+            u32::from(seq_start(0x1234_5678, 0)),
+            "the epoch is not a sequence start"
+        );
+    }
 
     #[test]
     fn the_sequence_starts_are_spread_over_the_planes() {

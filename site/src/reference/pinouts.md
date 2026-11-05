@@ -41,7 +41,7 @@ through a 68k / 10k divider on GPIO5 (ADC).
 
 | Pin | Legend | Signal |
 |---|---|---|
-| 1 | `3V` | 3.3 V to the planes' isolator side 1, through a current-limited switch per connector |
+| 1 | `3V` | 3.3 V to the planes' isolators (cable side), through a current-limited switch per connector |
 | 2 | `G` | GND |
 | 3 | `CL` | SCL, 33 ohm series, ESD |
 | 4 | `DA` | SDA, 33 ohm series, ESD |
@@ -164,7 +164,7 @@ capacitors, no fuse. Feeds the core's 3.3 V buck and the isolated
 
 | Pin | Signal |
 |---|---|
-| 1 | CTRL_3V3 (from the controller, supplies isolator side 1) |
+| 1 | CTRL_3V3 (from the controller, supplies the isolators' cable side) |
 | 2 | CTRL_GND |
 | 3 | SCL (controller side) |
 | 4 | SDA (controller side) |

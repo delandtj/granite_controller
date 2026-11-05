@@ -70,8 +70,8 @@ pub fn run() -> anyhow::Result<()> {
         Err(err) => log::info!("hwtest: plane 0x30 -> {err} (expected, the link is a stub)"),
     }
     log::info!(
-        "hwtest: EXP_INT asserted = {} (expected false with nothing on the line)",
-        hw.plane.int_asserted()
+        "hwtest: planes that raised events = {:#04x} (expected 0x00 with nothing on EXP_INT)",
+        hw.plane.event_nodes()
     );
 
     // 3. The dry inputs.

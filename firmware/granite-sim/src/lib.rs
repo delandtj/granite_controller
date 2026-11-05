@@ -13,6 +13,8 @@
 //! - [`planes`]: the fake plane link of controller ADR 0004 decision 5,
 //!   with up to eight simulated planes running plane-logic (ADR 0002)
 //!   behind it, including the fault knobs a plane client needs.
+//! - [`can`]: the CAN FD transport under that link (ADR 0005), with the
+//!   real segmentation, EVENT, SYNC and frame loss injection.
 //! - [`sim`]: the simulated controller: state, tick loop, side effects.
 //! - [`platform`]: the [`granite_core::api`] traits the board's platform
 //!   layer implements, implemented here against the simulation.
@@ -20,6 +22,7 @@
 //! - [`keys`]: the fleet recovery key tools (`keygen`, `recover`).
 
 pub mod assets;
+pub mod can;
 pub mod fakes;
 pub mod http;
 pub mod keys;

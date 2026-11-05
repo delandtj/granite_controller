@@ -1,6 +1,211 @@
-# Handoff - granite-plane (updated 2026-10-29)
+# Handoff - granite-plane (updated 2026-11-04, evening)
 
 Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
+
+## 2026-11-04 (afternoon): FD board changes done, factory partition dropped, rev C bench
+
+State: master = origin/master (1c9876c), tree clean. Commits today
+after a497b0e: aadc3c6 (OV_KILL part named right, lto), 794cd51 /
+75cc383 (FD box header, FD termination header, merges c09c53d /
+de43d06), d800949 (no `factory` partition), 7290a45 (dispatcher stack),
+1c9876c (DHCP restart after AutoIP).
+
+- Rev D is ready to order: fab sets in fab/ of pp-48-core, pp-48-unit,
+  controller regenerated and checked (details below). Not ordered.
+- FD boards: termination header, controller box header, J2 pin-1 mark
+  done (details below). Before an FD order: JLC preview of C492419,
+  C34945, 3D models.
+- OV_KILL: asked SixUnited for the Halo Gorgon board's maximum barrel
+  jack voltage (user, 2026-11-04). Waiting. The trip is U2 MCP65R46 +
+  R18 / R19 on PM-19V-250W-B; fallback R18 84.5k -> 76.8k (20.8 V
+  nominal; MCP65R46 reference accuracy still to check in its
+  datasheet). Plane boards do not change.
+- Rev C bench board (granite-cb374b, 192.168.64.115 by DHCP, on
+  /dev/ttyACM0; admin password: ask the user). Flash backup of its old
+  layout: ~/Granite/attic/revc-90649bcb3748-flash-2026-11-04.bin
+  (`espflash write-bin 0 <file>` restores it). Tested on it:
+  - New partition layout, wired migration from the old one: works,
+    settings / cert / recovery token kept.
+  - OTA push over HTTPS (`POST /api/v1/firmware/upload`, session cookie
+    from `POST /api/v1/session`), probation, confirm via the broker
+    (mosquitto here, ~/.local/share/granite-mqtt/mosquitto.conf, on
+    192.168.64.99:8883): works, into both
+    slots. `POST /api/v1/firmware/rollback`: works (ota_0 -> ota_1).
+  - Not tested: automatic rollback of an image that never validates.
+- DHCP / AutoIP race (fixed in 1c9876c, platform/net.rs): after a cable
+  replug, a lease arrived at 17.1 s just as lwIP started AutoIP, and
+  169.254.x replaced it 0.6 s later; DHCP then thought it was bound and
+  the lease only came back at ~270 s (most of the 600 s OTA
+  probation). The firmware now watches IP events, and when AutoIP
+  displaces a lease it restarts the DHCP client (at most once per
+  30 s). Normal boots, 8 soft / OTA / rollback reboots and two cable
+  replugs: lease in 1-14 s, no false restart. The recovery path itself
+  has not fired yet: with the link down lwIP neither counts DHCP tries
+  nor starts AutoIP, so a board-side replug cannot set it up; it needs
+  the link up and DHCP unanswered for ~15 s (switch or router side).
+- Evening, all on master: stacks measured with lto under load (HTTPS x4
+  parallel, OTA upload, Modbus, MQTT; console `stacks`, 9a9f837, real
+  FreeRTOS task names via platform::spawn). dispatch was 83 % of 24 KB
+  (two PlaneClient copies) -> PlaneClient on the heap (8512 -> 464 B),
+  now 18 %; sys_evt had 956 B free of 2304 -> 4096, now 2.7 KB free.
+  Every task >= 1.2 KB free; dispatch must be re-measured with the real
+  plane link (still the stub).
+- DHCP / AutoIP race, root cause (432bb2b): lwIP 2.2 neither stops AutoIP
+  in dhcp_bind nor stops AutoIP's ACD in autoip_stop, so whichever ACD
+  probe finishes last sets the address. ESP-IDF's DISCOVER backoff (0,
+  0.5, 1.5, 3.5, 7.5 s, then 4 s) made TRIES=4 start AutoIP 7.5 s after
+  link-up, right where this switch's first answered DISCOVER lands.
+  Fix: components/granite_lwip (C: acd_remove + autoip_stop on the tcpip
+  thread on every routable address) + CONFIG_LWIP_AUTOIP_TRIES=10
+  (31.5 s). Bench: 13 boots, lease at 12.8-14.5 s, no 169.254. Upstream
+  issue drafted for the user (lwIP savannah + ESP-IDF), not filed; same
+  code on lwIP master and esp-lwip 2.2.0-esp.
+- Small firmware bugs seen, not fixed: `/api/v1/firmware` lists the
+  other slot as `size 0, version ""` even when it holds a valid image;
+  the rollback call answers with an empty body.
+- Next:
+  - First batch is the CAN FD generation (user, 2026-11-04), not rev D.
+    Rev D fab sets stay ready; order and bench (clock stretch through
+    the ISO1640, 8-plane rise time) only if rev D comes back.
+  - Firmware builds one link per image (ADR 0006 component 7):
+    `link-canfd` first; `link-i2c` waits for rev D. OTA guard on the
+    link kind.
+  - SixUnited answer -> R18 or not.
+  - Test automatic rollback (an image that cannot validate).
+  - FD: JLC preview checks and 3D models before ordering.
+
+## 2026-11-04: rev D safeguard, CAN FD generation started (ADR 0006)
+
+Morning state (see the afternoon section for now). Two lines of
+boards now live side by side:
+
+- **Rev D (cabled, isolated I2C)**: power/pp-48-core, pp-48-unit,
+  controller/. Buildable. Changes today:
+  - Core ISO1640 U4 turned round (9fd8541): side 1 (single node, 80 pF,
+    static output offset) on the plane MCU, side 2 (shareable, 400 pF)
+    on the cable. Before, up to 8 planes' side 1 shared the cable bus,
+    which TI rules out. DRC / ERC clean, R26 / R27 are the side 1
+    pull-ups. Rev D doc: capacitance budget for both link connectors
+    together (one bus): 10 pF + 15 pF per plane + ~50 pF/m <= 350 pF.
+  - Controller D4 LED -> KT-0603G C12624 (old part had 2 in stock).
+    Stock check of all 128 parts on core / unit / controller: fine for
+    5 / 20 / 5 boards.
+  - Docs synced with the boards (a0c87f8): ADR 0005 sizes (core 56.1 x
+    72.1, unit 78.6 x 72.1), LM5069-2 + firmware latch, no chain cable
+    wording left.
+- **CAN FD generation (no cables at all)**: docs/adr/0006-plane-link-can-fd.md
+  (hardware) and firmware/docs/adr/0005-plane-link-can-fd-transport.md
+  (transport), both Accepted (see below).
+  - One row on the bar: controller, core 1, its units, core 2, ... The
+    link (CANH, CANL, LINK_GND, AUX_12V) runs through every board on a
+    2x3 A2541 joint beside the 2x7 chain joint, pin 1 at top + 30.0 mm
+    on every board. ISO1044 per core, MCP2518FD on the G070 (G0B1
+    FDCAN1 on the same PB8 / PB9 as a drop-in build), controller
+    MCP2518FD on the W5500 SPI + TCAN1044V. AUX_12V OR'ed from every
+    core feeds the controller. Right-end termination: two jumper
+    caps on a 2x2 header on the last board.
+  - Projects: power/pp-48-fd/tools (copied generator), power/pp-48-core-fd
+    (68.0 x 72.0 mm: 12 mm wider for the link domain's >= 2 mm
+    isolation channels), power/pp-48-unit-fd (78.6 x 72.1),
+    controller-fd/ (105 x 50). Schematics ERC 0; boards DRC 0
+    unconnected / parity clean (unit: rev D's 6 pth_inside_courtyard);
+    every part in JLC stock. Rebuild: pp-48-fd/tools/fd_layout.sh,
+    controller-fd/tools/fd_build.sh (KRT steps not bit-exact).
+  - Before ordering any FD board: 3D models of the new parts, JLC
+    placement preview of the bottom-side 2x3 / 2x7 rotations, the open
+    review asks of ADR 0006.
+- **Firmware** (all on master, `cargo test --workspace` 479 pass, clippy
+  clean):
+  - granite-proto::can: ids, segmenter, reassembler (7c39a71).
+  - mcp2518fd: facade over the mcp251xfd crate (0af8d56). INT0 / INT1:
+    inputs on the plane (pulled up), outputs low on the controller
+    (open there). mcp251xfd pulls RUSTSEC-2024-0370 at build time only.
+  - plane-fw (8d898e6): STM32G070 binary, embassy 0.6, rev D I2C1 slave
+    link, bus / status tasks, 46.3 KB flash of a ~56 KB slot. DFU and
+    MCU temperature are stubs; nothing run on hardware. One mutex
+    around Plane: a request mid-poll can stretch SCL ~25 ms at four
+    units (bench-measure).
+  - granite-core / sim (7319d12): PlaneLink::event_nodes (was
+    int_asserted), SYNC sender, sim CAN transport with frame loss
+    (`granite-sim serve --link can --drop-every 12`).
+  - The controller's real plane link (I2C or CAN) is still the stub,
+    on purpose, until a board can be measured.
+  - ESP32-C6 flash: image 1.85 MB = 70.7 % of a 2.5 MB OTA slot (~750
+    KB free, grew ~89 KB in two weeks). Levers: lto = true (not set),
+    drop the factory partition (~3.9 MB slots, needs a wired reflash:
+    decide before boards ship). Both done on 2026-11-04: see below,
+    1,654,816 B = 41.39 % of a 0x3D0000 slot.
+- Housekeeping: the second clone ~/Granite/Electronics/granite_controller
+  moved to ~/Granite/attic/granite_controller-2026-11-04 (its recovery
+  tokens copied to firmware/, gitignored). Work only in this checkout.
+  .claude/worktrees/ is gitignored. GPG pinentry and the SSH key unlock
+  time out now and then: retry.
+- Open questions walked with the user (972ef5c, 918f21c). ADR 0006
+  and firmware ADR 0005 are Accepted:
+  - FD: G070 + MCP2518FD now, G0B1 drop-in later; bus-off auto
+    recovery, counted; EVENT stays a bare flag.
+  - FD right-end termination: jumper caps on a 2x2 pin header per
+    board (was two solder jumpers), both caps on the last board.
+  - FD controller sits anywhere: keyed 2x3 box header (right-angle
+    C34945 fitted as J15; C9136 / C9141 were 2x6 parts) and a
+    pre-made 6-pin 2x3 IDC ribbon (AVR-ISP
+    type, <= ~1 m) onto core 1's bare link plug (was the right-angle
+    socket J15 on the bar).
+  - Every future plane type provides the isolated 12 V aux; the core
+    keeps the TCA9548A.
+  - The node has no DC-ATX converter: the slot's 19 V goes into the
+    Halo Gorgon board's own DC input (R1). The 2026-10-28 wording was
+    wrong and is fixed everywhere.
+- Next, board changes the answers need (FD only, DRC + stock again):
+  - Done: core-fd / unit-fd termination is now one 2x2 2.54 mm header
+    each (JP1 / JP301, C492419 XFCN PZ254V-12-4P, extended, ~59.7k in
+    stock): 1 CANH / 2 TERM_H, 3 CANL / 4 TERM_L, caps on 1-2 and 3-4.
+    Caps: C5305 (2.54 mm open-top, ~911k in stock), not assembled,
+    two per row (last board). core-fd's link plug J2 has a pin-1 silk
+    mark (F and B). Scripts: pp-48-fd/tools/fd/core_term.py,
+    unit_term.py (fd_layout.sh header). ERC 0; DRC 0 errors / 0
+    unconnected / parity clean (unit: rev D's 6 pth_inside_courtyard);
+    core isocheck 2.0: 0 pairs. Add C492419 to the JLC rotation check.
+  - Done: controller-fd J15 is a keyed 2x3 right-angle box header
+    (C34945 BOOMELE, ~2.7k in stock; C9136 / C9141 were 2x6 parts) on
+    B, same pad grid, face 4.8 mm past the edge, pin 1 at the bottom of
+    the column. Straight IDC ribbon = pin n to pin n (link.py pinout).
+    ERC 0, DRC 0 errors / 0 unconnected / parity clean. JLC rotation
+    90 in pcbkit.toml. Core 1's plug is not keyed: fit by the pin-1
+    mark.
+- Next, checks still open (ADR checklists):
+  - OV_KILL 22.7 V vs the Halo Gorgon board's maximum DC input (not
+    known: asked SixUnited 2026-11-04; if < ~24 V, R18 on PM-19V-250W-B
+    84.5k -> 76.8k, see ADR 0003. U2 MCP65R46 sets it, not the TPS3701).
+  - DG128 drawing and second source; node connector soak test; unit
+    hot-swap power limit / timer vs two slot insertions; where the slot
+    output voltage is read (ADR 0001).
+- Rev D fab sets regenerated 2026-11-04 (pcbkit jlcfab, fab/ of
+  pp-48-core, pp-48-unit, controller): DRC 0 errors / 0 unconnected /
+  parity clean, ERC 0, LCSC on every placed line, CPL = BOM. In JLC's
+  preview check core Y1 (no rotation correction). J5 SWD hand-fit.
+- Firmware flash: granite-fw release has lto = true (1.65 MB) and, as
+  of 2026-11-04, no `factory` partition - **decided and done**. Two
+  0x3D0000 (3,997,696 B) OTA slots at 0x50000 and 0x420000, 64 K free
+  at the top of the 8 MB. `espflash save-image` reports 1,654,816 /
+  3,997,696 B = 41.39 %; at ~89 KB / 2 weeks the slot fills around
+  2027-10 instead of 2027-04. Reasoning recorded in firmware ADR 0001
+  decision 11: rollback means an update never overwrites the running
+  slot, so one slot always holds the last image that self-validated and
+  two bad updates in a row cannot brick the board; `factory` only
+  covered both OTA images being invalid at once, and it never helped
+  with an image that validates but is subtly broken. Cost: both slots
+  invalid = USB. Bench boards move to the new layout with the ordinary
+  wired flash (`--target-app-partition ota_0 --erase-parts otadata`);
+  `nvs` keeps its offset, so settings, cert and recovery token survive.
+  Bench-checked 2026-11-04 on a rev C board (granite-cb374b, old layout
+  with OTA history, flash backup in ~/Granite/attic/): boots ota_0 on
+  the new table, same cert, link + DHCP + HTTPS up. The first LTO image
+  boot-looped: stack protection fault in the 12 KB "dispatch" thread
+  (PlaneClient 8.5 KB, inlined constructor = two copies in one frame);
+  DISPATCH_STACK = 24 KB fixed it (main.rs). Other threads' stack
+  margins with LTO not measured yet. OTA on the new layout: see the
+  afternoon section above.
 
 ## 2026-11-02: plane chain without cables (ADR 0005 decisions 4, 7)
 

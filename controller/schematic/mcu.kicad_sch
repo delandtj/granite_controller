@@ -5176,7 +5176,7 @@
 				)
 			)
 		)
-		(property "MPN" "APT1608LZGCK"
+		(property "MPN" "KT-0603G"
 			(at 53.34 60.96 0)
 			(hide yes)
 			(show_name no)
@@ -5187,7 +5187,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C5246833"
+		(property "LCSC" "C12624"
 			(at 53.34 60.96 0)
 			(hide yes)
 			(show_name no)

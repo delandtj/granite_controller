@@ -10,12 +10,17 @@
 //!
 //! What lwIP does by itself and what this module drives:
 //!
-//! - **AutoIP** is lwIP's, not ours. `CONFIG_LWIP_AUTOIP=y` plus
-//!   `CONFIG_LWIP_AUTOIP_TRIES=4` makes lwIP start IPv4 link-local
-//!   alongside DHCP after four failed DISCOVERs, which with lwIP's
-//!   doubling backoff (2 + 4 + 8 + 16 s) is the 30 s the ADR asks for, and
-//!   DHCP keeps retrying underneath. This module only *reports* the state
-//!   by recognising a 169.254/16 address.
+//! - **AutoIP** is lwIP's. `CONFIG_LWIP_AUTOIP=y` plus
+//!   `CONFIG_LWIP_AUTOIP_TRIES=10` makes lwIP start IPv4 link-local
+//!   alongside DHCP 31.5 s after link-up (ESP-IDF's DISCOVER backoff, see
+//!   sdkconfig.defaults), the 30 s the ADR asks for, and DHCP keeps
+//!   retrying underneath. lwIP 2.2 never stops AutoIP when DHCP binds,
+//!   and its `autoip_stop` leaves the address probe running, so a probe
+//!   that finishes after the lease overwrites it with 169.254/16. This
+//!   module stops AutoIP on every routable address
+//!   (`granite_autoip_yield`, components/granite_lwip) and, as a backstop,
+//!   restarts DHCP if a link-local address still replaced a lease. It
+//!   reports the AutoIP state by recognising a 169.254/16 address.
 //! - **SNTP** is `esp_netif_sntp_*` rather than esp-idf-svc's `EspSntp`,
 //!   because only the former can take the server from DHCP option 42
 //!   (`CONFIG_LWIP_DHCP_GET_NTP_SRV=y`). The clock is set to the firmware
@@ -56,14 +61,15 @@ use esp_idf_svc::hal::gpio::{Gpio18, Gpio19, Gpio20, Gpio21, Gpio22, Gpio23};
 use esp_idf_svc::hal::spi::{Dma, SPI2, SpiDriver, config::DriverConfig};
 use esp_idf_svc::hal::units::Hertz;
 use esp_idf_svc::ipv4;
-use esp_idf_svc::netif::{EspNetif, NetifConfiguration};
+use esp_idf_svc::netif::{EspNetif, IpEvent, NetifConfiguration};
 use esp_idf_svc::ping::{Configuration as PingConfiguration, EspPing};
 use esp_idf_svc::sys::{
     ESP_IPADDR_TYPE_V4, esp, esp_ip4_addr_t, esp_ip6_addr_t, esp_netif_create_ip6_linklocal,
     esp_netif_dhcpc_start, esp_netif_dhcpc_stop, esp_netif_dns_info_t,
     esp_netif_dns_type_t_ESP_NETIF_DNS_BACKUP, esp_netif_dns_type_t_ESP_NETIF_DNS_MAIN,
-    esp_netif_get_ip6_linklocal, esp_netif_ip_info_t, esp_netif_set_dns_info,
-    esp_netif_set_hostname, esp_netif_set_ip_info, esp_netif_t, esp_sntp_config_t,
+    esp_netif_get_ip6_linklocal, esp_netif_get_netif_impl, esp_netif_ip_info_t, esp_netif_set_dns_info,
+    esp_netif_set_hostname, esp_netif_set_ip_info, esp_netif_t, esp_netif_tcpip_exec,
+    esp_sntp_config_t,
     esp_netif_sntp_deinit, esp_netif_sntp_init, ip_event_t_IP_EVENT_ETH_GOT_IP, settimeofday,
     sntp_get_sync_status, sntp_sync_status_t_SNTP_SYNC_STATUS_COMPLETED, timeval,
 };
@@ -82,6 +88,8 @@ const IP_TIMEOUT: Duration = Duration::from_secs(35);
 const TICK: Duration = Duration::from_secs(1);
 /// How often the dead-man probes the gateway.
 const DEADMAN_PROBE: Duration = Duration::from_secs(60);
+/// At most one DHCP restart per this long when AutoIP displaced a lease.
+const LEASE_KICK_GAP: Duration = Duration::from_secs(30);
 /// mDNS service ports.
 const HTTPS_PORT: u16 = 443;
 
@@ -188,6 +196,9 @@ static LAST_CONN_S: AtomicU32 = AtomicU32::new(0);
 static TIME_SYNCED: AtomicBool = AtomicBool::new(false);
 /// Set once `esp_netif_sntp_init` succeeded.
 static SNTP_STARTED: AtomicBool = AtomicBool::new(false);
+/// The last routable address a GOT_IP event brought (a DHCP lease, or the
+/// static address), as a big-endian u32; 0 = none since the last kick.
+static LAST_LEASE: AtomicU32 = AtomicU32::new(0);
 
 /// Record that a server accepted a connection, or that the broker session
 /// came up. Part of the static-config dead-man (ADR component 6): a
@@ -276,12 +287,9 @@ pub fn init(
     }));
     let (tx, rx) = channel();
     let thread_status = Arc::clone(&status);
-    let spawned = thread::Builder::new()
-        .name("net".into())
-        .stack_size(8192)
-        .spawn(move || {
-            run(hw, mac, device_id, cfg, sysloop, thread_status, rx);
-        });
+    let spawned = super::spawn(c"net", 8192, move || {
+        run(hw, mac, device_id, cfg, sysloop, thread_status, rx);
+    });
     if let Err(e) = spawned {
         log::error!("network thread could not start: {e}");
         if let Ok(mut s) = status.write() {
@@ -323,6 +331,37 @@ fn run(
     // timestamps are at least plausible until SNTP lands (ADR component 6).
     set_clock_to_build_time();
 
+    // Remember every routable address the netif gets, so the loop below can
+    // tell "AutoIP replaced a lease" from "no lease yet". The DHCP address
+    // can live for well under a TICK before AutoIP overwrites it (seen on
+    // rev C, 2026-11-04: lease at 17.1 s, 169.254 at 17.7 s, after a cable
+    // reinserted at boot put the DHCP answer on lwIP's AutoIP start), so
+    // polling the netif would miss it. Subscribed before bring-up, which
+    // is where the first lease lands.
+    //
+    // The same watch stops AutoIP as soon as the address is routable, so
+    // its probe cannot overwrite the lease later (see the module doc). This
+    // runs on the event loop task; esp_netif_tcpip_exec hands the call to
+    // the tcpip thread and waits for it.
+    let _lease_watch = sysloop
+        .subscribe::<IpEvent, _>(|event: IpEvent| {
+            if let IpEvent::DhcpIpAssigned(a) = event {
+                let ip = a.ip();
+                if !is_link_local(ip) {
+                    LAST_LEASE.store(u32::from(ip), Ordering::Relaxed);
+                    let lwip = unsafe { esp_netif_get_netif_impl(a.netif_handle()) };
+                    if !lwip.is_null()
+                        && let Err(e) =
+                            unsafe { esp!(esp_netif_tcpip_exec(Some(granite_autoip_yield), lwip)) }
+                    {
+                        log::warn!("net: autoip could not be stopped: {e}");
+                    }
+                }
+            }
+        })
+        .map_err(|e| log::warn!("net: ip event watch not installed: {e}"))
+        .ok();
+
     let hostname = hostname_of(&cfg, &device_id);
     #[allow(unused_mut)]
     let mut link = match bring_up_link(hw, &mac, &hostname, &cfg, sysloop) {
@@ -352,6 +391,7 @@ fn run(
     // timer never fires, instead of wondering.
     let mut deadman_logged = false;
     let mut deadman_fired = false;
+    let mut last_kick_ms: Option<u64> = None;
     #[cfg(feature = "wifi-dev")]
     let mut last_retry_ms = super::now_ms();
 
@@ -430,6 +470,40 @@ fn run(
         } else {
             AddrMode::Dhcp
         };
+
+        // -- AutoIP displaced a lease --------------------------------------
+        // lwIP's DHCP / AutoIP cooperation can let AutoIP's address win
+        // over a lease that arrived as AutoIP started. The DHCP client then
+        // believes it is bound and sends nothing until T1, minutes later,
+        // while the board sits on 169.254 (and an image on OTA probation
+        // runs out its window). One stop/start gets the lease back from a
+        // server that just answered. Only when a lease was actually seen:
+        // a board that never had one stays on AutoIP undisturbed (direct
+        // cable commissioning), with lwIP's own DHCP retries underneath.
+        let dhcp_wanted = cfg.ip_mode == IpMode::Dhcp || deadman_fired;
+        let lease = LAST_LEASE.load(Ordering::Relaxed);
+        if dhcp_wanted
+            && link_up
+            && mode == AddrMode::AutoIp
+            && lease != 0
+            && !netif_handle.is_null()
+            && last_kick_ms.is_none_or(|t| {
+                super::now_ms().saturating_sub(t) >= LEASE_KICK_GAP.as_millis() as u64
+            })
+        {
+            last_kick_ms = Some(super::now_ms());
+            LAST_LEASE.store(0, Ordering::Relaxed);
+            log::warn!(
+                "net: link-local {ip} replaced the lease {}; restarting dhcp",
+                Ipv4Addr::from(lease)
+            );
+            unsafe {
+                let _ = esp_netif_dhcpc_stop(netif_handle);
+            }
+            if let Err(e) = unsafe { esp!(esp_netif_dhcpc_start(netif_handle)) } {
+                log::error!("net: dhcp restart failed: {e}");
+            }
+        }
 
         // IPv6 link-local once the interface is up (ADR: always on).
         if link_up && has_ip && !ip6_done && !netif_handle.is_null() {
@@ -583,6 +657,12 @@ fn run(
             }
         }
     }
+}
+
+unsafe extern "C" {
+    /// components/granite_lwip: take AutoIP's ACD off the list and stop
+    /// AutoIP. Must run on the tcpip thread; `ctx` is the lwIP `struct netif`.
+    fn granite_autoip_yield(ctx: *mut core::ffi::c_void) -> esp_idf_svc::sys::esp_err_t;
 }
 
 fn is_link_local(ip: ipv4::Ipv4Addr) -> bool {

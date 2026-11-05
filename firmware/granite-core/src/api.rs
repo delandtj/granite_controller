@@ -452,7 +452,7 @@ pub struct MqttStatus {
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct SlotInfo {
-    /// Partition label (`factory`, `ota_0`, `ota_1`).
+    /// Partition label (`ota_0`, `ota_1`).
     pub label: String,
     /// `running`, `valid`, `pending_verify`, `invalid`, `aborted`, `empty`.
     pub state: String,

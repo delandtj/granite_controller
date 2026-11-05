@@ -1,0 +1,94 @@
+(footprint "Converter_DCDC_1x1in_THT"
+	(version 20241229)
+	(generator "pp48")
+	(layer "F.Cu")
+	(descr "Isolated DC/DC module 25.4 x 25.4 mm, industry-standard 1 x 1 inch pin-out (Mornsun URB_YMD-6WR3, PCB layout top view): pins 1 GND, 2 Vin, 3 +Vo, 5 0V on a 2.54 mm grid, pin 4 not fitted on single-output parts; pins 1.0 mm")
+	(attr through_hole)
+	(property "Reference" "REF**"
+		(at 0 -14.2 0)
+		(layer "F.SilkS")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Value" "Converter_DCDC_1x1in_THT"
+		(at 0 14.2 0)
+		(layer "F.Fab")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(fp_rect
+		(start -12.7 -12.7)
+		(end 12.7 12.7)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(fill no)
+		(layer "F.Fab")
+	)
+	(fp_rect
+		(start -12.82 -12.82)
+		(end 12.82 12.82)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(fill no)
+		(layer "F.SilkS")
+	)
+	(fp_rect
+		(start -13.2 -13.2)
+		(end 13.2 13.2)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(fill no)
+		(layer "F.CrtYd")
+	)
+	(fp_line
+		(start -12.82 -5.0)
+		(end -11.6 -3.8)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+	)
+	(pad "1" thru_hole rect
+		(at -10.16 -2.54)
+		(size 2.2 2.2)
+		(drill 1.3)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+	)
+	(pad "2" thru_hole circle
+		(at -10.16 2.54)
+		(size 2.2 2.2)
+		(drill 1.3)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+	)
+	(pad "3" thru_hole circle
+		(at 10.16 10.16)
+		(size 2.2 2.2)
+		(drill 1.3)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+	)
+	(pad "5" thru_hole circle
+		(at 10.16 -10.16)
+		(size 2.2 2.2)
+		(drill 1.3)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+	)
+)

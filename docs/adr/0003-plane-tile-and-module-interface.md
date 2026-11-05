@@ -2,7 +2,10 @@
 
 **Status**: Accepted; decisions 1, 2, 3 (INT_n, ID_n lines) and 4
 (ID read path), and 11 (node connector) superseded by ADR 0004 (proposed 2026-10-28: N = 2/4/6/8
-columns at 25 mm, front end under the module, rotating channel)
+columns at 25 mm, front end under the module, rotating channel);
+decision 8's tile input row (LM5069-1 latch-off) superseded by ADR
+0005 decision 3: one hot-swap per 2-slot unit, LM5069-2 auto-retry,
+the latch in the core firmware
 **Date**: 2026-10-26
 **Updated**: 2026-10-26 (review asks answered: names, LM5069-1, new
 module project, INT per column; decision 14 isolated aux added);
@@ -480,9 +483,9 @@ Review asks (answered 2026-10-26):
 ## Open Questions
 
 **Architecture-changers**
-- [ ] Pod envelope and how tiles sit in the box (confirms 1x4).
-- [ ] Slot GPIO through TCA9535 vs direct MCU pins (pin count check
-  on the G070 with 4 columns).
+- [x] Pod envelope and how tiles sit in the box: superseded by ADR
+  0005 / 0006 (core and units in one row on a mounting bar).
+- [x] Slot GPIO: one TCA6424A per 2-slot unit (ADR 0005).
 
 **Behavior definers**
 - [x] PGOOD-loss latch start-up blanking: arm on first PGOOD, no timer
@@ -490,7 +493,8 @@ Review asks (answered 2026-10-26):
 - [x] INA238 ALERT latches: open drain straight onto the OV_KILL line,
   so it sets the slot latch. Threshold (210-220 W input) is firmware
   (power limit register, ALATCH), set at boot.
-- [ ] Tile hot-swap reset path (LM5069-1 latch-off, decided).
+- [x] Tile hot-swap reset path: superseded, ADR 0005 decision 3 (unit
+  LM5069-2, latch in firmware).
 - [x] D1 SMBJ60A at 60 V standoff vs the new range: kept (2026-10-28).
   Breakdown >= 66.7 V, so no conduction at 60 V; SMBJ64A clamps at
   103 V, over the 100 V FET and module parts; no SMBJ62A at LCSC.
@@ -500,6 +504,15 @@ Review asks (answered 2026-10-26):
   trips at 67.5 V, so "plane first" holds nominally, not worst case;
   the +/-4 % threshold leaves no setting that clears both 60 V and
   66.7 V (D1 breakdown) worst case. Both trips are safe.
-- [ ] OV_KILL at 22.7 V against the node's input rating.
-- [ ] Spare aux contact: second GND or something useful.
+- [ ] OV_KILL at 22.7 V against the node's input rating: the node is
+  the Halo Gorgon board's own 19 V DC input (R1). Its maximum input
+  voltage is not known yet (user 2026-11-04): find it in the board's
+  spec or ask the vendor (asked SixUnited 2026-11-04). OV_KILL is U2
+  (MCP65R46-2.4) on PM-19V-250W-B with R18 84.5k / R19 10k; the TPS3701
+  there is the 66.6 V VIN OVLO, not this trip. If the limit is under
+  ~24 V: R18 76.8k gives 20.83 V nominal (20.06-21.63 V worst case at
+  +/-2 % reference, 1 % resistors, reference accuracy still to check
+  in the MCP65R46 datasheet), still clear of the module's 19.31 V
+  maximum output.
+- [x] Spare aux contact: the second GND (A6, docs/pm-interface.md).
 - [ ] Node connector fluid compatibility (soak test).

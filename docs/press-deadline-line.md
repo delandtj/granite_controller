@@ -29,7 +29,7 @@ during a press. The plane has no equivalent.
 - No press is possible unless the core MCU is alive and actively
   allows it.
 - Within about 1 s of the MCU stopping (crash, hang, reset, core
-  unplugged, chain cable pulled) every photoMOS LED goes dark.
+  or a unit unplugged from the chain) every photoMOS LED goes dark.
 - Slot OFF, RUNOFF, DISARM and U_OFF are NOT touched. An operator's
   OFF must survive a firmware hang.
 - Default with no core at all: no presses. That is the safe state; the

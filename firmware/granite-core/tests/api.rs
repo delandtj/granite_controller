@@ -103,7 +103,7 @@ impl Platform for FakePlatform {
                 label: String::from("ota_0"),
                 state: String::from("running"),
                 version: String::from("0.1.0-test"),
-                size: 2_621_440,
+                size: 3_997_696,
             }],
             key_id: String::from("deadbeef"),
             rollback_available: true,

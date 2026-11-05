@@ -2,10 +2,11 @@
 
 There are two firmwares in a frame: the controller's and each plane
 core's. The controller is updated over the network into one of two OTA
-slots; the image flashed over USB stays in the `factory` slot as the
-last resort. A plane core is updated by the controller over the plane
-link. Both run a new image on probation, and an image that does not
-prove itself is rolled back.
+slots; an update never writes the slot it is running from, so the other
+slot always holds the last image that proved itself and is the last
+resort. A plane core is updated by the controller over the plane link.
+Both run a new image on probation, and an image that does not prove
+itself is rolled back.
 
 ## Controller: two ways to deliver an image
 
@@ -63,7 +64,8 @@ this: a controller whose planes are unplugged must still be able to
 take an update. If the image fails, panics, trips the task watchdog or
 browns out before that, it is marked invalid and the board reboots,
 and the bootloader starts the previous slot. If that one is also
-invalid, `factory` runs. An image that hangs too early to roll itself
+invalid there is nothing left to fall back to and the board needs USB
+(see [Recovery](recovery.md)). An image that hangs too early to roll itself
 back is reset by the bootloader's RTC watchdog, which stays armed for
 an image on probation, and the bootloader rolls it back the same way.
 

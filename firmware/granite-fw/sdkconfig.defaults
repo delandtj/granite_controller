@@ -45,12 +45,17 @@ CONFIG_LWIP_AUTOIP=y
 # With AUTOIP on, the simple ARP check is unavailable (it depends on
 # !LWIP_AUTOIP); use Address Conflict Detection instead.
 CONFIG_LWIP_DHCP_DOES_ACD_CHECK=y
-# lwIP starts AUTOIP alongside DHCP after this many failed DISCOVERs, and
-# keeps retrying DHCP underneath (LWIP_DHCP_AUTOIP_COOP). lwIP doubles the
-# DISCOVER timeout, so 4 tries is 2 + 4 + 8 + 16 = 30 s, which is the
-# "no lease within 30 s" of ADR 0001 component 6. The firmware only
-# reports the resulting 169.254/16 address; it does not drive AutoIP.
-CONFIG_LWIP_AUTOIP_TRIES=4
+# lwIP starts AUTOIP alongside DHCP at the DISCOVER after this many
+# unanswered ones, and keeps retrying DHCP underneath
+# (LWIP_DHCP_AUTOIP_COOP). ESP-IDF's backoff (lwipopts.h,
+# DHCP_REQUEST_BACKOFF_SEQUENCE) sends DISCOVERs at 0, 0.5, 1.5, 3.5, 7.5 s
+# after link-up and then every 4 s, so N tries start AutoIP at
+# 7.5 + 4 * (N - 4) s: 10 is 31.5 s, the "no lease within 30 s" of ADR 0001
+# component 6. (It was 4 = 7.5 s, on the assumption of a 2 + 4 + 8 + 16 s
+# backoff; a switch port that forwards ~4-8 s after link-up then put the
+# DHCP answer right on AutoIP's start, rev C 2026-11-04.) Once an address
+# is routable, platform/net.rs stops AutoIP (components/granite_lwip).
+CONFIG_LWIP_AUTOIP_TRIES=10
 CONFIG_LWIP_NETIF_LOOPBACK=y
 CONFIG_LWIP_SO_RCVBUF=y
 # Socket table: HTTPS (listener, control, 4 sessions), HTTP (listener,
@@ -98,8 +103,21 @@ CONFIG_MBEDTLS_PEM_WRITE_C=y
 
 # --- runtime -------------------------------------------------------------
 CONFIG_ESP_MAIN_TASK_STACK_SIZE=12288
+# The default event loop task (`sys_evt`) runs esp_netif's and esp_eth's
+# handlers as well as ours, including the IpEvent subscription of
+# src/platform/net.rs. The default 2304 bytes left it 956 free on a rev C
+# board (console `stacks`, 2026-11-04): 59 % used, and the deepest of
+# those handlers is not ours to bound.
+CONFIG_ESP_SYSTEM_EVENT_TASK_STACK_SIZE=4096
 CONFIG_PTHREAD_TASK_STACK_SIZE_DEFAULT=8192
 CONFIG_COMPILER_OPTIMIZATION_SIZE=y
+# uxTaskGetSystemState() is compiled only with configUSE_TRACE_FACILITY,
+# and that is how the firmware reads per-task stack high-water marks
+# (src/platform/tasks.rs, the console's `stacks` command and one log block
+# 120 s after boot). Needed because `lto = true` inlines large
+# constructors into caller frames, so a stack that was ample without LTO
+# can overflow with it - the dispatcher did, on a rev C board.
+CONFIG_FREERTOS_USE_TRACE_FACILITY=y
 
 # --- I2C -----------------------------------------------------------------
 # Both buses use the ESP-IDF v5 I2C master driver (driver/i2c_master.h):

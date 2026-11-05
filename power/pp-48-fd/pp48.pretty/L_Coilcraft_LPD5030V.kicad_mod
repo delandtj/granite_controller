@@ -1,0 +1,279 @@
+(footprint "L_Coilcraft_LPD5030V"
+	(version 20260206)
+	(generator "pcbnew")
+	(generator_version "10.0")
+	(layer "F.Cu")
+	(descr "Coilcraft LPD5030V 1:1 coupled inductor, 4.8 x 4.8 x 2.9 mm, 1000 V winding to winding; L1 = 1-2 (left), L2 = 4-3 (right), dots 1 and 4 (Coilcraft document 757 land pattern)")
+	(tags "coupled inductor LPD5030V Fly-Buck")
+	(property "Reference" ""
+		(at 0 -3.6 0)
+		(layer "F.SilkS")
+		(uuid "fc236e4c-8d5d-4afa-82b2-affa4e09fecf")
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+	)
+	(property "Value" ""
+		(at 0 3.6 0)
+		(layer "F.Fab")
+		(uuid "3ad13631-3257-418b-9213-246d80210b33")
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "9840eb3b-6648-40fd-9069-0c0d4e29ed16")
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "937915c4-616c-4895-8a87-2a828bde25fa")
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+	)
+	(attr smd)
+	(duplicate_pad_numbers_are_jumpers no)
+	(fp_line
+		(start -2.6 -0.45)
+		(end -2.6 0.45)
+		(stroke
+			(width 0.15)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "60aead54-22ff-4060-8d03-f1c4f84b55c3")
+	)
+	(fp_line
+		(start -0.45 -2.6)
+		(end 0.45 -2.6)
+		(stroke
+			(width 0.15)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "edfaa773-2649-4599-9e24-c4535477bf28")
+	)
+	(fp_line
+		(start -0.45 2.6)
+		(end 0.45 2.6)
+		(stroke
+			(width 0.15)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "105f1f73-0429-4b3f-a4aa-ff6b3d6c64d3")
+	)
+	(fp_line
+		(start 2.6 -0.45)
+		(end 2.6 0.45)
+		(stroke
+			(width 0.15)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "1073702e-140f-4433-978c-82e1243a64f9")
+	)
+	(fp_circle
+		(center -3 -2.6)
+		(end -2.85 -2.6)
+		(stroke
+			(width 0.15)
+			(type default)
+		)
+		(fill yes)
+		(layer "F.SilkS")
+		(uuid "a84076ca-d9b2-47de-b681-93eae3b75621")
+	)
+	(fp_line
+		(start -2.75 -2.75)
+		(end 2.75 -2.75)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(layer "F.CrtYd")
+		(uuid "afc82a40-05ec-4020-a5dd-a7e45f96ba93")
+	)
+	(fp_line
+		(start -2.75 2.75)
+		(end -2.75 -2.75)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(layer "F.CrtYd")
+		(uuid "08618e26-1cc1-4c61-be00-c0c8f9f99873")
+	)
+	(fp_line
+		(start 2.75 -2.75)
+		(end 2.75 2.75)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(layer "F.CrtYd")
+		(uuid "45a57714-a48e-418d-afbc-8072071a153b")
+	)
+	(fp_line
+		(start 2.75 2.75)
+		(end -2.75 2.75)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(layer "F.CrtYd")
+		(uuid "074e6683-f2db-4041-b8be-324123cb23cd")
+	)
+	(fp_line
+		(start -2.4 -2.4)
+		(end 2.4 -2.4)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.Fab")
+		(uuid "f6bfd45d-2773-4b55-86e3-f613586a3dbd")
+	)
+	(fp_line
+		(start -2.4 2.4)
+		(end -2.4 -2.4)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.Fab")
+		(uuid "79e16cc3-82a9-4823-b916-617ff2ab0aa4")
+	)
+	(fp_line
+		(start 2.4 -2.4)
+		(end 2.4 2.4)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.Fab")
+		(uuid "a78e0e83-b6b2-49c7-8575-75bedd16d3c8")
+	)
+	(fp_line
+		(start 2.4 2.4)
+		(end -2.4 2.4)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.Fab")
+		(uuid "4166d04c-030d-4409-a9c5-97fdd7dfb98c")
+	)
+	(pad "1" smd custom
+		(at -1.62 -1.605)
+		(size 0.5 0.5)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(thermal_bridge_angle 45)
+		(options
+			(clearance outline)
+			(anchor rect)
+		)
+		(primitives
+			(gr_poly
+				(pts
+					(xy 0.88 -0.074999) (xy 0.88 -0.875) (xy 0.12 -0.875) (xy -0.879999 0.125) (xy -0.879999 0.875)
+					(xy -0.079999 0.875) (xy -0.079999 0.475) (xy 0.47 -0.074999)
+				)
+				(width 0)
+				(fill yes)
+			)
+		)
+		(uuid "baa0f961-14cb-40d1-8b90-afd27ebe63ec")
+	)
+	(pad "2" smd custom
+		(at -1.62 1.605)
+		(size 0.5 0.5)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(thermal_bridge_angle 45)
+		(options
+			(clearance outline)
+			(anchor rect)
+		)
+		(primitives
+			(gr_poly
+				(pts
+					(xy 0.88 0.074999) (xy 0.88 0.875) (xy 0.12 0.875) (xy -0.879999 -0.125) (xy -0.879999 -0.875)
+					(xy -0.079999 -0.875) (xy -0.079999 -0.475) (xy 0.47 0.074999)
+				)
+				(width 0)
+				(fill yes)
+			)
+		)
+		(uuid "7e671247-5853-4858-bcbe-002e0742fc47")
+	)
+	(pad "3" smd custom
+		(at 1.62 1.605)
+		(size 0.5 0.5)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(thermal_bridge_angle 45)
+		(options
+			(clearance outline)
+			(anchor rect)
+		)
+		(primitives
+			(gr_poly
+				(pts
+					(xy -0.88 0.074999) (xy -0.88 0.875) (xy -0.12 0.875) (xy 0.879999 -0.125) (xy 0.879999 -0.875)
+					(xy 0.079999 -0.875) (xy 0.079999 -0.475) (xy -0.47 0.074999)
+				)
+				(width 0)
+				(fill yes)
+			)
+		)
+		(uuid "41f7f913-9813-4c9e-8ab0-36aea3a35d4f")
+	)
+	(pad "4" smd custom
+		(at 1.62 -1.605)
+		(size 0.5 0.5)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(thermal_bridge_angle 45)
+		(options
+			(clearance outline)
+			(anchor rect)
+		)
+		(primitives
+			(gr_poly
+				(pts
+					(xy -0.88 -0.074999) (xy -0.88 -0.875) (xy -0.12 -0.875) (xy 0.879999 0.125) (xy 0.879999 0.875)
+					(xy 0.079999 0.875) (xy 0.079999 0.475) (xy -0.47 -0.074999)
+				)
+				(width 0)
+				(fill yes)
+			)
+		)
+		(uuid "ef98974e-1256-4ddb-bb7c-34d1749d1e79")
+	)
+	(embedded_fonts no)
+	(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/L_Coilcraft_LPD5030V.step"
+		(offset
+			(xyz 0 0 0.1)
+		)
+		(scale
+			(xyz 1 1 1)
+		)
+		(rotate
+			(xyz 0 0 0)
+		)
+	)
+)

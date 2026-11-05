@@ -83,41 +83,38 @@ pub fn start(mut pin: PinDriver<'static, Output>) -> anyhow::Result<LedHandle> {
         pattern: pattern.clone(),
     };
 
-    thread::Builder::new()
-        .name("granite-led".into())
-        .stack_size(STACK_SIZE)
-        .spawn(move || {
-            let mut on = false;
-            let mut elapsed = Duration::ZERO;
-            loop {
-                let current = decode(pattern.load(Ordering::Acquire));
-                let want = match half_period(current) {
-                    None => {
-                        // Solid or dark: start the next blinking pattern
-                        // from a full half period.
+    crate::platform::spawn(c"granite-led", STACK_SIZE, move || {
+        let mut on = false;
+        let mut elapsed = Duration::ZERO;
+        loop {
+            let current = decode(pattern.load(Ordering::Acquire));
+            let want = match half_period(current) {
+                None => {
+                    // Solid or dark: start the next blinking pattern
+                    // from a full half period.
+                    elapsed = Duration::ZERO;
+                    matches!(current, LedPattern::Busy)
+                }
+                Some(half) => {
+                    if elapsed >= half {
                         elapsed = Duration::ZERO;
-                        matches!(current, LedPattern::Busy)
-                    }
-                    Some(half) => {
-                        if elapsed >= half {
-                            elapsed = Duration::ZERO;
-                            !on
-                        } else {
-                            on
-                        }
-                    }
-                };
-                if want != on {
-                    on = want;
-                    if let Err(err) = pin.set_level(on.into()) {
-                        log::error!("led: GPIO1 write failed: {err}");
-                        return;
+                        !on
+                    } else {
+                        on
                     }
                 }
-                thread::sleep(TICK);
-                elapsed += TICK;
+            };
+            if want != on {
+                on = want;
+                if let Err(err) = pin.set_level(on.into()) {
+                    log::error!("led: GPIO1 write failed: {err}");
+                    return;
+                }
             }
-        })?;
+            thread::sleep(TICK);
+            elapsed += TICK;
+        }
+    })?;
 
     Ok(handle)
 }

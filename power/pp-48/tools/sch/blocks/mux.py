@@ -26,21 +26,22 @@ def block(N=2):
         nets[pd] = "UNIT%d_SDA" % u if u <= N // 2 else "NC"
         nets[pc] = "UNIT%d_SCL" % u if u <= N // 2 else "NC"
     b.sym("U6", "Interface_Expansion:TCA9548APWR", "TCA9548APWR", "Package_SO:TSSOP-24_4.4x7.8mm_P0.65mm", nets,
-          at=P(80, 70), fields={"LCSC": "C130026"},
+          at=P(80, 70), fields={"LCSC": "C130026"}, ref_at=(12.7, -25.4), val_at=(12.7, -22.86),
           desc="I2C switch, 0x70; channel k = unit k + 1")
-    b.sym("C28", "Device:C", "100n", C0402, {"1": "+3V3", "2": "GND"}, at=P(120, 50), desc="TCA9548A VCC")
-    b.sym("R31", "Device:R", "10k", R0402, {"1": "+3V3", "2": "MUX_RSTN"}, at=P(52, 60), desc="/RESET pull-up")
+    b.sym("C28", "Device:C", "100n", C0402, {"1": "+3V3", "2": "GND"}, at=P(102, 51), desc="TCA9548A VCC")
+    b.sym("R31", "Device:R", "10k", R0402, {"1": "+3V3", "2": "MUX_RSTN"}, at=P(52, 63), desc="/RESET pull-up")
     b.sym("Q6", "Transistor_FET:2N7002", "2N7002", "Package_TO_SOT_SMD:SOT-23", {"1": "MUX_RST", "2": "GND", "3": "MUX_RSTN"},
           at=P(44, 74), fields={"LCSC": "C8545"}, desc="MCU MUX_RST high -> mux reset")
     b.sym("R32", "Device:R", "100k", R0402, {"1": "MUX_RST", "2": "GND"}, at=P(36, 82), desc="Q6 gate pull-down: MCU in reset = mux running")
     for pin in ("22", "23"):
         b.port(nets[pin], "bidirectional", side="left", pos=("U6", pin))
-    b.port("MUX_RST", "input", side="left", pos=("Q6", "1"))
-    for pin in ("3",):
-        b.tie(nets[pin], ("U6", pin))
-    b.tie("MUX_RSTN", ("R31", "2"))
-    b.tie("MUX_RSTN", ("Q6", "3"))
+    b.port("MUX_RST", "input", side="left", pos=P(32, 74))
+    b.wire("+3V3", [P(80, 48), ("U6", "24")])            # C28 at the VCC pin
+    b.wire("+3V3", [P(80, 48), ("C28", "1")])
+    b.wire("MUX_RSTN", [("Q6", "3"), P(46, 66), ("R31", "2"), ("U6", "3")])
+    b.name("MUX_RSTN", at=P(58, 66))
     b.wire("MUX_RST", [("Q6", "1"), ("R32", "1")])
+
     for pin, net in sorted(nets.items(), key=lambda kv: int(kv[0])):
         if net.startswith("UNIT"):
             b.port(net, "bidirectional", side="right", pos=("U6", pin))

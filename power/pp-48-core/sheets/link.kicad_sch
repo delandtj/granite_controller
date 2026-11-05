@@ -2547,16 +2547,6 @@
 		)
 		(uuid "9e38fbf8-1bf2-5d10-8581-510cce3c6914")
 	)
-	(label "CTRL_SDA"
-		(at 201.93 113.03 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "c9be6155-bc92-58a4-8293-4b867b59aa83")
-	)
 	(label "CTRL_SCL"
 		(at 201.93 115.57 0)
 		(effects
@@ -2566,6 +2556,16 @@
 			(justify left bottom)
 		)
 		(uuid "cfe2aa71-d90b-5fb1-b64d-4685aa0180b6")
+	)
+	(label "CTRL_SDA"
+		(at 201.93 113.03 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "c9be6155-bc92-58a4-8293-4b867b59aa83")
 	)
 	(label "CTRL_INT"
 		(at 252.73 110.49 0)
@@ -2734,23 +2734,25 @@
 		(dnp no)
 		(uuid "bf5dbb7b-c380-5314-8dbd-e05e0ccf5104")
 		(property "Reference" "U5"
-			(at 190.5 65.786 0)
+			(at 187.96 66.04 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
+				(justify left)
 			)
 		)
 		(property "Value" "ISO7721D"
-			(at 190.5 67.31 0)
+			(at 193.04 66.04 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
+				(justify right)
 			)
 		)
 		(property "Footprint" "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm"
@@ -2837,7 +2839,6 @@
 	(symbol
 		(lib_id "Isolator:ISO1540")
 		(at 190.5 113.03 0)
-		(mirror y)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -2847,23 +2848,25 @@
 		(dnp no)
 		(uuid "d0a656e6-649f-5631-ab1b-4f42f3d8abb4")
 		(property "Reference" "U4"
-			(at 190.5 105.156 0)
+			(at 187.96 105.41 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
+				(justify right)
 			)
 		)
 		(property "Value" "ISO1640BD"
-			(at 190.5 106.68 0)
+			(at 193.04 105.41 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
+				(justify left)
 			)
 		)
 		(property "Footprint" "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm"
@@ -2890,7 +2893,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "isolated I2C; side 1 = controller cable, side 2 = plane. ISO1540 symbol, ISO1640 pin compatible"
+		(property "Description" "isolated I2C; side 1 = plane (single node), side 2 = shared controller cable. ISO1540 symbol, ISO1640 pin compatible"
 			(at 190.5 113.03 0)
 			(hide yes)
 			(show_name no)
@@ -3190,7 +3193,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "U4 VCC2"
+		(property "Description" "U4 VCC1"
 			(at 165.1 101.6 0)
 			(hide yes)
 			(show_name no)
@@ -3284,7 +3287,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "U4 VCC1"
+		(property "Description" "U4 VCC2"
 			(at 215.9 101.6 0)
 			(hide yes)
 			(show_name no)
@@ -3378,7 +3381,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "I2C1 pull-up, isolator side 2"
+		(property "Description" "I2C1 pull-up, isolator side 1 (needs its own)"
 			(at 152.4 105.41 0)
 			(hide yes)
 			(show_name no)
@@ -3715,7 +3718,7 @@
 		(dnp no)
 		(uuid "81acfa6a-5c37-5a07-88d6-65a03f2fd75c")
 		(property "Reference" "J2"
-			(at 272.415 106.426 0)
+			(at 274.32 104.14 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -3725,7 +3728,7 @@
 			)
 		)
 		(property "Value" "CTRL IN"
-			(at 272.415 107.95 0)
+			(at 274.32 106.68 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -3819,7 +3822,7 @@
 		(dnp no)
 		(uuid "de6d2883-f489-5f87-9c66-38012b5352bd")
 		(property "Reference" "J3"
-			(at 272.415 126.746 0)
+			(at 274.32 124.46 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -3829,7 +3832,7 @@
 			)
 		)
 		(property "Value" "CTRL OUT"
-			(at 272.415 128.27 0)
+			(at 274.32 127 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -3965,7 +3968,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "DNP: the controller's J8 bus carries the pull-ups"
+		(property "Description" "DNP: the controller's J8 bus carries the pull-ups (2.2k, on ISO1640 side 2)"
 			(at 227.33 104.14 0)
 			(hide yes)
 			(show_name no)
@@ -4059,7 +4062,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "DNP: the controller's J8 bus carries the pull-ups (2.2k, on ISO1640 side 2)"
 			(at 237.49 104.14 0)
 			(hide yes)
 			(show_name no)

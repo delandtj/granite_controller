@@ -66,8 +66,9 @@ Northbound:
 
 Reachability is a first-class property: network configuration changes
 are commit-confirmed with automatic revert, OTA images self-validate by
-reaching the network and are rolled back otherwise, a factory partition
-is the last resort, and a per-device recovery token allows a factory
+reaching the network and are rolled back otherwise, the other OTA slot
+(which always holds the last image that validated) is the last resort,
+and a per-device recovery token allows a factory
 reset over the network when the admin password is lost. Identity is the
 eFuse MAC: hostname, mDNS name, MQTT client id and the default device id
 all derive from it, so a noted MAC is enough to find and recover a board.
@@ -308,11 +309,28 @@ firmware/
       token, device cert if the user chose to keep it) and reboots.
 
 11. **Firmware update and boot safety** (`granite-fw/src/ota.rs`)
-    - Partition table (8 MB): `nvs` 192 K, `otadata` 8 K, `coredump`
-      64 K, `factory` 2.5 M, `ota_0` 2.5 M, `ota_1` 2.5 M. The image
-      flashed at the bench goes to `factory` and to `ota_0`; OTA
-      alternates `ota_0`/`ota_1`; `factory` is only ever rewritten over
-      USB.
+    - Partition table (8 MB): `nvs` 192 K at 0x9000, `otadata` 8 K at
+      0x39000, `coredump` 64 K at 0x3B000, `ota_0` 0x3D0000
+      (3,997,696 B) at 0x50000, `ota_1` 0x3D0000 at 0x420000. Last byte
+      used 0x7F0000, 64 K free at the top. There is no `factory`
+      partition: the bench flash writes `ota_0` directly (one espflash
+      invocation with `--target-app-partition ota_0 --erase-parts
+      otadata`, see `firmware/README.md`) and OTA then alternates
+      `ota_0`/`ota_1`.
+    - **Revised (user, 2026-11-04): `factory` dropped, its 2.5 M given
+      to the two OTA slots (2.5 M -> 0x3D0000 each).** With bootloader
+      app rollback an update never overwrites the slot that is running,
+      so one OTA slot always holds the last image that passed
+      self-validation; two bad updates in a row cannot brick the board.
+      `factory` only covered both OTA images being invalid at the same
+      time (flash corruption of the good slot), and it does not help
+      with an image that validates but is subtly broken - that is a
+      validation-criteria question either way. Gain: the release image
+      is 1.65 MB with `lto = true`, 41.4 % of the new slot (63 % of the
+      old one). Cost: if both OTA slots are invalid the board needs USB,
+      which means lifting it out. Moving an existing bench board to the
+      new layout is the same wired flash; `nvs` keeps its offset, so
+      settings, the device cert and the recovery token survive.
     - Images are signed (ESP-IDF app signature scheme, ECDSA P-256,
       `CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT` +
       `CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT`): the running app
@@ -327,9 +345,10 @@ firmware/
       configured broker or served an authenticated HTTPS request, within
       `t_validate` (default 10 min). Then it marks itself valid.
       Otherwise it marks itself invalid and reboots into the previous
-      slot; if that also fails the bootloader falls through to
-      `factory`. The task watchdog (10 s) and a brown-out handler also
-      count as failures while pending.
+      slot, which is the last resort now that there is no `factory`
+      partition: if that one is invalid too the board needs USB. The
+      task watchdog (10 s) and a brown-out handler also count as
+      failures while pending.
     - OTA sources: HTTPS pull (URL + expected SHA-256, CA = the MQTT CA
       or a separate one) and HTTPS push (multipart upload on the setup
       page). Progress and result go out as events.
@@ -488,7 +507,7 @@ traffic uses `std::sync::mpsc` and `RwLock<Observed>`.
 - Node power state cannot be changed by a controller crash, reboot, OTA
   or a firmware hang (reset-held expander, hardware-bounded presses).
 - Every reachability change is reversible by time (commit-confirm, OTA
-  self-validation, factory partition, recovery token).
+  self-validation, rollback into the other OTA slot, recovery token).
 - One command vocabulary serves MQTT, HTTP and (reduced) Modbus; the
   core crate and its tests run on the host.
 - The data model and register map are reusable for the ducks.
@@ -571,14 +590,17 @@ operator is the same trust problem moved one step. If the deployment
 later needs it, `Command` has a reserved `sig` field and the dispatcher
 has one verification hook.
 
-**Q: Two OTA slots of 2.5 MB each plus factory: is 2.5 MB enough for
-ESP-IDF + TLS server + MQTT + HTTP assets in Rust?**
+**Q: Is an OTA slot enough for ESP-IDF + TLS server + MQTT + HTTP
+assets in Rust?**
 A: Comparable esp-idf-svc firmware with HTTPS, MQTT-TLS and lwIP lands
-around 1.3-1.8 MB in release with LTO and `opt-level = "s"`. 2.5 MB
-leaves margin for the HTTP assets (gzip'd, under 100 KB) and growth. If
-it does not fit, `factory` shrinks first (it only needs to be
-recoverable, so a reduced build with HTTPS + OTA and no Modbus/rules is
-acceptable there).
+around 1.3-1.8 MB in release with LTO and `opt-level = "s"`. The
+original table had two 2.5 M slots plus `factory`, which already left
+margin for the HTTP assets (gzip'd, under 100 KB) and growth; the
+measured image was 1.65 MB, 63 % of a 2.5 M slot, growing about 89 KB
+per two weeks. Rather than shrink `factory` when that ran out, the user
+dropped it on 2026-11-04 and gave its space to the slots (decision 11):
+0x3D0000 each, 41.4 % used, and the growth curve now reaches the limit
+around 2027-10 instead of 2027-04.
 
 **Q: What does the controller do on the 200th boot when NVS is worn or
 corrupted?**
