@@ -1,6 +1,50 @@
-# Handoff - granite-plane (updated 2026-11-04, evening)
+# Handoff - granite-plane (updated 2026-11-05)
 
 Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
+
+## 2026-11-05: schematics readable, generators own the layout
+
+State: master = origin/master (1c622f8 before this handoff commit), tree
+clean.
+
+- Decisions (user):
+  - ADR 0007 (core 48 V from unit 1 over the chain) Rejected: shared
+    power on every unit, unit 1's XT60 a single point. The core keeps
+    its own XT30 (1e05c8d).
+  - First batch is the CAN FD generation; rev D fab sets stay ready,
+    unordered. Firmware builds one plane link per image (`link-canfd`
+    / `link-i2c`, OTA guard on the link kind): ADR 0006 component 7
+    (01e142e).
+- Schematics, all four plane boards (core, unit, core-fd, unit-fd):
+  bypass caps at the pins they decouple, local nets wired instead of
+  joined by labels, no overlapping text, title comments inside the frame
+  (pp-48-core comment 1 said RS-485; rev D is isolated I2C). Labels kept
+  only for nets that leave a sheet or cross a part (core: SPI / MCP_CS /
+  MCP_INT between U3 and U5, ADR0-2, NRST, PRESS_EN). R29 has R28's DNP
+  description. Netlists identical throughout, ERC 0.
+- The generators own that layout (ADR 0002: edit the Python, never the
+  .kicad_sch): power/pp-48/tools (rev D, 8a94449) and power/pp-48-fd/tools
+  (FD, 1c622f8) reproduce the improved sheets, regenerate deterministic.
+  New lint in sch/draw.py finish(): Reference / Value / heading texts may
+  not overlap texts, labels, power symbols, bodies or wires; no text past
+  the frame; a bypass cap (rail to ground) sits within 10.16 mm of a part
+  pin on its rail or is wired to one; `bulk=True` opts out.
+  - The two copies differ: wired limit 30.48 mm (rev D) vs 50.8 mm of
+    wire (FD); rev D marks core C1 / C2, unit C201 / C202 bulk, FD none.
+    Align when next touched.
+  - Core rev D DRC parity: 1 item, R29's new description is not on the
+    board (sync the board before regenerating rev D fab outputs).
+- Explained for the record: the unit slot logic (per slot Q1 the power
+  FET; Q2 OFF, Q3 latch -> UVLO; Q4 latch clear; Q5 RUN off; Q8 + Q9
+  arm on PG and PGD; Q6 PG loss when armed -> OV_KILL; Q7 DISARM), see
+  ADR 0003; core R28 / R29 DNP because the controller carries the I2C
+  pull-ups.
+- Next:
+  - SixUnited answer -> R18 or not.
+  - Test automatic rollback (an image that cannot validate).
+  - FD: JLC preview checks and 3D models before ordering the first batch.
+  - Controller firmware: CAN FD plane link (`link-canfd`) behind
+    PlaneLink, with the OTA link-kind guard.
 
 ## 2026-11-04 (afternoon): FD board changes done, factory partition dropped, rev C bench
 
