@@ -71,7 +71,7 @@ corrections = [
     ["^Crystal_SMD_3225-4Pin_3.2x2.5mm$", "C9010", 0, 0.0, 0.0],  # 40 MHz Y2
     ["^PinHeader_2x03_P2.54mm_Horizontal$", "C239334", 270, 0.0, 0.0],   # link plug J2: fitted on the body side (EasyEDA numbers the rows the other way, as the 2x7; its body is drawn the other way round from the 2x7's, hence 270, not 90)
     ["^PinSocket_2x03_P2.54mm_Horizontal$", "C5333425", 270, 0.0, 0.0],  # link socket J3: pads and body both fit
-    ["^AMASS_XT30PW-M_1x02_P2.50mm_Horizontal$", "C431092", 180, 0.0, -5.0],
+    ["^AMASS_XT30PW-M_1x02_P2.50mm_Horizontal$", "C431092", 180, 0.0, 0.0],   # EasyEDA origin = centre of pins + pegs = jlcfab THT reference (all pads); was dy -5.0, 5 mm toward the edge in the JLC preview (2026-11-05)
     ["^CP_Elec_10x10$", "C87862", 0, 0.0, 0.0],                     # pad 1 = + on both
     ["^D_SMC$", "C2990209", 0, 0.0, 0.0],
     ["^D_SOD-123$", "C917030", 0, 0.0, 0.0],

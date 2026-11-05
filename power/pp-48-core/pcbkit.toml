@@ -60,7 +60,7 @@ ground = { net = "GND", width = 0.4 }
 corrections = [
     ["^Crystal_SMD_3225-4Pin_3.2x2.5mm$", "C7424755", 0, 0.0, 0.0], # 8 MHz Y1: no EasyEDA footprint for this part; SMD3225-4P as C9010 (fitted, 0). JLC places it by package: check pin 1 in the preview
     ["^SOIC-8_3.9x4.9mm_P1.27mm$", "C5122339", 0, 0.0, 0.0],      # ISO1640: EasyEDA drawn as KiCad (pcbkit's generic SOIC-8 entry is 270)
-    ["^AMASS_XT30PW-M_1x02_P2.50mm_Horizontal$", "C431092", 180, 0.0, -5.0],
+    ["^AMASS_XT30PW-M_1x02_P2.50mm_Horizontal$", "C431092", 180, 0.0, 0.0],   # EasyEDA origin = centre of pins + pegs = jlcfab THT reference (all pads); was dy -5.0, 5 mm toward the edge in the JLC preview (2026-11-05)
     ["^CP_Elec_10x10$", "C87862", 0, 0.0, 0.0],                     # pad 1 = + on both
     ["^D_SMC$", "C2990209", 0, 0.0, 0.0],
     ["^D_SOD-123$", "C917030", 0, 0.0, 0.0],
