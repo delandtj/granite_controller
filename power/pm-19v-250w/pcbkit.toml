@@ -59,3 +59,20 @@ zone_min_width = 0.25
 priority = 1
 group = "gnd-stitch"
 fill = true
+
+[jlcfab]
+out = "fab"
+skip_dnp = true
+# KiCad -> EasyEDA rotation / centroid per LCSC part (pcbkit jlc.py convention, see
+# power/pp-48-unit/pcbkit.toml). Fitted 2026-11-05 (EasyEDA footprints by easyeda2kicad, numbered
+# pads onto ours); parts shared with PM-19V-250W-B copied from its table. Check them in JLC's preview.
+corrections = [
+    ["^CP_EIA-7360-38_Kemet-E$", "C2158991", 180, 0.0, 0.0],         # C24 / C25: EasyEDA pad 1 = + as the Kemet-D entry; check the + mark in the preview
+    ["^D_SOD-323$", "C107713", 0, 0.0, 0.0],                         # from B
+    ["^D_SOD-323$", "C82466", 0, 0.0, 0.0],                          # from B
+    ["^L_Coilcraft_XAL1510-223$", "C49261404", 0, 0.0, 0.0],         # no EasyEDA data; same package as B's XAL1510-103 C49261402 (0), two pads
+    ["^LQFP-48-1EP_7x7mm_P0.5mm_EP3.6x3.6mm$", "C581067", 270, 0.0, 0.0],  # LTC7810 U1: fitted, all pads within 0.08 mm
+    ["^PM_Aux_Header_2x03_P1.27$", "C41376035", 270, 0.0, 0.0],      # from B; symmetric, our pins are numbered by function
+    ["^SOT-23-6$", "C623510", 270, 0.0, 0.0],                        # MCP65R46, from B
+    ["^TDSON-8-1$", "C534364", 270, 0.0, 0.0],                       # from B (fitted on pins 1-4)
+]
