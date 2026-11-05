@@ -21,6 +21,16 @@ de43d06), d800949 (no `factory` partition), 7290a45 (dispatcher stack),
   Board value / LCSC changed in place, no re-route; ERC 0, DRC 0, parity
   clean. Check full-load-release overshoot on the first module (~0.3 V
   margin when every tolerance stacks). Plane boards do not change.
+- JLC CPL, 2026-11-05: pcbkit jlcfab wrote bottom-side rotations as
+  r + correction; JLC reads them seen from below, 180 - r + correction
+  (KiBot mirror_bottom, kicad-jlcpcb-tools and the Fabrication Toolkit
+  all do this). Fixed in pcbkit da29f15. The old output had every
+  bottom part at KiCad 0 / 180 turned 180 deg (core U1, D1, link / chain
+  connectors, unit U207 / U208, optos, Q, D1 / D51, controller-fd J15).
+  All six fab/ sets (rev D and FD) regenerated. C492419 (270) and
+  C7424755 (0, no EasyEDA footprint) added to the tables. Still to do:
+  upload each fab/ set to JLC and look at the bottom side in the
+  preview (browser extension was not connected).
 - Rev C bench board (granite-cb374b, 192.168.64.115 by DHCP, on
   /dev/ttyACM0; admin password: ask the user). Flash backup of its old
   layout: ~/Granite/attic/revc-90649bcb3748-flash-2026-11-04.bin
