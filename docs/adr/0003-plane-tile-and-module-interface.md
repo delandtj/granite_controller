@@ -504,15 +504,13 @@ Review asks (answered 2026-10-26):
   trips at 67.5 V, so "plane first" holds nominally, not worst case;
   the +/-4 % threshold leaves no setting that clears both 60 V and
   66.7 V (D1 breakdown) worst case. Both trips are safe.
-- [ ] OV_KILL at 22.7 V against the node's input rating: the node is
-  the Halo Gorgon board's own 19 V DC input (R1). Its maximum input
-  voltage is not known yet (user 2026-11-04): find it in the board's
-  spec or ask the vendor (asked SixUnited 2026-11-04). OV_KILL is U2
-  (MCP65R46-2.4) on PM-19V-250W-B with R18 84.5k / R19 10k; the TPS3701
-  there is the 66.6 V VIN OVLO, not this trip. If the limit is under
-  ~24 V: R18 76.8k gives 20.83 V nominal (20.06-21.63 V worst case at
-  +/-2 % reference, 1 % resistors, reference accuracy still to check
-  in the MCP65R46 datasheet), still clear of the module's 19.31 V
-  maximum output.
+- [x] OV_KILL against the node's input rating: the node is the Halo
+  Gorgon board's own 19 V DC input (R1); its maximum input voltage is
+  not known (asked SixUnited 2026-11-04, no answer). Decided by the user
+  2026-11-05: trip at most 22 V. U2 (MCP65R46-2.4) on PM-19V-250W-B,
+  R18 84.5k -> 76.8k (C26987) / R19 10k: 20.83 V nominal, 19.83-21.87 V
+  worst case (datasheet DS22269 tolerances, docs/pm-19v-250w-b.md 4.12),
+  clear of the module's 19.31 V maximum output. The TPS3701 there is the
+  66.6 V VIN OVLO, not this trip.
 - [x] Spare aux contact: the second GND (A6, docs/pm-interface.md).
 - [ ] Node connector fluid compatibility (soak test).

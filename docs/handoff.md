@@ -15,11 +15,12 @@ de43d06), d800949 (no `factory` partition), 7290a45 (dispatcher stack),
 - FD boards: termination header, controller box header, J2 pin-1 mark
   done (details below). Before an FD order: JLC preview of C492419,
   C34945, 3D models.
-- OV_KILL: asked SixUnited for the Halo Gorgon board's maximum barrel
-  jack voltage (user, 2026-11-04). Waiting. The trip is U2 MCP65R46 +
-  R18 / R19 on PM-19V-250W-B; fallback R18 84.5k -> 76.8k (20.8 V
-  nominal; MCP65R46 reference accuracy still to check in its
-  datasheet). Plane boards do not change.
+- OV_KILL: decided 2026-11-05 without SixUnited's answer (user: at most
+  22 V). PM-19V-250W-B R18 84.5k -> 76.8k C26987: 20.83 V nominal,
+  19.83-21.87 V worst case (MCP65R46 datasheet tolerances, spec 4.12).
+  Board value / LCSC changed in place, no re-route; ERC 0, DRC 0, parity
+  clean. Check full-load-release overshoot on the first module (~0.3 V
+  margin when every tolerance stacks). Plane boards do not change.
 - Rev C bench board (granite-cb374b, 192.168.64.115 by DHCP, on
   /dev/ttyACM0; admin password: ask the user). Flash backup of its old
   layout: ~/Granite/attic/revc-90649bcb3748-flash-2026-11-04.bin

@@ -4469,7 +4469,7 @@
 		)
 		(uuid "3306c0af-bd44-533d-8ddc-11db65d19eda")
 	)
-	(text "OUTPUT SUPERVISION (as PM-19V-250W rev A): OV_KILL > 22.68 V, PGOOD > 17.26 V"
+	(text "OUTPUT SUPERVISION: OV_KILL > 20.83 V, PGOOD > 17.26 V"
 		(exclude_from_sim no)
 		(at 20.32 213.36 0)
 		(effects
@@ -9826,7 +9826,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "OV_KILL: low when VOUT > 22.68 V"
+		(property "Description" "OV_KILL: low when VOUT > 20.83 V"
 			(at 91.44 231.14 0)
 			(hide yes)
 			(show_name no)
@@ -9898,7 +9898,7 @@
 				)
 			)
 		)
-		(property "Value" "84.5k"
+		(property "Value" "76.8k"
 			(at 68.58 251.841 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -9932,7 +9932,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "OV divider: 2.4 x 94.5 / 10 = 22.68 V"
+		(property "Description" "OV divider: 2.4 x 86.8 / 10 = 20.83 V (19.8-21.9 V worst case)"
 			(at 68.58 248.92 0)
 			(hide yes)
 			(show_name no)
@@ -9944,7 +9944,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" "C185390"
+		(property "LCSC" "C26987"
 			(at 68.58 248.92 0)
 			(hide yes)
 			(show_name no)

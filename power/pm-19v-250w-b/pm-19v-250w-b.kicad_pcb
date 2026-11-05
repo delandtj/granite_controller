@@ -7920,7 +7920,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Value" "84.5k"
+		(property "Value" "76.8k"
 			(at 0 -1.17 180)
 			(layer "B.Fab")
 			(uuid "5caec67f-3a88-4f89-a645-6da6c7839efe")
@@ -7944,7 +7944,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Description" "OV divider: 2.4 x 94.5 / 10 = 22.68 V"
+		(property "Description" "OV divider: 2.4 x 86.8 / 10 = 20.83 V (19.8-21.9 V worst case)"
 			(at 0 0 180)
 			(layer "B.Fab")
 			(hide yes)
@@ -7969,7 +7969,7 @@
 				(justify mirror)
 			)
 		)
-		(property "LCSC" "C185390"
+		(property "LCSC" "C26987"
 			(at 0 0 180)
 			(layer "B.Fab")
 			(hide yes)
@@ -8282,7 +8282,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Description" "OV_KILL: low when VOUT > 22.68 V"
+		(property "Description" "OV_KILL: low when VOUT > 20.83 V"
 			(at 0 0 270)
 			(layer "B.Fab")
 			(hide yes)

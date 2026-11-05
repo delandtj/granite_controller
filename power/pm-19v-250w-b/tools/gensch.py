@@ -238,13 +238,13 @@ two("C25", C, "100n", C0402, "VAUX", "GND", ux2 + 17.78, uy2 + 35.56, "C307331",
 
 # ---- output supervision (as rev A)
 sx, sy = 40.64, 228.6
-heading("OUTPUT SUPERVISION (as PM-19V-250W rev A): OV_KILL > 22.68 V, PGOOD > 17.26 V", sx - 20.32, sy - 15.24)
+heading("OUTPUT SUPERVISION: OV_KILL > 20.83 V, PGOOD > 17.26 V", sx - 20.32, sy - 15.24)
 two("R17", R, "47k 0805", R0805, "VIN", "VAUX", sx - 7.62, sy, "C17713", "VAUX feed from VIN")
 two("D4", DZ, "4.7V", SOD323, "VAUX", "GND", sx - 7.62, sy + P, "C107713", "VAUX 4.7 V zener")
 two("C26", C, "1u", C0402, "VAUX", "GND", sx - 7.62, sy + 2 * P, "C52923", "VAUX")
 part("U2", "Comparator:MCP65R46", "MCP65R46-2.4", SOT236, {"1": "OV_KILL", "2": "GND", "3": "OV_REF", "4": "OVD",
-     "5": "OV_REF", "6": "VAUX"}, (sx + 50.8, sy + 2.54), lcsc="C623510", desc="OV_KILL: low when VOUT > 22.68 V")
-two("R18", R, "84.5k", R0402, "VOUT", "OVD", sx + 27.94, sy + 20.32, "C185390", "OV divider: 2.4 x 94.5 / 10 = 22.68 V")
+     "5": "OV_REF", "6": "VAUX"}, (sx + 50.8, sy + 2.54), lcsc="C623510", desc="OV_KILL: low when VOUT > 20.83 V")
+two("R18", R, "76.8k", R0402, "VOUT", "OVD", sx + 27.94, sy + 20.32, "C26987", "OV divider: 2.4 x 86.8 / 10 = 20.83 V (19.8-21.9 V worst case)")
 two("R19", R, "10k", R0402, "OVD", "GND", sx + 27.94, sy + 20.32 + P, "C25744", "")
 two("C27", C, "100n", C0402, "VAUX", "GND", sx + 27.94, sy + 20.32 + 2 * P, "C307331", "U2 bypass")
 part("U3", "Comparator:MCP65R46", "MCP65R46-2.4", SOT236, {"1": "PGOOD", "2": "GND", "3": "PGD", "4": "PG_REF",
