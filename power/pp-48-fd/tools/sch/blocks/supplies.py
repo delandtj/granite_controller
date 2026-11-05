@@ -38,7 +38,7 @@ def lm5164(b, gx, gy, u, vout, nets, rron, l, rfb1, cout, ca, rsuffix, cbase, lc
 
     b.sym(u, "Regulator_Switching:LM5164DDA", "LM5164DDA", "Package_SO:HSOP-8-1EP_3.9x4.9mm_P1.27mm_EP2.41x3.1mm",
           {"1": "GND", "2": "VIN", "3": nets["en"], "4": nets["ron"], "5": nets["fb"], "6": "NC", "7": nets["bst"], "8": nets["sw"], "9": "GND"},
-          at=P(0, 0), fields={"LCSC": "C477928"}, desc="100 V 1 A COT buck, %s" % vout)
+          at=P(0, 0), fields={"LCSC": "C477928"}, desc="100 V 1 A COT buck, %s" % vout, ref_at=(0, -13.97))
 
     # ---------------------------------------------------------- input side (left)
     yr = -22                                       # VBUS rail above the chip
@@ -86,7 +86,7 @@ def lm5164(b, gx, gy, u, vout, nets, rron, l, rfb1, cout, ca, rsuffix, cbase, lc
     b.wire(fb, [P(xd, yfb), (rr(4), "1")])
 
     # ---------------------------------------------------------- output
-    xo1, xo2 = 52, 63
+    xo1, xo2 = 52, 65
     b.sym(cc(5), "Device:C", cout, C1210, {"1": nets["vout"], "2": "GND"}, at=P(xo1, 4), desc="output X7R")
     b.sym(cc(6), "Device:C", cout, C1210, {"1": nets["vout"], "2": "GND"}, at=P(xo2, 4), desc="output X7R")
     rail = [P(29, -2), (lref, "2"), P(29, -2), P(37, -2), P(37, 4), (cc(1), "2"), P(37, 4), P(37, -2)]   # CA to VOUT
@@ -100,79 +100,81 @@ def flybuck(b, gx, gy):
     b.sym("U2", "Regulator_Switching:LM5017MR", "LM5018MRX/NOPB",
           "pp48:SOIC-8-1EP_3.9x4.9mm_P1.27mm_EP2.95x4.9mm_Mask2.71x3.4mm_ThermalVias",
           {"1": "GND", "2": "VIN", "3": "UVLO2", "4": "RON2", "5": "FB2", "6": "VCC2", "7": "BST2", "8": "SW2", "9": "GND"},
-          at=P(0, 0), fields={"LCSC": "C471040"}, desc="100 V 300 mA COT synchronous buck (LM5017 pinout), Fly-Buck primary 12.7 V")
+          at=P(0, 0), fields={"LCSC": "C471040"}, desc="100 V 300 mA COT synchronous buck (LM5017 pinout), Fly-Buck primary 12.7 V",
+          ref_at=(0, -11.43))
 
     # ---------------------------------------------------------- input side (left)
     yr = -22
-    b.sym("R10", "Device:R", "100k", R0805, {"1": "VIN", "2": "UVLO2"}, at=P(-30, -7), desc="UVLO top, 20 uA x 100k = 2 V hysteresis")
-    b.sym("R11", "Device:R", "4.22k", R0402, {"1": "UVLO2", "2": "GND"}, at=P(-30, 3), desc="on at 30.3 V, off at 28.3 V")
-    b.sym("R12", "Device:R", "169k", R0805, {"1": "VIN", "2": "RON2"}, at=P(-16, -12), desc="RON from VIN: fsw = VOUT1 / (9e-11 x RON) ~ 800 kHz, on-time 200 ns at 75 V")
-    b.sym("C11", "Device:C", "2.2u 100V", C1210, {"1": "VIN", "2": "GND"}, at=P(-24, -16),
+    b.sym("R10", "Device:R", "100k", R0805, {"1": "VIN", "2": "UVLO2"}, at=P(-36, -7), desc="UVLO top, 20 uA x 100k = 2 V hysteresis")
+    b.sym("R11", "Device:R", "4.22k", R0402, {"1": "UVLO2", "2": "GND"}, at=P(-36, 3), desc="on at 30.3 V, off at 28.3 V")
+    b.sym("R12", "Device:R", "169k", R0805, {"1": "VIN", "2": "RON2"}, at=P(-18, -12), desc="RON from VIN: fsw = VOUT1 / (9e-11 x RON) ~ 800 kHz, on-time 200 ns at 75 V")
+    b.sym("C11", "Device:C", "2.2u 100V", C1210, {"1": "VIN", "2": "GND"}, at=P(-30, -16),
           fields={"LCSC": "C338133"}, desc="input, at the VIN pin")
     b.sym("C12", "Device:C", "100n 100V", C0603, {"1": "VIN", "2": "GND"}, at=P(-5, -16), desc="input HF")
-    b.wire("VIN", [P(-33, yr), P(-30, yr), ("R10", "1"), P(-30, yr), P(-24, yr), ("C11", "1"), P(-24, yr), P(-16, yr),
-                   ("R12", "1"), P(-16, yr), P(-12, yr), ("U2", "2"), P(-12, yr), P(-5, yr), ("C12", "1")])
-    b.wire("UVLO2", [("R10", "2"), P(-30, -2), P(-20, -2), P(-20, 2), ("U2", "3")])
-    b.wire("UVLO2", [P(-30, -2), ("R11", "1")])
+    b.wire("VIN", [P(-39, yr), P(-36, yr), ("R10", "1"), P(-36, yr), P(-30, yr), ("C11", "1"), P(-30, yr), P(-18, yr),
+                   ("R12", "1"), P(-18, yr), P(-12, yr), ("U2", "2"), P(-12, yr), P(-5, yr), ("C12", "1")])
+    b.wire("UVLO2", [("R10", "2"), P(-36, -2), P(-26, -2), P(-26, 2), ("U2", "3")])
+    b.wire("UVLO2", [P(-36, -2), ("R11", "1")])
     b.wire("RON2", [("R12", "2"), ("U2", "4")])
     b.wire("GND", [P(-1, 14), P(-1, 12), P(-2, 12), ("U2", "1"), P(-2, 12), P(0, 12), ("U2", "9")])
 
     # ---------------------------------------------------------- switch node, coupled inductor
     b.sym("C13", "Device:C", "10n 50V", C0402, {"1": "BST2", "2": "SW2"}, at=P(14, -8), desc="bootstrap")
     b.sym("L2", "Device:L_Coupled_1243", "33u", "pp48:L_Coilcraft_LPD5030V",
-          {"1": "SW2", "2": "VOUT1", "4": "LINK_GND", "3": "SEC2"}, at=P(36, -8), mirror="x",
+          {"1": "SW2", "2": "VOUT1", "4": "LINK_GND", "3": "SEC2"}, at=P(42, -8), mirror="x", ref_at=(0, -6.35),
           fields={"LCSC": "C5441621", "MPN": "Coilcraft LPD5030V-333MRC"},
           desc="Fly-Buck coupled inductor 1:1, 33 uH, Isat 0.49 A (10 %), 1000 V winding to winding; L1 1-2 primary, L2 4-3 secondary (dots 1, 4)")
     b.wire("BST2", [("U2", "7"), P(11, -4), P(11, -14), P(14, -14), ("C13", "1")])
     b.name("BST2", at=P(11, -10), ang=90)
-    b.wire("SW2", [("U2", "8"), P(14, -2), P(22, -2), P(22, -6), ("L2", "1")])
+    b.wire("SW2", [("U2", "8"), P(14, -2), P(36, -2), P(36, -6), ("L2", "1")])
     b.wire("SW2", [P(14, -2), ("C13", "2")])
-    b.wire("LINK_GND", [P(28, -10), ("L2", "4")])
+    b.wire("LINK_GND", [P(29, -10), ("L2", "4")])
     b.name("SW2", at=P(18, -2))
 
     # ---------------------------------------------------------- type 3 ripple, feedback, VCC
     b.sym("R13", "Device:R", "200k", R0805, {"1": "SW2", "2": "INJ2"}, at=P(26, 4), rot=90, desc="ripple Rr (type 3)")
-    b.sym("C14", "Device:C", "1n", C0402, {"1": "INJ2", "2": "VOUT1"}, at=P(38, 4), rot=90, desc="ripple Cr")
-    b.sym("C15", "Device:C", "100n", C0402, {"1": "INJ2", "2": "FB2"}, at=P(34, 11), desc="ripple Cac (DC block)")
-    b.sym("R14", "Device:R", "18.7k", R0402, {"1": "VOUT1", "2": "FB2"}, at=P(48, 9), desc="feedback top")
-    b.sym("R17", "Device:R", "2k", R0402, {"1": "FB2", "2": "GND"}, at=P(48, 20), desc="feedback bottom: VOUT1 = 1.225 V x 10.35 = 12.7 V")
-    b.sym("C16", "Device:C", "1u 25V", C0603, {"1": "VCC2", "2": "GND"}, at=P(10, 10), desc="VCC")
+    b.sym("C14", "Device:C", "1n", C0402, {"1": "INJ2", "2": "VOUT1"}, at=P(44, 4), rot=90, desc="ripple Cr")
+    b.sym("C15", "Device:C", "100n", C0402, {"1": "INJ2", "2": "FB2"}, at=P(40, 11), desc="ripple Cac (DC block)")
+    b.sym("R14", "Device:R", "18.7k", R0402, {"1": "VOUT1", "2": "FB2"}, at=P(54, 9), desc="feedback top")
+    b.sym("R17", "Device:R", "2k", R0402, {"1": "FB2", "2": "GND"}, at=P(54, 20), desc="feedback bottom: VOUT1 = 1.225 V x 10.35 = 12.7 V")
+    b.sym("C16", "Device:C", "1u 25V", C0603, {"1": "VCC2", "2": "GND"}, at=P(10, 10), desc="VCC", ref_at=(-5.08, -1.27), val_at=(-6.35, 1.27))
     b.sym("D2", "Device:D", "1N4148W", "Diode_SMD:D_SOD-123", {"1": "VCC2", "2": "VOUT1"}, at=P(13, 22), rot=270,
           fields={"LCSC": "C917030"}, desc="VCC from VOUT1 (12.7 V > 8.55 V + VF): bias off the VIN regulator")
-    b.wire("SW2", [P(22, -2), ("R13", "1")])
-    b.wire("INJ2", [("R13", "2"), P(34, 4), ("C15", "1")])
-    b.wire("INJ2", [P(34, 4), ("C14", "1")])
-    b.wire("FB2", [("U2", "5"), P(16, 2), P(16, 15), P(48, 15), ("R14", "2")])
-    b.wire("FB2", [P(34, 15), ("C15", "2")])
-    b.wire("FB2", [P(48, 15), ("R17", "1")])
+    b.wire("SW2", [P(22, -2), P(22, 4), ("R13", "1")])
+    b.wire("INJ2", [("R13", "2"), P(40, 4), ("C15", "1")])
+    b.wire("INJ2", [P(40, 4), ("C14", "1")])
+    b.name("INJ2", at=P(36, 4))
+    b.wire("FB2", [("U2", "5"), P(16, 2), P(16, 15), P(54, 15), ("R14", "2")])
+    b.wire("FB2", [P(40, 15), ("C15", "2")])
+    b.wire("FB2", [P(54, 15), ("R17", "1")])
     b.wire("VCC2", [("U2", "6"), P(13, 6), ("D2", "1")])
     b.wire("VCC2", [P(10, 6), ("C16", "1")])
 
     # ---------------------------------------------------------- primary output VOUT1
-    b.sym("C29", "Device:C", "4.7u 25V", C0805, {"1": "VOUT1", "2": "GND"}, at=P(56, 2), desc="primary output COUT1")
-    b.wire("VOUT1", [("L2", "2"), P(42, -6), P(42, 4), ("C14", "2"), P(42, 4), P(42, -6), P(48, -6), ("R14", "1"),
-                     P(48, -6), P(56, -6), ("C29", "1"), P(56, -6), P(60, -6), P(60, 27), P(13, 27), ("D2", "2")])
+    b.sym("C29", "Device:C", "4.7u 25V", C0805, {"1": "VOUT1", "2": "GND"}, at=P(62, 2), desc="primary output COUT1")
+    b.wire("VOUT1", [("L2", "2"), P(48, -6), P(48, 4), ("C14", "2"), P(48, 4), P(48, -6), P(54, -6), ("R14", "1"),
+                     P(54, -6), P(62, -6), ("C29", "1"), P(62, -6), P(74, -6), P(74, 29), P(13, 29), ("D2", "2")])
 
     # ---------------------------------------------------------- secondary: the link domain (LINK_GND island)
-    b.sym("D6", "Device:D_Schottky", "SS110", "Diode_SMD:D_SMA", {"1": "ISO_12V", "2": "SEC2"}, at=P(47, -22), rot=180,
+    b.sym("D6", "Device:D_Schottky", "SS110", "Diode_SMD:D_SMA", {"1": "ISO_12V", "2": "SEC2"}, at=P(53, -22), rot=180,
           fields={"LCSC": "C2482"}, desc="secondary rectifier 100 V 1 A (VR = VIN, 1:1)")
-    b.sym("C30", "Device:C", "10u 25V", C0805, {"1": "ISO_12V", "2": "LINK_GND"}, at=P(56, -19), desc="secondary output COUT2")
-    b.sym("C31", "Device:C", "10u 25V", C0805, {"1": "ISO_12V", "2": "LINK_GND"}, at=P(66, -19), desc="secondary output COUT2")
-    b.sym("D7", "Device:D_Zener", "SMF13A", "Diode_SMD:D_SOD-123F", {"1": "ISO_12V", "2": "LINK_GND"}, at=P(76, -19), rot=270,
+    b.sym("C30", "Device:C", "10u 25V", C0805, {"1": "ISO_12V", "2": "LINK_GND"}, at=P(62, -19), desc="secondary output COUT2")
+    b.sym("C31", "Device:C", "10u 25V", C0805, {"1": "ISO_12V", "2": "LINK_GND"}, at=P(76, -19), desc="secondary output COUT2")
+    b.sym("D7", "Device:D_Zener", "SMF13A", "Diode_SMD:D_SOD-123F", {"1": "ISO_12V", "2": "LINK_GND"}, at=P(86, -19), rot=270,
           fields={"LCSC": "C353315"}, desc="13 V TVS: caps VOUT2 when the controller is unplugged (the Fly-Buck secondary rises unloaded)")
-    b.sym("R9", "Device:R", "4.7k", R0603, {"1": "ISO_12V", "2": "LED12_A"}, at=P(86, -19), desc="12V LED, also the ~2 mA preload")
-    b.sym("D5", "Device:LED", "GREEN 12V", LED0603, {"1": "LINK_GND", "2": "LED12_A"}, at=P(86, -10), rot=90,
+    b.sym("R9", "Device:R", "4.7k", R0603, {"1": "ISO_12V", "2": "LED12_A"}, at=P(96, -19), desc="12V LED, also the ~2 mA preload")
+    b.sym("D5", "Device:LED", "GREEN 12V", LED0603, {"1": "LINK_GND", "2": "LED12_A"}, at=P(96, -10), rot=90,
           fields={"LCSC": "C2297"})
-    b.wire("SEC2", [("L2", "3"), P(42, -10), P(42, -22), ("D6", "2")])
-    b.name("SEC2", at=P(42, -14), ang=90)
-    b.wire("ISO_12V", [P(53, -25), P(53, -22), ("D6", "1"), P(53, -22), P(56, -22), ("C30", "1"), P(56, -22), P(66, -22),
-                        ("C31", "1"), P(66, -22), P(76, -22), ("D7", "1"), P(76, -22), P(86, -22), ("R9", "1")])
-    b.wire("LINK_GND", [P(52, -13), P(52, -15), P(56, -15), ("C30", "2"), P(56, -15), P(66, -15), ("C31", "2"), P(66, -15),
-                        P(76, -15), ("D7", "2")])
+    b.wire("SEC2", [("L2", "3"), P(48, -10), P(48, -22), ("D6", "2")])
+    b.name("SEC2", at=P(48, -14), ang=90)
+    b.wire("ISO_12V", [P(59, -25), P(59, -22), ("D6", "1"), P(59, -22), P(62, -22), ("C30", "1"), P(62, -22), P(76, -22),
+                        ("C31", "1"), P(76, -22), P(86, -22), ("D7", "1"), P(86, -22), P(96, -22), ("R9", "1")])
+    b.wire("LINK_GND", [P(58, -13), P(58, -15), P(62, -15), ("C30", "2"), P(62, -15), P(76, -15), ("C31", "2"), P(76, -15),
+                        P(86, -15), ("D7", "2")])
     b.wire("LED12_A", [("R9", "2"), ("D5", "2")])
-    b.wire("LINK_GND", [P(86, -4), ("D5", "1")])
-    b.name("LED12_A", at=P(86, -14))
-    b.text("ISOLATED 12 V AUX  U2 LM5018 Fly-Buck from VIN, L2 1:1, secondary on the LINK_GND island", P(-34, -30))
+    b.wire("LINK_GND", [P(96, -4), ("D5", "1")])
+    b.name("LED12_A", at=P(96, -14))
+    b.text("ISOLATED 12 V AUX  U2 LM5018 Fly-Buck from VIN, L2 1:1, secondary on the LINK_GND island", P(-40, -30))
 
 
 def block(N=2):
@@ -183,16 +185,16 @@ def block(N=2):
     # 3V3 buck U1: LM5164, 200 kHz, type 3 ripple injection
     P, rail = lm5164(b, *G1, "U1", "3.3 V", dict(en="EN1", ron="RON1", fb="FB1", bst="BST1", sw="SW1", inj="INJ1", vout="+3V3"),
                      "41.2k", "33u", "86.6k", "22u 10V", "1.5n", 3, 4, lcsc_l="C840528")
-    b.sym("R18", "Device:R", "1k", R0402, {"1": "+3V3", "2": "LED33_A"}, at=P(75, 3), desc="3V3 LED")
-    b.sym("D3", "Device:LED", "GREEN 3V3", LED0603, {"1": "GND", "2": "LED33_A"}, at=P(75, 12), rot=90, fields={"LCSC": "C2297"})
-    b.wire("+3V3", rail + [P(75, -2), ("R18", "1")])
+    b.sym("R18", "Device:R", "1k", R0402, {"1": "+3V3", "2": "LED33_A"}, at=P(77, 3), desc="3V3 LED")
+    b.sym("D3", "Device:LED", "GREEN 3V3", LED0603, {"1": "GND", "2": "LED33_A"}, at=P(77, 12), rot=90, fields={"LCSC": "C2297"})
+    b.wire("+3V3", rail + [P(77, -2), ("R18", "1")])
     b.wire("LED33_A", [("R18", "2"), ("D3", "2")])
-    b.wire("GND", [P(75, 17), ("D3", "1")])          # GND below the LED arrows
-    b.name("LED33_A", at=P(75, 8))
+    b.wire("GND", [P(77, 17), ("D3", "1")])          # GND below the LED arrows
+    b.name("LED33_A", at=P(77, 8))
     b.text("3V3 BUCK  U1 LM5164, 200 kHz, from VIN", P(-34, -30))
 
     # isolated 12 V aux U2: LM5018 Fly-Buck (see the docstring)
     b.power("ISO_12V", "power:+12V", value="ISO_12V")
     b.power("LINK_GND", "power:GND", value="LINK_GND")
-    flybuck(b, 45, 112)
+    flybuck(b, 51, 112)
     return b.finish()

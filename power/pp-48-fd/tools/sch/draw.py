@@ -11,26 +11,34 @@
 
 Coordinates are sheet mm, y down, symbol origins on the 1.27 grid.
 
-b.sym(ref, lib, value, fp, nets, at, rot=0, mirror=None|"x"|"y", fields={}, desc="", dnp=False, bom=True)
+b.sym(ref, lib, value, fp, nets, at, rot=0, mirror=None|"x"|"y", fields={}, desc="", dnp=False, bom=True,
+      ref_at=None, val_at=None, bulk=False)
     nets: pin number -> net name, every pin of the symbol must be listed;
     "NC" draws a no-connect flag. fields: hidden properties (LCSC, MPN, ...);
     LCSC is filled from BASIC by (value, fp) when not given. ref is the
-    sheet-local reference; write() renumbers it per instance.
-b.wire(net, path, via=None)
+    sheet-local reference; write() renumbers it per instance. ref_at / val_at:
+    the Reference / Value text at (dx, dy[, justify]) from the origin instead
+    of the automatic spot. bulk=True: a rail cap, exempt from the bypass rule.
+b.wire(net, path, via=None, sym=True)
     path: a list of (ref, pin) and (x, y) points, drawn in order, one leg
     per consecutive pair. via points are inserted after the first element.
+    An (x, y, (dx, dy)) point says which way the wire leaves it (a power
+    symbol there faces the other way). sym=False: a branch of a power net
+    that gets no power symbol of its own (it starts on another path's wire).
     A leg is straight if aligned, else L (corner) or Z (two corners). A leg
     leaves / enters a pin along the pin's axis from outside the body. Nets
     without a wire() are chained pin to pin in declaration order; pins of a
     net not named in any of its wire() calls are joined to the nearest
     named pin. Several wire() calls on one net are allowed (branches);
     junction dots are added where three or more ends meet.
-b.port(net, shape="passive", side="left", pos=None)
+b.port(net, shape="passive", side="left", pos=None, ang=None)
     hierarchical label for a net that leaves the sheet; shape input /
     output / bidirectional / tri_state / passive; side = the sheet edge the
     label faces (and the root's sheet pin side). pos None = at the net's
     first pin, (ref, pin) = at that pin, (x, y) = at that point with a leg
     from the nearest pin of the net (unless the point is already wired).
+    ang: the label's own angle when it should not face the sheet edge (a
+    port at the end of a stub that runs toward the edge).
 b.power(net, symbol, value=None)
     net drawn with power symbols (GND, +3V3, +12V are by default). Each
     pin of the net gets its own symbol, rotated to point away from the
@@ -58,8 +66,14 @@ b.text(txt, at, size=2.0)
 b.finish()  derive everything, then lint: a wire leg may not cross a body
     box (box spanned by the pins, pin roots and graphics), pass over a pin
     of another net, or touch a wire end of another net; labels, power
-    symbols and bodies may not overlap. Errors raise LintError naming the
-    net and the symbols. Fix by moving parts or adding via points.
+    symbols and bodies may not overlap; Reference / Value texts and b.text
+    may not overlap each other, labels, power symbols, a body's graphics or
+    a wire; no text past the page frame (FRAME mm in from the paper edge);
+    a bypass cap (rail to a ground net) has its rail pin within BYPASS mm
+    of a pin (not a cap's) on that rail, or wired to one along at most
+    BYPASS_WIRED mm of the rail, unless bulk=True. All errors are listed in
+    one LintError naming the nets and symbols. Fix by moving parts or
+    fields or adding via points.
 b.ports  [dict(name, shape, side, pos)]: what the root needs for sheet pins
 b.paper  smallest of A4..A0 holding the drawing (or Block(paper=...))
 b.write(path, instances=None, project=...)
@@ -102,6 +116,9 @@ SIDES = {"left": (180, (1, 0)), "right": (0, (-1, 0)), "top": (90, (0, 1)), "bot
 PAPERS = [("A4", 297, 210), ("A3", 420, 297), ("A2", 594, 420), ("A1", 841, 594), ("A0", 1189, 841)]
 EPS = 1e-6
 STEP = 2.54
+FRAME = 10.0          # KiCad's default page frame: 10 mm in from each paper edge
+BYPASS = 10.16        # a bypass cap's rail pin within this of a pin (not a cap's) on its rail,
+BYPASS_WIRED = 50.8   # or wired to one along at most this much of the rail's wire
 
 class LintError(Exception):
     pass
@@ -161,6 +178,13 @@ def label_box(text, x, y, ang):
     return {0: (x, y - h, x + w, y + h), 180: (x - w, y - h, x, y + h),
             90: (x - h, y - w, x + h, y), 270: (x - h, y, x + h, y + w)}[ang]
 
+def text_box(text, x, y, size):
+    """free text (b.text), left bottom justified, bold stroke font ~0.8 x size per character"""
+    lines = text.split("\n")
+    return (x, y - size * 1.6 * (len(lines) - 1) - size, x + max(len(t) for t in lines) * size * 0.8, y)
+
+def is_ground(net): return "GND" in net
+
 def llabel_box(text, x, y, ang):
     """local label: text beside the anchor, above (or left of) the wire"""
     w, a, b = len(text) * 1.0 + 0.5, 0.2, 1.6
@@ -179,13 +203,16 @@ class Block:
         self.done = False
 
     # ------------------------------------------------------------ authoring
-    def sym(self, ref, lib, value, fp, nets, at=(0, 0), rot=0, mirror=None, fields=None, desc="", dnp=False, bom=True):
+    def sym(self, ref, lib, value, fp, nets, at=(0, 0), rot=0, mirror=None, fields=None, desc="", dnp=False, bom=True,
+            ref_at=None, val_at=None, bulk=False):
         if ref in self.syms: raise ValueError("dup ref " + ref)
         if not (K.on_grid(at[0]) and K.on_grid(at[1])): raise ValueError("%s: at %s off the 1.27 grid" % (ref, at))
         fields = dict(fields or {})
         if not fields.get("LCSC") and (value, fp) in BASIC: fields["LCSC"] = BASIC[(value, fp)]
-        s = K.Symbol(ref, lib, value, fp, at, rot, mirror, fields, desc, dnp)
+        fat = {k: v for k, v in (("Reference", ref_at), ("Value", val_at)) if v is not None}
+        s = K.Symbol(ref, lib, value, fp, at, rot, mirror, fields, desc, dnp, fat=fat)
         s.bom = bom                              # False: not in the BOM (solder jumpers)
+        s.bulk = bulk                            # True: a rail cap, exempt from the bypass rule
         for num in nets:
             s.pin(num)
         for p in s.pins:
@@ -195,15 +222,15 @@ class Block:
         self.syms[ref] = s; self.order.append(ref)
         return s
 
-    def wire(self, net, path, via=None):
+    def wire(self, net, path, via=None, sym=True):
         path = [tuple(e) for e in path]
         if via: path = path[:1] + [tuple(v) for v in via] + path[1:]
-        self.wires.append((net, path))
+        self.wires.append((net, path, sym))
 
-    def port(self, net, shape="passive", side="left", pos=None):
+    def port(self, net, shape="passive", side="left", pos=None, ang=None):
         if side not in SIDES: raise ValueError("port %s: side %s" % (net, side))
         if shape not in K.SHAPES: raise ValueError("port %s: shape %s" % (net, shape))
-        self.ports.append(dict(name=net, shape=shape, side=side, pos=pos))
+        self.ports.append(dict(name=net, shape=shape, side=side, pos=pos, ang=ang))
 
     def power(self, net, symbol, value=None):
         self.powers[net] = symbol
@@ -230,7 +257,7 @@ class Block:
             if s.nets.get(num) != net:
                 raise LintError("net %s: %s pin %s is on net %s" % (net, ref, num, s.nets.get(num)))
             return s.pin_xy(num), s.pin_out(num)
-        return (R(e[0]), R(e[1])), None
+        return (R(e[0]), R(e[1])), (tuple(e[2]) if len(e) > 2 else None)
 
     def _path(self, net, elems, ends=None):
         pts = [self._ep(net, e) if not (isinstance(e, tuple) and len(e) == 3) else (e[:2], e[2]) for e in elems]
@@ -243,6 +270,7 @@ class Block:
 
     def _psym(self, net, xy, out, tag):
         lib = self.powers[net]
+        if any(p.net == net and p.at == xy and p.lib == lib for p in self.psyms): return   # paths that start at one point
         self.npwr += 1
         ref = ("#FLG%d" if lib == "power:PWR_FLAG" else "#PWR%d") % (self.pwr_base + self.npwr)
         val = "PWR_FLAG" if lib == "power:PWR_FLAG" else self.pvalues.get(net, net)
@@ -269,9 +297,9 @@ class Block:
         for p in self.ports:
             if p["name"] not in netpins: raise LintError("port %s: no pin on this net" % p["name"])
         wired = {}
-        for net, path in self.wires:
+        for net, path, psym in self.wires:
             if net == "NC": raise LintError("wire on NC")
-            wired.setdefault(net, []).append(path)
+            wired.setdefault(net, []).append((path, psym))
             self._path(net, path)
         for net, pins in netpins.items():
             if net == "NC":
@@ -279,9 +307,10 @@ class Block:
                 continue
             if net in self.powers:
                 named = set()
-                for path in wired.get(net, []):
+                for path, psym in wired.get(net, []):
                     e = path[0]; xy, out = self._ep(net, e)
-                    self._psym(net, xy, out, "%s %s" % (net, "%s.%s" % e if is_pin(e) else fmt(xy)))
+                    if out is not None and not is_pin(e): out = (-out[0], -out[1])    # (x, y, wire direction): symbol faces away
+                    if psym: self._psym(net, xy, out, "%s %s" % (net, "%s.%s" % e[:2] if is_pin(e) else fmt(xy)))
                     named |= {e for e in path if is_pin(e)}
                 for ref, num in pins:
                     if (ref, num) not in named:
@@ -290,7 +319,7 @@ class Block:
                 continue
             if len(pins) < 2 and net not in portnets and net not in wired and net not in tienets:
                 raise LintError("net %s has one pin (%s.%s) and is not a port" % (net, pins[0][0], pins[0][1]))
-            named = [e for path in wired.get(net, []) for e in path if is_pin(e)]
+            named = [e for path, _ in wired.get(net, []) for e in path if is_pin(e)]
             pins = [e for e in pins if (net, e) not in tiepins or e in named]
             if not pins:
                 continue
@@ -314,7 +343,7 @@ class Block:
                 if not touched:
                     best = min(netpins[net], key=lambda e: (abs(self._ep(net, e)[0][0] - xy[0]) + abs(self._ep(net, e)[0][1] - xy[1]), e))
                     self._path(net, [best, (xy[0], xy[1], arrive)])
-            self.hlabels.append((net, p["shape"], xy, ang))
+            self.hlabels.append((net, p["shape"], xy, ang if p["ang"] is None else p["ang"]))
         self.tlabels = []
         for net, at, ang in self.ties:
             if is_pin(at):
@@ -393,31 +422,82 @@ class Block:
                 r, k = pins[0]; o = self.syms[r].pin_out(k)
                 self.labels.append((net, self.syms[r].pin_xy(k), {(1, 0): 0, (-1, 0): 180, (0, -1): 90, (0, 1): 270}[o]))
 
+    def _err(self, msg):
+        if msg not in self.errs: self.errs.append(msg)
+
     def _lint(self, netpins):
+        """collects every problem; one LintError lists them all"""
+        self.errs = []
         pins = [(self.syms[r].pin_xy(num), net, r, num) for net, ps in netpins.items() for r, num in ps]
         bodies = [(r, self.syms[r].bbox()) for r in self.order]
         for net, a, b in self.segs:
             where = "net %s: wire %s-%s" % (net, fmt(a), fmt(b))
             for r, box in bodies:
-                if seg_in_box(a, b, box) and not any(nn == net and s_.pin_xy(k) in (a, b) and on_seg((s_.pin_xy(k)[0] + 0.01 * s_.pin_out(k)[0], s_.pin_xy(k)[1] + 0.01 * s_.pin_out(k)[1]), a, b) for s_ in [self.syms[r]] for k, nn in s_.nets.items()): raise LintError("%s crosses the body of %s" % (where, r))   # a stub leaving its own pin outward is fine (graphics beyond the pin end, e.g. LED arrows)
+                if seg_in_box(a, b, box) and not any(nn == net and s_.pin_xy(k) in (a, b) and on_seg((s_.pin_xy(k)[0] + 0.01 * s_.pin_out(k)[0], s_.pin_xy(k)[1] + 0.01 * s_.pin_out(k)[1]), a, b) for s_ in [self.syms[r]] for k, nn in s_.nets.items()): self._err("%s crosses the body of %s" % (where, r))   # a stub leaving its own pin outward is fine (graphics beyond the pin end, e.g. LED arrows)
             for xy, pnet, r, num in pins:
                 if pnet != net and on_seg(xy, a, b):
-                    raise LintError("%s passes over %s pin %s (net %s)" % (where, r, num, pnet))
+                    self._err("%s passes over %s pin %s (net %s)" % (where, r, num, pnet))
             for m, c, d in self.segs:
                 if m != net and (on_seg(c, a, b) or on_seg(d, a, b)):
-                    raise LintError("%s touches a wire of net %s at %s-%s" % (where, m, fmt(c), fmt(d)))
+                    self._err("%s touches a wire of net %s at %s-%s" % (where, m, fmt(c), fmt(d)))
         for net, shape, xy, ang in self.hlabels:
             for m, c, d in self.segs:
-                if m != net and on_seg(xy, c, d): raise LintError("port %s sits on a wire of net %s" % (net, m))
+                if m != net and on_seg(xy, c, d): self._err("port %s sits on a wire of net %s" % (net, m))
             for pxy, pnet, r, num in pins:
-                if pnet != net and pxy == xy: raise LintError("port %s sits on %s pin %s (net %s)" % (net, r, num, pnet))
+                if pnet != net and pxy == xy: self._err("port %s sits on %s pin %s (net %s)" % (net, r, num, pnet))
         boxes = [("body of %s" % r, box) for r, box in bodies]
         boxes += [("power symbol %s" % s.tag, s.bbox()) for s in self.psyms]
         boxes += [("port %s" % net, label_box(net, xy[0], xy[1], ang)) for net, shape, xy, ang in self.hlabels]
         boxes += [("label %s" % net, llabel_box(net, xy[0], xy[1], ang)) for net, xy, ang in self.labels]
+        # Reference / Value texts: against each other, bodies, power symbols, labels, and the wires they would hide
+        fields = [("%s %s of %s" % (name.lower(), text, r), box) for r in self.order for name, text, box in self.syms[r].field_boxes()]
+        fields += [("value of power symbol %s" % s.tag, box) for s in self.psyms for name, text, box in s.field_boxes()]
+        texts = [("text '%s'" % t[:30], text_box(t, x, y, size)) for t, x, y, size in self.texts]
         for i, (na, ba) in enumerate(boxes):
-            for nb, bb in boxes[i + 1:]:
-                if overlap(ba, bb): raise LintError("%s overlaps %s" % (na, nb))
+            for nb, bb in boxes[i + 1:] + fields + texts:
+                if overlap(ba, bb) and not (na.startswith("body") and nb[:5] in ("refer", "value", "text ")):
+                    self._err("%s overlaps %s" % (na, nb))
+        drawn = [("body of %s" % r, self.syms[r].bbox(pins=False)) for r in self.order]   # graphics: text may sit by a pin
+        for i, (na, ba) in enumerate(fields + texts):
+            for nb, bb in (fields + texts)[i + 1:] + drawn:
+                if overlap(ba, bb): self._err("%s overlaps %s" % (na, nb))
+        boxes += fields + texts
+        for nf, bf in fields + texts:
+            for net, a, b in self.segs:
+                if seg_in_box(a, b, bf): self._err("%s sits on a wire of net %s at %s-%s" % (nf, net, fmt(a), fmt(b)))
+        _, w, h = next(p for p in PAPERS if p[0] == self.paper)
+        for nt, bt in boxes[len(bodies):]:
+            if bt[0] < FRAME - EPS or bt[1] < FRAME - EPS or bt[2] > w - FRAME + EPS or bt[3] > h - FRAME + EPS:
+                self._err("%s runs past the %s sheet frame" % (nt, self.paper))
+        self._bypass(netpins)
+        if self.errs: raise LintError("%s sheet:\n  " % self.sheet_name + "\n  ".join(self.errs))
+
+    def _bypass(self, netpins):
+        """a capacitor from a rail to a ground is a bypass cap: its rail pin sits within
+        BYPASS (straight line) of a pin (not a capacitor's) on that rail, or a wire of the
+        rail runs from it to such a pin in at most BYPASS_WIRED; bulk=True opts out"""
+        adj = {}
+        for net, a, b in self.segs:
+            adj.setdefault((net, a), []).append((b, b_len((a, b)))); adj.setdefault((net, b), []).append((a, b_len((a, b))))
+        for r in self.order:
+            s = self.syms[r]
+            if not s.lib.startswith("Device:C") or s.bulk or len(set(s.nets.values())) != 2: continue
+            (pa, na), (pb, nb) = sorted(s.nets.items())
+            if is_ground(na): (pa, na), (pb, nb) = (pb, nb), (pa, na)
+            if not is_ground(nb) or is_ground(na) or na not in self.powers: continue
+            xy = s.pin_xy(pa)
+            hosts = {self.syms[q].pin_xy(k) for q, k in netpins[na] if not self.syms[q].lib.startswith("Device:C")}
+            if not hosts: continue
+            near = min(((p[0] - xy[0]) ** 2 + (p[1] - xy[1]) ** 2) ** 0.5 for p in hosts)
+            dist, todo = {xy: 0.0}, [xy]                  # wire length from the cap pin along its rail
+            while todo:
+                p = todo.pop()
+                for q, d in adj.get((na, p), []):
+                    if dist[p] + d < dist.get(q, 1e9) - EPS and dist[p] + d <= BYPASS_WIRED + EPS:
+                        dist[q] = dist[p] + d; todo.append(q)
+            if near > BYPASS + EPS and not hosts & set(dist):
+                self._err("%s: bypass cap on %s, pin %s is %.1f mm from the nearest part pin on %s (max %.2f, or %.1f of wire to it); "
+                          "draw it at the pin it decouples, or bulk=True for a rail cap" % (r, na, pa, near, na, BYPASS, BYPASS_WIRED))
 
     # ------------------------------------------------------------ output
     def extent(self):

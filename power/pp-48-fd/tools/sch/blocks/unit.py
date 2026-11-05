@@ -79,8 +79,9 @@ UNIT_IO = {"U_OFF": "output", "U_PGD": "input"}   # unit hot-swap on the Input s
 PRESS_FET = "Q10"                                  # photoMOS LED return switch (docs/press-deadline-line.md)
 
 
-def P(x, y):
-    return (x * G, y * G)
+def P(x, y, d=None):
+    """grid point; d = the direction a wire leaves it (a power symbol there faces away)"""
+    return (x * G, y * G) if d is None else (x * G, y * G, d)
 
 
 def block():
@@ -90,7 +91,7 @@ def block():
         slot(b, s)
     expander(b)
     b.text("UNIT: TWO SLOTS ON ONE I2C SEGMENT. SLOT A (LEFT, NETS A_*) AND SLOT B (RIGHT, REFS + 50, NETS B_*)", P(12, 12))
-    b.text("I2C SEGMENT: INA237 0x40 / 0x41, ADC121C027 0x51 / 0x52 (slot A / B), TCA6424A 0x22", P(12, 150), size=1.5)
+    b.text("I2C SEGMENT: INA237 0x40 / 0x41,\nADC121C027 0x51 / 0x52 (slot A / B),\nTCA6424A 0x22", P(12, 150), size=1.5)
     return b.finish()
 
 
@@ -100,12 +101,18 @@ def expander(b):
     nets.update({"25": "GND", "33": "GND", "26": "GND", "27": "+3V3", "31": "+3V3", "28": "EXP_RSTN",
                  "29": "SCL", "30": "SDA", "32": "NC"})
     b.sym("U5", "pp:TCA6424ARGJR", "TCA6424ARGJR", "pp48:VQFN-32-1EP_5x5mm_P0.5mm_EP3.15x3.15mm", nets,
-          at=P(80, 190), fields={"LCSC": "C80692"},
+          at=P(80, 190), fields={"LCSC": "C80692"}, ref_at=(15.24, 39.37), val_at=(15.24, 41.91),
           desc="unit GPIO in slot B, address 0x22 (ADDR GND); 11 lines per slot: slot A P00-P07 / P10-P12 (to slot A over "
                "the In2 bus), slot B P14-P17 / P20-P26; INT unused (polled); all inputs after reset")
-    b.sym("C9", "Device:C", "100n", C0402, {"1": "+3V3", "2": "GND"}, at=P(66, 154), desc="TCA6424A VCCI")
-    b.sym("C13", "Device:C", "100n", C0402, {"1": "+3V3", "2": "GND"}, at=P(96, 154), desc="TCA6424A VCCP")
-    b.sym("R30", "Device:R", "10k", R0402, {"1": "EXP_RSTN", "2": "+3V3"}, at=P(66, 182), desc="TCA6424A /RESET pull-up")
+    b.sym("C9", "Device:C", "100n", C0402, {"1": "+3V3", "2": "GND"}, at=P(74, 155), desc="TCA6424A VCCI",
+          ref_at=(-5.08, -1.27), val_at=(-5.08, 1.27))
+    b.sym("C13", "Device:C", "100n", C0402, {"1": "+3V3", "2": "GND"}, at=P(86, 155), desc="TCA6424A VCCP")
+    b.wire("+3V3", [P(80, 150), P(80, 152), P(78, 152), ("U5", "31")])      # VCCI / VCCP with their caps
+    b.wire("+3V3", [P(80, 152), P(82, 152), ("U5", "27")], sym=False)
+    b.wire("+3V3", [P(78, 152), ("C9", "1")], sym=False)
+    b.wire("+3V3", [P(82, 152), ("C13", "1")], sym=False)
+    b.wire("GND", [P(68, 177), P(68, 175), ("U5", "26")])                   # ADDR: GND clear of EXP_RSTN
+    b.sym("R30", "Device:R", "10k", R0402, {"1": "EXP_RSTN", "2": "+3V3"}, at=P(66, 184), desc="TCA6424A /RESET pull-up")
     b.wire("EXP_RSTN", [("R30", "1"), (66 * G, 173 * G), ("U5", "28")])
     b.port("EXP_RSTN", "input", side="left", pos=P(66, 177))
     # press deadline (docs/press-deadline-line.md): the four photoMOS LED cathodes return through Q10, gate =
@@ -134,7 +141,7 @@ def slot(b, s):
         return net if net in SHARED else "%s_%s" % (s, net)
 
     def pt(p):
-        return (renumber(p[0], roff), p[1]) if isinstance(p[0], str) else P(p[0] + dx, p[1])
+        return (renumber(p[0], roff), p[1]) if isinstance(p[0], str) else P(p[0] + dx, p[1], *p[2:])
 
     def sym(ref, lib, val, fp, nets, at, rot=0, mirror=None, **kw):
         b.sym(renumber(ref, roff), lib, val, fp, {k: n(v) for k, v in nets.items()}, at=pt(at), rot=rot, mirror=mirror, **kw)
@@ -145,8 +152,8 @@ def slot(b, s):
     def C(num, val, fp, nets, at, rot=0, **kw):
         sym("C%d" % num, "Device:C", val, fp, nets, at, rot, **kw)
 
-    def wire(net, *pts):
-        b.wire(n(net), [pt(p) for p in pts])
+    def wire(net, *pts, sym=True):
+        b.wire(n(net), [pt(p) for p in pts], sym=sym)
 
     def name(net, at, ang=0):
         b.name(n(net), at=pt(at), ang=ang)
@@ -203,7 +210,7 @@ def slot(b, s):
         {"1": "GND", "2": "GND", "3": "NC", "4": "GND", "5": "LQ", "6": "CLRN", "7": "OVK", "8": "+3V3"},
         (112, 100), mirror="y", fields={"LCSC": "C70285"},
         desc="OV latch: /PRE = module OV_KILL (low = set), /CLR = RC power-on clear + expander; Q holds UVLO low until cleared")
-    C(4, "100n", C0402, {"1": "+3V3", "2": "GND"}, (104, 84), desc="latch VCC")
+    C(4, "100n", C0402, {"1": "+3V3", "2": "GND"}, (104, 85), desc="latch VCC")
     R(11, "100k", R0402, {"1": "+3V3", "2": "CLRN"}, (128, 111), desc="power-on clear RC (10 ms)")
     C(5, "100n", C0402, {"1": "CLRN", "2": "GND"}, (122, 118))
     sym("Q4", FET, "2N7002", SOT23, {"1": "LCLR", "2": "GND", "3": "CLRN"}, (132, 127),
@@ -213,10 +220,10 @@ def slot(b, s):
     # ========================================================== PGOOD-loss trip with blanking
     sym("U10", "74xGxx:74AUC1G74", "74LVC1G74", "Package_SO:VSSOP-8_2.3x2mm_P0.5mm",
         {"1": "GND", "2": "GND", "3": "NC", "4": "GND", "5": "ARM", "6": "PGD", "7": "ARMS_N", "8": "+3V3"},
-        (130, 170), fields={"LCSC": "C70285"},
+        (130, 170), fields={"LCSC": "C70285"}, ref_at=(25.63, -15.494), val_at=(28.63, -13.97),
         desc="PGOOD-loss arm: set while PG and PGD are high, cleared while PGD is low")
-    C(12, "100n", C0402, {"1": "+3V3", "2": "GND"}, (148, 160), desc="arm FF VCC")
-    R(28, "100k", R0402, {"1": "+3V3", "2": "ARMS_N"}, (112, 156), desc="arm set pull-up")
+    C(12, "100n", C0402, {"1": "+3V3", "2": "GND"}, (138, 155), desc="arm FF VCC")
+    R(28, "100k", R0402, {"1": "+3V3", "2": "ARMS_N"}, (114, 154), desc="arm set pull-up")
     sym("Q8", FET, "2N7002", SOT23, {"1": "PG", "2": "ARMS_M", "3": "ARMS_N"}, (112, 170),
         fields={"LCSC": "C8545"}, desc="arm set, upper: module PGOOD high")
     sym("Q9", FET, "2N7002", SOT23, {"1": "PGD", "2": "GND", "3": "ARMS_M"}, (112, 190),
@@ -225,7 +232,7 @@ def slot(b, s):
         fields={"LCSC": "C8545"}, desc="PGOOD-loss trip: armed and PG low -> OVK low -> slot latch set")
     sym("Q7", FET, "2N7002", SOT23, {"1": "DISARM", "2": "GND", "3": "PGD"}, (176, 160),
         fields={"LCSC": "C8545"}, desc="expander DISARM high -> PGD low -> arm cleared (around RUNOFF)")
-    R(29, "100k", R0402, {"1": "DISARM", "2": "GND"}, (170, 172), desc="Q7 gate pull-down: expander in reset = armed path live")
+    R(29, "100k", R0402, {"1": "DISARM", "2": "GND"}, (172, 172), desc="Q7 gate pull-down: expander in reset = armed path live")
 
     # ========================================================== module mount: standoffs and aux socket
     sym("SO1", "Connector_Generic:Conn_01x01", "S1 VIN", STANDOFF, {"1": "OUT"}, (150, 32),
@@ -276,12 +283,14 @@ def slot(b, s):
         R(26, "4.7k", R0402, {"1": "+3V3", "2": "SDA"}, (20, 132), desc="segment SDA pull-up (one per mux channel)")
         R(27, "4.7k", R0402, {"1": "+3V3", "2": "SCL"}, (26, 132), desc="segment SCL pull-up")
     sym("U4", "Analog_ADC:ADC101C021CIMK", "ADC121C027CIMK", "Package_TO_SOT_SMD:TSOT-23-6",
-        {"1": "+3V3", "2": "GND", "3": "ID_F", "4": strap, "5": "SCL", "6": "SDA"}, (40, 175),
+        {"1": "+3V3", "2": "GND", "3": "ID_F", "4": strap, "5": "SCL", "6": "SDA"}, (40, 175), ref_at=(7.62, 10.16), val_at=(15.24, 12.7),
         fields={"LCSC": "C2670157", "MPN": "TI ADC121C027CIMKX/NOPB"},
         desc="ID ADC, 12 bit, VA = reference (reads ID / 3V3), address 0x51 slot A (ADR0 GND) / 0x52 slot B (ADR0 VA); symbol of the pin-equal ADC101C021CIMK, pin 4 = ADR0")
     C(6, "100n", C0402, {"1": "ID_F", "2": "GND"}, (26, 179), desc="ID filter at the ADC input")
-    C(10, "100n", C0402, {"1": "+3V3", "2": "GND"}, (12, 164), desc="ADC VA (its reference)")
-    C(11, "1u", C0402, {"1": "+3V3", "2": "GND"}, (22, 164), fields={"LCSC": "C52923"}, desc="ADC VA bulk")
+    C(10, "100n", C0402, {"1": "+3V3", "2": "GND"}, (22, 166), desc="ADC VA (its reference)")
+    C(11, "1u", C0402, {"1": "+3V3", "2": "GND"}, (30, 166), fields={"LCSC": "C52923"}, desc="ADC VA bulk")
+    wire("+3V3", (40, 161), ("U4", "1"))                            # VA with its caps
+    wire("+3V3", (40, 163), ("C11", "1"), (22, 163), ("C10", "1"), sym=False)
 
     # ========================================================== wiring: power path
     wire("VBUS", (16, 32), ("R1", "1"), (30, 32), ("R2", "1"))      # one VBUS symbol, both shunts
@@ -314,6 +323,7 @@ def slot(b, s):
     # ========================================================== INA237 supply, alert, I2C segment
     wire("+3V3", (58, 56), ("C3", "1"), ("U2", "6"))
     wire("GND", (32, 64), ("U2", "7"))
+    wire("GND", (50, 73), ("U2", "1"))                              # GND below the A0 strap symbol
     tie("OVK", ("U2", "3"))                                         # ALERT (open drain) sets the slot latch
     wire("SDA", ("U2", "4"), (44, 138), (12, 138))                  # segment along the bottom
     wire("SCL", ("U2", "5"), (42, 140), (12, 140))
@@ -336,6 +346,10 @@ def slot(b, s):
     tie("LQ", (90, 104), 180)
     wire("GND", (100, 84), ("Q3", "2"))
     wire("GND", (124, 108), ("U3", "1"), ("U3", "2"))
+    wire("+3V3", (110, 80), (110, 82), ("C4", "1"))                 # bypass caps at the flip-flops' VCC pins
+    wire("+3V3", (110, 82), ("U3", "8"), sym=False)
+    wire("+3V3", (132, 150), ("U10", "8"))
+    wire("+3V3", (132, 152), ("C12", "1"), sym=False)
     wire("CLRN", ("U3", "6"), (114, 114), ("R11", "2"))            # latch /CLR node
     wire("CLRN", (128, 114), ("Q4", "3"))
     wire("CLRN", (122, 114), ("C5", "1"))
@@ -378,7 +392,10 @@ def slot(b, s):
     tie("ID_F", (22, 175), 180)
 
     wire("ARMS_M", ("Q8", "2"), ("Q9", "3"))                       # arm set stack (labels would collide)
-    for ref, pins in (("U10", "567"), ("R28", "2"), ("Q8", "13"), ("Q9", "1"), ("Q6", "123"), ("Q7", "13"), ("R29", "1")):
+    wire("ARMS_N", ("R28", "2"), ("Q8", "3"))                       # pull-up on the stack, across to /PRE
+    wire("ARMS_N", (114, 158), (128, 158), ("U10", "7"))
+    wire("DISARM", ("R29", "1"), ("Q7", "1"))                       # gate pull-down at the gate
+    for ref, pins in (("U10", "56"), ("Q8", "1"), ("Q9", "1"), ("Q6", "123"), ("Q7", "13")):
         for pin in pins:
             r = renumber(ref, roff)
             b.tie(b.syms[r].nets[pin], (r, pin))

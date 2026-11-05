@@ -76,13 +76,13 @@ def block():
 
     # ========================================================== connector, TVS, bulk (VIN rail y = 32)
     sym("J201", "Connector_Generic:Conn_01x02", "XT60PW-M", "pp48:AMASS_XT60PW-M_1x02_P7.20mm_Horizontal",
-        {"1": "GND", "2": "VIN"}, (-8, 30), mirror="y", fields={"LCSC": "C98732", "MPN": "Amass XT60PW-M"},
+        {"1": "GND", "2": "VIN"}, (-12, 30), mirror="y", fields={"LCSC": "C98732", "MPN": "Amass XT60PW-M"},
         desc="unit input, keyed (pin 1 -, pin 2 +), 30 A rated; cable from the top edge")
-    sym("D201", "Device:D_Zener", "SMDJ60A", "Diode_SMD:D_SMC", {"1": "VIN", "2": "GND"}, (2, 38), rot=270,
+    sym("D201", "Device:D_Zener", "SMDJ60A", "Diode_SMD:D_SMC", {"1": "VIN", "2": "GND"}, (-2, 38), rot=270,
         fields={"LCSC": "C2990209"}, desc="bus TVS 3 kW, unidirectional: cathode (pad 1) on VIN; 60 V standoff, breakdown >= 66.7 V, clamp 96.8 V")
-    sym("C201", "Device:C_Polarized", "47u 100V", "Capacitor_SMD:CP_Elec_10x10", {"1": "VIN", "2": "GND"}, (14, 38),
+    sym("C201", "Device:C_Polarized", "47u 100V", "Capacitor_SMD:CP_Elec_10x10", {"1": "VIN", "2": "GND"}, (9, 38),
         fields={"LCSC": "C87862", "MPN": "Lelon RVT2A470M1010"}, desc="input bulk, damps cable ringing when the hot-swap opens")
-    C(202, "2.2u 100V", C1210, {"1": "VIN", "2": "GND"}, (24, 38), fields={"LCSC": "C338133"}, desc="input HF")
+    C(202, "2.2u 100V", C1210, {"1": "VIN", "2": "GND"}, (21, 38), fields={"LCSC": "C338133"}, desc="input HF")
 
     # ========================================================== hot-swap (as the slot front end)
     R(201, "6m 2W", R2512, {"1": "VIN", "2": "USENSE"}, (35, 32), rot=90, fields={"LCSC": "C2692028"},
@@ -107,7 +107,7 @@ def block():
     C(203, "220n", C0603, {"1": "TIMER", "2": "GND"}, (108, 68), desc="insertion 160 ms, fault timeout 10 ms")
     R(238, "10k", R0402, {"1": "+3V3", "2": "U_PGD"}, (126, 52), desc="PGD pull-up (3V3 from the chain)")
     C(214, "2.2u 100V", C1210, {"1": "VBUS", "2": "GND"}, (112, 38), fields={"LCSC": "C338133"}, desc="VBUS at the FETs")
-    C(215, "2.2u 100V", C1210, {"1": "VBUS", "2": "GND"}, (122, 38), fields={"LCSC": "C338133"}, desc="VBUS at the FETs")
+    C(215, "2.2u 100V", C1210, {"1": "VBUS", "2": "GND"}, (124, 38), fields={"LCSC": "C338133"}, desc="VBUS at the FETs")
 
     # ========================================================== INA237 under the shunt
     sym("U208", "Sensor_Energy:INA237", "INA237AIDGSR", "Package_SO:TSSOP-10_3x3mm_P0.5mm",
@@ -121,15 +121,16 @@ def block():
     R(214, "100k", R0402, {"1": "U_OFF", "2": "GND"}, (76, 95), desc="expander in reset or no 3V3 = unit ON")
 
     # ========================================================== wiring
-    wire("VIN", ("J201", "2"), (2, 32), ("D201", "1"), (2, 32), (14, 32), ("C201", "1"), (14, 32), (24, 32), ("C202", "1"),
-         (24, 32), (30, 32), ("R201", "1"), (30, 32), ("R202", "1"))
+    wire("VIN", (26, 29), (26, 32), (21, 32), ("C202", "1"), (21, 32), (9, 32), ("C201", "1"), (9, 32), (-2, 32),
+         ("D201", "1"), (-2, 32), ("J201", "2"))                     # VIN symbol above the rail, clear of the caps
+    b.wire("VIN", [P(26, 32), P(30, 32), ("R201", "1"), P(30, 32), ("R202", "1")], sym=False)
     wire("USENSE", ("R201", "2"), ("Q202", "5"))
     wire("USENSE", (40, 32), ("R202", "2"))
     wire("USENSE", (40, 38), ("U208", "9"))                        # Kelvin tap to INA237 IN-
     tie("USENSE", ("U207", "1"))                                    # by label: the gate labels need x = 94-98
     tie("USENSE", (70, 32))
     wire("USENSE", (40, 32), (40, 6), ("Q203", "5"))
-    wire("VBUS", (130, 32), (122, 32), ("C215", "1"), (122, 32), (112, 32), ("C214", "1"), (112, 32),
+    wire("VBUS", (130, 32), (124, 32), ("C215", "1"), (124, 32), (112, 32), ("C214", "1"), (112, 32),
          ("Q202", "1"), ("Q202", "2"), ("Q202", "3"), ("U207", "9"))  # one VBUS symbol at the right end
     wire("VBUS", ("Q203", "1"), ("Q203", "2"), ("Q203", "3"))       # Q203 source: its own VBUS symbol
     wire("GATE_A", ("Q202", "4"), (98, 41), ("R210", "2"))
@@ -149,6 +150,7 @@ def block():
     wire("PWR", ("U207", "7"), ("R237", "1"))
     wire("TIMER", ("U207", "6"), ("C203", "1"))
     wire("+3V3", (58, 56), ("C216", "1"), ("U208", "6"))
+    wire("GND", (48, 73), ("U208", "2"))                           # A0 GND below the A1 +3V3 symbol
     wire("SDA", ("U208", "4"), (44, 74), (12, 74))
     wire("SCL", ("U208", "5"), (42, 76), (12, 76))
     wire("U_OFF", ("Q204", "1"), (76, 90), ("R214", "1"))

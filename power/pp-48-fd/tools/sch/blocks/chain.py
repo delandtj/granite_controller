@@ -62,8 +62,9 @@ OUT = IN                              # plug pin n mates socket pin n
 STATIC = {"PRESS_EN": "input", "EXP_RSTN": "input"}      # unit side: port shapes
 
 
-def P(x, y):
-    return (x * G, y * G)
+def P(x, y, d=None):
+    """grid point; d = the direction a wire leaves it (a power symbol there faces away)"""
+    return (x * G, y * G) if d is None else (x * G, y * G, d)
 
 
 def pair(v):
@@ -88,16 +89,17 @@ def block(kind):
     if kind == "core":
         nets = {str(n): ("UNIT%d_%s" % (int(v[1]) + 1, v[3:]) if pair(v) else v) for n, v in OUT.items()}
         b.sym("J301", SYM, "CHAIN OUT", SOCKET, nets, at=P(60, 40), mirror="y",
-              fields=SOCKET_FIELDS, desc="chain to unit 1 (right edge socket): Pk = mux channel k")
-        for n, net in nets.items():
+              fields=SOCKET_FIELDS, desc="chain to unit 1 (right edge socket): Pk = mux channel k", ref_at=(-1.27, -12.7))
+        for n, net in nets.items():               # ports on the right-hand stubs face away from the wire
             if net.startswith("UNIT"):
-                b.port(net, "bidirectional", side="left", pos=stub(b, "J301", n, net))
+                end = stub(b, "J301", n, net)
+                b.port(net, "bidirectional", side="left", pos=end, ang=0 if end[0] > b.syms["J301"].at[0] else None)
             elif net == "EXP_RSTN":
-                b.port(net, "input", side="left", pos=stub(b, "J301", n, net))
-            elif net == "PRESS_EN":
-                b.tie(net, stub(b, "J301", n, net))
+                b.port(net, "input", side="left", pos=stub(b, "J301", n, net), ang=0)
         deadline(b)
-        b.text("CHAIN OUT  J301 2x7 socket, Pk = TCA9548A channel k (unit k + 1), PRESS_EN / EXP_RSTN bused", P(30, 30))
+        b.wire("PRESS_EN", [("J301", "2"), P(50, 34), P(50, 28), P(134, 28), P(134, 56), ("U301", "5")])   # over the top
+        b.name("PRESS_EN", P(122, 56))
+        b.text("CHAIN OUT  J301 2x7 socket, Pk = TCA9548A channel k (unit k + 1), PRESS_EN / EXP_RSTN bused", P(30, 24))
         return b.finish()
 
     # unit: own segment = IN P0; IN P1..P3 -> OUT P0..P2; OUT P3 open
@@ -154,23 +156,26 @@ def deadline(b):
     """core: PRESS_EN = 74LVC1G123 Q, retriggered by PRESS_TRIG rising edges (B), ~1 s after the last"""
     b.sym("U301", "pp:74LVC1G123", "74LVC1G123", "Package_SO:SSOP-8_2.95x2.8mm_P0.65mm",
           {"1": "GND", "2": "PRESS_TRIG", "3": "PRESS_CLRN", "4": "GND", "5": "PRESS_EN", "6": "CEXT", "7": "RCEXT", "8": "+3V3"},
-          at=P(110, 60), fields={"LCSC": "C123302", "MPN": "TI SN74LVC1G123DCTR"},
+          at=P(110, 60), fields={"LCSC": "C123302", "MPN": "TI SN74LVC1G123DCTR"}, ref_at=(15.24, 5.08), val_at=(19.05, 7.62),
           desc="press deadline: B rising edge (A low, /CLR high) retriggers, Q high for tw = R301 x C301 ~1 s")
-    b.sym("R301", "Device:R", "100k", "Resistor_SMD:R_0402_1005Metric", {"1": "+3V3", "2": "RCEXT"}, at=P(140, 50),
+    b.sym("R301", "Device:R", "100k", "Resistor_SMD:R_0402_1005Metric", {"1": "+3V3", "2": "RCEXT"}, at=P(90, 49),
           desc="Rext: tw ~ 1.0 x 100k x 10u = 1 s")
-    b.sym("C301", "Device:C", "10u", "Capacitor_SMD:C_0805_2012Metric", {"1": "RCEXT", "2": "CEXT"}, at=P(150, 62),
-          fields={"LCSC": "C15850"}, desc="Cext, X5R")
-    b.sym("C302", "Device:C", "100n", "Capacitor_SMD:C_0402_1005Metric", {"1": "+3V3", "2": "GND"}, at=P(130, 80),
+    b.sym("C301", "Device:C", "10u", "Capacitor_SMD:C_0805_2012Metric", {"1": "RCEXT", "2": "CEXT"}, at=P(84, 55),
+          fields={"LCSC": "C15850"}, desc="Cext, X5R", ref_at=(-5.08, -1.27), val_at=(-5.08, 1.27))
+    b.sym("C302", "Device:C", "100n", "Capacitor_SMD:C_0402_1005Metric", {"1": "+3V3", "2": "GND"}, at=P(124, 45),
           desc="U301 VCC")
-    b.sym("R303", "Device:R", "10k", "Resistor_SMD:R_0402_1005Metric", {"1": "+3V3", "2": "PRESS_CLRN"}, at=P(96, 84),
-          desc="/CLR pull-up (spare: an MCU pin could clear the press at once)")
-    b.sym("R302", "Device:R", "100k", "Resistor_SMD:R_0402_1005Metric", {"1": "PRESS_TRIG", "2": "GND"}, at=P(80, 72),
+    b.sym("R303", "Device:R", "10k", "Resistor_SMD:R_0402_1005Metric", {"1": "+3V3", "2": "PRESS_CLRN"}, at=P(96, 73),
+          desc="/CLR pull-up (spare: an MCU pin could clear the press at once)", ref_at=(-5.08, -1.27), val_at=(-5.08, 1.27))
+    b.sym("R302", "Device:R", "100k", "Resistor_SMD:R_0402_1005Metric", {"1": "PRESS_TRIG", "2": "GND"}, at=P(82, 69),
           desc="trigger pull-down: an MCU in reset (pin floating) gives no edges")
-    for ref, pin, net in (("U301", "2", "PRESS_TRIG"), ("U301", "5", "PRESS_EN"), ("U301", "6", "CEXT"),
-                          ("U301", "7", "RCEXT"), ("U301", "3", "PRESS_CLRN"), ("R303", "2", "PRESS_CLRN"), ("R301", "2", "RCEXT"), ("C301", "1", "RCEXT"), ("C301", "2", "CEXT"),
-                          ("R302", "1", "PRESS_TRIG")):
-        end = stub(b, ref, pin, net)
-        if (ref, pin) == ("U301", "2"):
-            b.port(net, "input", side="left", pos=end)
-        else:
-            b.tie(net, end)
+    b.wire("+3V3", [P(110, 42, (0, 1)), ("U301", "8")])                       # C302 at the VCC pin
+    b.wire("+3V3", [P(110, 42), ("C302", "1")], sym=False)
+    b.wire("RCEXT", [("C301", "1"), ("R301", "2"), P(90, 56), ("U301", "7")])
+    b.name("RCEXT", P(92, 56))
+    b.wire("CEXT", [("C301", "2"), ("U301", "6")])
+    b.name("CEXT", P(86, 58))
+    b.wire("PRESS_CLRN", [("R303", "2"), P(110, 76), ("U301", "3")])
+    b.name("PRESS_CLRN", P(98, 76))
+    b.wire("PRESS_TRIG", [("R302", "1"), P(82, 64), P(76, 64)])
+    b.wire("PRESS_TRIG", [P(82, 64), ("U301", "2")])
+    b.port("PRESS_TRIG", "input", side="left", pos=P(76, 64))
