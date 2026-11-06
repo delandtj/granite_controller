@@ -171,8 +171,11 @@ The build output is `target/riscv32imac-esp-espidf/release/granite-fw`
 directory instead - the flash commands below assume the default, so
 substitute the path.
 
-Image size, release, default features (2026-11-04): 1,654,816 bytes of
-the 3,997,696-byte slot, 41.4 %. `cargo build --release` keeps
+Image size, release, default features (`link-canfd`, 2026-11-06):
+1,706,432 bytes of the 3,997,696-byte slot, 42.7 % - the CAN transport,
+`mcp251xfd` and the link marker are +51,616 bytes on the 1,654,816 of
+2026-11-04. The `link-i2c` image is 1,681,792 bytes (42.1 %): the stub
+link, but the same new platform code. `cargo build --release` keeps
 `opt-level = "s"` and `lto = true`; do not switch the release profile to
 `3` without checking that number again. The number comes from
 
@@ -733,8 +736,10 @@ expander and sense bits are set a second after boot and stay set. That
 is the honest reading, not a bug; green breathing needs expanders that
 answer. The monitor says which pattern is on the LED either way.
 
-**`devboard`** - `wifi-dev` plus `rgb-led`, i.e. everything a bare
-devkit wants:
+**`devboard`** - `wifi-dev`, `rgb-led` and `link-bench`, i.e.
+everything a bare devkit wants. `link-bench` is in there because a
+devkit has no MCP2518FD, and without it every image would fail the
+link-hardware step of its probation and roll back:
 
 ```sh
 cd firmware/granite-fw
