@@ -1,6 +1,6 @@
 [package]
 name = "plane-fw"
-description = "Granite plane core firmware for the STM32G070CBT6 on the PP-48 core board"
+description = "Granite plane core firmware for the PP-48 core board: STM32G070CB with the rev D I2C link or an MCP2518FD, or STM32G0B1CC with its own FDCAN"
 version = "0.1.0"
 edition = "2024"
 license = "MIT"
@@ -11,10 +11,13 @@ cortex-m-rt = "0.7.7"
 defmt = "1.2.0"
 defmt-rtt = "1.3.1"
 embassy-executor = { version = "0.10.0", features = ["platform-cortex-m", "executor-thread", "defmt"] }
-embassy-stm32 = { version = "0.6.0", features = ["stm32g070cb", "time-driver-any", "defmt", "unstable-pac"] }
+embassy-stm32 = { version = "0.6.0", features = ["time-driver-any", "defmt", "unstable-pac"] }
 embassy-sync = { version = "0.8.0", features = ["defmt"] }
 embassy-time = { version = "0.5.1", features = ["defmt", "defmt-timestamp-uptime"] }
+embedded-can = { version = "0.4", optional = true }
+embedded-hal-bus = { version = "0.3", optional = true }
 granite-proto = { version = "0.1.0", path = "../granite-proto" }
+mcp2518fd = { version = "0.1.0", path = "../mcp2518fd", optional = true }
 panic-probe = { version = "1.0.0", features = ["print-defmt"] }
 plane-logic = { version = "0.1.0", path = "../plane-logic" }
 # The M0+ has no atomic compare-and-swap; portable-atomic emulates it
@@ -40,3 +43,34 @@ debug = 2
 [profile.dev]
 opt-level = "z"
 panic = "abort"
+
+# One link per image, exactly one feature set (ADR 0005 decision 9, the
+# same rule granite-fw follows): the link decides the MCU, so the
+# embassy-stm32 chip feature lives here and not in the dependency, and
+# `build.rs` picks the matching memory.x and pin map. `src/main.rs`
+# refuses a build with none or more than one.
+#
+# The G0B1CC is a 256 KB part whose DUAL_BANK option bit decides whether
+# its flash is one bank or two. `single-bank` is what embassy is told,
+# and the two CONFIG pages sit in the first 128 KB (src/config_store.rs),
+# which is bank 1 either way: a page erase then names the same physical
+# page whichever way the option bit is set on the part that arrives.
+[features]
+default = ["link-mcp"]
+# Rev D: I2C1 as a slave through the ISO1640, INT_OUT for EXP_INT.
+link-i2c = ["embassy-stm32/stm32g070cb"]
+# FD generation, first batch: MCP2518FD on SPI1 (hardware ADR 0006
+# decision 6, G070 build). PB8 / PB9 stay in their reset state.
+link-mcp = [
+    "embassy-stm32/stm32g070cb",
+    # MCP_INT on PA0 as an EXTI falling-edge wake.
+    "embassy-stm32/exti",
+    "dep:mcp2518fd",
+    "dep:embedded-hal-bus",
+]
+# FD generation on the G0B1CC: FDCAN1 on PB8 / PB9 AF3, no MCP2518FD.
+link-fdcan = [
+    "embassy-stm32/stm32g0b1cc",
+    "embassy-stm32/single-bank",
+    "dep:embedded-can",
+]

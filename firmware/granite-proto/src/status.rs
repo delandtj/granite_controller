@@ -144,6 +144,60 @@ impl SegmentErrors {
     }
 }
 
+/// STATUS 0x1D: the CAN FD link's own counters (ADR 0005 decision 8).
+///
+/// Eight bytes, and only the FD builds of the plane send it: the two
+/// CAN error counters as the controller reads them, the bus-off
+/// recoveries (automatic, so the count is all there is to see), the
+/// partial messages reassembly dropped, and the frames a full transmit
+/// FIFO refused. The three counts saturate rather than wrap, so a
+/// controller that misses a poll still sees "many" and not "few".
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct CanErrors {
+    /// Transmit error counter (TEC) as last read off the controller.
+    pub tec: u8,
+    /// Receive error counter (REC).
+    pub rec: u8,
+    /// How often the node went bus-off since boot.
+    pub bus_off: u16,
+    /// Partial messages dropped while reassembling: a lost segment, a
+    /// segment out of order, a gap over 50 ms, an overflow.
+    pub dropped: u16,
+    /// Frames not sent because the transmit FIFO was full.
+    pub tx_full: u16,
+}
+
+impl CanErrors {
+    /// The record's tag.
+    pub const TAG: u8 = TAG_CAN_ERRORS;
+
+    /// Bytes of the record's value.
+    pub const LEN: usize = 8;
+
+    /// Append the record to a payload.
+    pub fn encode(&self, w: &mut RecordWriter) -> Result<(), RecordError> {
+        let mut v = [0u8; Self::LEN];
+        v[0] = self.tec;
+        v[1] = self.rec;
+        v[2..4].copy_from_slice(&self.bus_off.to_le_bytes());
+        v[4..6].copy_from_slice(&self.dropped.to_le_bytes());
+        v[6..8].copy_from_slice(&self.tx_full.to_le_bytes());
+        w.push(Self::TAG, &v)
+    }
+
+    /// Read the record's value.
+    pub fn decode(value: &[u8]) -> Result<Self, RecordError> {
+        let v = fixed::<{ Self::LEN }>(Self::TAG, value)?;
+        Ok(CanErrors {
+            tec: v[0],
+            rec: v[1],
+            bus_off: u16_at(&v, 2),
+            dropped: u16_at(&v, 4),
+            tx_full: u16_at(&v, 6),
+        })
+    }
+}
+
 /// One STATUS record.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Status {
@@ -167,6 +221,8 @@ pub enum Status {
     SegmentErrors(SegmentErrors),
     /// 0x1B last reset cause, the plane's own code.
     LastResetCause(u8),
+    /// 0x1D CAN FD link counters, FD builds only.
+    CanErrors(CanErrors),
 }
 
 impl Status {
@@ -183,6 +239,7 @@ impl Status {
             Status::LinkErrors(_) => TAG_LINK_ERRORS,
             Status::SegmentErrors(_) => TAG_SEGMENT_ERRORS,
             Status::LastResetCause(_) => TAG_LAST_RESET_CAUSE,
+            Status::CanErrors(_) => TAG_CAN_ERRORS,
         }
     }
 
@@ -199,6 +256,7 @@ impl Status {
             Status::LinkErrors(e) => e.encode(w),
             Status::SegmentErrors(e) => e.encode(w),
             Status::LastResetCause(c) => w.push(tag, &[*c]),
+            Status::CanErrors(e) => e.encode(w),
         }
     }
 
@@ -216,6 +274,7 @@ impl Status {
             TAG_LINK_ERRORS => Status::LinkErrors(LinkErrors::decode(value)?),
             TAG_SEGMENT_ERRORS => Status::SegmentErrors(SegmentErrors::decode(value)?),
             TAG_LAST_RESET_CAUSE => Status::LastResetCause(as_u8(tag, value)?),
+            TAG_CAN_ERRORS => Status::CanErrors(CanErrors::decode(value)?),
             _ => return Err(RecordError::Unknown { tag }),
         })
     }
@@ -337,6 +396,29 @@ mod tests {
         }
         assert_eq!(w.len(), 96);
         assert_eq!(SlotSummary::records(w.payload()).count(), 8);
+    }
+
+    #[test]
+    fn can_errors_round_trip() {
+        let e = CanErrors {
+            tec: 96,
+            rec: 7,
+            bus_off: 2,
+            dropped: 513,
+            tx_full: 1,
+        };
+        let mut buf = [0u8; 16];
+        let mut w = RecordWriter::new(&mut buf);
+        e.encode(&mut w).unwrap();
+        assert_eq!(
+            w.payload(),
+            &[0x1D, 8, 96, 7, 0x02, 0x00, 0x01, 0x02, 0x01, 0x00]
+        );
+        assert_eq!(CanErrors::decode(&w.payload()[2..]), Ok(e));
+        assert_eq!(
+            Status::records(w.payload()).next(),
+            Some(Ok(Status::CanErrors(e)))
+        );
     }
 
     #[test]
