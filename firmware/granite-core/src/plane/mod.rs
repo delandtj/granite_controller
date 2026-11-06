@@ -24,6 +24,10 @@
 //!   decision 8).
 //! - [`intent`]: the nodes the controller last commanded rail-off, so
 //!   it can put them back after a plane reports "intended state lost".
+//! - [`can_link`]: the controller's CAN FD transport (ADR 0005), a
+//!   [`crate::hal::PlaneLink`] over a frame driver. The rev D I2C link
+//!   is the firmware's own; both are picked at build time, and the
+//!   client never learns which one it has.
 //!
 //! Everything is synchronous and allocation-light: one transaction per
 //! link call, a bounded number of transactions per [`poll`], no
@@ -39,6 +43,7 @@
 //! places that arithmetic lives, and [`crate::is_node`] is the same
 //! range.
 
+pub mod can_link;
 pub mod client;
 pub mod command;
 pub mod config;
