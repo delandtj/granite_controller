@@ -16,9 +16,11 @@
 //!
 //! 1. `hw::init` on a board with nothing on I2C logs errors and returns,
 //!    rather than panicking.
-//! 2. The plane link is the stub: every address NAKs and EXP_INT reads
-//!    as "no events" (controller ADR 0004 decision 9 - the real HP I2C
-//!    driver comes with the rev D board).
+//! 2. The plane link answers: in an FD build (`link-canfd`) the
+//!    MCP2518FD came up and a read of plane 0x30 times out on an empty
+//!    bus; in an I2C build it is the stub, where every address NAKs and
+//!    EXP_INT reads as "no events" (controller ADR 0004 decision 9 -
+//!    the real HP I2C driver comes with the rev D board).
 //! 3. The dry inputs are unwired and say so.
 //! 4. The probe bus enumerates to an empty list on an empty bus.
 //! 5. VIN, the board temperature and the external bus scan all answer
@@ -46,12 +48,33 @@ pub fn run() -> anyhow::Result<()> {
     let peripherals = Peripherals::take()?;
     let pins = peripherals.pins;
 
+    // The SPI bus the W5500 and (in an FD build) the MCP2518FD share.
+    // Built here even in an I2C build, so the pin map stays one list.
+    let spi = crate::platform::net::spi_bus(
+        peripherals.spi2,
+        pins.gpio19,
+        pins.gpio20,
+        pins.gpio21,
+    )?;
+    let _ = spi;
+
     log::info!("hwtest: calling hw::init");
     let mut hw = init(HwInit {
+        #[cfg(feature = "link-i2c")]
         plane_int: pins.gpio0,
-        status_led: pins.gpio1,
+        #[cfg(feature = "link-i2c")]
         int_sda: pins.gpio2,
+        #[cfg(feature = "link-i2c")]
         int_scl: pins.gpio3,
+        #[cfg(feature = "link-canfd")]
+        spi,
+        #[cfg(feature = "link-canfd")]
+        can_stb: pins.gpio0,
+        #[cfg(feature = "link-canfd")]
+        can_cs: pins.gpio2,
+        #[cfg(feature = "link-canfd")]
+        can_int: pins.gpio3,
+        status_led: pins.gpio1,
         ext_sda: pins.gpio6,
         ext_scl: pins.gpio7,
         vin: pins.gpio5,
@@ -62,17 +85,26 @@ pub fn run() -> anyhow::Result<()> {
     })?;
     log::info!("hwtest: hw::init returned, no panic");
 
-    // 1 and 2. The plane link: the stub refuses every address, which is
-    // how the client reads "no plane there".
+    // 1 and 2. The plane link. On a bus with no plane on it a read is a
+    // timeout (CAN) or a NAK (I2C stub); both are how the client reads
+    // "no plane there".
     let mut answer = [0u8; 64];
-    match hw.plane.write_read(0x30, &[0x01, 0xff], &mut answer) {
-        Ok(n) => log::warn!("hwtest: plane 0x30 answered {n} bytes - is the link real now?"),
-        Err(err) => log::info!("hwtest: plane 0x30 -> {err} (expected, the link is a stub)"),
+    match hw.plane.as_mut() {
+        Some(plane) => {
+            match plane.write_read(0x30, &[0x01, 0xff], &mut answer) {
+                Ok(n) => log::warn!("hwtest: plane 0x30 answered {n} bytes - is a plane wired?"),
+                Err(err) => log::info!("hwtest: plane 0x30 -> {err} (expected with no plane)"),
+            }
+            log::info!(
+                "hwtest: planes that raised events = {:#04x} (expected 0x00 with no plane)",
+                plane.event_nodes()
+            );
+        }
+        None => log::error!("hwtest: the plane link did not come up; see the lines above"),
     }
-    log::info!(
-        "hwtest: planes that raised events = {:#04x} (expected 0x00 with nothing on EXP_INT)",
-        hw.plane.event_nodes()
-    );
+    for line in super::link_lines() {
+        log::info!("hwtest: {line}");
+    }
 
     // 3. The dry inputs.
     log::info!("hwtest: dry inputs wired = {}", hw.dry.is_wired());
@@ -115,6 +147,8 @@ pub fn run() -> anyhow::Result<()> {
     log::info!("hwtest: done, idling");
     loop {
         thread::sleep(Duration::from_secs(10));
-        log::info!("hwtest: idle, {} plane NAKs so far", hw.plane.naks());
+        for line in super::link_lines() {
+            log::info!("hwtest: idle, {line}");
+        }
     }
 }

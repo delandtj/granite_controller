@@ -1,4 +1,7 @@
-//! The plane link - **a stub until the rev D board exists**.
+//! The **I2C** plane link (`link-i2c`) - **a stub until the rev D board
+//! exists**. The FD generation's link is [`super::can_link`], and one
+//! image has exactly one of the two (ADR 0006, architecture
+//! component 7).
 //!
 //! Controller ADR 0004 decision 9 puts the plane link on the HP I2C
 //! peripheral at 100 kHz with a 5-pin JST PH to the planes' J2 and
@@ -42,6 +45,13 @@ impl StubPlaneLink {
             "plane link: stub driver - no plane transaction is performed, every address \
              answers NAK until the rev D board and its HP I2C driver exist"
         );
+        // The link-hardware step of the probation ladder (ADR 0006,
+        // architecture component 7). There is no chip on an I2C link to
+        // answer: EXP_INT is a pull-up and the planes are passive on
+        // SDA / SCL, so "the link hardware is there" is as far as this
+        // build can test, and this is today's behaviour unchanged. The
+        // rev D driver replaces this with a real probe.
+        crate::platform::ota::mark_link_hw();
         StubPlaneLink { int, naks: 0 }
     }
 

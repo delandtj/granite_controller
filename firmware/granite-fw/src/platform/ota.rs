@@ -12,13 +12,24 @@
 //!
 //! The ladder (ADR: within `t_validate`, default 10 min):
 //!
-//!   1. link and an IP - the network monitor calls [`mark_link`],
-//!   2. **either** the broker connected ([`mark_broker`]) **or** an
+//!   1. the plane link hardware answered - the hardware layer calls
+//!      [`mark_link_hw`] (ADR 0006, architecture component 7: "an image
+//!      that never sees its link hardware does not validate and rolls
+//!      back after probation"),
+//!   2. link and an IP - the network monitor calls [`mark_link`],
+//!   3. **either** the broker connected ([`mark_broker`]) **or** an
 //!      authenticated HTTPS request served ([`mark_https`]).
 //!
 //! A step whose provider never registered (MQTT disabled in the config)
 //! is not required: see [`expect_broker`]. Steps nobody can satisfy
 //! would turn every boot into a rollback.
+//!
+//! Step 1 is the only one that is about the board rather than the
+//! network: an FD image whose MCP2518FD does not reset or configure has
+//! no way to reach a plane, and an image like that must not stay. The
+//! `link-bench` feature logs it instead of failing the ladder, for the
+//! rev C bench board that has no MCP2518FD on it; a shipped image never
+//! has that feature.
 //!
 //! Rev C had a step before those two: "both expanders initialised". The
 //! expanders are gone with the rev C node section (controller ADR 0004
@@ -45,9 +56,11 @@ use esp_idf_svc::sys::{
 };
 use esp_idf_svc::tls::X509;
 use granite_core::api::{OtaFinish, OtaSink as ApiOtaSink};
+use granite_core::link_kind::{TagError, TagScan};
 use granite_core::msg::{Event, EventKind};
 
 use super::identity::hex;
+use super::link_kind::RUNNING;
 
 /// How often the probation ladder is re-evaluated.
 const PROBATION_TICK: Duration = Duration::from_secs(2);
@@ -126,10 +139,43 @@ pub fn ota_state() -> OtaState {
 mod ready {
     use std::sync::atomic::AtomicBool;
 
+    pub static LINK_HW: AtomicBool = AtomicBool::new(false);
     pub static LINK: AtomicBool = AtomicBool::new(false);
     pub static BROKER: AtomicBool = AtomicBool::new(false);
     pub static HTTPS: AtomicBool = AtomicBool::new(false);
     pub static WANT_BROKER: AtomicBool = AtomicBool::new(false);
+}
+
+/// Step 1: the plane link hardware is there and configured.
+///
+/// The CAN build calls this once the MCP2518FD has reset, configured and
+/// gone on the bus; the I2C build calls it as it claims EXP_INT, because
+/// there is no chip on that link to answer (and rev D's driver does not
+/// exist yet). An image that never calls it fails its probation and the
+/// bootloader rolls it back - unless it was built with `link-bench`.
+pub fn mark_link_hw() {
+    ready::LINK_HW.store(true, Ordering::Relaxed);
+}
+
+/// Whether the link-hardware step counts as passed.
+///
+/// With `link-bench` it always does, and [`link_hw_note`] says so in the
+/// probation detail, so a bench run cannot be mistaken for a shipped
+/// image passing the gate.
+fn link_hw_ok() -> bool {
+    cfg!(feature = "link-bench") || ready::LINK_HW.load(Ordering::Relaxed)
+}
+
+/// How the link-hardware step reads in a log line.
+fn link_hw_note() -> &'static str {
+    match (
+        ready::LINK_HW.load(Ordering::Relaxed),
+        cfg!(feature = "link-bench"),
+    ) {
+        (true, _) => "true",
+        (false, true) => "false (link-bench: not required)",
+        (false, false) => "false",
+    }
 }
 
 /// The MQTT worker announces that a broker is configured, so "broker
@@ -156,14 +202,17 @@ pub fn mark_https() {
 }
 
 fn ladder_passed() -> Option<&'static str> {
+    if !link_hw_ok() {
+        return None;
+    }
     if !ready::LINK.load(Ordering::Relaxed) {
         return None;
     }
     let broker = ready::WANT_BROKER.load(Ordering::Relaxed) && ready::BROKER.load(Ordering::Relaxed);
     let https = ready::HTTPS.load(Ordering::Relaxed);
     match (broker, https) {
-        (true, _) => Some("link and the broker"),
-        (false, true) => Some("link and an authenticated https request"),
+        (true, _) => Some("the plane link hardware, the network link and the broker"),
+        (false, true) => Some("the plane link hardware, the network link and an authenticated https request"),
         _ => None,
     }
 }
@@ -371,7 +420,8 @@ fn probation(window_s: u32, events: Option<Sender<Event>>) {
         }
         if super::now_ms() >= deadline {
             let detail = format!(
-                "link={} broker={} https={}",
+                "link_hw={} link={} broker={} https={}",
+                link_hw_note(),
                 ready::LINK.load(Ordering::Relaxed),
                 ready::BROKER.load(Ordering::Relaxed),
                 ready::HTTPS.load(Ordering::Relaxed),
@@ -685,6 +735,9 @@ pub enum OtaError {
     Transfer(String),
     /// Nothing was written.
     Empty,
+    /// The image is built for the other plane link, or does not say
+    /// which one it drives (ADR 0006, architecture component 7).
+    LinkKind(TagError),
 }
 
 impl core::fmt::Display for OtaError {
@@ -696,6 +749,7 @@ impl core::fmt::Display for OtaError {
             }
             OtaError::Transfer(m) => write!(f, "transfer failed: {m}"),
             OtaError::Empty => f.write_str("no image data"),
+            OtaError::LinkKind(e) => write!(f, "wrong image: {e}"),
         }
     }
 }
@@ -776,6 +830,12 @@ pub struct OtaWriter {
     total: Option<u64>,
     /// `written` at the last `downloading` event.
     progress_at: u64,
+    /// The hunt for the image's plane-link marker (ADR 0006,
+    /// architecture component 7). Fed with every chunk, read in
+    /// [`OtaWriter::finish`]: the marker can be anywhere in the image,
+    /// so the verdict is only final once the last byte is in. Refusing
+    /// at the end is enough - the boot partition is switched after it.
+    tag: TagScan,
 }
 
 // The only non-Send field is a pointer into the partition table, which
@@ -800,6 +860,7 @@ impl OtaWriter {
             slot: String::new(),
             total: None,
             progress_at: 0,
+            tag: TagScan::new(),
         }
     }
 
@@ -849,6 +910,7 @@ impl OtaWriter {
         self.written = 0;
         self.total = total_len.filter(|n| *n > 0);
         self.progress_at = 0;
+        self.tag = TagScan::new();
         let size = total_len
             .map(|n| format!("{n} bytes"))
             .unwrap_or_else(|| String::from("size unknown"));
@@ -890,6 +952,7 @@ impl OtaWriter {
         if let Some(sha) = self.sha.as_mut() {
             sha.update(chunk);
         }
+        self.tag.feed(chunk);
         let before = self.written;
         self.written += chunk.len() as u64;
         if before / (64 * 1024) != self.written / (64 * 1024) {
@@ -927,6 +990,19 @@ impl OtaWriter {
             });
         }
 
+        // One link per image (ADR 0006): an image for the other link, or
+        // one that does not say, never gets the boot partition. Checked
+        // before `esp_ota_end`, so the slot is abandoned the same way a
+        // hash mismatch abandons it.
+        match self.tag.verdict(RUNNING) {
+            Ok(kind) => log::info!("ota: image is a {kind} plane-link build, like this one"),
+            Err(e) => {
+                log::error!("ota: refusing the image: {e}");
+                let _ = unsafe { esp_ota_abort(handle) };
+                return Err(OtaError::LinkKind(e));
+            }
+        }
+
         // esp_ota_end validates the image header and, with signing on, the
         // signature block; only then is the boot partition switched.
         esp!(unsafe { esp_ota_end(handle) })?;
@@ -953,6 +1029,7 @@ impl OtaWriter {
         self.expected_sha256 = None;
         self.total = None;
         self.progress_at = 0;
+        self.tag = TagScan::new();
     }
 }
 

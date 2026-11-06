@@ -10,10 +10,30 @@ esp-idf-svc = "0.53.0"
 esp-idf-sys = "0.38.1"
 granite-core = { version = "0.1.0", path = "../granite-core" }
 log = "0.4.34"
+mcp2518fd = { version = "0.1.0", path = "../mcp2518fd", optional = true }
 serde = { version = "1.0.229", default-features = false, features = ["derive", "alloc"] }
 serde_json = { version = "1.0.151", default-features = false, features = ["alloc"] }
 
 [features]
+# One link per image (ADR 0006, architecture component 7): exactly one of
+# link-canfd / link-i2c must be set, and src/lib.rs refuses the build
+# otherwise. Nothing above granite_core::hal::PlaneLink knows which is
+# built.
+default = ["link-canfd"]
+# The FD generation (controller-fd): MCP2518FD on the W5500's SPI bus,
+# nCS GPIO2, nINT GPIO3, TCAN1044V STB on GPIO0, the CAN FD transport of
+# firmware ADR 0005. The first batch is this one.
+link-canfd = ["dep:mcp2518fd"]
+# Rev D: the isolated I2C link on GPIO2 / GPIO3 with EXP_INT on GPIO0.
+# Still the NAK stub of src/hw/plane_link.rs: the rev D driver is not
+# written until a rev D board is ordered (ADR 0006, "First batch").
+link-i2c = []
+# Bench relief for a board with no MCP2518FD on it (the rev C board the
+# image is tried on): a link that does not come up is logged instead of
+# keeping the image from marking itself valid. A shipped image must never
+# have this: the validation gate of ADR 0006 component 7 is what rolls an
+# image back that cannot see its link hardware.
+link-bench = []
 # Devboard bring-up exercise for the hardware layer (src/hw/hwtest.rs,
 # examples/hwtest.rs). Off in a shipped image.
 hwtest = []
@@ -40,8 +60,11 @@ boot-hang-test = []
 # has to reset the board (src/main.rs). Bench-only. Off in a shipped
 # image.
 dispatcher-hang-test = []
-# Everything that only makes sense on a devboard, in one flag.
-devboard = ["wifi-dev", "rgb-led"]
+# Everything that only makes sense on a devboard, in one flag. It
+# includes link-bench: a devkit has no MCP2518FD, so the link gate would
+# roll every image back.
+devboard = ["wifi-dev", "rgb-led", "link-bench"]
+mcp2518fd = ["dep:mcp2518fd"]
 
 [[example]]
 name = "hwtest"

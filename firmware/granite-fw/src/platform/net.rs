@@ -95,20 +95,51 @@ const HTTPS_PORT: u16 = 443;
 
 type GraniteEth = BlockingEth<EspEth<'static, SpiEth<&'static SpiDriver<'static>>>>;
 
-/// SPI and control pins of the W5500 (docs/controller.md, "Ethernet").
+/// The W5500's own pins on the shared SPI bus (docs/controller.md,
+/// "Ethernet"). The bus pins themselves are [`spi_bus`]'s.
 pub struct EthPins {
-    /// SPI clock.
-    pub sclk: Gpio19<'static>,
-    /// Controller out, W5500 in.
-    pub mosi: Gpio20<'static>,
-    /// W5500 out, controller in.
-    pub miso: Gpio21<'static>,
     /// Chip select, driven by the Ethernet driver.
     pub cs: Gpio18<'static>,
     /// W5500 interrupt.
     pub int: Gpio22<'static>,
     /// W5500 reset.
     pub rst: Gpio23<'static>,
+}
+
+/// SPI2, GPIO19 / 20 / 21, as a bus two devices share.
+///
+/// The W5500 was the only device until the FD generation put the
+/// MCP2518FD on the same bus (hardware ADR 0006 decision 9), so the bus
+/// driver is built here, before either device, and handed to both:
+/// `EthDriver::new_spi` takes `&'static SpiDriver` and the CAN chip gets
+/// a `SpiDeviceDriver` of its own on the same reference, with its own
+/// chip select and its own clock (the MCP2518FD's 17 MHz ceiling is per
+/// device, not per bus).
+///
+/// The driver is leaked on purpose, as it was when `bring_up` owned it:
+/// SPI2 belongs to these two devices for the lifetime of the firmware,
+/// and when the W5500 does not answer ESP-IDF leaves the Ethernet MAC's
+/// SPI device attached to the bus - dropping the driver then makes
+/// `esp_spi_bus_free` fail and esp-idf-hal's `Drop` panics on it. A
+/// missing W5500 must stay a logged error, not a reboot loop.
+///
+/// DMA on: without it a transaction is capped at 64 bytes and every
+/// frame the W5500 driver moves fails with "txdata transfer > host
+/// maximum" (seen on rev C, 2026-10-16). 4096 covers a 1514-byte frame,
+/// and a 64-byte CAN frame is nowhere near it.
+pub fn spi_bus(
+    spi: SPI2<'static>,
+    sclk: Gpio19<'static>,
+    mosi: Gpio20<'static>,
+    miso: Gpio21<'static>,
+) -> Result<&'static SpiDriver<'static>, esp_idf_svc::sys::EspError> {
+    Ok(Box::leak(Box::new(SpiDriver::new(
+        spi,
+        sclk,
+        mosi,
+        Some(miso),
+        &DriverConfig::new().dma(Dma::Auto(4096)),
+    )?)))
 }
 
 /// The network hardware the thread is handed.
@@ -119,8 +150,9 @@ pub struct EthPins {
 /// they are peripheral tokens, not drivers, and keeping them means
 /// `main.rs` has one pin map for both.
 pub struct NetHw {
-    /// SPI2, the W5500's bus.
-    pub spi: SPI2<'static>,
+    /// The SPI bus the W5500 shares with the MCP2518FD, from
+    /// [`spi_bus`].
+    pub spi: &'static SpiDriver<'static>,
     /// The W5500's pins.
     pub pins: EthPins,
     /// The radio. Only in a `wifi-dev` build, which uses it instead of
@@ -785,7 +817,7 @@ fn bring_up_link(
 /// it), called only when `wifi-dev` is off.
 #[cfg_attr(feature = "wifi-dev", allow(dead_code))]
 fn bring_up(
-    spi: SPI2<'static>,
+    spi: &'static SpiDriver<'static>,
     pins: EthPins,
     mac: &[u8; 6],
     hostname: &str,
@@ -793,24 +825,8 @@ fn bring_up(
     sysloop: EspSystemEventLoop,
 ) -> anyhow::Result<GraniteEth> {
     // CS is driven by the Ethernet driver, not by the SPI bus driver.
-    //
-    // The bus driver is leaked on purpose. SPI2 belongs to the W5500 for the
-    // lifetime of the firmware, and when the W5500 does not answer, ESP-IDF
-    // leaves the Ethernet MAC's SPI device attached to the bus; dropping the
-    // driver then makes esp_spi_bus_free fail and esp-idf-hal's Drop panics
-    // on it. A missing W5500 must stay a logged error, not a reboot loop.
-    //
-    // DMA on: without it a transaction is capped at 64 bytes and every
-    // frame the W5500 driver moves fails with "txdata transfer > host
-    // maximum" (seen on rev C, 2026-10-16). 4096 covers a 1514-byte frame.
-    let spi: &'static SpiDriver<'static> = Box::leak(Box::new(SpiDriver::new(
-        spi,
-        pins.sclk,
-        pins.mosi,
-        Some(pins.miso),
-        &DriverConfig::new().dma(Dma::Auto(4096)),
-    )?));
-
+    // The bus itself is `spi_bus`'s, and in an FD build the MCP2518FD
+    // has its own device on it.
     let driver = EthDriver::new_spi(
         spi,
         pins.int,

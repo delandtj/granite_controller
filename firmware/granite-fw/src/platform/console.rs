@@ -53,6 +53,7 @@ commands:
   reboot                restart through the planned-reboot path
   log [n]               last n lines of the log ring (default 40)
   stacks                per-task stack headroom, worst first
+  link                  plane link: kind, frames, errors, bus state
   help                  this list";
 
 /// Start the console thread.
@@ -194,6 +195,13 @@ fn handle(platform: &Platform, input: &str) {
                 say(&line);
             }
         }
+        // The plane link's own counters (ADR 0005 decision 8 keeps the
+        // controller's CAN errors "in its diagnostics"; this is them).
+        "link" => {
+            for line in crate::hw::link_lines() {
+                say(&line);
+            }
+        }
         other => say(&format!("err: unknown command `{other}`; try `help`")),
     }
 }
@@ -237,6 +245,11 @@ fn cmd_status(platform: &Platform) {
         Err(e) => say(&format!("ota       unreadable: {e}")),
     }
     say(&format!("signing   {}", super::signing_summary()));
+    // One line here, the detail under `link`.
+    say(&format!(
+        "plane     {} link",
+        super::link_kind::summary()
+    ));
     let uptime = super::now_ms() / 1000;
     say(&format!(
         "uptime    {} d {:02}:{:02}:{:02}",

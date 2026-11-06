@@ -13,6 +13,7 @@
 pub mod api_impl;
 pub mod console;
 pub mod identity;
+pub mod link_kind;
 pub mod logring;
 pub mod net;
 pub mod ota;

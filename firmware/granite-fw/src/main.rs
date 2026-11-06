@@ -161,12 +161,14 @@ fn main() -> anyhow::Result<()> {
     // devboard has no W5500, and without a network nothing above the
     // hardware layer can be exercised. The default image has no radio
     // code in it at all.
+    // SPI2 on GPIO19 / 20 / 21 carries the W5500 and, in an FD build,
+    // the MCP2518FD (ADR 0006 decision 9). The bus driver is built here,
+    // before either device: the network thread takes a reference and so
+    // does the hardware layer.
+    let spi = platform::net::spi_bus(peripherals.spi2, pins.gpio19, pins.gpio20, pins.gpio21)?;
     let net_hw = platform::net::NetHw {
-        spi: peripherals.spi2,
+        spi,
         pins: platform::net::EthPins {
-            sclk: pins.gpio19,
-            mosi: pins.gpio20,
-            miso: pins.gpio21,
             cs: pins.gpio18,
             int: pins.gpio22,
             rst: pins.gpio23,
@@ -189,6 +191,9 @@ fn main() -> anyhow::Result<()> {
         platform::boot_reason()
     );
     log::info!("image signing: {}", platform::signing_summary());
+    // Which plane link this image drives, and that the marker an OTA
+    // upload looks for survived the build (ADR 0006 component 7).
+    log::info!("plane link: {}", platform::link_kind::summary());
 
     // INTEGRATION: hw::init. It brings up the two I2C buses, the status
     // LED, the probes, the TMP1075, the VIN ADC, the plane link (a stub
@@ -201,10 +206,23 @@ fn main() -> anyhow::Result<()> {
     // what a controller with no plane does (ADR 0004 decision 6).
     let vin_trim = platform.config().nodes.vin_trim;
     let hw = hw::init(hw::HwInit {
+        // GPIO0 / GPIO2 / GPIO3 belong to whichever link this image was
+        // built for (hw::mod, "The two links, and the pins they take").
+        #[cfg(feature = "link-i2c")]
         plane_int: pins.gpio0,
-        status_led: pins.gpio1,
+        #[cfg(feature = "link-i2c")]
         int_sda: pins.gpio2,
+        #[cfg(feature = "link-i2c")]
         int_scl: pins.gpio3,
+        #[cfg(feature = "link-canfd")]
+        spi,
+        #[cfg(feature = "link-canfd")]
+        can_stb: pins.gpio0,
+        #[cfg(feature = "link-canfd")]
+        can_cs: pins.gpio2,
+        #[cfg(feature = "link-canfd")]
+        can_int: pins.gpio3,
+        status_led: pins.gpio1,
         ext_sda: pins.gpio6,
         ext_scl: pins.gpio7,
         vin: pins.gpio5,
@@ -268,15 +286,34 @@ fn main() -> anyhow::Result<()> {
             }
 
             let dispatch_faults = Arc::clone(&faults);
-            platform::spawn(c"dispatch", DISPATCH_STACK, move || {
-                dispatcher(
-                    dispatcher_platform,
-                    commands_rx,
-                    plane,
-                    dispatch_faults,
-                    fallback_sections,
-                )
-            })?;
+            match plane {
+                Some(plane) => {
+                    platform::spawn(c"dispatch", DISPATCH_STACK, move || {
+                        dispatcher(
+                            dispatcher_platform,
+                            commands_rx,
+                            plane,
+                            dispatch_faults,
+                            fallback_sections,
+                        )
+                    })?;
+                }
+                // The link hardware is not there (hw::init logged why).
+                // Everything else runs; the planes are simply absent,
+                // and the image will not confirm itself.
+                None => {
+                    faults.fetch_or(fault_bits::NO_PLANE, Ordering::Relaxed);
+                    platform::spawn(c"dispatch", DISPATCH_STACK, move || {
+                        dispatcher(
+                            dispatcher_platform,
+                            commands_rx,
+                            platform::NoPlaneLink,
+                            dispatch_faults,
+                            fallback_sections,
+                        )
+                    })?;
+                }
+            }
         }
         Err(e) => {
             log::error!(
