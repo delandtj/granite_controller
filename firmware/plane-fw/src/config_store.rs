@@ -8,24 +8,34 @@
 //! Where the pages are is temporary. The slot plan of ADR 0002 puts
 //! CONFIG at 0x08004800, right after the bootloader's swap state, but
 //! plane-boot does not exist yet and this image owns the whole flash
-//! (memory.x), so the two copies live in the last two pages instead -
-//! out of reach of an image that is nowhere near 124 KB. They move
-//! when the bootloader lands, and the first boot after the move reads
-//! blank pages and falls back to the defaults, which the controller
-//! then re-writes (it compares the config hash in INFO).
+//! (memory-*.x), so the two copies live at 0x0801F000 / 0x0801F800
+//! instead - out of reach of an image that is nowhere near 124 KB. They
+//! move when the bootloader lands, and the first boot after the move
+//! reads blank pages and falls back to the defaults, which the
+//! controller then re-writes (it compares the config hash in INFO).
+//!
+//! The same two pages on both parts, on purpose. On the G070CB they are
+//! the last two of its 128 KB. On the G0B1CC (256 KB, `link-fdcan`)
+//! they are the last two of the **first** 128 KB, which is bank 1
+//! whichever way that part's DUAL_BANK option bit is set: a page erase
+//! there names the same physical page in single-bank numbering (page 62
+//! of 128) and in dual-bank numbering (page 62 of bank 1, BKER = 0), so
+//! the store cannot land on the wrong page because a part arrived
+//! configured the other way. The last two pages of the G0B1's 256 KB
+//! would not have that property.
 
 use embassy_stm32::flash::{Blocking, Flash};
 use plane_logic::config::{BLOB_BYTES, COPIES};
 use plane_logic::device::{DevResult, DeviceError, ConfigStore};
 
-/// Flash page size on the G070: 2 KB.
+/// Flash page size on both parts: 2 KB.
 const PAGE: u32 = 2048;
 
-/// Write granularity on the G070: one 64-bit double word.
+/// Write granularity on both parts: one 64-bit double word.
 const WRITE_ALIGN: usize = 8;
 
 /// Offset of copy 0 from the start of flash: the last two pages of the
-/// 128 KB part.
+/// first 128 KB (see the module docs for why not "of the part").
 const FIRST_COPY: u32 = 128 * 1024 - 2 * PAGE;
 
 /// The two CONFIG pages.

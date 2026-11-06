@@ -1,37 +1,84 @@
-//! plane-fw: the plane core application for the STM32G070CBT6 on the
-//! PP-48 core board.
+//! plane-fw: the plane core application for the PP-48 core board.
+//!
+//! One binary, one link per image, chosen by a cargo feature (ADR 0005
+//! decision 9; `compile_error!` below if the set is not exactly one):
+//!
+//! | Feature | Board | MCU | Link |
+//! |---|---|---|---|
+//! | `link-i2c` | pp-48-core (rev D) | STM32G070CB | I2C1 slave through the ISO1640, INT_OUT for EXP_INT |
+//! | `link-mcp` | pp-48-core-fd | STM32G070CB | MCP2518FD on SPI1, nINT on PA0 |
+//! | `link-fdcan` | pp-48-core-fd | STM32G0B1CC | FDCAN1 on PB8 / PB9 AF3 |
+//!
+//! The link decides the MCU, so the feature carries the embassy-stm32
+//! chip feature too, and `build.rs` picks the linker script and the
+//! generated pin map to check against.
 //!
 //! The behaviour is not here. It is in `plane-logic`, which is
 //! hardware-free, host-tested and shared with granite-sim's fake plane
 //! (ADR 0002 decision 1); this crate is the glue that gives it a board:
 //!
-//! - [`pins`]: every net of `firmware/plane-core-pins.toml`, checked
-//!   against that file by `build.rs`.
+//! - [`pins`]: every net of the board's generated pin map, checked
+//!   against that file by `build.rs` (`src/pins.rs` for rev D,
+//!   `src/pins_fd.rs` for the FD board).
 //! - [`segment_bus`]: I2C2 master behind the TCA9548A, as
 //!   `plane_logic::SegmentBus`.
 //! - [`core_pins`]: PRESS_TRIG, EXP_RSTN and the VIN_SNS ADC.
 //! - [`backup_regs`] / [`config_store`] / [`update_store`]: the TAMP
 //!   words, the two CONFIG pages, and the DFU slot (not yet).
-//! - [`link`]: I2C1 slave at 0x30 + straps, into
-//!   `Plane::handle_frame`.
-//! - [`status`]: LED_RUN and INT_OUT.
+//! - the link module of the build: `link` (I2C1 slave at 0x30 + straps),
+//!   `link_mcp` or `link_fdcan` (both `plane_logic::can_link` over a
+//!   CAN FD controller). All three end in `Plane::handle_frame`.
+//! - [`status`]: LED_RUN, and INT_OUT on the rev D build only - the CAN
+//!   builds announce events with an EVENT frame instead (ADR 0005
+//!   decision 6) and leave PD2 free.
 //!
 //! Three tasks, as ADR 0002 decision 1 splits them: the bus task owns
 //! I2C2 and the whole plane state (`Plane::tick`), the link task
 //! answers the controller (`Plane::handle_frame`), the status task
-//! drives the two lines. The plane itself lives behind one mutex, and
-//! neither holder awaits while it has it, so the two tasks cannot
-//! interleave inside the state machine.
+//! drives the LED. The plane itself lives behind one mutex, and neither
+//! holder awaits while it has it, so the two tasks cannot interleave
+//! inside the state machine.
 
 #![no_std]
 #![no_main]
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
+// Exactly one link per image (ADR 0005 decision 9). The link chooses
+// the MCU, the linker script and the pin map, so "none" and "two" are
+// not builds: they are a mistake with a message.
+#[cfg(not(any(feature = "link-i2c", feature = "link-mcp", feature = "link-fdcan")))]
+compile_error!(
+    "plane-fw needs exactly one link feature: link-i2c (rev D, G070 + I2C1 slave), \
+     link-mcp (FD, G070 + MCP2518FD on SPI1, the default) or link-fdcan (FD, G0B1CC + FDCAN1). \
+     Building with --no-default-features and nothing else selects no MCU either."
+);
+#[cfg(any(
+    all(feature = "link-i2c", feature = "link-mcp"),
+    all(feature = "link-i2c", feature = "link-fdcan"),
+    all(feature = "link-mcp", feature = "link-fdcan"),
+))]
+compile_error!(
+    "plane-fw builds one link per image: link-i2c, link-mcp and link-fdcan are exclusive \
+     (they select different MCUs and different linker scripts). The default is link-mcp, \
+     so another one needs --no-default-features."
+);
+
 mod backup_regs;
 mod config_store;
 mod core_pins;
+#[cfg(feature = "link-i2c")]
 mod link;
+#[cfg(feature = "link-fdcan")]
+mod link_fdcan;
+#[cfg(feature = "link-mcp")]
+mod link_mcp;
+#[cfg(feature = "link-i2c")]
+mod pins;
+// The FD board's pin map, under the same name: nothing outside these two
+// files names a port.
+#[cfg(not(feature = "link-i2c"))]
+#[path = "pins_fd.rs"]
 mod pins;
 mod reset;
 mod segment_bus;
@@ -40,11 +87,9 @@ mod update_store;
 
 use defmt_rtt as _;
 use embassy_executor::Spawner;
-use embassy_stm32::i2c::{I2c, SlaveAddrConfig};
 use embassy_stm32::peripherals;
 use embassy_stm32::time::Hertz;
 use embassy_stm32::wdg::IndependentWatchdog;
-use embassy_stm32::{bind_interrupts, dma, i2c};
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 use embassy_sync::mutex::Mutex;
 use embassy_time::{Duration, Instant, Ticker};
@@ -52,6 +97,21 @@ use panic_probe as _;
 use plane_logic::device::DeviceSet;
 use plane_logic::{Plane, Setup};
 use static_cell::StaticCell;
+
+#[cfg(feature = "link-i2c")]
+use embassy_stm32::i2c::{I2c, SlaveAddrConfig};
+#[cfg(feature = "link-i2c")]
+use embassy_stm32::{bind_interrupts, dma, i2c};
+
+/// Which link this image was built with, for the boot log.
+#[cfg(feature = "link-i2c")]
+const LINK: &str = "I2C1 slave, rev D";
+/// Which link this image was built with, for the boot log.
+#[cfg(feature = "link-mcp")]
+const LINK: &str = "CAN FD, MCP2518FD on SPI1";
+/// Which link this image was built with, for the boot log.
+#[cfg(feature = "link-fdcan")]
+const LINK: &str = "CAN FD, FDCAN1";
 
 /// Firmware version of this image (INFO 0x04).
 const VERSION: granite_proto::Version = granite_proto::Version::new(0, 1, 0);
@@ -89,18 +149,24 @@ pub type PlaneMutex = Mutex<CriticalSectionRawMutex, Plane>;
 
 static PLANE: StaticCell<PlaneMutex> = StaticCell::new();
 
+#[cfg(feature = "link-i2c")]
 bind_interrupts!(struct Irqs {
     I2C1 => i2c::EventInterruptHandler<peripherals::I2C1>, i2c::ErrorInterruptHandler<peripherals::I2C1>;
     DMA1_CHANNEL1 => dma::InterruptHandler<peripherals::DMA1_CH1>;
     DMA1_CHANNEL2_3 => dma::InterruptHandler<peripherals::DMA1_CH2>;
 });
 
-/// 8 MHz HSE crystal (plane-core-pins.toml `hse_hz`) to a 64 MHz
-/// SYSCLK: PLL with M = 1, N = 16 (128 MHz VCO, inside the G0's
-/// 64-344 MHz range) and R = 2.
+/// 8 MHz HSE crystal (the pin map's `hse_hz`) to a 64 MHz SYSCLK: PLL
+/// with M = 1, N = 16 (128 MHz VCO, inside the G0's 64-344 MHz range)
+/// and R = 2.
 ///
 /// The HSI stays on as the ADC's clock: the G0's ADC takes at most
 /// 35 MHz, so it cannot run off the 64 MHz SYSCLK.
+///
+/// On the `link-mcp` build the MCP2518FD has its own 40 MHz crystal
+/// (hardware ADR 0006 decision 6), so nothing of the CAN timing hangs
+/// on this tree; SPI1 is divided down to 8 MHz in `link_mcp`.
+#[cfg(not(feature = "link-fdcan"))]
 fn clocks() -> embassy_stm32::Config {
     use embassy_stm32::rcc::{
         APBPrescaler, AHBPrescaler, Hse, HseMode, Pll, PllMul, PllPreDiv, PllRDiv, PllSource,
@@ -127,13 +193,60 @@ fn clocks() -> embassy_stm32::Config {
     config
 }
 
+/// The G0B1 clock tree: 8 MHz HSE, VCO 320 MHz (M = 1, N = 40), SYSCLK
+/// 64 MHz off R = 5 and **FDCAN kernel clock 40 MHz off Q = 8**, which
+/// is what hardware ADR 0006 decision 11 asks for (and the same 40 MHz
+/// the MCP2518FD gets from its crystal on the other build, so one bit
+/// timing serves both).
+///
+/// The G070 build's 128 MHz VCO cannot do it: Q divides by 2 to 8, so
+/// 128 MHz gives 64, 42.7, 32 ... and never 40. 320 MHz is inside the
+/// 96-344 MHz VCO range, R = 5 lands exactly on the 64 MHz SYSCLK
+/// maximum and Q = 8 exactly on 40 MHz, with no fractional parts
+/// anywhere: the bit timing of ADR 0005 decision 8 (80 TQ nominal,
+/// 20 TQ data) needs the clock to be exact, not close.
+///
+/// The HSI stays on as the ADC clock, as on the G070.
+#[cfg(feature = "link-fdcan")]
+fn clocks() -> embassy_stm32::Config {
+    use embassy_stm32::rcc::{
+        APBPrescaler, AHBPrescaler, Hse, HseMode, Pll, PllMul, PllPreDiv, PllQDiv, PllRDiv,
+        PllSource, Sysclk, mux,
+    };
+
+    let mut config = embassy_stm32::Config::default();
+    config.rcc.hse = Some(Hse {
+        freq: Hertz::mhz(8),
+        mode: HseMode::Oscillator,
+    });
+    config.rcc.pll = Some(Pll {
+        source: PllSource::HSE,
+        prediv: PllPreDiv::DIV1,
+        mul: PllMul::MUL40,
+        divp: None,
+        divq: Some(PllQDiv::DIV8),
+        divr: Some(PllRDiv::DIV5),
+    });
+    config.rcc.sys = Sysclk::PLL1_R;
+    config.rcc.ahb_pre = AHBPrescaler::DIV1;
+    config.rcc.apb1_pre = APBPrescaler::DIV1;
+    config.rcc.mux.adcsel = mux::Adcsel::HSI;
+    config.rcc.mux.fdcansel = mux::Fdcansel::PLL1_Q;
+    config
+}
+
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
     let board = pins::split(embassy_stm32::init(clocks()));
 
     let address = reset::address(board.adr0, board.adr1, board.adr2);
     let cause = reset::cause();
-    defmt::info!("plane-fw at 0x{:02x}, reset cause {}", address, cause);
+    defmt::info!(
+        "plane-fw at 0x{:02x} ({}), reset cause {}",
+        address,
+        LINK,
+        cause
+    );
 
     // The devices the plane logic drives. The bus task owns all of
     // them: it is the only task that may touch the segment bus, the
@@ -183,24 +296,65 @@ async fn main(spawner: Spawner) {
 
     let plane: &'static PlaneMutex = PLANE.init(Mutex::new(plane));
 
-    // I2C1 as a slave at the strapped address. The frequency only sets
-    // the analog filter and the data setup/hold times here; the master
-    // is the controller, at 100 kHz (ADR 0003).
-    let mut link_config = i2c::Config::default();
-    link_config.frequency = Hertz::khz(100);
-    let link = I2c::new(
-        board.i2c1,
-        board.scl1,
-        board.sda1,
-        board.link_tx_dma,
-        board.link_rx_dma,
-        Irqs,
-        link_config,
-    )
-    .into_slave_multimaster(SlaveAddrConfig::basic(address));
+    #[cfg(feature = "link-i2c")]
+    {
+        // I2C1 as a slave at the strapped address. The frequency only
+        // sets the analog filter and the data setup/hold times here; the
+        // master is the controller, at 100 kHz (ADR 0003).
+        let mut link_config = i2c::Config::default();
+        link_config.frequency = Hertz::khz(100);
+        let link = I2c::new(
+            board.i2c1,
+            board.scl1,
+            board.sda1,
+            board.link_tx_dma,
+            board.link_rx_dma,
+            Irqs,
+            link_config,
+        )
+        .into_slave_multimaster(SlaveAddrConfig::basic(address));
 
-    spawner.spawn(defmt::unwrap!(status::task(board.led_run, board.int_out)));
-    spawner.spawn(defmt::unwrap!(link::task(plane, link)));
+        spawner.spawn(defmt::unwrap!(status::task(board.led_run, board.int_out)));
+        spawner.spawn(defmt::unwrap!(link::task(plane, link)));
+    }
+
+    // The CAN node id is the three address straps (hardware ADR 0006
+    // decision 7); the ADR 0003 address the CRC covers is 0x30 + node,
+    // which is the address above.
+    #[cfg(not(feature = "link-i2c"))]
+    let node = address - reset::BASE_ADDRESS;
+
+    #[cfg(feature = "link-mcp")]
+    {
+        spawner.spawn(defmt::unwrap!(status::task(board.led_run)));
+        spawner.spawn(defmt::unwrap!(link_mcp::task(
+            plane,
+            node,
+            link_mcp::LinkParts {
+                spi1: board.spi1,
+                sck: board.spi_sck,
+                miso: board.spi_miso,
+                mosi: board.spi_mosi,
+                cs: board.mcp_cs,
+                int: board.mcp_int,
+                exti: board.mcp_int_exti,
+            }
+        )));
+    }
+
+    #[cfg(feature = "link-fdcan")]
+    {
+        spawner.spawn(defmt::unwrap!(status::task(board.led_run)));
+        spawner.spawn(defmt::unwrap!(link_fdcan::task(
+            plane,
+            node,
+            link_fdcan::LinkParts {
+                fdcan1: board.fdcan1,
+                rx: board.can_rx,
+                tx: board.can_tx,
+            }
+        )));
+    }
 
     bus_task(plane, devices, watchdog).await;
 }

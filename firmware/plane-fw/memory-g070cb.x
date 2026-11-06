@@ -1,5 +1,12 @@
-/* STM32G070CBT6 on the PP-48 core board (firmware/plane-core-pins.toml):
+/* STM32G070CBT6 on the PP-48 core board, the link-i2c and link-mcp
+ * builds (firmware/plane-core-pins.toml and plane-core-fd-pins.toml):
  * 128 KB flash in 2 KB pages, 36 KB RAM, no CCM, no backup SRAM.
+ *
+ * Picked by build.rs from the link feature; link-fdcan uses
+ * memory-g0b1cc.x. Neither file is called memory.x, because the one on
+ * the linker's search path has to be the one build.rs copied: ld
+ * resolves `INCLUDE memory.x` from the current directory first, so a
+ * memory.x in the crate root would quietly win over either of these.
  *
  * This build takes the whole flash, because plane-boot does not exist
  * yet and plane-fw is flashed over SWD at 0x08000000. The slot plan of
