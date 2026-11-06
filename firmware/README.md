@@ -99,9 +99,63 @@ download plus a full ESP-IDF compile); later builds are quick.
 
 ```sh
 cd firmware/granite-fw
-cargo build --release
+cargo build --release                 # the FD image: link-canfd
 cargo clippy --release --all-targets -- -D warnings
 ```
+
+### One link per image
+
+ADR 0006 (architecture component 7) gives each image exactly one plane
+link, picked by a cargo feature. Exactly one of the two must be set and
+`src/lib.rs` refuses the build with a `compile_error!` otherwise - both
+set or neither set is a mistake, never a default.
+
+| feature | board | link |
+|---|---|---|
+| `link-canfd` (**default**) | controller-fd | MCP2518FD on the W5500's SPI bus, CAN FD transport of `docs/adr/0005` |
+| `link-i2c` | rev D | isolated I2C on GPIO2 / GPIO3, EXP_INT GPIO0; still the NAK stub |
+
+```sh
+cargo build --release                                            # canfd
+cargo build --release --no-default-features --features link-i2c  # rev D
+cargo build --release --no-default-features \
+    --features link-i2c,devboard                                 # rev D on a devkit
+```
+
+The feature decides what three pins are, because the two boards wire
+them differently (`src/hw/mod.rs`, "The two links, and the pins they
+take"):
+
+| pin | `link-i2c` | `link-canfd` |
+|---|---|---|
+| GPIO0 | EXP_INT (planes' wired-OR interrupt) | TCAN1044V STB, driven low for normal mode |
+| GPIO2 | plane link SDA (HP I2C) | MCP2518FD nCS |
+| GPIO3 | plane link SCL (HP I2C) | MCP2518FD nINT |
+| GPIO6 / 7 | local I2C (LP): J9 | local I2C (LP): J9 **and the TMP1075** |
+
+controller-fd has no HP I2C bus at all - its TMP1075 sits on the local
+bus with J9 - so the FD build never opens `I2C_NUM_0` and reads the
+board temperature over LP I2C. The MCP2518FD is a second device on the
+W5500's bus (`platform::net::spi_bus` builds the bus before either
+device): its own chip select, its own 10 MHz clock, below the ~17 MHz
+erratum ceiling at a 40 MHz SYSCLK; the W5500 keeps its 20 MHz.
+
+The link-related features in full:
+
+- `link-canfd`, `link-i2c`: above, exactly one.
+- `link-bench`: a link that does not come up is logged instead of
+  keeping the image from confirming itself (see "probation" below). For
+  the rev C bench board, which has no MCP2518FD on it. In `devboard`.
+  **Never in a shipped image.**
+
+`link` on the console prints the link kind and, on an FD build, the
+transport's counters: frames in and out, blocked sends, timeouts,
+EVENTs, reassembly drops by reason, TEC / REC and the bus-off count
+(ADR 0005 decision 8). `status` carries one summary line.
+
+Nothing of the CAN link has run on hardware: no controller-fd board
+exists. The transport itself is host-tested
+(`granite-core/src/plane/can_link.rs`, `cargo test -p granite-core`).
 
 `MCU=esp32c6`, `ESP_IDF_VERSION=v5.5.5` and `CARGO_WORKSPACE_DIR` come
 from `.cargo/config.toml`, so no environment setup is needed. The last
@@ -497,9 +551,24 @@ accepts such an image over OTA, and whether the bootloader the signing
 build produces is itself signed. That needs a signing build (a full
 ESP-IDF reconfigure) and a bench board; nothing here has been pushed to
 a board yet.
+- **Link kind**: the image carries which plane link it drives, and an
+  upload of an image for the other one is refused with HTTP 400 and an
+  `ota failed` event, like a hash mismatch (ADR 0006 component 7). The
+  marker is a 24-byte tagged struct in the image's read-only data
+  (`granite-core/src/link_kind.rs`: a 16-byte magic, a format version,
+  the kind, its complement, a CRC-32), and the upload path searches the
+  stream it is writing for it. **An image with no marker is refused
+  too** - an image from before the links split is exactly the case the
+  guard exists for. That means the first FD image cannot be installed
+  over an older build *from the network*: the board takes it over USB
+  once, and every image after that over OTA. `esp_app_desc_t` was the
+  alternative and is not usable: its `version` is pinned to the crate
+  version by `build.rs` and comes from a file the ESP-IDF build reads
+  before cargo features exist, and `project_name` has no sdkconfig
+  symbol at all.
 - **Probation**: a new image boots `pending_verify` and must, within
-  `sys.t_validate_s` (default 10 min), have (a) initialised the
-  expanders, (b) got link and an IP, and (c) either connected to the
+  `sys.t_validate_s` (default 10 min), have (a) brought its plane link
+  hardware up, (b) got link and an IP, and (c) either connected to the
   configured broker or served an authenticated HTTPS request. Then it
   marks itself valid; otherwise it marks itself invalid and reboots, and
   the bootloader falls back to the other slot - which, with no

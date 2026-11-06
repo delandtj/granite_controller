@@ -2,7 +2,7 @@
 
 **Status**: Accepted (2026-11-04)
 **Date**: 2026-11-04
-**Updated**: 2026-11-04 (open questions answered by the user: EVENT stays a bare flag, bus-off auto recovery); 2026-11-04 (as built: granite-proto::can 7c39a71, plane-fw 8d898e6, mcp2518fd 0af8d56 as a facade over mcp251xfd, granite-core / sim 7319d12)
+**Updated**: 2026-11-04 (open questions answered by the user: EVENT stays a bare flag, bus-off auto recovery); 2026-11-04 (as built: granite-proto::can 7c39a71, plane-fw 8d898e6, mcp2518fd 0af8d56 as a facade over mcp251xfd, granite-core / sim 7319d12); 2026-11-06 (as built, controller side: `granite_core::plane::can_link::CanPlaneLink` over a frame-driver trait, granite-fw features `link-canfd` / `link-i2c` / `link-bench`, MCP2518FD on the W5500's SPI bus, link kind in the image and the OTA guard. See "As built: the controller side" below)
 
 Related: docs/adr/0006-plane-link-can-fd.md (hardware: ISO1044 per
 core, MCP2518FD on the G070 or FDCAN on the G0B1, MCP2518FD on the
@@ -111,6 +111,80 @@ written and tested on the host before the boards exist.
      granite-fw: thumbv6m, embassy-stm32, STM32G070CB): builds the
      rev D link (I2C1 slave) first; the CAN transports (MCP2518FD,
      FDCAN) are features of the same binary.
+
+---
+
+## As built: the controller side (2026-11-06)
+
+Nothing below changes a decision; it records where the decisions
+landed and the three places the code is narrower or wider than the text.
+
+- **The transport is `granite_core::plane::can_link`**
+  (`CanPlaneLink<D>`), a `PlaneLink` over a small frame-driver trait
+  `CanFrames`: send one frame with an 11-bit id, take one received
+  frame, `now_ms`, read the error counters, `idle` between polls. So
+  decisions 2-8 are host-tested against a queue-backed fake driver (17
+  tests: read, write, BULK both ways, timeout, lost segment, EVENT
+  during a transaction, an answer from the wrong node, a full TX FIFO,
+  bus-off edges, 5000 random frames without a panic), and the firmware
+  only owns the chip.
+- **A timeout is `LinkError::Timeout`**, which `plane::link` retries
+  (ADR 0003's rules); `LinkError::Nak` stays "no plane strapped there"
+  and is what an address outside 0x30-0x37 gets, without a frame on the
+  bus. Nothing on CAN acknowledges a frame, so a plane that never heard
+  the request and one that did not answer are the same event.
+- **Frames that are not the answer are sorted, not dropped blindly**:
+  an EVENT from a plane sets its bit in the `event_nodes` mask even in
+  the middle of a transaction (decision 6), a foreign SYNC or REQ and
+  an answer from another node are counted as `foreign`, and the receive
+  FIFO is pumped before every transaction so a leftover answer cannot
+  be read as this one's. Counters for all of it, plus the
+  reassembler's own drop reasons and TEC / REC, on the console's `link`
+  command (decision 8: "the controller keeps its own in its
+  diagnostics").
+- **The controller's acceptance filter is promiscuous**, not
+  `Config::for_node(14)`: the node field of an identifier always names
+  the *plane* (decision 2), so every answer and every EVENT the
+  controller must read has a plane's number in it. A node filter of 14
+  would accept nothing a plane sends. `mcp2518fd::Config::promiscuous`
+  exists for this.
+- **SYNC goes through the segmenter** like every other message, so the
+  one frame is `[0x80, epoch LE]` and a receiver has one code path
+  (this is what granite-sim's CAN fake already did). A standby
+  controller's link would send it from node 15; nothing builds that.
+- **Polling, not the interrupt pin**: nINT (GPIO3) is claimed as an
+  input and read only for the diagnostics. The dispatcher is a 50 ms
+  loop and a transaction waits at most 20 ms, so the transport polls the
+  receive FIFO every 200 us (a busy wait: `CONFIG_FREERTOS_HZ` is 100,
+  so the shortest task delay is 10 ms and would give a transaction two
+  polls).
+- **granite-sim keeps its own `CanBus`** (commit 7319d12) instead of
+  running `CanPlaneLink` on the controller side. Its fake already
+  segments and reassembles through `granite_proto::can` on both sides
+  and adds frame-loss injection; putting the real transport in would
+  mean the driver owning the fake planes that `FakePlaneLink` owns
+  today - a cyclic-ownership refactor of granite-sim for no new
+  coverage of the transport, which is tested directly. Left alone
+  deliberately.
+- **granite-fw**: features `link-canfd` (default) and `link-i2c`,
+  exactly one, `compile_error!` otherwise (ADR 0006 component 7). The
+  MCP2518FD is a second `SpiDeviceDriver` on the W5500's bus at 10 MHz
+  (the bus is built once, before either device), nCS GPIO2, nINT
+  GPIO3, the TCAN1044V's STB on GPIO0 driven low, INT0 / INT1 driven
+  low through `IOCON` (the 32-bit write clears LAT0 / LAT1 by erratum,
+  which is the level the board wants). An FD build opens no HP I2C bus
+  and reads the TMP1075 over LP I2C, because that is where
+  controller-fd puts it.
+- **One image per link, enforced twice**: the image carries its link
+  kind as a tagged 24-byte marker in its read-only data
+  (`granite_core::link_kind`), the OTA upload refuses an image of the
+  other kind or without a marker (HTTP 400, the path a hash mismatch
+  already uses), and an image whose link hardware never came up does
+  not pass its probation ladder, so it rolls back. The bench feature
+  `link-bench` only logs that last one.
+- **Untested on hardware.** No controller-fd board exists. The image
+  builds (1,706,432 B of the 0x3D0000 slot, 42.7 %, against 1,654,816 B
+  before) and the transport is host-tested; the chip is not.
 
 ---
 
