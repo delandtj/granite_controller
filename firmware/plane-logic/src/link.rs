@@ -395,6 +395,11 @@ impl Plane {
         }
         let _ = Status::SegmentErrors(granite_proto::SegmentErrors { per_channel }).encode(w);
         let _ = Status::LastResetCause(self.reset_cause).encode(w);
+        // Only the CAN FD builds have these (ADR 0005 decision 8); on
+        // the I2C link the record is absent rather than zero.
+        if let Some(can) = self.can_errors {
+            let _ = Status::CanErrors(can).encode(w);
+        }
     }
 
     fn encode_summary(&self, w: &mut RecordWriter) {

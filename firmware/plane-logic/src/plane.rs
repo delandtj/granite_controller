@@ -15,7 +15,7 @@
 //! present units.
 
 use granite_proto::{
-    Capabilities, EventKind, EventTarget, ImageState, LinkErrors, PlaneType, SLOT_COUNT,
+    CanErrors, Capabilities, EventKind, EventTarget, ImageState, LinkErrors, PlaneType, SLOT_COUNT,
     SEGMENT_CHANNELS, StatusFlags, UNIT_COUNT, UnitStatus, Version,
 };
 
@@ -168,6 +168,10 @@ pub struct Plane {
     pub(crate) writes: heapless::Deque<PendingWrite, 2>,
     /// Frames dropped on the link (STATUS 0x19).
     pub(crate) link_errors: LinkErrors,
+    /// The CAN FD link's counters (STATUS 0x1D), as the transport last
+    /// published them. `None` on the I2C link, which has no such
+    /// counters and whose STATUS block therefore does not grow.
+    pub(crate) can_errors: Option<CanErrors>,
 
     /// The firmware update state machine.
     pub(crate) update: Update,
@@ -231,6 +235,7 @@ impl Plane {
             log: Log::new(),
             writes: heapless::Deque::new(),
             link_errors: LinkErrors::default(),
+            can_errors: None,
             update: Update::new(),
             now_ms: 0,
             core_volts: 0,
@@ -307,9 +312,22 @@ impl Plane {
     }
 
     /// True while INT_OUT should be high: unacknowledged events exist
-    /// (ADR 0002 decision 8).
+    /// (ADR 0002 decision 8). On the CAN FD link the same bit is what
+    /// the EVENT schedule of ADR 0005 decision 6 runs on.
     pub fn event_pending(&self) -> bool {
         self.events.pending()
+    }
+
+    /// Publish the CAN FD link's counters, so the next STATUS read
+    /// carries them (STATUS 0x1D). Called by the transport; an I2C
+    /// build never calls it and STATUS stays as it was.
+    pub fn set_can_errors(&mut self, errors: CanErrors) {
+        self.can_errors = Some(errors);
+    }
+
+    /// The CAN FD counters the plane last published, if any.
+    pub const fn can_errors(&self) -> Option<CanErrors> {
+        self.can_errors
     }
 
     /// True once, after a full poll cycle in which the sequencer also

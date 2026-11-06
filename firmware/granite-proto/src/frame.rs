@@ -162,6 +162,34 @@ impl<'a> Frame<'a> {
     }
 }
 
+/// Cut the padding off a frame that arrived padded, using the frame's
+/// own content to say where it ends (ADR 0005 decision 3).
+///
+/// A CAN FD frame has one of sixteen lengths, so the last segment of a
+/// message is padded with 0x00; [`check_answer`] ignores bytes past the
+/// CRC already, but [`parse_frame`] takes a length and cannot, because
+/// on I2C a length that does not match `L` is a lost or doubled byte and
+/// has to be refused. This is what a CAN transport calls before handing
+/// a reassembled message to [`parse_frame`].
+///
+/// Two bytes are a read request and are returned as they are: the frame
+/// that carries one is three bytes long ([`crate::can::fd_len`] of 3),
+/// so a read request never arrives padded. Anything longer is read as a
+/// write frame and cut to `3 + L + 1`. A frame shorter than its own `L`
+/// claims, or one a sender padded further than the rule allows, comes
+/// back untouched and fails [`parse_frame`] as it should.
+pub const fn trim_padded(frame: &[u8]) -> &[u8] {
+    if frame.len() <= REQUEST_LEN {
+        return frame;
+    }
+    let total = frame[2] as usize + MIN_WRITE_FRAME;
+    if total <= frame.len() {
+        frame.split_at(total).0
+    } else {
+        frame
+    }
+}
+
 /// Plane side: parse what the controller wrote.
 ///
 /// Two bytes are a read request; four or more are a write frame, whose
@@ -384,6 +412,32 @@ mod tests {
                 "bit flip at {i} passed"
             );
         }
+    }
+
+    #[test]
+    fn a_padded_write_frame_is_trimmed_to_its_own_length() {
+        let mut out = [0u8; MAX_WRITE_FRAME];
+        let frame = write_frame(&mut out, 0x33, crate::BLK_CTRL, crate::INDEX_NONE, &[1, 2, 3])
+            .unwrap()
+            .to_vec();
+        // As a CAN FD frame carries it: 7 bytes of message, padded to 8.
+        let mut padded = frame.clone();
+        padded.extend_from_slice(&[0, 0, 0, 0, 0]);
+        assert_eq!(trim_padded(&padded), &frame[..]);
+        assert!(matches!(
+            parse_frame(0x33, trim_padded(&padded)),
+            Ok(Frame::Write { payload, .. }) if payload == [1, 2, 3]
+        ));
+        // Untouched: a read request, and anything too short for its own
+        // length byte.
+        let request = read_request(crate::BLK_STATUS, crate::INDEX_NONE);
+        assert_eq!(trim_padded(&request), &request[..]);
+        assert_eq!(trim_padded(&[]), &[] as &[u8]);
+        assert_eq!(trim_padded(&[0x10, 0xFF, 0x40]), &[0x10, 0xFF, 0x40]);
+        assert_eq!(
+            parse_frame(0x33, trim_padded(&[0x10, 0xFF, 0x40])),
+            Err(FrameError::BadLength)
+        );
     }
 
     #[test]

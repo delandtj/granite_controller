@@ -25,6 +25,9 @@
 //!   hot-swap off, since the LM5069-2 would retry for ever.
 //! - [`link`] / [`update`] / [`events`] / [`log`]: the controller link,
 //!   the firmware update, the event ring and the log ring.
+//! - [`can_link`]: the CAN FD transport under that link (ADR 0005), over
+//!   a small frame-driver trait: an MCP2518FD on the G070 build, the
+//!   G0B1's own FDCAN, or a fake on the host.
 //! - [`plane`]: [`Plane`] itself, which is all of the above as one state
 //!   machine.
 //!
@@ -61,6 +64,7 @@ extern crate std;
 extern crate alloc;
 
 pub mod backup;
+pub mod can_link;
 pub mod config;
 pub mod crc32;
 pub mod device;
