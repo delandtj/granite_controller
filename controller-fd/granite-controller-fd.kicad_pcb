@@ -18775,7 +18775,7 @@
 				)
 			)
 		)
-		(property "Value" "25MHz 12pF YXC"
+		(property "Value" "25MHz 12pF JGHC"
 			(at 0 2.45 0)
 			(layer "F.Fab")
 			(uuid "ea8a389b-e013-4869-9211-b7e948285fad")
@@ -18820,7 +18820,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YXC"
+		(property "MANUFACTURER" "JGHC"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -18832,7 +18832,7 @@
 				)
 			)
 		)
-		(property "MPN" "X322525MOB4SI"
+		(property "MPN" "S3225000121060"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -18844,7 +18844,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C9006"
+		(property "LCSC" "C390773"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)

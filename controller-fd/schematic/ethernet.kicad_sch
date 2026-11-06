@@ -4785,7 +4785,7 @@
 				(justify right)
 			)
 		)
-		(property "Value" "25MHz 12pF YXC"
+		(property "Value" "25MHz 12pF JGHC"
 			(at 69.85 129.54 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4829,7 +4829,7 @@
 				)
 			)
 		)
-		(property "MANUFACTURER" "YXC"
+		(property "MANUFACTURER" "JGHC"
 			(at 77.47 127 0)
 			(hide yes)
 			(show_name no)
@@ -4840,7 +4840,7 @@
 				)
 			)
 		)
-		(property "MPN" "X322525MOB4SI"
+		(property "MPN" "S3225000121060"
 			(at 77.47 127 0)
 			(hide yes)
 			(show_name no)
@@ -4851,7 +4851,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C9006"
+		(property "LCSC" "C390773"
 			(at 77.47 127 0)
 			(hide yes)
 			(show_name no)

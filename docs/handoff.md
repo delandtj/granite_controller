@@ -1,4 +1,4 @@
-# Handoff - granite-plane (updated 2026-11-05)
+# Handoff - granite-plane (updated 2026-11-06)
 
 Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
 
@@ -59,11 +59,33 @@ de43d06), d800949 (no `factory` partition), 7290a45 (dispatcher stack),
 - FD boards: termination header, controller box header, J2 pin-1 mark
   done (details below). Before an FD order: JLC preview of C492419,
   C34945, 3D models.
-- OV_KILL: asked SixUnited for the Halo Gorgon board's maximum barrel
-  jack voltage (user, 2026-11-04). Waiting. The trip is U2 MCP65R46 +
-  R18 / R19 on PM-19V-250W-B; fallback R18 84.5k -> 76.8k (20.8 V
-  nominal; MCP65R46 reference accuracy still to check in its
-  datasheet). Plane boards do not change.
+- OV_KILL: decided 2026-11-05 without SixUnited's answer (user: at most
+  22 V). PM-19V-250W-B R18 84.5k -> 76.8k C26987: 20.83 V nominal,
+  19.83-21.87 V worst case (MCP65R46 datasheet tolerances, spec 4.12).
+  Board value / LCSC changed in place, no re-route; ERC 0, DRC 0, parity
+  clean. Check full-load-release overshoot on the first module (~0.3 V
+  margin when every tolerance stacks). Plane boards do not change.
+- JLC CPL, 2026-11-05: pcbkit jlcfab wrote bottom-side rotations as
+  r + correction; JLC reads them seen from below, 180 - r + correction
+  (KiBot mirror_bottom, kicad-jlcpcb-tools and the Fabrication Toolkit
+  all do this). Fixed in pcbkit da29f15. The old output had every
+  bottom part at KiCad 0 / 180 turned 180 deg (core U1, D1, link / chain
+  connectors, unit U207 / U208, optos, Q, D1 / D51, controller-fd J15).
+  All six fab/ sets (rev D and FD) regenerated. C492419 (270) and
+  C7424755 (0, no EasyEDA footprint) added to the tables. Still to do:
+  upload each fab/ set to JLC and look at the bottom side in the
+  preview (browser extension was not connected).
+- Order fixes, 2026-11-06 (from the JLC previews / stock at order time):
+  - controller-fd Y2: YXC C9006 had 0 stock -> JGHC S3225000121060
+    C390773 (25 MHz, 12 pF, +/-10 ppm), same pads, rotation 0, load caps
+    unchanged (dd998c8).
+  - XT30 C431092 / XT60 C98732 CPL centroid offsets set to 0 (were dy
+    -5.0 / -3.0, J1 showed 5 mm toward the edge on core-fd); rotations
+    refitted on the EasyEDA pads: XT30 180, XT60 270 (e8a7130). Affects
+    pp-48-core, pp-48-unit and both FD variants.
+  - PM-19V-250W rev A: R12 84.5k -> 76.8k C26987 (OV_KILL ~20.8 V, as
+    rev B), JLC rotation table added (LTC7810 LQFP 270, Kemet-E 180).
+    Rev B: Q3 SOT-89 dx -0.59. Fab sets regenerated (e611c09).
 - Rev C bench board (granite-cb374b, 192.168.64.115 by DHCP, on
   /dev/ttyACM0; admin password: ask the user). Flash backup of its old
   layout: ~/Granite/attic/revc-90649bcb3748-flash-2026-11-04.bin

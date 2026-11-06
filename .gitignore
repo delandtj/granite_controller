@@ -37,3 +37,10 @@ attic/power/*/output/
 
 # agent worktrees (Claude Code)
 .claude/worktrees/
+
+# mech: board STEP exports (regenerable), FreeCAD backups
+mech/step/
+*.FCBak
+
+# KiCad Fabrication Toolkit plugin settings
+power/*/fabrication-toolkit-options.json

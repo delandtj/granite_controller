@@ -77,8 +77,25 @@ Host standoff (one part per designator, JLC places one part each):
 Hardware: M2 x 5 pan or cheese head, A2 stainless, with a spring lock
 washer (DIN 127 / split ring) under the head. Engagement: 5 - 1.6
 (PCB) - 0.5 (washer) = 2.9 mm (the screw goes into the standoff's top,
-so the standoff length does not change it). Torque: 0.25 Nm (to confirm on a
-sample). Check: is the standoff thread through or blind, and how deep.
+so the standoff length does not change it). Torque: 0.15 Nm max, the
+datasheet's tightening torque for the M2 size (1.5 kgf.cm); the earlier 0.25 Nm
+was over it. That gives roughly 350-400 N clamp on an M2 (F = T / (0.2 d)).
+
+Standoff datasheet (Sinhoo PCB SMD NUT, LCSC C2916355, checked 2026-11-03):
+- Thread: through, over the full length, for L 0.5-10 mm; only L 11-30 is
+  blind (7 mm thread depth). The 7.0 mm part is through-threaded, so the
+  M2 x 5 cannot bottom out (2.9 mm engagement, 7 mm of thread).
+- Through means the bore is open to the host's plated pilot hole: solder can
+  wick up into the bottom of the thread (the datasheet warns about this and
+  rules out wave soldering). The screw only uses the top 2.9 mm, so a little
+  wicking is harmless; keep the paste apertures off the hole as drawn.
+- Material / plating: the datasheet gives brass C3604 (H59) for the parts with
+  a rated current; LCSC lists the part as tin-plated copper. The datasheet
+  itself does not decode the CTJ suffix, so tin plating rests on the LCSC
+  listing (to confirm on a sample).
+- Rated current for the M2 size: 30 A (S3 / S4 need 13.2 A cont., 20 A fault).
+- Dimensions as used: body 5.56, pilot 3.6 x 1.53, min. solder pad 6.2,
+  hole 3.73 +0.08.
 
 ## Aux contacts
 

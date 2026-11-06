@@ -9840,7 +9840,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Value" "84.5k"
+		(property "Value" "76.8k"
 			(at 0 -1.17 90)
 			(layer "B.Fab")
 			(uuid "7bb74268-e148-4296-a868-28dbf4f77b9f")
@@ -9889,7 +9889,7 @@
 				(justify mirror)
 			)
 		)
-		(property "LCSC" "C185390"
+		(property "LCSC" "C26987"
 			(at 0 0 90)
 			(layer "B.Fab")
 			(hide yes)
