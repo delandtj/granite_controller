@@ -1,4 +1,4 @@
-# Handoff - granite-plane (updated 2026-11-04, evening)
+# Handoff - granite-plane (updated 2026-11-06)
 
 Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
 
@@ -31,6 +31,17 @@ de43d06), d800949 (no `factory` partition), 7290a45 (dispatcher stack),
   C7424755 (0, no EasyEDA footprint) added to the tables. Still to do:
   upload each fab/ set to JLC and look at the bottom side in the
   preview (browser extension was not connected).
+- Order fixes, 2026-11-06 (from the JLC previews / stock at order time):
+  - controller-fd Y2: YXC C9006 had 0 stock -> JGHC S3225000121060
+    C390773 (25 MHz, 12 pF, +/-10 ppm), same pads, rotation 0, load caps
+    unchanged (dd998c8).
+  - XT30 C431092 / XT60 C98732 CPL centroid offsets set to 0 (were dy
+    -5.0 / -3.0, J1 showed 5 mm toward the edge on core-fd); rotations
+    refitted on the EasyEDA pads: XT30 180, XT60 270 (e8a7130). Affects
+    pp-48-core, pp-48-unit and both FD variants.
+  - PM-19V-250W rev A: R12 84.5k -> 76.8k C26987 (OV_KILL ~20.8 V, as
+    rev B), JLC rotation table added (LTC7810 LQFP 270, Kemet-E 180).
+    Rev B: Q3 SOT-89 dx -0.59. Fab sets regenerated (e611c09).
 - Rev C bench board (granite-cb374b, 192.168.64.115 by DHCP, on
   /dev/ttyACM0; admin password: ask the user). Flash backup of its old
   layout: ~/Granite/attic/revc-90649bcb3748-flash-2026-11-04.bin
