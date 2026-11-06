@@ -46,6 +46,7 @@ pub mod config;
 pub mod dispatch;
 pub mod hal;
 pub mod jobs;
+pub mod link_kind;
 pub mod modbus_map;
 pub mod modbus_server;
 pub mod msg;
