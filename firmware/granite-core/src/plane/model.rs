@@ -583,6 +583,11 @@ impl Plane {
                 Status::LinkErrors(e) => self.link_errors = e,
                 Status::SegmentErrors(e) => self.segment_errors = e,
                 Status::LastResetCause(c) => self.last_reset_cause = c,
+                // STATUS 0x1D, only sent by a plane on the CAN FD link
+                // (ADR 0005 decision 8). The controller keeps its own
+                // CAN counters; taking the plane's into the observed
+                // model belongs with the FD controller work, not here.
+                Status::CanErrors(_) => {}
             }
         }
         self.status_ms = now_ms;

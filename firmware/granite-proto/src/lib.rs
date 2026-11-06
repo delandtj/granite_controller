@@ -83,7 +83,9 @@ pub use info::{Info, Version};
 pub use log::LogLine;
 pub use record::{MAX_PAYLOAD, MAX_VALUE, RecordError, RecordWriter, Records};
 pub use slot::{Energy, NodeLed, PowerMinMax, Slot};
-pub use status::{CommandResult, LinkErrors, SegmentErrors, SlotSummary, Status, UpdateProgress};
+pub use status::{
+    CanErrors, CommandResult, LinkErrors, SegmentErrors, SlotSummary, Status, UpdateProgress,
+};
 pub use tags::*;
 pub use unit::Unit;
 

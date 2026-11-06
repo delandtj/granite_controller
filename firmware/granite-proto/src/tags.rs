@@ -170,7 +170,7 @@ pub const TAG_IMAGE_STATE: u8 = 0x0A;
 /// Bootloader version \[u8 x3\].
 pub const TAG_BOOTLOADER_VERSION: u8 = 0x0B;
 
-// --- STATUS tags (0x10-0x1B) -----------------------------------------
+// --- STATUS tags (0x10-0x1B, 0x1D) -----------------------------------
 
 /// Core input voltage \[u16, 10 mV\].
 pub const TAG_CORE_INPUT_V: u8 = 0x10;
@@ -203,6 +203,14 @@ pub const TAG_LAST_RESET_CAUSE: u8 = 0x1B;
 /// Slot summary \[u8 slot, u16 status, u16 V, u16 I, u16 P, u8 LED\],
 /// 10 bytes; see [`crate::SlotSummary`].
 pub const TAG_SLOT_SUMMARY: u8 = 0x1C;
+
+// --- STATUS tag of the CAN FD link (0x1D) ----------------------------
+
+/// CAN FD link errors \[u8 TEC, u8 REC, u16 bus-off count, u16 dropped,
+/// u16 TX full\]; see [`crate::CanErrors`]. ADR 0005 decision 8 (the
+/// "new tag" it reserves): the next free number after the SUMMARY
+/// record. A plane on the I2C link never sends it.
+pub const TAG_CAN_ERRORS: u8 = 0x1D;
 
 // --- SLOT tags (0x20-0x2F, 0x70) -------------------------------------
 
