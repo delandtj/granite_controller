@@ -939,7 +939,37 @@ impl State {
     pub fn to_json(&self) -> Result<String, String> {
         serde_json::to_string(self).map_err(|e| e.to_string())
     }
+
+    /// True when `self` says nothing new compared with `published`, the
+    /// payload last sent: what the retained `state` is republished on.
+    ///
+    /// `ts` and `uptime_s` move on their own and are ignored. `vin_v`
+    /// counts as unchanged while it stays within [`VIN_DEADBAND_V`] of
+    /// the published figure: the ADC wanders by a count (~11 mV, rev C
+    /// bench 2026-11-08), which otherwise republished `state` every
+    /// second. Compared against the published value, not the previous
+    /// sample, so a slow drift still goes out once it adds up.
+    pub fn same_content(&self, published: &State) -> bool {
+        let vin_close = match (self.vin_v, published.vin_v) {
+            (Some(now), Some(then)) => (now - then).abs() < VIN_DEADBAND_V,
+            (None, None) => true,
+            _ => false,
+        };
+        let mut a = self.clone();
+        let mut b = published.clone();
+        a.ts = 0;
+        b.ts = 0;
+        a.uptime_s = 0;
+        b.uptime_s = 0;
+        a.vin_v = None;
+        b.vin_v = None;
+        vin_close && a == b
+    }
 }
+
+/// How far `vin_v` may move from the published `state` before it counts
+/// as a change \[V\] (see [`State::same_content`]).
+pub const VIN_DEADBAND_V: f32 = 0.05;
 
 /// Round a plane's deciwatt figure to whole watts.
 fn div_round_u16(value: u16, by: u16) -> u16 {

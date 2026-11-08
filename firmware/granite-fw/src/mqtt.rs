@@ -880,7 +880,7 @@ fn run(ctx: &mut MqttCtx, stop: &AtomicBool) -> anyhow::Result<Outcome> {
             let state = build_state(&ctx.observed, &cfg, now);
             let changed = last_state
                 .as_ref()
-                .is_none_or(|last| !same_state(last, &state));
+                .is_none_or(|last| !state.same_content(last));
             if changed && dirty_since.is_none() {
                 dirty_since = Some(now);
             }
@@ -1019,18 +1019,6 @@ fn build_state(observed: &Arc<RwLock<Observed>>, cfg: &Config, now: u64) -> Stat
         .map(|o| o.clone())
         .unwrap_or_else(|_| Observed::new());
     State::from_observed(&snapshot, &cfg.nodes, now)
-}
-
-/// Compare two `state` payloads while ignoring the fields that move on
-/// their own: a timestamp and an uptime are not a change in state.
-fn same_state(a: &State, b: &State) -> bool {
-    let mut left = a.clone();
-    let mut right = b.clone();
-    left.ts = 0;
-    right.ts = 0;
-    left.uptime_s = 0;
-    right.uptime_s = 0;
-    left == right
 }
 
 /// True when something that only takes effect at connect time changed.

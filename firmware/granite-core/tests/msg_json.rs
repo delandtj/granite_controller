@@ -676,3 +676,52 @@ fn topic_tree() {
     assert_eq!(t.cmd(), "granite/default/granite-aabbcc/cmd");
     assert_eq!(t.ack("c-1"), "granite/default/granite-aabbcc/ack/c-1");
 }
+
+/// A `state` built from a snapshot whose only reading is `vin_mv`.
+fn state_with_vin(vin_mv: Option<u32>, ts: u64) -> State {
+    let mut o = Observed::new();
+    o.vin_mv = Stamped::new(vin_mv, ts);
+    State::from_observed(&o, &NodesCfg::default(), ts)
+}
+
+#[test]
+fn state_ignores_vin_jitter_within_the_deadband() {
+    // Rev C bench 2026-11-08: 18.645 / 18.656 / 18.667 V, one ADC count
+    // apart, republished `state` every second.
+    let published = state_with_vin(Some(18_656), 1_000);
+    for mv in [18_645, 18_667, 18_620, 18_700] {
+        assert!(
+            state_with_vin(Some(mv), 2_000).same_content(&published),
+            "{mv} mV is within the deadband of 18656 mV"
+        );
+    }
+}
+
+#[test]
+fn state_reports_a_vin_change_past_the_deadband() {
+    let published = state_with_vin(Some(18_656), 1_000);
+    assert!(!state_with_vin(Some(18_710), 2_000).same_content(&published));
+    assert!(!state_with_vin(Some(18_600), 2_000).same_content(&published));
+    assert!(!state_with_vin(None, 2_000).same_content(&published));
+    assert!(!state_with_vin(Some(18_656), 2_000).same_content(&state_with_vin(None, 1_000)));
+}
+
+#[test]
+fn state_drift_is_measured_against_the_published_value() {
+    // Small steps that each stay inside the deadband still add up: the
+    // comparison is with what was published, not with the last sample.
+    let published = state_with_vin(Some(18_600), 1_000);
+    assert!(state_with_vin(Some(18_640), 2_000).same_content(&published));
+    assert!(!state_with_vin(Some(18_660), 3_000).same_content(&published));
+}
+
+#[test]
+fn state_ts_and_uptime_are_not_a_change_but_other_fields_are() {
+    let mut a = state_with_vin(Some(18_656), 1_000);
+    let mut b = state_with_vin(Some(18_656), 9_000);
+    a.uptime_s = 1;
+    b.uptime_s = 9;
+    assert!(b.same_content(&a));
+    b.board_temp_c = Some(25.0);
+    assert!(!b.same_content(&a));
+}
