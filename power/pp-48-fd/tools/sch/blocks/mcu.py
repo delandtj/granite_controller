@@ -203,7 +203,7 @@ def block(N=2, tile=True):
     b.sym("R19", "Device:R", "1k", R0402, {"1": "LED_RUN", "2": "LEDRUN_A"}, at=(197 * G, yl), rot=90,
           desc="firmware heartbeat LED")
     b.sym("D4", "Device:LED", "GREEN RUN", LED0603, {"1": "GND", "2": "LEDRUN_A"}, at=(214 * G, yl), rot=180,
-          fields={"LCSC": "C2297"})
+          fields={"LCSC": "C12624"})
     b.wire("GND", [(221 * G, yl), ("D4", "1")])     # GND clear of the LED arrows
     b.wire("LED_RUN", [("U3", inv["LED_RUN"]), ("R19", "1")])
     b.name("LED_RUN", (182 * G, yl))

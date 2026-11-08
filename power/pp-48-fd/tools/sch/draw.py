@@ -94,7 +94,7 @@ LED0603 = "LED_SMD:LED_0603_1608Metric"
 
 BASIC = {   # JLC basic parts, by (value, footprint); verify in the JLC preview before ordering
     ("10k", R0402): "C25744", ("100k", R0402): "C25741", ("47k", R0402): "C25792", ("220", R0402): "C25091",
-    ("270", R0402): "C22775", ("2.2k", R0402): "C25879", ("4.7k", R0402): "C25900", ("1k", R0402): "C11702",
+    ("270", R0402): "C25099", ("2.2k", R0402): "C25879", ("4.7k", R0402): "C25900", ("1k", R0402): "C11702",
     ("10k", R0603): "C25804", ("100k", R0603): "C25803", ("100n", C0402): "C1525",
     # the rest of the core's passives (JLC parts API 2026-10-30; basic where JLC has one, else the
     # best-stocked extended part of the right rating)
@@ -122,6 +122,25 @@ BYPASS_WIRED = 50.8   # or wired to one along at most this much of the rail's wi
 
 class LintError(Exception):
     pass
+
+# LCSC code -> the chip package the part really is, for the codes whose package the part
+# number itself states (0603WAF1000T5E, 0402WGF2700TCE, KT-0603G, KT-0805G). JLC refused
+# R19 / R20 / R69 / R70 of the 2026-11-07 order: C22775 is a 100 ohm 0603, not the 270 ohm
+# 0402 this table claimed. BASIC is checked here at import and every part's LCSC field in
+# _lint; a code that is not listed is not checked (no catalogue offline), so add one
+# whenever the package is on record.
+LCSC_PKG = {"C22775": "0603", "C25099": "0402", "C2297": "0805", "C12624": "0603"}
+PKG_RE = re.compile(r"_(0402|0603|0805|1206|1210|2512)_")
+
+def pkg_err(what, code, fp):
+    """"<what>: LCSC <code> is a <pkg> part on a <pkg> footprint", or None if it fits"""
+    want, m = LCSC_PKG.get(code), PKG_RE.search(fp or "")
+    if want and m and m.group(1) != want:
+        return "%s: LCSC %s is a %s part on a %s footprint (%s)" % (what, code, want, m.group(1), fp)
+
+for _vfp, _code in BASIC.items():
+    _e = pkg_err("value table %r" % (_vfp,), _code, _vfp[1])
+    if _e: raise LintError(_e)
 
 def snap(v, g=STEP): return R(round(v / g) * g)
 def is_pin(e): return isinstance(e[0], str)
@@ -428,6 +447,9 @@ class Block:
     def _lint(self, netpins):
         """collects every problem; one LintError lists them all"""
         self.errs = []
+        for r in self.order:
+            e = pkg_err(r, self.syms[r].fields.get("LCSC"), self.syms[r].fp)
+            if e: self._err(e)
         pins = [(self.syms[r].pin_xy(num), net, r, num) for net, ps in netpins.items() for r, num in ps]
         bodies = [(r, self.syms[r].bbox()) for r in self.order]
         for net, a, b in self.segs:

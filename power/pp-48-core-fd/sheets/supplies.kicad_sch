@@ -5883,7 +5883,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" "C2297"
+		(property "LCSC" "C12624"
 			(at 154.94 71.12 0)
 			(hide yes)
 			(show_name no)
@@ -7991,7 +7991,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" "C2297"
+		(property "LCSC" "C12624"
 			(at 186.69 129.54 0)
 			(hide yes)
 			(show_name no)
