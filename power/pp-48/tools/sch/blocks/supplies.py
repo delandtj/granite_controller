@@ -165,7 +165,7 @@ def flybuck(b, gx, gy):
           fields={"LCSC": "C353315"}, desc="13 V TVS: caps VOUT2 when the controller is unplugged (the Fly-Buck secondary rises unloaded)")
     b.sym("R9", "Device:R", "4.7k", R0603, {"1": "CTRL_12V", "2": "LED12_A"}, at=P(90, -19), desc="12V LED, also the ~2 mA preload")
     b.sym("D5", "Device:LED", "GREEN 12V", LED0603, {"1": "CTRL_GND", "2": "LED12_A"}, at=P(90, -10), rot=90,
-          fields={"LCSC": "C2297"}, ref_at=(-3.81, -0.889), val_at=(-8.89, 1.651))     # left, clear of J4's CTRL_GND
+          fields={"LCSC": "C12624"}, ref_at=(-3.81, -0.889), val_at=(-8.89, 1.651))     # left, clear of J4's CTRL_GND
 
     b.sym("J4", "Connector_Generic:Conn_01x02", "12V AUX OUT", "Connector_JST:JST_PH_B2B-PH-K_1x02_P2.00mm_Vertical",
           {"1": "CTRL_12V", "2": "CTRL_GND"}, at=P(102, -22), fields={"LCSC": "C131337"},
@@ -194,7 +194,7 @@ def block(N=2):
     P, rail = lm5164(b, *G1, "U1", "3.3 V", dict(en="EN1", ron="RON1", fb="FB1", bst="BST1", sw="SW1", inj="INJ1", vout="+3V3"),
                      "41.2k", "33u", "86.6k", "22u 10V", "1.5n", 3, 4, lcsc_l="C840528")
     b.sym("R18", "Device:R", "1k", R0402, {"1": "+3V3", "2": "LED33_A"}, at=P(75, 3), desc="3V3 LED")
-    b.sym("D3", "Device:LED", "GREEN 3V3", LED0603, {"1": "GND", "2": "LED33_A"}, at=P(75, 12), rot=90, fields={"LCSC": "C2297"})
+    b.sym("D3", "Device:LED", "GREEN 3V3", LED0603, {"1": "GND", "2": "LED33_A"}, at=P(75, 12), rot=90, fields={"LCSC": "C12624"})
     b.wire("+3V3", rail + [P(75, -2), ("R18", "1")])
     b.wire("LED33_A", [("R18", "2"), ("D3", "2")])
     b.wire("GND", [P(75, 17), ("D3", "1")])          # GND below the LED arrows

@@ -5448,7 +5448,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" "C2297"
+		(property "LCSC" "C12624"
 			(at 248.92 213.36 0)
 			(hide yes)
 			(show_name no)

@@ -265,11 +265,11 @@ def slot(b, s):
         desc="JST GH 1x4, latching: 1 PWR_SW, 2 RST_SW, 3 PLED+, 4 PLED- (drawn 2x2, pads 1-4)")
     sym("U6", *TLP176, {"1": "PWRD_A", "3": "PRESS_RTN", "4": "GND", "6": "PWR_SW"}, (208, 58),
         fields={"LCSC": "C5370540"}, desc="photoMOS front-panel PWR_SW contact")
-    R(19, "270", R0402, {"1": "PWRD", "2": "PWRD_A"}, (186, 56), rot=90, fields={"LCSC": "C22775"},
+    R(19, "270", R0402, {"1": "PWRD", "2": "PWRD_A"}, (186, 56), rot=90, fields={"LCSC": "C25099"},
       desc="photoMOS LED, ~6.5 mA from the expander")
     sym("U7", *TLP176, {"1": "RSTD_A", "3": "PRESS_RTN", "4": "GND", "6": "RST_SW"}, (246, 46), mirror="y",
         fields={"LCSC": "C5370540"}, desc="photoMOS front-panel RST_SW contact")
-    R(20, "270", R0402, {"1": "RSTD", "2": "RSTD_A"}, (268, 44), rot=270, fields={"LCSC": "C22775"},
+    R(20, "270", R0402, {"1": "RSTD", "2": "RSTD_A"}, (268, 44), rot=270, fields={"LCSC": "C25099"},
       desc="photoMOS LED, ~6.5 mA from the expander")
     sym("U8", "Isolator:TLP291", "TLP291", "pp48:SOIC-4_4.55x2.6mm_P1.27mm",
         {"1": "PLED_A", "2": "PLED_N", "3": "GND", "4": "LED"}, (226, 62), rot=270, mirror="y",

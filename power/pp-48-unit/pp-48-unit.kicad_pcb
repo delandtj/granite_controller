@@ -32151,7 +32151,7 @@
 				(justify mirror)
 			)
 		)
-		(property "LCSC" "C22775"
+		(property "LCSC" "C25099"
 			(at 0 0 270)
 			(layer "B.Fab")
 			(hide yes)
@@ -37296,7 +37296,7 @@
 				(justify mirror)
 			)
 		)
-		(property "LCSC" "C22775"
+		(property "LCSC" "C25099"
 			(at 0 0 270)
 			(layer "B.Fab")
 			(hide yes)
@@ -38691,7 +38691,7 @@
 				(justify mirror)
 			)
 		)
-		(property "LCSC" "C22775"
+		(property "LCSC" "C25099"
 			(at 0 0 270)
 			(layer "B.Fab")
 			(hide yes)
@@ -39029,7 +39029,7 @@
 				(justify mirror)
 			)
 		)
-		(property "LCSC" "C22775"
+		(property "LCSC" "C25099"
 			(at 0 0 270)
 			(layer "B.Fab")
 			(hide yes)
