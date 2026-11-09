@@ -4,7 +4,7 @@
 Usage: place_core.py <in.kicad_pcb> <out.kicad_pcb>
 
 CAN FD (2026-11-04): 68 x 72 mm, board x 43.5-111.5 (the rev D core grown 8.5 mm left and 3.5 mm right).
-The link domain (LINK_GND, CANH / CANL, AUX_12V, ISO_12V, LINK_5V: the rev D CTRL island) must join the
+The link domain (LINK_GND, CAN_P / CAN_N, AUX_12V, ISO_12V, LINK_5V: the rev D CTRL island) must join the
 left link plug J2 to the right link socket J3 without cutting the bus world in two, so it now runs along
 the whole top edge: the island block top left (ISO1044 U4 straddling its bottom edge where the ISO1640
 was), a strip along the top edge to the right edge, a channel down each edge to the link connector
@@ -91,8 +91,8 @@ LINKP = {
     'U7': (9.0, 13.0, 0, F), 'C27': (9.0, 8.6, 0, F), 'C26': (5.0, 17.0, 180, F),
     'D10': (17.0, 13.0, 180, F),
     # link ESD at each connector, the termination above the socket
-    # the termination: 2x2 jumper-cap header JP1 (origin = pin 1 CANH; rot 90: pin 2 TERM_H above it, pins 3 / 4
-    # CANL / TERM_L to the right), R25 / R26 over its TERM row, C32 above them (courtyards: D9 0.6 mm down)
+    # the termination: 2x2 jumper-cap header JP1 (origin = pin 1 CAN_P; rot 90: pin 2 TERM_H above it, pins 3 / 4
+    # CAN_N / TERM_L to the right), R25 / R26 over its TERM row, C32 above them (courtyards: D9 0.6 mm down)
     'D8': (-5.0, 25.0, 270, F), 'D9': (53.6, 25.6, 90, F),
     'JP1': (51.5, 21.8, 90, F),
     'R25': (51.5, 15.9, 90, F), 'R26': (54.04, 15.9, 270, F), 'C32': (52.77, 13.3, 0, F),

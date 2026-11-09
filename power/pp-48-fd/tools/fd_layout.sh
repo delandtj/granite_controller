@@ -15,7 +15,7 @@
 #   prune (3 rounds) -> pcbkit silk -> nosilk J2 / J3 / J301. Checks: isocheck.py <filled board> 2.0.
 #   Termination header (2026-11-04, ADR 0006 decision 8: 2x2 jumper-cap header JP1 for the solder jumpers
 #   JP1 / JP2) and J2's pin 1 silk mark: on the routed board, fdsync.py -> fd/core_term.py (places D9 / JP1 /
-#   R25 / R26 / C32 from place_core.py, redraws the channel's CANH / CANL / TERM_* / AUX_12V copper and the
+#   R25 / R26 / C32 from place_core.py, redraws the channel's CAN_P / CAN_N / TERM_* / AUX_12V copper and the
 #   mark); a fresh run of the sequence above places them by place_core.py and lets KRT route them instead.
 # unit: rev D board -> fdsync.py -> place_unit.py (J303 / J304 at v 30, C201 turned, C202 / H3 / Q10 / R31 /
 #   R58 moved, termination in the margin) -> fdstrip.py fd/unit-regions.json -> route_unit.py (link() band

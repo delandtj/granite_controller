@@ -2552,7 +2552,7 @@
 		)
 		(uuid "b7f62134-e38c-551a-a342-376b0d044319")
 	)
-	(label "CANH"
+	(label "CAN_P"
 		(at 99.06 63.5 0)
 		(effects
 			(font
@@ -2562,7 +2562,7 @@
 		)
 		(uuid "f1059fd4-1405-5408-86f3-026bea1777ff")
 	)
-	(label "CANL"
+	(label "CAN_N"
 		(at 99.06 66.04 0)
 		(effects
 			(font
@@ -2572,7 +2572,7 @@
 		)
 		(uuid "c5c05b7d-9a95-5282-91a5-b642e72586a5")
 	)
-	(label "CANH"
+	(label "CAN_P"
 		(at 147.32 60.96 180)
 		(effects
 			(font
@@ -2582,7 +2582,7 @@
 		)
 		(uuid "47bdc09f-9eeb-53b3-ba07-901276e14b64")
 	)
-	(label "CANL"
+	(label "CAN_N"
 		(at 160.02 60.96 0)
 		(effects
 			(font
@@ -2592,7 +2592,7 @@
 		)
 		(uuid "0969009e-e033-57db-a4ee-9377b97a4bf5")
 	)
-	(label "CANH"
+	(label "CAN_P"
 		(at 147.32 81.28 180)
 		(effects
 			(font
@@ -2602,7 +2602,7 @@
 		)
 		(uuid "e54a3c36-c79c-581f-8574-46f84a154b4b")
 	)
-	(label "CANL"
+	(label "CAN_N"
 		(at 160.02 81.28 0)
 		(effects
 			(font
@@ -2612,7 +2612,7 @@
 		)
 		(uuid "c27abb56-54c0-505d-84b0-8f31afa1ab4a")
 	)
-	(label "CANH"
+	(label "CAN_P"
 		(at 177.8 66.04 90)
 		(effects
 			(font
@@ -2622,7 +2622,7 @@
 		)
 		(uuid "733d60af-b804-59b2-bd63-da00a8458bfd")
 	)
-	(label "CANL"
+	(label "CAN_N"
 		(at 182.88 66.04 90)
 		(effects
 			(font
@@ -2632,7 +2632,7 @@
 		)
 		(uuid "2b323396-98de-53ed-ae04-f5969488387d")
 	)
-	(label "CANH"
+	(label "CAN_P"
 		(at 200.66 66.04 90)
 		(effects
 			(font
@@ -2642,7 +2642,7 @@
 		)
 		(uuid "bb73239a-11c0-5af4-87e2-b0c69b9470f5")
 	)
-	(label "CANL"
+	(label "CAN_N"
 		(at 205.74 66.04 90)
 		(effects
 			(font
@@ -2652,7 +2652,7 @@
 		)
 		(uuid "1e2eb1bb-1a7a-5c86-8b0c-3cecbf7df20b")
 	)
-	(label "CANH"
+	(label "CAN_P"
 		(at 134.62 106.68 180)
 		(effects
 			(font
@@ -2662,7 +2662,7 @@
 		)
 		(uuid "7c5d4c7d-81f0-51ed-90ce-929586836d8e")
 	)
-	(label "CANL"
+	(label "CAN_N"
 		(at 134.62 109.22 180)
 		(effects
 			(font
@@ -2792,7 +2792,7 @@
 		)
 		(uuid "d783416a-e248-548b-8e76-eb7daa4c09fa")
 	)
-	(text "LINK  J2 IN plug / J3 OUT socket: 1 CANH 2 CANL 3/4 LINK_GND 5/6 AUX_12V"
+	(text "LINK  J2 IN plug / J3 OUT socket: 1 CAN_P 2 CAN_N 3/4 LINK_GND 5/6 AUX_12V"
 		(exclude_from_sim no)
 		(at 139.7 33.02 0)
 		(effects
@@ -3635,7 +3635,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "plane link from the left neighbour (left edge, 2x3 right-angle plug); pin n = pin n: 1 CANH 2 CANL 3/4 LINK_GND 5/6 AUX_12V"
+		(property "Description" "plane link from the left neighbour (left edge, 2x3 right-angle plug); pin n = pin n: 1 CAN_P 2 CAN_N 3/4 LINK_GND 5/6 AUX_12V"
 			(at 152.4 63.5 0)
 			(hide yes)
 			(show_name no)
@@ -3871,7 +3871,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "CAN ESD / TVS (24 V working) on CANH / CANL at J2 LINK IN"
+		(property "Description" "CAN ESD / TVS (24 V working) on CAN_P / CAN_N at J2 LINK IN"
 			(at 180.34 71.12 0)
 			(hide yes)
 			(show_name no)
@@ -3980,7 +3980,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "CAN ESD / TVS (24 V working) on CANH / CANL at J3 LINK OUT"
+		(property "Description" "CAN ESD / TVS (24 V working) on CAN_P / CAN_N at J3 LINK OUT"
 			(at 203.2 71.12 0)
 			(hide yes)
 			(show_name no)
@@ -4089,7 +4089,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "right-end termination, 2x2 2.54 mm header: jumper caps on 1-2 (CANH) and 3-4 (CANL), both on the last board of the row only, none elsewhere (caps C5305, not assembled)"
+		(property "Description" "right-end termination, 2x2 2.54 mm header: jumper caps on 1-2 (CAN_P) and 3-4 (CAN_N), both on the last board of the row only, none elsewhere (caps C5305, not assembled)"
 			(at 139.7 106.68 0)
 			(hide yes)
 			(show_name no)

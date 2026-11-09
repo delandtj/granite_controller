@@ -27507,7 +27507,7 @@
 				)
 			)
 		)
-		(property "Description" "right-end termination, 2x2 2.54 mm header: jumper caps on 1-2 (CANH) and 3-4 (CANL), both on the last board of the row only, none elsewhere (caps C5305, not assembled)"
+		(property "Description" "right-end termination, 2x2 2.54 mm header: jumper caps on 1-2 (CAN_P) and 3-4 (CAN_N), both on the last board of the row only, none elsewhere (caps C5305, not assembled)"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -27717,7 +27717,7 @@
 			(drill 1)
 			(layers "*.Cu" "*.Mask")
 			(remove_unused_layers no)
-			(net "/Chain/CANH")
+			(net "/Chain/CAN_P")
 			(uuid "42c67afb-b931-47d9-b99f-a19c00420453")
 		)
 		(pad "2" thru_hole circle
@@ -27735,7 +27735,7 @@
 			(drill 1)
 			(layers "*.Cu" "*.Mask")
 			(remove_unused_layers no)
-			(net "/Chain/CANL")
+			(net "/Chain/CAN_N")
 			(uuid "b835dd2c-7323-4661-b4f1-badc064cf572")
 		)
 		(pad "4" thru_hole circle
@@ -33805,7 +33805,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Description" "plane link from the left neighbour (left edge, 2x3 right-angle plug); pin n = pin n: 1 CANH 2 CANL 3/4 LINK_GND 5/6 AUX_12V"
+		(property "Description" "plane link from the left neighbour (left edge, 2x3 right-angle plug); pin n = pin n: 1 CAN_P 2 CAN_N 3/4 LINK_GND 5/6 AUX_12V"
 			(at 0 0 0)
 			(layer "B.Fab")
 			(hide yes)
@@ -34120,7 +34120,7 @@
 			(drill 1)
 			(layers "*.Cu" "*.Mask")
 			(remove_unused_layers no)
-			(net "/Chain/CANH")
+			(net "/Chain/CAN_P")
 			(uuid "fea2a7ee-53b2-4d57-a442-512fea78949e")
 		)
 		(pad "2" thru_hole circle
@@ -34129,7 +34129,7 @@
 			(drill 1)
 			(layers "*.Cu" "*.Mask")
 			(remove_unused_layers no)
-			(net "/Chain/CANL")
+			(net "/Chain/CAN_N")
 			(uuid "8e70b1c0-ddc0-4c95-93f3-97513ee3a87d")
 		)
 		(pad "3" thru_hole circle
@@ -41461,7 +41461,7 @@
 			(drill 1)
 			(layers "*.Cu" "*.Mask")
 			(remove_unused_layers no)
-			(net "/Chain/CANH")
+			(net "/Chain/CAN_P")
 			(uuid "1a017bf0-864e-4d38-886d-d44b4c2a0a7a")
 		)
 		(pad "2" thru_hole circle
@@ -41470,7 +41470,7 @@
 			(drill 1)
 			(layers "*.Cu" "*.Mask")
 			(remove_unused_layers no)
-			(net "/Chain/CANL")
+			(net "/Chain/CAN_N")
 			(uuid "e41530fe-a8fd-4184-8dab-0f6db5dd8056")
 		)
 		(pad "3" thru_hole circle
@@ -64957,25 +64957,25 @@
 	(segment
 		(start 95 119)
 		(end 96.4 120.4)
-		(width 0.3)
+		(width 0.2)
 		(layer "F.Cu")
-		(net "/Chain/CANH")
+		(net "/Chain/CAN_P")
 		(uuid "27eb67a6-5ee4-4542-b5c0-dbbcd9a58cbf")
 	)
 	(segment
 		(start 96.4 120.4)
 		(end 98.6 120.4)
-		(width 0.3)
+		(width 0.2)
 		(layer "F.Cu")
-		(net "/Chain/CANH")
+		(net "/Chain/CAN_P")
 		(uuid "2f4bb2ef-836b-47be-8c99-b3c1a75d3acc")
 	)
 	(segment
 		(start 95 117.4)
 		(end 95 119)
-		(width 0.3)
+		(width 0.2)
 		(layer "F.Cu")
-		(net "/Chain/CANH")
+		(net "/Chain/CAN_P")
 		(uuid "73a542f6-59f5-49fe-a36a-26d1fa162d44")
 	)
 	(via
@@ -64984,7 +64984,7 @@
 		(drill 0.2)
 		(layers "F.Cu" "B.Cu")
 		(free yes)
-		(net "/Chain/CANH")
+		(net "/Chain/CAN_P")
 		(uuid "12e6d86f-0066-4f9e-9cb0-425109214e15")
 	)
 	(segment
@@ -64992,7 +64992,7 @@
 		(end 97.58 130)
 		(width 0.2)
 		(layer "B.Cu")
-		(net "/Chain/CANH")
+		(net "/Chain/CAN_P")
 		(uuid "31b89edd-1133-4cd9-926b-42fb376821f3")
 	)
 	(segment
@@ -65000,7 +65000,7 @@
 		(end 160.93 120.4)
 		(width 0.2)
 		(layer "B.Cu")
-		(net "/Chain/CANH")
+		(net "/Chain/CAN_P")
 		(uuid "922d43c4-6f15-4c4d-9e78-7c68a66d091b")
 	)
 	(segment
@@ -65008,7 +65008,7 @@
 		(end 160.93 130)
 		(width 0.2)
 		(layer "B.Cu")
-		(net "/Chain/CANH")
+		(net "/Chain/CAN_P")
 		(uuid "fc1b5495-520d-447f-9b20-dbc0a148274c")
 	)
 	(segment
@@ -65016,7 +65016,7 @@
 		(end 163.47 130)
 		(width 0.2)
 		(layer "B.Cu")
-		(net "/Chain/CANL")
+		(net "/Chain/CAN_N")
 		(uuid "1449171f-ec02-44e5-b42a-b9102fca3321")
 	)
 	(segment
@@ -65024,7 +65024,7 @@
 		(end 95.04 130)
 		(width 0.2)
 		(layer "B.Cu")
-		(net "/Chain/CANL")
+		(net "/Chain/CAN_N")
 		(uuid "370153cf-ee43-425e-b928-f99390ec5884")
 	)
 	(segment
@@ -65032,15 +65032,15 @@
 		(end 163.47 119.6)
 		(width 0.2)
 		(layer "B.Cu")
-		(net "/Chain/CANL")
+		(net "/Chain/CAN_N")
 		(uuid "7c7a680a-0f1e-43cd-a038-565285b90db8")
 	)
 	(segment
 		(start 97.54 117.4)
 		(end 97.54 119.6)
-		(width 0.3)
+		(width 0.2)
 		(layer "B.Cu")
-		(net "/Chain/CANL")
+		(net "/Chain/CAN_N")
 		(uuid "94fba877-cef9-4f92-b797-f0fda6358826")
 	)
 	(segment

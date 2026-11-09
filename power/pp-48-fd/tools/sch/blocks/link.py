@@ -1,7 +1,7 @@
 """Link sheet: the plane link over isolated CAN FD (docs/adr/0006-plane-link-can-fd.md).
 
 The core sits in one row of boards on the mounting bar; the link is one
-isolated net set along the row (LINK_GND, CANH, CANL, AUX_12V), shared with
+isolated net set along the row (LINK_GND, CAN_P, CAN_N, AUX_12V), shared with
 the controller, never tied to the plane's GND.
 
 - U4 ISO1044BDR (C2878225): isolated CAN FD transceiver. Side 1 on the
@@ -19,12 +19,12 @@ the controller, never tied to the plane's GND.
   the row's AUX_12V, the controller takes its 12 V from it.
 - J2 LINK IN (left edge, 2x3 right-angle plug A2541WR-2x3P) and J3 LINK OUT
   (right edge, 2x3 right-angle socket A2541HWR-2x3P), pin n = pin n:
-  1 CANH, 2 CANL, 3 / 4 LINK_GND, 5 / 6 AUX_12V (decision 3).
-- D8 / D9 NUP2105L: 2-line CAN TVS (24 V working) on CANH / CANL at each
+  1 CAN_P, 2 CAN_N, 3 / 4 LINK_GND, 5 / 6 AUX_12V (decision 3).
+- D8 / D9 NUP2105L: 2-line CAN TVS (24 V working) on CAN_P / CAN_N at each
   connector.
 - Right-end split termination (decision 8): R25 / R26 2 x 60.4R, C32 4.7 nF
   from the mid point to LINK_GND, behind the 2x2 2.54 mm pin header JP1
-  (C492419): 1 CANH / 2 TERM_H and 3 CANL / 4 TERM_L, one jumper cap per
+  (C492419): 1 CAN_P / 2 TERM_H and 3 CAN_N / 4 TERM_L, one jumper cap per
   leg (1-2, 3-4). No caps by default; both caps fitted on the last board of
   the row (two standard 2.54 mm caps, e.g. C5305, not assembled, not in the
   board BOM). Two legs so that an open termination leaves no capacitive
@@ -45,7 +45,7 @@ TERM_SYM = "Connector_Generic:Conn_02x02_Odd_Even"
 TERM_FP = "Connector_PinHeader_2.54mm:PinHeader_2x02_P2.54mm_Vertical"
 TERM_HDR = {"LCSC": "C492419", "MPN": "XFCN PZ254V-12-4P"}
 TERM_CAP = "C5305"                                # 2.54 mm jumper cap (accessory: 2 per row, last board)
-PINS = {"1": "CANH", "2": "CANL", "3": "LINK_GND", "4": "LINK_GND", "5": "AUX_12V", "6": "AUX_12V"}
+PINS = {"1": "CAN_P", "2": "CAN_N", "3": "LINK_GND", "4": "LINK_GND", "5": "AUX_12V", "6": "AUX_12V"}
 ESD = ("Power_Protection:NUP2105L", "NUP2105L", "Package_TO_SOT_SMD:SOT-23",
        {"LCSC": "C14486", "MPN": "onsemi NUP2105LT1G"})
 TERM_R = {"LCSC": "C144645", "MPN": "Yageo AC0603FR-0760R4L"}
@@ -58,24 +58,24 @@ def P(x, y, d=None):
 
 
 def connectors(b, j_in, j_out, x, y_in, y_out, nets=PINS):
-    """link plug (IN) and socket (OUT), pin n = pin n; CANH / CANL tied by name"""
+    """link plug (IN) and socket (OUT), pin n = pin n; CAN_P / CAN_N tied by name"""
     b.sym(j_in, SYM, "LINK IN", PLUG, dict(nets), at=P(x, y_in), fields=PLUG_FIELDS, ref_at=(1.27, -7.62),
           desc="plane link from the left neighbour (left edge, 2x3 right-angle plug); pin n = pin n: "
-               "1 CANH 2 CANL 3/4 LINK_GND 5/6 AUX_12V")
+               "1 CAN_P 2 CAN_N 3/4 LINK_GND 5/6 AUX_12V")
     b.sym(j_out, SYM, "LINK OUT", SOCKET, dict(nets), at=P(x, y_out), fields=SOCKET_FIELDS, ref_at=(1.27, -7.62),
           desc="plane link to the right neighbour (right edge, 2x3 right-angle socket), same pinout")
     for j in (j_in, j_out):
-        b.tie("CANH", (j, "1"), 180)
-        b.tie("CANL", (j, "2"), 0)
+        b.tie("CAN_P", (j, "1"), 180)
+        b.tie("CAN_N", (j, "2"), 0)
 
 
 def termination(b, refs, x, y, lgnd="LINK_GND"):
-    """split termination behind a 2x2 jumper-cap header; refs = (JP header, R CANH leg, R CANL leg, C), header at
-    (x, y): 1 CANH / 2 TERM_H on row y, 3 CANL / 4 TERM_L on row y + 2; a cap on 1-2 and one on 3-4 close it"""
+    """split termination behind a 2x2 jumper-cap header; refs = (JP header, R CAN_P leg, R CAN_N leg, C), header at
+    (x, y): 1 CAN_P / 2 TERM_H on row y, 3 CAN_N / 4 TERM_L on row y + 2; a cap on 1-2 and one on 3-4 close it"""
     j, ra, rb, c = refs
-    b.sym(j, TERM_SYM, "TERM", TERM_FP, {"1": "CANH", "2": "TERM_H", "3": "CANL", "4": "TERM_L"}, at=P(x, y),
+    b.sym(j, TERM_SYM, "TERM", TERM_FP, {"1": "CAN_P", "2": "TERM_H", "3": "CAN_N", "4": "TERM_L"}, at=P(x, y),
           fields=TERM_HDR, ref_at=(1.27, -5.08),
-          desc="right-end termination, 2x2 2.54 mm header: jumper caps on 1-2 (CANH) and 3-4 (CANL), both on the "
+          desc="right-end termination, 2x2 2.54 mm header: jumper caps on 1-2 (CAN_P) and 3-4 (CAN_N), both on the "
                "last board of the row only, none elsewhere (caps %s, not assembled)" % TERM_CAP)
     xr = x + 6                                       # header pins 2 / 4
     b.sym(ra, "Device:R", "60.4", R0603, {"1": "TERM_H", "2": "TERM_MID"}, at=P(xr + 13, y), rot=90, fields=TERM_R,
@@ -88,8 +88,8 @@ def termination(b, refs, x, y, lgnd="LINK_GND"):
     b.wire("TERM_L", [(j, "4"), P(xr + 1, y + 2), P(xr + 1, y + 4), (rb, "2")])
     b.wire("TERM_MID", [(ra, "2"), P(xr + 18, y), P(xr + 18, y + 4), (rb, "1")])
     b.wire("TERM_MID", [P(xr + 18, y + 2), (c, "1")])
-    b.tie("CANH", (j, "1"), 180)
-    b.tie("CANL", (j, "3"), 180)
+    b.tie("CAN_P", (j, "1"), 180)
+    b.tie("CAN_N", (j, "3"), 180)
 
 
 def block(N=2):
@@ -100,7 +100,7 @@ def block(N=2):
     X, Y = 70, 50                                    # U4 origin (grid units)
 
     b.sym("U4", "Interface_CAN_LIN:ISO1044BD", "ISO1044BDR", "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
-          {"1": "+3V3", "2": "CAN_TX", "3": "CAN_RX", "4": "GND", "5": "CANL", "6": "CANH", "7": "LINK_GND", "8": "LINK_5V"},
+          {"1": "+3V3", "2": "CAN_TX", "3": "CAN_RX", "4": "GND", "5": "CAN_N", "6": "CAN_P", "7": "LINK_GND", "8": "LINK_5V"},
           at=P(X, Y), fields={"LCSC": "C2878225", "MPN": "TI ISO1044BDR"}, ref_at=(0, -8.89),
           desc="isolated CAN FD transceiver (5 Mbit/s); side 1 = plane (TXD / RXD to the MCP2518FD or the G0B1 FDCAN1), "
                "side 2 = the link domain (LINK_GND, LINK_5V)")
@@ -124,8 +124,8 @@ def block(N=2):
         "LINK_5V", "right")
     b.port("CAN_TX", "input", side="left", pos=("U4", "2"))
     b.port("CAN_RX", "output", side="left", pos=("U4", "3"))
-    b.tie("CANH", ("U4", "6"), 0)
-    b.tie("CANL", ("U4", "5"), 0)
+    b.tie("CAN_P", ("U4", "6"), 0)
+    b.tie("CAN_N", ("U4", "5"), 0)
 
     # ---------------------------------------------------------- LINK_5V regulator and the AUX_12V OR diode
     yl = Y + 34
@@ -143,10 +143,10 @@ def block(N=2):
     XJ = 120
     connectors(b, "J2", "J3", XJ, Y, Y + 16)
     for d, x in (("D8", XJ + 22), ("D9", XJ + 40)):
-        b.sym(d, ESD[0], ESD[1], ESD[2], {"1": "CANH", "2": "CANL", "3": "LINK_GND"}, at=P(x, Y + 6), fields=ESD[3],
-              desc="CAN ESD / TVS (24 V working) on CANH / CANL at %s" % ("J2 LINK IN" if d == "D8" else "J3 LINK OUT"))
-        b.tie("CANH", (d, "1"), 90)
-        b.tie("CANL", (d, "2"), 90)
+        b.sym(d, ESD[0], ESD[1], ESD[2], {"1": "CAN_P", "2": "CAN_N", "3": "LINK_GND"}, at=P(x, Y + 6), fields=ESD[3],
+              desc="CAN ESD / TVS (24 V working) on CAN_P / CAN_N at %s" % ("J2 LINK IN" if d == "D8" else "J3 LINK OUT"))
+        b.tie("CAN_P", (d, "1"), 90)
+        b.tie("CAN_N", (d, "2"), 90)
     termination(b, ("JP1", "R25", "R26", "C32"), XJ - 10, Y + 34)
 
     for ref, mpn in (("C24", "Samsung CL05B104KO5NNNC"), ("C25", "Samsung CL05B104KO5NNNC"),
@@ -158,6 +158,6 @@ def block(N=2):
             b.text("|", P(X, y), size=1.5)
     b.text("PLANE (+3V3 / GND)", P(X - 30, Y - 20))
     b.text("LINK DOMAIN (LINK_GND)", P(X + 4, Y - 20))
-    b.text("LINK  J2 IN plug / J3 OUT socket: 1 CANH 2 CANL 3/4 LINK_GND 5/6 AUX_12V", P(XJ - 10, Y - 24))
+    b.text("LINK  J2 IN plug / J3 OUT socket: 1 CAN_P 2 CAN_N 3/4 LINK_GND 5/6 AUX_12V", P(XJ - 10, Y - 24))
     b.text("TERMINATION  JP1: jumper caps on 1-2 and 3-4 on the last board of the row only", P(XJ - 10, Y + 28))
     return b.finish()

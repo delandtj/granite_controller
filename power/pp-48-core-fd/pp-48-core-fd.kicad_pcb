@@ -3699,7 +3699,7 @@
 				)
 			)
 		)
-		(property "Description" "CAN ESD / TVS (24 V working) on CANH / CANL at J2 LINK IN"
+		(property "Description" "CAN ESD / TVS (24 V working) on CAN_P / CAN_N at J2 LINK IN"
 			(at 0 0 270)
 			(layer "F.Fab")
 			(hide yes)
@@ -4021,7 +4021,7 @@
 			(size 1.475 0.6)
 			(layers "F.Cu" "F.Mask" "F.Paste")
 			(roundrect_rratio 0.25)
-			(net "/Link/CANH")
+			(net "/Link/CAN_P")
 			(uuid "243a1981-b81f-44f3-877d-5193405cf099")
 		)
 		(pad "2" smd roundrect
@@ -4029,7 +4029,7 @@
 			(size 1.475 0.6)
 			(layers "F.Cu" "F.Mask" "F.Paste")
 			(roundrect_rratio 0.25)
-			(net "/Link/CANL")
+			(net "/Link/CAN_N")
 			(uuid "c533fed8-1661-4aff-b180-ee355c616e05")
 		)
 		(pad "3" smd roundrect
@@ -8044,7 +8044,7 @@
 			(size 1.95 0.6)
 			(layers "F.Cu" "F.Mask" "F.Paste")
 			(roundrect_rratio 0.25)
-			(net "/Link/CANL")
+			(net "/Link/CAN_N")
 			(uuid "0f0d9635-c5c2-4684-9796-e9f85f56bb53")
 		)
 		(pad "6" smd roundrect
@@ -8052,7 +8052,7 @@
 			(size 1.95 0.6)
 			(layers "F.Cu" "F.Mask" "F.Paste")
 			(roundrect_rratio 0.25)
-			(net "/Link/CANH")
+			(net "/Link/CAN_P")
 			(uuid "c4f691bc-e07e-4e5b-a82a-7b8caecb40ae")
 		)
 		(pad "7" smd roundrect
@@ -13564,7 +13564,7 @@
 				)
 			)
 		)
-		(property "Description" "CAN ESD / TVS (24 V working) on CANH / CANL at J3 LINK OUT"
+		(property "Description" "CAN ESD / TVS (24 V working) on CAN_P / CAN_N at J3 LINK OUT"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -13886,7 +13886,7 @@
 			(size 1.475 0.6)
 			(layers "F.Cu" "F.Mask" "F.Paste")
 			(roundrect_rratio 0.25)
-			(net "/Link/CANH")
+			(net "/Link/CAN_P")
 			(uuid "8a8ccc59-c8ca-449d-83cb-35ce3f96f48d")
 		)
 		(pad "2" smd roundrect
@@ -13894,7 +13894,7 @@
 			(size 1.475 0.6)
 			(layers "F.Cu" "F.Mask" "F.Paste")
 			(roundrect_rratio 0.25)
-			(net "/Link/CANL")
+			(net "/Link/CAN_N")
 			(uuid "41453a65-171b-4dea-bcaa-1e28a0324f92")
 		)
 		(pad "3" smd roundrect
@@ -13957,7 +13957,7 @@
 				)
 			)
 		)
-		(property "Description" "right-end termination, 2x2 2.54 mm header: jumper caps on 1-2 (CANH) and 3-4 (CANL), both on the last board of the row only, none elsewhere (caps C5305, not assembled)"
+		(property "Description" "right-end termination, 2x2 2.54 mm header: jumper caps on 1-2 (CAN_P) and 3-4 (CAN_N), both on the last board of the row only, none elsewhere (caps C5305, not assembled)"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -14167,7 +14167,7 @@
 			(drill 1)
 			(layers "*.Cu" "*.Mask")
 			(remove_unused_layers no)
-			(net "/Link/CANH")
+			(net "/Link/CAN_P")
 			(uuid "c227a8fd-b619-4a0e-862a-8b1589cdbb4b")
 		)
 		(pad "2" thru_hole circle
@@ -14185,7 +14185,7 @@
 			(drill 1)
 			(layers "*.Cu" "*.Mask")
 			(remove_unused_layers no)
-			(net "/Link/CANL")
+			(net "/Link/CAN_N")
 			(uuid "ab431afc-0884-4d62-9103-a18bb8453df0")
 		)
 		(pad "4" thru_hole circle
@@ -16661,7 +16661,7 @@
 			(drill 1)
 			(layers "*.Cu" "*.Mask")
 			(remove_unused_layers no)
-			(net "/Link/CANH")
+			(net "/Link/CAN_P")
 			(uuid "7d1f7c32-01a7-43f3-a300-359586b92828")
 		)
 		(pad "2" thru_hole circle
@@ -16670,7 +16670,7 @@
 			(drill 1)
 			(layers "*.Cu" "*.Mask")
 			(remove_unused_layers no)
-			(net "/Link/CANL")
+			(net "/Link/CAN_N")
 			(uuid "cdbd3554-ee10-4b6c-9fbb-c75040c0214d")
 		)
 		(pad "3" thru_hole circle
@@ -23414,7 +23414,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Description" "plane link from the left neighbour (left edge, 2x3 right-angle plug); pin n = pin n: 1 CANH 2 CANL 3/4 LINK_GND 5/6 AUX_12V"
+		(property "Description" "plane link from the left neighbour (left edge, 2x3 right-angle plug); pin n = pin n: 1 CAN_P 2 CAN_N 3/4 LINK_GND 5/6 AUX_12V"
 			(at 0 0 0)
 			(layer "B.Fab")
 			(hide yes)
@@ -23729,7 +23729,7 @@
 			(drill 1)
 			(layers "*.Cu" "*.Mask")
 			(remove_unused_layers no)
-			(net "/Link/CANH")
+			(net "/Link/CAN_P")
 			(uuid "6432a92b-e7ca-404d-8e30-6cc4a4da9cc3")
 		)
 		(pad "2" thru_hole circle
@@ -23738,7 +23738,7 @@
 			(drill 1)
 			(layers "*.Cu" "*.Mask")
 			(remove_unused_layers no)
-			(net "/Link/CANL")
+			(net "/Link/CAN_N")
 			(uuid "fde80afe-d27a-4ea0-adbc-25da4328dc3b")
 		)
 		(pad "3" thru_hole circle
@@ -28098,7 +28098,7 @@
 		(end 104.65 127.197499)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANH")
+		(net "/Link/CAN_P")
 		(uuid "1732a08b-2159-4de6-aa7a-f958547fcb72")
 	)
 	(segment
@@ -28106,7 +28106,7 @@
 		(end 48 123.2)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANH")
+		(net "/Link/CAN_P")
 		(uuid "1eec9361-80ee-48c1-afff-b6d671bbc0d1")
 	)
 	(segment
@@ -28114,7 +28114,7 @@
 		(end 104.65 122.949999)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANH")
+		(net "/Link/CAN_P")
 		(uuid "2260b1b9-b7bd-43b3-9c24-a857f5666028")
 	)
 	(segment
@@ -28122,7 +28122,7 @@
 		(end 102.93 130)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANH")
+		(net "/Link/CAN_P")
 		(uuid "313aa99e-7497-40c2-9781-d47f056baa22")
 	)
 	(segment
@@ -28130,7 +28130,7 @@
 		(end 52.9 118.3)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANH")
+		(net "/Link/CAN_P")
 		(uuid "3e480760-46a0-4120-ba0d-0cdf5efdd7da")
 	)
 	(segment
@@ -28138,7 +28138,7 @@
 		(end 70.7 106.7)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANH")
+		(net "/Link/CAN_P")
 		(uuid "4dcdcbbc-055a-4e59-a855-ba771c9d177d")
 	)
 	(segment
@@ -28146,7 +28146,7 @@
 		(end 50.1 126.2)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANH")
+		(net "/Link/CAN_P")
 		(uuid "5f3f9936-9841-45a6-980c-e1a4416b8d73")
 	)
 	(segment
@@ -28154,7 +28154,7 @@
 		(end 104.65 126.5375)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANH")
+		(net "/Link/CAN_P")
 		(uuid "64426fad-86ed-4fad-ac42-beeb45d4cfae")
 	)
 	(segment
@@ -28162,7 +28162,7 @@
 		(end 101.2 106.7)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANH")
+		(net "/Link/CAN_P")
 		(uuid "65be22c4-a2fa-4500-8c8b-4c7651458fe6")
 	)
 	(segment
@@ -28170,7 +28170,7 @@
 		(end 58.9 118.5)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANH")
+		(net "/Link/CAN_P")
 		(uuid "88d6b119-7185-416e-8e1b-6555cc02c40b")
 	)
 	(segment
@@ -28178,7 +28178,7 @@
 		(end 102.93 128.917499)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANH")
+		(net "/Link/CAN_P")
 		(uuid "9ce8484c-6a57-455a-bac4-493aded2fa7b")
 	)
 	(segment
@@ -28186,7 +28186,7 @@
 		(end 103.6 109.1)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANH")
+		(net "/Link/CAN_P")
 		(uuid "a2f4d5ee-2653-4261-a2de-b444914f2657")
 	)
 	(segment
@@ -28194,7 +28194,7 @@
 		(end 102.2 121.8)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANH")
+		(net "/Link/CAN_P")
 		(uuid "ac81b573-5247-457a-b328-4c11fa71c456")
 	)
 	(segment
@@ -28202,7 +28202,7 @@
 		(end 103.5 121.8)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANH")
+		(net "/Link/CAN_P")
 		(uuid "b6516383-85ec-4829-8f0c-629ac05194f5")
 	)
 	(segment
@@ -28210,7 +28210,7 @@
 		(end 58 118.3)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANH")
+		(net "/Link/CAN_P")
 		(uuid "c64e13af-e0e1-4818-bdd0-ee15904768e2")
 	)
 	(segment
@@ -28218,7 +28218,7 @@
 		(end 50.1 130)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANH")
+		(net "/Link/CAN_P")
 		(uuid "cce1a73e-2076-445d-889c-23d74ba1406f")
 	)
 	(segment
@@ -28226,7 +28226,7 @@
 		(end 102.2 110.5)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANH")
+		(net "/Link/CAN_P")
 		(uuid "cda29210-d968-4cc3-8d28-14e39ef69984")
 	)
 	(via
@@ -28234,7 +28234,7 @@
 		(size 0.5)
 		(drill 0.2)
 		(layers "F.Cu" "B.Cu")
-		(net "/Link/CANH")
+		(net "/Link/CAN_P")
 		(uuid "9601666b-ee52-4ce5-b149-4b03025d9d9a")
 	)
 	(via
@@ -28242,7 +28242,7 @@
 		(size 0.5)
 		(drill 0.2)
 		(layers "F.Cu" "B.Cu")
-		(net "/Link/CANH")
+		(net "/Link/CAN_P")
 		(uuid "b101e749-94bd-42c7-930e-ec35dbb17fa2")
 	)
 	(via
@@ -28250,7 +28250,7 @@
 		(size 0.5)
 		(drill 0.2)
 		(layers "F.Cu" "B.Cu")
-		(net "/Link/CANH")
+		(net "/Link/CAN_P")
 		(uuid "b37209bc-0f3a-42dd-8648-17c1adece28f")
 	)
 	(via
@@ -28258,7 +28258,7 @@
 		(size 0.5)
 		(drill 0.2)
 		(layers "F.Cu" "B.Cu")
-		(net "/Link/CANH")
+		(net "/Link/CAN_P")
 		(uuid "b78aa843-0b79-4f03-94bf-5b43dd939108")
 	)
 	(segment
@@ -28266,7 +28266,7 @@
 		(end 86.3 106.7)
 		(width 0.2)
 		(layer "B.Cu")
-		(net "/Link/CANH")
+		(net "/Link/CAN_P")
 		(uuid "540ad31c-1188-4858-b4a3-b2cd8258a832")
 	)
 	(segment
@@ -28274,7 +28274,7 @@
 		(end 53 118.2)
 		(width 0.2)
 		(layer "B.Cu")
-		(net "/Link/CANH")
+		(net "/Link/CAN_P")
 		(uuid "b5776a1e-1b65-4b07-aa33-8ab6b498ce68")
 	)
 	(segment
@@ -28282,7 +28282,7 @@
 		(end 105.47 130)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANL")
+		(net "/Link/CAN_N")
 		(uuid "138bbdce-f802-4e9d-9730-8c6d34dbcb39")
 	)
 	(segment
@@ -28290,7 +28290,7 @@
 		(end 106.55 126.5375)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANL")
+		(net "/Link/CAN_N")
 		(uuid "18a46c75-77ed-4507-9a19-2f09e4d54bd1")
 	)
 	(segment
@@ -28298,7 +28298,7 @@
 		(end 108.4 111.7)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANL")
+		(net "/Link/CAN_N")
 		(uuid "2a9c949a-ab47-4d3d-be18-bec79fbfbc85")
 	)
 	(segment
@@ -28306,7 +28306,7 @@
 		(end 106.04 121.8)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANL")
+		(net "/Link/CAN_N")
 		(uuid "346fc6c8-4571-48a7-8248-1cec8536133b")
 	)
 	(segment
@@ -28314,7 +28314,7 @@
 		(end 46 122.8)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANL")
+		(net "/Link/CAN_N")
 		(uuid "35a461bc-e97d-40df-bdc1-79a16ef20008")
 	)
 	(segment
@@ -28322,7 +28322,7 @@
 		(end 105.47 128.2775)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANL")
+		(net "/Link/CAN_N")
 		(uuid "4d249aab-0c24-4662-94f1-db94a83db6cd")
 	)
 	(segment
@@ -28330,7 +28330,7 @@
 		(end 54.3 117.4)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANL")
+		(net "/Link/CAN_N")
 		(uuid "5d9f4e55-c6ce-4bfa-9745-27cae0556f07")
 	)
 	(segment
@@ -28338,7 +28338,7 @@
 		(end 60.5 118.1)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANL")
+		(net "/Link/CAN_N")
 		(uuid "619ec250-99b2-4055-8470-7dbd63b3a6bc")
 	)
 	(segment
@@ -28346,7 +28346,7 @@
 		(end 108.4 120.899999)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANL")
+		(net "/Link/CAN_N")
 		(uuid "650f8f07-63ba-48f8-8a3c-3f7154aac867")
 	)
 	(segment
@@ -28354,7 +28354,7 @@
 		(end 101.2 104.5)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANL")
+		(net "/Link/CAN_N")
 		(uuid "8209a5a5-52fa-42c5-8eb1-527bd83bcc81")
 	)
 	(segment
@@ -28362,7 +28362,7 @@
 		(end 60.2 118.4)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANL")
+		(net "/Link/CAN_N")
 		(uuid "890f5a48-ddfc-4f68-b2ce-c427fe83eb16")
 	)
 	(segment
@@ -28370,7 +28370,7 @@
 		(end 56.9 114.8)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANL")
+		(net "/Link/CAN_N")
 		(uuid "a6d96456-f186-48fd-bec4-04e954a4e580")
 	)
 	(segment
@@ -28378,7 +28378,7 @@
 		(end 106.55 127.197499)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANL")
+		(net "/Link/CAN_N")
 		(uuid "c72d70bd-d771-4810-9938-c5d95b0d922e")
 	)
 	(segment
@@ -28386,7 +28386,7 @@
 		(end 107.5 121.8)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANL")
+		(net "/Link/CAN_N")
 		(uuid "d45397f3-56ff-4e5e-a028-d44b9656e28d")
 	)
 	(segment
@@ -28394,7 +28394,7 @@
 		(end 51.4 117.4)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANL")
+		(net "/Link/CAN_N")
 		(uuid "f6128d80-bd39-40cd-8ee4-b842c0a1e439")
 	)
 	(segment
@@ -28402,7 +28402,7 @@
 		(end 106.55 122.309999)
 		(width 0.2)
 		(layer "F.Cu")
-		(net "/Link/CANL")
+		(net "/Link/CAN_N")
 		(uuid "fc49862d-abe0-494e-af89-8bf2df753640")
 	)
 	(via
@@ -28410,7 +28410,7 @@
 		(size 0.5)
 		(drill 0.2)
 		(layers "F.Cu" "B.Cu")
-		(net "/Link/CANL")
+		(net "/Link/CAN_N")
 		(uuid "0095bbf8-73e5-4a91-9387-480c64f00fca")
 	)
 	(via
@@ -28418,7 +28418,7 @@
 		(size 0.5)
 		(drill 0.2)
 		(layers "F.Cu" "B.Cu")
-		(net "/Link/CANL")
+		(net "/Link/CAN_N")
 		(uuid "1a719dc1-17f2-497a-b436-e139c7bbd26e")
 	)
 	(via
@@ -28426,7 +28426,7 @@
 		(size 0.5)
 		(drill 0.2)
 		(layers "F.Cu" "B.Cu")
-		(net "/Link/CANL")
+		(net "/Link/CAN_N")
 		(uuid "24f52a1c-d6c8-4d15-8398-3c77cdccbef7")
 	)
 	(via
@@ -28434,7 +28434,7 @@
 		(size 0.5)
 		(drill 0.2)
 		(layers "F.Cu" "B.Cu")
-		(net "/Link/CANL")
+		(net "/Link/CAN_N")
 		(uuid "5174978d-942c-4910-bb4f-0bff065812f5")
 	)
 	(segment
@@ -28442,7 +28442,7 @@
 		(end 70.3 104.5)
 		(width 0.2)
 		(layer "B.Cu")
-		(net "/Link/CANL")
+		(net "/Link/CAN_N")
 		(uuid "3f66eb50-7e6d-4cd7-abd1-4bad7650c16b")
 	)
 	(segment
@@ -28450,7 +28450,7 @@
 		(end 47.5 121.3)
 		(width 0.2)
 		(layer "B.Cu")
-		(net "/Link/CANL")
+		(net "/Link/CAN_N")
 		(uuid "5333b6cf-fc02-4ece-8365-5170063c0153")
 	)
 	(segment
@@ -28458,7 +28458,7 @@
 		(end 60.5 114.3)
 		(width 0.2)
 		(layer "B.Cu")
-		(net "/Link/CANL")
+		(net "/Link/CAN_N")
 		(uuid "58cba610-b290-4540-94af-74392b4f6710")
 	)
 	(segment
@@ -28466,7 +28466,7 @@
 		(end 84.2 104.5)
 		(width 0.2)
 		(layer "B.Cu")
-		(net "/Link/CANL")
+		(net "/Link/CAN_N")
 		(uuid "6c3fdf89-c340-4b15-8776-f4819e96941a")
 	)
 	(segment
@@ -28474,7 +28474,7 @@
 		(end 48.1 120.7)
 		(width 0.2)
 		(layer "B.Cu")
-		(net "/Link/CANL")
+		(net "/Link/CAN_N")
 		(uuid "86cadb84-82d4-4ba4-bde4-a88fecc342e1")
 	)
 	(segment
@@ -28482,7 +28482,7 @@
 		(end 57.1 114.8)
 		(width 0.2)
 		(layer "B.Cu")
-		(net "/Link/CANL")
+		(net "/Link/CAN_N")
 		(uuid "94e550e7-4f10-4d94-815b-a5c3025eb1c6")
 	)
 	(segment

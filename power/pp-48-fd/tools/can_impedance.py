@@ -1,4 +1,4 @@
-"""CANH / CANL differential impedance on pp-48-unit-fd (B.Cu over In2, JLC04161H-7628), 2026-11-09.
+"""CAN_P / CAN_N differential impedance on pp-48-unit-fd (B.Cu over In2, JLC04161H-7628), 2026-11-09.
 
 Run: uv run --no-project --with scipy --with numpy python -I can_impedance.py
 Cross-section at x 105 / 150 taken from the board (GND pour edges, LINK_GND, AUX_12V).
@@ -30,10 +30,10 @@ g = dict(base, mask_t=0.0, span=(-5, 5), rects=[tr("S", 0, 0.36)])
 show("check: 0.36 mm microstrip, no mask (expect ~50)", g)
 
 # --- unit-fd at x=105 / 150 (GND pour to 119.0, from 123.16), y in board mm
-rects = [("G", 112.0, 119.0), tr("CANL", 119.6, 0.2), tr("CANH", 120.4, 0.2),
+rects = [("G", 112.0, 119.0), tr("CAN_N", 119.6, 0.2), tr("CAN_P", 120.4, 0.2),
          tr("LINK_GND", 121.4, 0.5), tr("AUX_12V", 122.4, 0.5), ("G", 123.16, 128.0)]
-# CANH / CANL must be the first two signal names (sorted): rename to keep order
-rects = [(n.replace("CANH", "A_CANH").replace("CANL", "A_CANL").replace("LINK_GND", "G")
+# CAN_P / CAN_N must be the first two signal names (sorted): rename to keep order
+rects = [(n.replace("CAN_P", "A_CANH").replace("CAN_N", "A_CANL").replace("LINK_GND", "G")
           .replace("AUX_12V", "G"), a, b) for n, a, b in rects]
 g = dict(base, span=(112.0, 128.0), rects=rects)
 show("main run (x 105/150): pair + LINK_GND/AUX_12V/pours AC-gnd", g)

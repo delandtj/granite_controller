@@ -83,7 +83,7 @@ HOLES = {'H1': (LEFT + 4.0, Y0 + 4.0), 'H2': (LEFT + 4.0, Y0 + 68.0)}   # left m
 MARGIN = {'Q10': (LEFT + 4.5, Y0 + 25.5, 0, F), 'R31': (LEFT + 4.5, Y0 + 22.7, 0, F)}
 # CAN FD split termination (ADR 0006 decision 8) in the margin above the link plug J303, on F (the strip by the
 # socket J304 has no room: XT60 VIN pour, C201, H3); tools/route_unit.py link_term() ties it to the B rows
-# (2x2 jumper-cap header JP301, origin = pin 1 CANH; rot 90: pin 2 TERM_H above it, pins 3 / 4 CANL / TERM_L
+# (2x2 jumper-cap header JP301, origin = pin 1 CAN_P; rot 90: pin 2 TERM_H above it, pins 3 / 4 CAN_N / TERM_L
 # to the right; the resistors over its TERM row, C301 above them)
 TERM = {'JP301': (95.0, 117.4, 90, F), 'R301': (95.0, 111.4, 90, F), 'R302': (97.54, 111.4, 270, F),
         'C301': (96.27, 108.6, 0, F)}

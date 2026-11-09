@@ -563,11 +563,11 @@
     "netclass_patterns": [
       {
         "netclass": "CAN",
-        "pattern": "/Chain/CANH"
+        "pattern": "/Chain/CAN_P"
       },
       {
         "netclass": "CAN",
-        "pattern": "/Chain/CANL"
+        "pattern": "/Chain/CAN_N"
       },
       {
         "netclass": "LINK",

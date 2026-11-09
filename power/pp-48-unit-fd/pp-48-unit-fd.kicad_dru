@@ -1,5 +1,5 @@
 (version 1)
-# ADR 0006 decision 12: the CAN FD link nets (net classes in the .kicad_pro: CAN = CANH / CANL, which carries the
+# ADR 0006 decision 12: the CAN FD link nets (net classes in the .kicad_pro: CAN = CAN_P / CAN_N, which carries the
 # CAN_DIFF tuning profile; LINK = LINK_GND, AUX_12V, the termination) keep 0.5 mm to every bus net (functional
 # isolation <= 60 V on the outer layers; inner layers
 # alike). Between link nets the class / board default applies (jumper and 0402 pads).
