@@ -1,7 +1,8 @@
 (version 1)
-# ADR 0006 decision 12: the CAN FD link nets (net class LINK in the .kicad_pro: CANH / CANL, LINK_GND, AUX_12V,
-# the termination) keep 0.5 mm to every bus net (functional isolation <= 60 V on the outer layers; inner layers
+# ADR 0006 decision 12: the CAN FD link nets (net classes in the .kicad_pro: CAN = CANH / CANL, which carries the
+# CAN_DIFF tuning profile; LINK = LINK_GND, AUX_12V, the termination) keep 0.5 mm to every bus net (functional
+# isolation <= 60 V on the outer layers; inner layers
 # alike). Between link nets the class / board default applies (jumper and 0402 pads).
 (rule "link to bus"
-	(condition "A.NetClass == 'LINK' && B.NetClass != 'LINK' && B.Type != 'Footprint'")
+	(condition "(A.NetClass == 'LINK' || A.NetClass == 'CAN') && B.NetClass != 'LINK' && B.NetClass != 'CAN' && B.Type != 'Footprint'")
 	(constraint clearance (min 0.5mm)))
