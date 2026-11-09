@@ -94,7 +94,7 @@ LED0603 = "LED_SMD:LED_0603_1608Metric"
 
 BASIC = {   # JLC basic parts, by (value, footprint); verify in the JLC preview before ordering
     ("10k", R0402): "C25744", ("100k", R0402): "C25741", ("47k", R0402): "C25792", ("220", R0402): "C25091",
-    ("270", R0402): "C22775", ("2.2k", R0402): "C25879", ("4.7k", R0402): "C25900", ("1k", R0402): "C11702",
+    ("270", R0402): "C25099", ("2.2k", R0402): "C25879", ("4.7k", R0402): "C25900", ("1k", R0402): "C11702",
     ("10k", R0603): "C25804", ("100k", R0603): "C25803", ("100n", C0402): "C1525",
     # the rest of the core's passives (JLC parts API 2026-10-30; basic where JLC has one, else the
     # best-stocked extended part of the right rating)
