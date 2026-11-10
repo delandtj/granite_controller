@@ -1,5 +1,5 @@
 # pcbkit settings for the PP-48 UNIT board, CAN FD link generation (docs/adr/0006-plane-link-can-fd.md, 0005).
-# Copied from power/pp-48-unit; the board is the rev D layout brought onto the CAN FD schematic (2026-11-04,
+# Copied from power/pp-48-unit (now attic/power/pp-48-unit); the board is the rev D layout brought onto the CAN FD schematic (2026-11-04,
 # tools/place_unit.py, route_unit.py link()): link plug J303 / socket J304 on B at v 30, the four link nets on B
 # across the board; net class LINK (.kicad_pro) + rule "link to bus" (pp-48-unit-fd.kicad_dru): 0.5 mm to bus nets
 # (decision 12). Steps: ../pp-48-fd/tools/fd_layout.sh.

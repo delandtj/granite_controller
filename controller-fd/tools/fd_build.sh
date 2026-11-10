@@ -25,7 +25,7 @@ else
 rm -rf "$S" && mkdir -p "$S"/{a,b,c,d,e}
 
 kicad-cli sch export netlist --format kicadxml -o "$S/net.xml" $NAME.kicad_sch
-python3 tools/fd_board.py ../controller/granite-controller.kicad_pcb "$S/net.xml" "$S/a/$NAME.kicad_pcb" 2>&1 | grep -v swig/
+python3 tools/fd_board.py ../attic/controller-rev-d/granite-controller.kicad_pcb "$S/net.xml" "$S/a/$NAME.kicad_pcb" 2>&1 | grep -v swig/
 $P relink "$S/net.xml" "$S/a/$NAME.kicad_pcb" --save | tail -3
 python3 tools/fd_hand.py "$S/a/$NAME.kicad_pcb"
 $P viaout "$S/a/$NAME.kicad_pcb" "$S/b/$NAME.kicad_pcb" 2>&1 | grep -v swig/

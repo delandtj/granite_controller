@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Route the PP-48 core board (docs/adr/0005): run in power/pp-48-core.
+# Route the PP-48 core board (docs/adr/0005): run in attic/power/pp-48-core.
 #
 #   ../pp-48/tools/route_core.sh <placed.kicad_pcb> [NET ...]
 #

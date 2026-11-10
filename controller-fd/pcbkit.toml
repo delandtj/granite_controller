@@ -86,7 +86,7 @@ width = 0.25
 gap = 0.15
 
 [jlcfab]
-# per-LCSC rotation corrections (see power/pp-48-unit/pcbkit.toml for the method, 2026-10-30).
+# per-LCSC rotation corrections (see attic/power/pp-48-unit/pcbkit.toml for the method, 2026-10-30).
 # FD parts fitted 2026-11-04 from the easyeda2kicad footprints (numbered pads onto ours at
 # rotation 0; the same fit gives pcbkit's generic SOIC-8 270, which also covers U24 C1852061;
 # Y3 C9010 matches pcbkit's generic ABM8G entry, 0).

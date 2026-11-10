@@ -1,0 +1,4 @@
+(fp_lib_table
+	(version 7)
+	(lib (name "pp48") (type "KiCad") (uri "${KIPRJMOD}/../../../power/pp-48/pp48.pretty") (options "") (descr "PP-48 plane footprints"))
+)

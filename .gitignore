@@ -43,4 +43,4 @@ mech/step/
 *.FCBak
 
 # KiCad Fabrication Toolkit plugin settings
-power/*/fabrication-toolkit-options.json
+fabrication-toolkit-options.json

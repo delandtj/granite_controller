@@ -3,12 +3,12 @@
 #
 # 78.5 x 72 mm: 9 mm left margin (chain IN header J301 on B, two M3 holes), slot A (x 100-125), slot B
 # (125-150), 19.5 mm input strip (150-169.5: XT60, unit hot-swap, chain OUT header J302 on B, two M3 holes).
-# Board flow (tools in ../pp-48/tools): gensch.py unit -> netlist -> mkboard -> outline -> setrules ->
+# Board flow (tools in ../../../power/pp-48/tools): gensch.py unit -> netlist -> mkboard -> outline -> setrules ->
 # place_unit.py; routing to follow (rev1 flow: route_hand.py, netsplit.py, krt-route, gndstitch.py).
 
 [project]
 name = "pp-48-unit"
-libs = { pp48 = "../pp-48/pp48.pretty" }
+libs = { pp48 = "../../../power/pp-48/pp48.pretty" }
 
 [mkboard]
 copper_layers = 4

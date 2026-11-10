@@ -41,11 +41,11 @@ mkdir -p "$W"
 py() { python3 "$@" 2>&1 | grep -v "Debug\|memory leak" || true; }
 D=$P/pp-48-$B-fd; N=pp-48-$B-fd
 kicad-cli sch export netlist --format kicadxml -o "$W/net.xml" "$D/$N.kicad_sch" > /dev/null
-py "$T/fdsync.py" "$P/pp-48-$B/pp-48-$B.kicad_pcb" "$W/net.xml" "$D" "$W/1-sync.kicad_pcb"
+py "$T/fdsync.py" "$P/../attic/power/pp-48-$B/pp-48-$B.kicad_pcb" "$W/net.xml" "$D" "$W/1-sync.kicad_pcb"
 if [ "$B" = core ]; then
     py "$T/place_core.py" "$W/1-sync.kicad_pcb" "$W/2-placed.kicad_pcb"
     py "$T/fdoutline.py" "$W/2-placed.kicad_pcb" "$W/3-outline.kicad_pcb" 43.5 100 111.5 172
-    python3 "$T/fdstrip.py" "$P/pp-48-core/pp-48-core.kicad_pcb" "$W/3-outline.kicad_pcb" "$W/4-strip.kicad_pcb" \
+    python3 "$T/fdstrip.py" "$P/../attic/power/pp-48-core/pp-48-core.kicad_pcb" "$W/3-outline.kicad_pcb" "$W/4-strip.kicad_pcb" \
         "$T/fd/core-regions.json" --zone VIN 43.8,100.3,111.2,171.7 2> /dev/null > "$W/nets.txt"
     py "$T/route_core.py" "$W/4-strip.kicad_pcb" "$W/5-hand.kicad_pcb"
     cp "$W/5-hand.kicad_pcb" "$D/$N.kicad_pcb"
@@ -57,7 +57,7 @@ if [ "$B" = core ]; then
     (cd "$D" && KRT_EXTRA="--max-ripup 0" "$PK" krt-reroute /Supplies/SW2)
 else
     py "$T/place_unit.py" "$W/1-sync.kicad_pcb" "$W/2-placed.kicad_pcb"
-    python3 "$T/fdstrip.py" "$P/pp-48-unit/pp-48-unit.kicad_pcb" "$W/2-placed.kicad_pcb" "$W/4-strip.kicad_pcb" \
+    python3 "$T/fdstrip.py" "$P/../attic/power/pp-48-unit/pp-48-unit.kicad_pcb" "$W/2-placed.kicad_pcb" "$W/4-strip.kicad_pcb" \
         "$T/fd/unit-regions.json" 2> /dev/null > "$W/nets.txt"
     py "$T/route_unit.py" "$W/4-strip.kicad_pcb" "$W/5-hand.kicad_pcb"
     (cd "$D" && RESUME=1 PASSES=4 SCRATCH="$W/flow" "$T/route_unit.sh" "$W/5-hand.kicad_pcb")

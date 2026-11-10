@@ -4405,7 +4405,7 @@
 			(uuid "a07dc1e9-91e7-4278-9e13-49b3c408f575")
 		)
 		(embedded_fonts no)
-		(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/L_Coilcraft_LPD5030V.step"
+		(model "${KIPRJMOD}/../../../power/pp-48/pp48.3dshapes/L_Coilcraft_LPD5030V.step"
 			(offset
 				(xyz 0 0 0.1)
 			)
@@ -8599,7 +8599,7 @@
 			(uuid "205e2f5e-6427-4409-accb-ecccab5a1197")
 		)
 		(embedded_fonts no)
-		(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/AMASS_XT30PW-M.step"
+		(model "${KIPRJMOD}/../../../power/pp-48/pp48.3dshapes/AMASS_XT30PW-M.step"
 			(offset
 				(xyz -2.5 8.48 0)
 			)

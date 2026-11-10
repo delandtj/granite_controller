@@ -5111,7 +5111,7 @@
 			(uuid "0e31cb43-a150-4b37-ae42-df5c16214dcd")
 		)
 		(embedded_fonts no)
-		(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/AMASS_XT60PW-M.step"
+		(model "${KIPRJMOD}/../../../power/pp-48/pp48.3dshapes/AMASS_XT60PW-M.step"
 			(offset
 				(xyz 3.6 7.1 0)
 			)
@@ -5673,7 +5673,7 @@
 			(uuid "5e9c1028-b8f9-4b9a-b759-9a5679f970b6")
 		)
 		(embedded_fonts no)
-		(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/TerminalBlock_Degson_DG128-5.0-02P.step"
+		(model "${KIPRJMOD}/../../../power/pp-48/pp48.3dshapes/TerminalBlock_Degson_DG128-5.0-02P.step"
 			(offset
 				(xyz 2.5 -0.1 0.2)
 			)
@@ -9208,7 +9208,7 @@
 			(uuid "5d2e402f-c9dd-4eea-ae40-d55b372decc8")
 		)
 		(embedded_fonts no)
-		(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/PM_Aux_Socket_2x03_P1.27.step"
+		(model "${KIPRJMOD}/../../../power/pp-48/pp48.3dshapes/PM_Aux_Socket_2x03_P1.27.step"
 			(offset
 				(xyz 0 0 0.3)
 			)
@@ -10113,7 +10113,7 @@
 			(uuid "724008a8-a521-49d2-9528-c2b2fb8d696c")
 		)
 		(embedded_fonts no)
-		(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/PM_Aux_Socket_2x03_P1.27.step"
+		(model "${KIPRJMOD}/../../../power/pp-48/pp48.3dshapes/PM_Aux_Socket_2x03_P1.27.step"
 			(offset
 				(xyz 0 0 0.3)
 			)
@@ -17092,7 +17092,7 @@
 			(uuid "f728ce67-76f7-42e0-9339-7b01292032e8")
 		)
 		(embedded_fonts no)
-		(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/TerminalBlock_Degson_DG128-5.0-02P.step"
+		(model "${KIPRJMOD}/../../../power/pp-48/pp48.3dshapes/TerminalBlock_Degson_DG128-5.0-02P.step"
 			(offset
 				(xyz 2.5 -0.1 0.2)
 			)
@@ -30395,7 +30395,7 @@
 			(uuid "9c0ffa76-5612-459c-a55a-e2e0385d3673")
 		)
 		(embedded_fonts no)
-		(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/TLP176AM_SO4.step"
+		(model "${KIPRJMOD}/../../../power/pp-48/pp48.3dshapes/TLP176AM_SO4.step"
 			(offset
 				(xyz 0 0 0.07)
 			)
@@ -30841,7 +30841,7 @@
 			(uuid "4d4edd4e-151d-4897-9aed-6fc730ead196")
 		)
 		(embedded_fonts no)
-		(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/TLP176AM_SO4.step"
+		(model "${KIPRJMOD}/../../../power/pp-48/pp48.3dshapes/TLP176AM_SO4.step"
 			(offset
 				(xyz 0 0 0.07)
 			)
@@ -32586,7 +32586,7 @@
 			(uuid "ed0448e6-f02c-4901-a8c6-91d3939d9dcf")
 		)
 		(embedded_fonts no)
-		(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/TLP291_SO4.step"
+		(model "${KIPRJMOD}/../../../power/pp-48/pp48.3dshapes/TLP291_SO4.step"
 			(offset
 				(xyz 0 0 0.02)
 			)
@@ -32932,7 +32932,7 @@
 			(uuid "b77661d6-25da-4613-abaa-361410411e0c")
 		)
 		(embedded_fonts no)
-		(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/TLP291_SO4.step"
+		(model "${KIPRJMOD}/../../../power/pp-48/pp48.3dshapes/TLP291_SO4.step"
 			(offset
 				(xyz 0 0 0.02)
 			)
@@ -35312,7 +35312,7 @@
 			(uuid "ebf57a8a-9f26-451f-80d7-33c2372afb2d")
 		)
 		(embedded_fonts no)
-		(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/TLP176AM_SO4.step"
+		(model "${KIPRJMOD}/../../../power/pp-48/pp48.3dshapes/TLP176AM_SO4.step"
 			(offset
 				(xyz 0 0 0.07)
 			)
@@ -36828,7 +36828,7 @@
 			(uuid "566a455d-9cb6-4ca6-8ae6-5e6dbb22345d")
 		)
 		(embedded_fonts no)
-		(model "${KIPRJMOD}/../pp-48/pp48.3dshapes/TLP176AM_SO4.step"
+		(model "${KIPRJMOD}/../../../power/pp-48/pp48.3dshapes/TLP176AM_SO4.step"
 			(offset
 				(xyz 0 0 0.07)
 			)
