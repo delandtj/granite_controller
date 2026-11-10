@@ -58,7 +58,7 @@ CORE_PINS = {
     "37": "ADR0", "39": "ADR1", "28": "ADR2",   # PA15 / PD1 / PA8 straps (DIP switch SW1 to GND, R20-22 up)
 }
 
-# what the firmware needs per pin (written to firmware/plane-core-pins.toml by gensch.py core):
+# what the firmware needs per pin (written to attic/firmware/plane-core-pins.toml by gensch.py core):
 # pin -> (port, mode, use); the fixed pins too
 PIN_USE = {
     "47": ("PB8", "I2C1_SCL AF6", "I2C slave to the controller through the ISO1640 U4"),

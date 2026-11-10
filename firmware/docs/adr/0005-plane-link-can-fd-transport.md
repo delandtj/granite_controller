@@ -2,7 +2,7 @@
 
 **Status**: Accepted (2026-11-04)
 **Date**: 2026-11-04
-**Updated**: 2026-11-04 (open questions answered by the user: EVENT stays a bare flag, bus-off auto recovery); 2026-11-04 (as built: granite-proto::can 7c39a71, plane-fw 8d898e6, mcp2518fd 0af8d56 as a facade over mcp251xfd, granite-core / sim 7319d12)
+**Updated**: 2026-11-04 (open questions answered by the user: EVENT stays a bare flag, bus-off auto recovery); 2026-11-04 (as built: granite-proto::can 7c39a71, plane-fw 8d898e6, mcp2518fd 0af8d56 as a facade over mcp251xfd, granite-core / sim 7319d12); 2026-11-10 (decision 9: the plane binary for FD is a new FD-only crate; the rev D I2C plane-fw is frozen in attic/firmware/plane-fw)
 
 Related: docs/adr/0006-plane-link-can-fd.md (hardware: ISO1044 per
 core, MCP2518FD on the G070 or FDCAN on the G0B1, MCP2518FD on the
@@ -107,18 +107,23 @@ written and tested on the host before the boards exist.
      planes in the mask; SYNC sender.
    - `granite-sim`: a CAN link fake that segments and reassembles
      through `granite-proto::can`, with frame loss injection.
-   - Plane binary `plane-fw` (new, outside the workspace like
-     granite-fw: thumbv6m, embassy-stm32, STM32G070CB): builds the
-     rev D link (I2C1 slave) first; the CAN transports (MCP2518FD,
-     FDCAN) are features of the same binary.
+   - Plane binary for FD: a new FD-only crate in firmware/ (outside
+     the workspace like granite-fw: thumbv6m, embassy-stm32), pins
+     from firmware/plane-core-fd-pins.toml; the CAN transports
+     (MCP2518FD on the G070, FDCAN on the G0B1) are its features. No
+     I2C link. (Amended 2026-11-10: this was "features of the same
+     binary" as the rev D one. The rev D binary `plane-fw`, I2C1 slave,
+     8d898e6, is frozen in attic/firmware/plane-fw and is the source
+     for the board glue: segment bus, backup registers, config and
+     update stores, reset cause, core pins.)
 
 ---
 
 ## Consequences
 
 ### Positive
-- One protocol and one plane core for rev D and FD; only the
-  transport differs.
+- One protocol and one plane core (plane-logic) for rev D and FD;
+  only the transport and the binary differ.
 - The CAN parts are testable on the host and in the sim before any
   board exists.
 

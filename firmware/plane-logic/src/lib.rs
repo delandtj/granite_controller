@@ -4,7 +4,8 @@
 //! authority for the behaviour, and every module here points at the
 //! decision it implements. This crate holds everything that can be
 //! reasoned about and tested without a board, so the same code runs on
-//! the STM32G070 (`plane-fw`), on the host (its own tests) and inside
+//! the STM32G070 (the plane binary; rev D's is
+//! `attic/firmware/plane-fw`), on the host (its own tests) and inside
 //! granite-sim's fake plane.
 //!
 //! - [`device`]: the small synchronous traits the firmware fills in

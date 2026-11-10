@@ -14,9 +14,9 @@ embassy-executor = { version = "0.10.0", features = ["platform-cortex-m", "execu
 embassy-stm32 = { version = "0.6.0", features = ["stm32g070cb", "time-driver-any", "defmt", "unstable-pac"] }
 embassy-sync = { version = "0.8.0", features = ["defmt"] }
 embassy-time = { version = "0.5.1", features = ["defmt", "defmt-timestamp-uptime"] }
-granite-proto = { version = "0.1.0", path = "../granite-proto" }
+granite-proto = { version = "0.1.0", path = "../../../firmware/granite-proto" }
 panic-probe = { version = "1.0.0", features = ["print-defmt"] }
-plane-logic = { version = "0.1.0", path = "../plane-logic" }
+plane-logic = { version = "0.1.0", path = "../../../firmware/plane-logic" }
 # The M0+ has no atomic compare-and-swap; portable-atomic emulates it
 # in a critical section for the crates that want one (static_cell,
 # embassy-executor).

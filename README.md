@@ -45,6 +45,10 @@ on top of granite_controller's history, so both histories are here.
     plane (ADR 0005), superseded by the -fd boards (2026-11-10); still the
     input boards of power/pp-48-fd/tools/fd_layout.sh and the output of
     power/pp-48/tools/gensch.py.
+  - attic/firmware/plane-fw, attic/firmware/plane-core-pins.toml: the
+    rev D plane binary (I2C link) and its pin map, frozen 2026-11-10;
+    builds against firmware/granite-proto and firmware/plane-logic. The
+    FD plane binary will be a new crate (firmware ADR 0005 decision 9).
   Older docs and the handoff name these at their old paths
   (power/pp-48-2s, power/pm-19v-200w, power/pp-48/pp-48.kicad_*,
   controller, power/pp-48-core, power/pp-48-unit).
