@@ -39,7 +39,8 @@ under it. What it left open is all about the modules' input ripple:
 
 ### Predicted numbers
 
-From a harmonic model, not a measurement: two PM-19V-250W-B modules at
+From a harmonic model (power/pp-48-fd/tools/unit_ripple.py, assumptions
+in its header), not a measurement: two PM-19V-250W-B modules at
 full load (252 kHz, 13.2 A out, 11 uF on each module), ceramics derated
 for 48 V bias, C201 ESR assumed 0.4 ohm, 0.5 uH supply cable.
 
