@@ -11,7 +11,8 @@ INA237 for INA238); 2026-11-02 (user: no chain cable, the boards plug
 into each other on a mounting bar: decisions 4 and 7, the "Direct
 board-to-board mating" alternative taken); 2026-11-11 (hot-swap SOA
 check done on the routed FD unit: the fitted FETs fail it on a short,
-decision 3a; replacement FET named, not fitted)
+decision 3a; replacement FET in the source for the next order, FD
+batch 1 unchanged)
 
 Related: docs/adr/0004-plane-column-layout.md (decisions 1, 1a, 2, 6
 and 9 stand; 3, 4, 5, 7 and 8 are replaced here, see "What changes"),
@@ -144,10 +145,13 @@ instead of a column edge.
      SOA at 48 V: about 7 A for 10 ms at T_C = 25 C, about 6 A at
      125 C, about 2.9 A for 100 ms; about 5 A at 60 V for 10 ms. That
      is about 5x on a slot and 4x on the unit with one FET taking
-     everything. No other value changes. Open: stock (LCSC not
-     checked, distributors quote long lead times), the land pattern
-     overlaid on the fitted footprint, and the rework of boards
-     already built (FD batch 1 carries the BSC parts). Second
+     everything. No other value changes. In the source since
+     2026-11-11 (gensch blocks unit.py / uinput.py, schematic and
+     board fields; copper untouched, the footprint is the same
+     PG-TDSON-8): the next unit-fd order carries it. JLC lists it as
+     C22408528, extended, 58 in stock on 2026-11-11 (4 per unit).
+     Open: the rework of boards already built (FD batch 1, tag
+     fd-batch1, carries the BSC parts). Second
      candidate, SOA not read: Nexperia PSMN4R8-100YSE (LFPAK56E).
      Read and rejected: TI CSD19531Q5A / 19532Q5B / 19533Q5A and
      BSC060N10NS3 (0.7 to 1.7 A at 48 V, 10 ms).
@@ -448,9 +452,9 @@ input strip on the far side (right of slot B).
 **Behavior definers**
 - [ ] Unit hot-swap power limit and timer vs two slot insertions.
 - [ ] Hot-swap FETs: the fitted BSC070N10NS5 / BSC040N10NS5 are outside
-  their SOA on a short (decision 3a). Source ISC035N10NM5LF2 (or read
-  PSMN4R8-100YSE), overlay the land pattern, decide the rework of FD
-  batch 1.
+  their SOA on a short (decision 3a). ISC035N10NM5LF2 is in the source
+  for the next order; decide the rework of FD batch 1 (JLC stock 58 on
+  2026-11-11 covers the slot FETs of 24 units, not all four positions).
 - [ ] Dead short on one slot: does the unit breaker trip with it
   (decision 3a, bench plan test 6).
 - [x] Firmware: chain topology discovery and re-scan: plane-logic

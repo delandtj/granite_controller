@@ -7169,7 +7169,7 @@
 				)
 			)
 		)
-		(property "Value" "BSC070N10NS5"
+		(property "Value" "ISC035N10NM5LF2"
 			(at 0 3.5 270)
 			(layer "F.Fab")
 			(uuid "bf35d35f-af6c-429d-a01f-7b814fd348d5")
@@ -7193,7 +7193,7 @@
 				)
 			)
 		)
-		(property "Description" "100 V pass MOSFET, placeholder: SOA check open (ADR 0001)"
+		(property "Description" "100 V 3.5 mOhm linear-mode pass FET (PG-TDSON-8, drawn with the BSC070N10NS5 symbol): about 7 A at 48 V for 10 ms against 0.96 A in power limit; was BSC070N10NS5, 0.15 A (ADR 0005 decision 3a)"
 			(at 0 0 270)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -7206,7 +7206,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C534364"
+		(property "LCSC" "C22408528"
 			(at 0 0 270)
 			(layer "F.Fab")
 			(hide yes)
@@ -13456,7 +13456,7 @@
 				)
 			)
 		)
-		(property "Value" "BSC040N10NS5"
+		(property "Value" "ISC035N10NM5LF2"
 			(at 0 3.5 90)
 			(layer "F.Fab")
 			(uuid "203a14a9-4384-416e-93fd-7b54aeb5ea3e")
@@ -13480,7 +13480,7 @@
 				)
 			)
 		)
-		(property "Description" "100 V 4 mOhm pass FET; carries the start-up SOA alone (power limit 75 W, 10 ms)"
+		(property "Description" "100 V 3.5 mOhm linear-mode pass FET; holds the power limit (70 W at 48 V, 10 to 20 ms) alone"
 			(at 0 0 90)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -13493,7 +13493,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C534334"
+		(property "LCSC" "C22408528"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -14430,7 +14430,7 @@
 				)
 			)
 		)
-		(property "Value" "BSC040N10NS5"
+		(property "Value" "ISC035N10NM5LF2"
 			(at 0 3.5 90)
 			(layer "F.Fab")
 			(uuid "428da31a-f2e2-46f7-8ed4-134ef35bcadd")
@@ -14467,7 +14467,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C534334"
+		(property "LCSC" "C22408528"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -25986,7 +25986,7 @@
 				)
 			)
 		)
-		(property "Value" "BSC070N10NS5"
+		(property "Value" "ISC035N10NM5LF2"
 			(at 0 3.5 270)
 			(layer "F.Fab")
 			(uuid "ba3d0742-dddb-4247-8060-9091dd310069")
@@ -26010,7 +26010,7 @@
 				)
 			)
 		)
-		(property "Description" "100 V pass MOSFET, placeholder: SOA check open (ADR 0001)"
+		(property "Description" "100 V 3.5 mOhm linear-mode pass FET (PG-TDSON-8, drawn with the BSC070N10NS5 symbol): about 7 A at 48 V for 10 ms against 0.96 A in power limit; was BSC070N10NS5, 0.15 A (ADR 0005 decision 3a)"
 			(at 0 0 270)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -26023,7 +26023,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C534364"
+		(property "LCSC" "C22408528"
 			(at 0 0 270)
 			(layer "F.Fab")
 			(hide yes)

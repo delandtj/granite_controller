@@ -2061,7 +2061,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "939da9ff-d0ba-582b-860d-ef7c524c3005")
+		(uuid "45a707d0-ec6f-5c75-84db-308aa0ec4c58")
 	)
 	(label "CAN_N"
 		(at 58.42 88.9 0)
@@ -2071,7 +2071,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "69207c3b-63b2-5c73-b2e2-cca5c7b8b1b2")
+		(uuid "deff4b53-ec38-5be3-8c4d-6f6053afde7f")
 	)
 	(label "CAN_P"
 		(at 45.72 114.3 180)
@@ -2081,7 +2081,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "fad8650f-7cf5-5d7c-b87e-f20cdf33a1ae")
+		(uuid "06656e28-ab11-5599-ad1c-84dd25c18f2b")
 	)
 	(label "CAN_N"
 		(at 58.42 114.3 0)
@@ -2091,7 +2091,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "2e8777d8-a39e-5b85-8abb-6845d11f6b5e")
+		(uuid "e9299bf4-ec04-5ce9-b2ec-0165e859ff43")
 	)
 	(label "LINK_GND"
 		(at 45.72 91.44 180)
@@ -2181,7 +2181,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "ae9abcdf-c869-5528-9623-3845ecaa3f87")
+		(uuid "41272249-de64-5d6d-bebf-517e5bce8606")
 	)
 	(label "CAN_N"
 		(at 96.52 119.38 180)
@@ -2191,7 +2191,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "d538ee3c-4e31-5041-9584-4f5559215a7f")
+		(uuid "dad3a653-3128-5f16-a470-69b14feadbce")
 	)
 	(label "LINK_GND"
 		(at 151.13 119.38 0)
@@ -2225,7 +2225,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "9fd09941-1c18-5993-aee1-e81f59351e1d")
+		(uuid "c0584ca3-d413-5dca-b24c-b6c6a7c3272d")
 	)
 	(text "TERMINATION  JP301: jumper caps on 1-2 and 3-4 on the last board of the row only"
 		(exclude_from_sim no)

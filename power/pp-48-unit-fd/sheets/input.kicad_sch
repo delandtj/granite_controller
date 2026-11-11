@@ -3777,7 +3777,7 @@
 				)
 			)
 		)
-		(property "Value" "BSC040N10NS5"
+		(property "Value" "ISC035N10NM5LF2"
 			(at 157.48 57.785 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3811,7 +3811,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "100 V 4 mOhm pass FET; carries the start-up SOA alone (power limit 75 W, 10 ms)"
+		(property "Description" "100 V 3.5 mOhm linear-mode pass FET; holds the power limit (70 W at 48 V, 10 to 20 ms) alone"
 			(at 157.48 63.5 0)
 			(hide yes)
 			(show_name no)
@@ -3823,7 +3823,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" "C534334"
+		(property "LCSC" "C22408528"
 			(at 157.48 63.5 0)
 			(hide yes)
 			(show_name no)
@@ -3880,7 +3880,7 @@
 				)
 			)
 		)
-		(property "Value" "BSC040N10NS5"
+		(property "Value" "ISC035N10NM5LF2"
 			(at 157.48 24.765 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3926,7 +3926,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" "C534334"
+		(property "LCSC" "C22408528"
 			(at 157.48 30.48 0)
 			(hide yes)
 			(show_name no)

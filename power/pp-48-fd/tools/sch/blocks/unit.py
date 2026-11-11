@@ -172,9 +172,10 @@ def slot(b, s):
       desc="shunt, two 7 mOhm in parallel = 3.5 mOhm: limit 15.7 A, breaker 30 A")
     R(2, "7m 2W", R2512, {"1": "VBUS", "2": "SENSE"}, (35, 38), rot=90, fields={"LCSC": "C2904232"},
       desc="shunt (parallel)")
-    sym("Q1", "Transistor_FET:BSC070N10NS5", "BSC070N10NS5", "Package_TO_SOT_SMD:TDSON-8-1",
-        by_name("Transistor_FET:BSC070N10NS5", {"G": "GATE", "S": "OUT", "D": "SENSE"}), (98, 34), rot=90, fields={"LCSC": "C534364"},
-        desc="100 V pass MOSFET, placeholder: SOA check open (ADR 0001)")
+    sym("Q1", "Transistor_FET:BSC070N10NS5", "ISC035N10NM5LF2", "Package_TO_SOT_SMD:TDSON-8-1",
+        by_name("Transistor_FET:BSC070N10NS5", {"G": "GATE", "S": "OUT", "D": "SENSE"}), (98, 34), rot=90, fields={"LCSC": "C22408528"},
+        desc="100 V 3.5 mOhm linear-mode pass FET (PG-TDSON-8, drawn with the BSC070N10NS5 symbol): about 7 A at 48 V for 10 ms "
+             "against 0.96 A in power limit; was BSC070N10NS5, 0.15 A (ADR 0005 decision 3a)")
     sym("U1", "Power_Management:LM5069MM-2", "LM5069MM-2", "Package_SO:MSOP-10_3x3mm_P0.5mm",
         {"1": "SENSE", "2": "VBUS", "3": "UVLO", "4": "OVLO", "5": "GND", "6": "TIMER", "7": "PWR", "8": "PGD", "9": "OUT", "10": "GATE"},
         (96, 56), fields={"LCSC": "C111822"}, desc="hot-swap, 55 mV current limit, power limit, auto-retry 0.5 %")

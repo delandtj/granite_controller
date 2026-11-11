@@ -15,7 +15,9 @@ References are the drawing's + 200.
 - U207 LM5069-2 (auto-retry, as the slots; was -1 latch-off, 1 in stock at
   JLC on 2026-10-30): shunt R201 || R202 = 3 mOhm, current limit
   55 mV / 3 mOhm = 18.3 A (16.2-20.5 A over 48.5-61.5 mV), circuit breaker
-  105 mV = 35 A. Q202 || Q203 BSC040N10NS5 with 10 Ohm gate resistors;
+  105 mV = 35 A. Q202 || Q203 ISC035N10NM5LF2 (linear-mode FET, same
+  PG-TDSON-8; was BSC040N10NS5, outside its SOA on a short: ADR 0005
+  decision 3a) with 10 Ohm gate resistors;
   power limit ~75 W at 60 V (RPWR = 1.3e5 x (RSNS x PLIM - 1.18 mV x VDS)
   = 20.0k), insertion 160 ms, fault 10 ms, UVLO / OVLO as the slots. VBUS
   holds only the slot front ends' small caps when this stage starts; the
@@ -40,7 +42,9 @@ from sch.kicad import by_name
 G = 1.27
 FET = "Transistor_FET:2N7002"
 SOT23 = "Package_TO_SOT_SMD:SOT-23"
-PFET = "Transistor_FET:BSC040N10NS5"
+PFET = "Transistor_FET:BSC040N10NS5"      # symbol only (same pinout); the part is PFET_VALUE
+PFET_VALUE = "ISC035N10NM5LF2"
+PFET_LCSC = "C22408528"
 TDSON = "Package_TO_SOT_SMD:TDSON-8-1"
 
 
@@ -88,10 +92,10 @@ def block():
     R(201, "6m 2W", R2512, {"1": "VIN", "2": "USENSE"}, (35, 32), rot=90, fields={"LCSC": "C2692028"},
       desc="shunt, two 6 mOhm in parallel = 3 mOhm: limit 18.3 A, breaker 35 A")
     R(202, "6m 2W", R2512, {"1": "VIN", "2": "USENSE"}, (35, 38), rot=90, fields={"LCSC": "C2692028"}, desc="shunt (parallel)")
-    sym("Q202", PFET, "BSC040N10NS5", TDSON, by_name(PFET, {"G": "GATE_A", "S": "VBUS", "D": "USENSE"}), (98, 34), rot=90,
-        fields={"LCSC": "C534334"}, desc="100 V 4 mOhm pass FET; carries the start-up SOA alone (power limit 75 W, 10 ms)")
-    sym("Q203", PFET, "BSC040N10NS5", TDSON, by_name(PFET, {"G": "GATE_B", "S": "VBUS", "D": "USENSE"}), (98, 8), rot=90,
-        fields={"LCSC": "C534334"}, desc="parallel pass FET, for conduction loss")
+    sym("Q202", PFET, PFET_VALUE, TDSON, by_name(PFET, {"G": "GATE_A", "S": "VBUS", "D": "USENSE"}), (98, 34), rot=90,
+        fields={"LCSC": PFET_LCSC}, desc="100 V 3.5 mOhm linear-mode pass FET; holds the power limit (70 W at 48 V, 10 to 20 ms) alone")
+    sym("Q203", PFET, PFET_VALUE, TDSON, by_name(PFET, {"G": "GATE_B", "S": "VBUS", "D": "USENSE"}), (98, 8), rot=90,
+        fields={"LCSC": PFET_LCSC}, desc="parallel pass FET, for conduction loss")
     R(210, "10", R0402, {"1": "GATE", "2": "GATE_A"}, (90, 41), rot=90, desc="gate resistor (parallel FETs)")
     R(211, "10", R0402, {"1": "GATE_B", "2": "GATE"}, (98, 17), desc="gate resistor (parallel FETs)")
     sym("U207", "Power_Management:LM5069MM-2", "LM5069MM-2", "Package_SO:MSOP-10_3x3mm_P0.5mm",
