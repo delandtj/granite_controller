@@ -2,6 +2,10 @@
 
 **Status**: Proposed
 **Date**: 2026-11-11
+**Updated**: 2026-11-11 (review asks answered by the user: desired state
+yes, but revert by re-applying the previous state while the switch is
+reachable, reboot only as the fallback; drift is report-only; counters
+on their own topic; switches are pre-provisioned with the infra script)
 
 Related: firmware/docs/adr/0001-firmware-architecture.md (components 6
 Network, 7 MQTT, 8 HTTP API, 10 Configuration; commit-confirm),
@@ -75,8 +79,10 @@ by a reconcile step with commit-confirm.
 3. Configuration is a new config section `switch`, set through the
    existing `config_set` (HTTP and MQTT), staged and confirmed like
    `net` and `mqtt`. A reconcile diffs desired against actual, applies
-   the plan without saving, verifies, and saves on confirm. Revert is a
-   switch reboot, which discards unsaved changes.
+   the plan without saving, verifies, and saves on confirm. Revert
+   re-applies the previous state while the switch is reachable; only
+   when it is not (or the undo does not verify) does the controller
+   reboot the switch, which discards unsaved changes.
 4. A small set of imperative commands for things that are actions, not
    state: port enable/disable (by node or port), password rotation,
    save, reboot, backup.
@@ -159,10 +165,23 @@ Numbered after ADR 0001's list.
       check the controller can still reach the switch and the broker.
       Apply does not save. The section stays staged; the existing
       confirm timer (ADR 0001 component 6, `t_confirm`) runs.
+    - Before applying, the worker snapshots the actual state it read
+      (`SwitchState`); that snapshot is what a revert goes back to.
     - Confirm: `save.cgi`, then download a config backup (component 20).
-    - Timeout or failed verify: reboot the switch (unsaved changes
-      gone, saved config restored), re-read, emit `switch_reverted`.
-      The controller's own staged section is restored as for `net`.
+    - Timeout or failed verify, switch reachable: plan from the current
+      actual state back to the snapshot and apply it the same way
+      (unsaved), read back, compare with the snapshot. No reboot, no
+      traffic interruption beyond the ports the undo itself touches.
+      Emit `switch_reverted` with `"how":"undo"`.
+    - Switch unreachable, or the undo's read-back does not match the
+      snapshot: reboot the switch (unsaved changes gone, saved config
+      restored; about 3 s for all ports), wait for it, re-read, emit
+      `switch_reverted` with `"how":"reboot"`. If it stays unreachable,
+      `switch_unreachable` as usual.
+    - Invariant either way: nothing is saved before confirm, so the
+      flash always holds the last confirmed state and the reboot path
+      is always a valid fallback.
+    - The controller's own staged section is restored as for `net`.
     - IP changes to the switch use the same path; the client follows
       the new address for the verify step.
 
@@ -320,7 +339,8 @@ does not hold.
   stats + 10 s info/port + 60 s MAC walk + 5 min write) runs before
   this ADR is accepted; defaults are 5x slower than the soak.
 - **Lock-out**: a switch IP or VLAN change that cuts the controller off.
-  Mitigation: protected ports, commit-confirm, revert by reboot.
+  Mitigation: protected ports, commit-confirm, revert by undo or, when
+  the switch is unreachable, by reboot.
 - **A human on the web UI at the same time**: shared paging/search
   state can confuse a MAC walk; forms are last-writer-wins. Mitigation:
   the walk resets the filter with a GET first; drift detection reports
@@ -365,14 +385,16 @@ enable changes until it is found; a forced command still works. If the
 controller hangs off another switch upstream, its MAC shows on the
 uplink port, which is protected anyway.
 
-**Q: The revert is a switch reboot. Does that not hurt the nodes more
-than the bad change?**
-A: It interrupts all ports for about 3 s, once, and only when a change
-was not confirmed. The alternative, replaying the previous state op by
-op, needs the old state to be reachable through the broken change,
-which is exactly the case where it is not. Revert-by-reboot only works
-because changes are not saved before confirm, so "never save before
-confirm" is the invariant the code must hold.
+**Q: Why not always revert by rebooting the switch? It is simpler.**
+A: A reboot interrupts every port for about 3 s, including nodes the
+change never touched, so it is the fallback, not the default. While the
+switch is reachable the undo is the same planner run in reverse (current
+-> snapshot), which costs nothing new. The undo cannot help when the
+change cut the controller off, and that is exactly when the reboot is
+used. Both paths depend on "never save before confirm"; that is the
+invariant the code must hold. One gap: an undo that half-applies and
+then loses the switch is caught by the read-back check and falls
+through to the reboot.
 
 **Q: How do the parsers cope with firmware 200.1.16 / 200.1.20 /
 200.2.4, which exist and which we have not seen?**
@@ -396,11 +418,12 @@ monitored if the pages parse and otherwise reported as unsupported.
   `.../switch/counters` topic, events through `.../event`.
   - Alternative: a separate retained `.../switch` state topic.
   - Cost to change later: medium; consumers have to follow.
-- **Revert by switch reboot**.
-  - Alternative: replay the previous desired state.
+- **Revert by undo, reboot as fallback** (user decision 2026-11-11).
+  - Alternative: always reboot (simpler, interrupts every port).
   - Cost to change later: low inside the worker, but the "never save
     before confirm" invariant shapes the whole reconcile.
-- **`enforce` defaults to false**.
+- **Drift is report-only; `enforce` defaults to false** (user decision
+  2026-11-11).
   - Alternative: true, the controller is the source of truth.
   - Cost to change later: trivial (a default).
 - **Poll defaults** (5 s stats, 60 s info, 120 s MAC, 10 min drift).
@@ -439,15 +462,15 @@ monitored if the pages parse and otherwise reported as unsupported.
 - granite-sim: a fake switch serving the fixtures over HTTP for
   integration tests and UI work.
 
-### Review asks
+### Review asks (answered 2026-11-11)
 
-1. Desired state in the controller config with commit-confirm (yes),
-   or imperative commands only (no)?
-2. `enforce` default: false (report drift) or true (fix drift)?
-3. Counters on their own topic `.../switch/counters` (yes), or folded
-   into the periodic `state` (no)?
-4. Pre-provision switches with the infra script (yes), or build an
-   adoption mode now (no)?
+1. Desired state in the controller config with commit-confirm: **yes**,
+   with revert by undo while the switch is reachable and reboot only as
+   the fallback.
+2. `enforce` default: **false**, drift is reported, not fixed.
+3. Counters on their own topic `.../switch/counters`: **yes**.
+4. Pre-provision switches with the infra script: **yes**; no adoption
+   mode for now.
 
 ---
 
