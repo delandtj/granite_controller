@@ -9,7 +9,9 @@ unit hot-swap latch-off, input strip on the far side); 2026-10-30 (user:
 unit hot-swap LM5069-2 auto-retry with the latch in firmware, decision 3;
 INA237 for INA238); 2026-11-02 (user: no chain cable, the boards plug
 into each other on a mounting bar: decisions 4 and 7, the "Direct
-board-to-board mating" alternative taken)
+board-to-board mating" alternative taken); 2026-11-11 (hot-swap SOA
+check done on the routed FD unit: the fitted FETs fail it on a short,
+decision 3a; replacement FET named, not fitted)
 
 Related: docs/adr/0004-plane-column-layout.md (decisions 1, 1a, 2, 6
 and 9 stand; 3, 4, 5, 7 and 8 are replaced here, see "What changes"),
@@ -97,10 +99,73 @@ instead of a column edge.
    `unit_reset`. Timing, the boot case and the debounce are the
    firmware's: firmware/docs/adr/0002-plane-core-firmware.md
    decision 7a. With no core (or the expander in reset) U_OFF is
-   low and the unit retries forever: hardware default ON (R14), and the
-   0.5 % duty keeps the FETs inside their SOA on a hard short. The
-   retry costs one restart attempt (~10 ms fault timer) before the core
+   low and the unit retries forever: hardware default ON (R14). The
+   0.5 % duty bounds the average power only; the single 10 ms pulse of
+   each retry is what the FET has to survive, and the fitted FETs do
+   not (decision 3a; this sentence claimed they did until 2026-11-11).
+   The retry costs one restart attempt (~10 ms fault timer) before the core
    reacts; acceptable, the slots' own hot-swaps behave the same.
+
+3a. **Hot-swap SOA check** (2026-11-11, desk check against the
+   datasheets on pp-48-unit-fd as routed; nothing measured). On a
+   short the LM5069 circuit breaker opens the FET, then holds it in
+   power limit at the full input voltage until the fault timer ends;
+   the -2 repeats that pulse on every retry. With the values fitted
+   (TI SNVS452G: P_LIM = R_PWR / (1.3e5 x R_S) + 1.18 mV x V_DS / R_S,
+   t_fault = C_T x 4 V / 85 uA):
+
+   | | Slot (U1 / U51) | Unit (U207) |
+   |---|---|---|
+   | R_S, R_PWR, C_T | 3.5 mOhm, 13.7k, 220 nF | 3.0 mOhm, 20.0k, 220 nF |
+   | Current limit / circuit breaker (min / typ / max) | 13.9 / 15.7 / 17.6 A, 23 / 30 / 37 A | 16.2 / 18.3 / 20.5 A, 27 / 35 / 43 A |
+   | Power limit at V_DS = 48 V (60 V) | 46 W, 0.96 A (50 W, 0.84 A) | 70 W, 1.46 A (75 W, 1.25 A) |
+   | Sense voltage in power limit (5 mV recommended minimum) | 3.4 mV | 4.4 mV |
+   | Fault time | 10.4 ms typ, about 20 ms worst case | the same |
+   | FET fitted | BSC070N10NS5 | 2 x BSC040N10NS5 |
+   | FET SOA at 48 V, 10 ms, T_C = 25 C | 0.15 A | 0.15 A each |
+   | Asked / allowed | about 6 | about 10 on one FET, 5 if shared |
+
+   - **Short: fails.** Both fitted types are trench switching FETs
+     whose SOA falls with about V_DS^-2 in linear mode (1 ms at 48 V:
+     about 0.5 A; still under the demand). Expect the slot FET to
+     fail, most likely shorted, on a module input short (input
+     ceramic, TVS), the unit FETs after it, and the fault to end at
+     the 48 V supply's limit or breaker.
+   - **Switch-on: passes at 48 V, thin.** A slot charges the module's
+     about 12 uF in power limit in about 0.3 ms; BSC070N10NS5 allows
+     about 1.7 A for that time at 48 V against 0.96 A asked. At 60 V
+     it is slightly outside (0.84 A asked, about 0.75 A allowed).
+   - **R_PWR and C_T do not fix it**: a fault time short enough for
+     these FETs is shorter than the switch-on needs, and the power
+     limit is already below its accurate range.
+   - **Fix: a linear-mode FET on the same PG-TDSON-8 footprint**, all
+     four positions (Q1, Q51, Q202, Q203): Infineon ISC035N10NM5LF2
+     (OptiMOS 5 Linear FET 2, 100 V, 3.5 mOhm, datasheet rev 2.3).
+     SOA at 48 V: about 7 A for 10 ms at T_C = 25 C, about 6 A at
+     125 C, about 2.9 A for 100 ms; about 5 A at 60 V for 10 ms. That
+     is about 5x on a slot and 4x on the unit with one FET taking
+     everything. No other value changes. Open: stock (LCSC not
+     checked, distributors quote long lead times), the land pattern
+     overlaid on the fitted footprint, and the rework of boards
+     already built (FD batch 1 carries the BSC parts). Second
+     candidate, SOA not read: Nexperia PSMN4R8-100YSE (LFPAK56E).
+     Read and rejected: TI CSD19531Q5A / 19532Q5B / 19533Q5A and
+     BSC060N10NS3 (0.7 to 1.7 A at 48 V, 10 ms).
+   - **Selectivity** (does a slot fault stay on the slot). Overload or
+     soft short: yes once the FET holds; the slot folds back to about
+     1 A in well under a millisecond, and the unit, which may touch
+     its own current limit for that moment (slot limit plus the other
+     slot's load against 16.2 A minimum), never runs out its timer.
+     Dead short: a race of 1 to 2 us between the slot breaker opening
+     and the unit breaker's threshold; the breaker ranges overlap and
+     the unit carries the other slot's load on top. Estimated just
+     under the unit's minimum threshold with the other slot running
+     (its module's 11 uF holds the bus up), over it with the other
+     slot idle (1.8 uF on VBUS). If the unit breaker trips, the other
+     slot loses its bus for a few ms and its node goes down. Not
+     settled at the desk: docs/unit-fd-emi-bench-plan.md test 6. The
+     remedies would be more VBUS capacitance or a series inductance
+     per slot (the same change the ripple review points at).
 
 4. **Chain link**: the boards plug straight into each other, in the
    plane of the boards, no cable (user 2026-11-02: no cable; was a JST
@@ -317,8 +382,10 @@ core), or mux channels 4-7 through a wider chain (16 lines). Not
 handled now.
 
 **Q: Unit hot-swap at 18 A with two slot hot-swaps at 15.7 A each behind it: does the coordination work?**
-A: Each slot limits at 15.7 A and breaks at 30 A on its own; a single
-slot fault stays below the unit limit and trips only that slot. The
+A: Each slot limits at 15.7 A and breaks at 30 A on its own. A single
+slot overload trips only that slot; on a dead short the slot and unit
+breakers race and the unit may trip too (decision 3a, 2026-11-11; this
+answer said a slot fault always stays below the unit limit). The
 unit limit only catches a fault on the unit's own bus (caps, TVS,
 traces) or both slots high at once. The power limit / timer of the
 unit LM5069 must ride through both slots' insertion (160 ms each):
@@ -345,7 +412,8 @@ to size with the SOA check of decision 3.
   the 6 mOhm 2512: checked before the schematic; pivot to a clone /
   screw terminals if missing.
 - Unit hot-swap SOA with one FET at the 530 W level: default two FETs
-  if the strip fits them; one if the SOA check passes.
+  if the strip fits them; one if the SOA check passes. Checked
+  2026-11-11: neither one nor two of the fitted type pass (decision 3a).
 - Left-edge mounting holes against slot A's standoffs: default M2.5 if
   M3 does not fit beside S2 / S3.
 
@@ -379,6 +447,12 @@ input strip on the far side (right of slot B).
 
 **Behavior definers**
 - [ ] Unit hot-swap power limit and timer vs two slot insertions.
+- [ ] Hot-swap FETs: the fitted BSC070N10NS5 / BSC040N10NS5 are outside
+  their SOA on a short (decision 3a). Source ISC035N10NM5LF2 (or read
+  PSMN4R8-100YSE), overlay the land pattern, decide the rework of FD
+  batch 1.
+- [ ] Dead short on one slot: does the unit breaker trip with it
+  (decision 3a, bench plan test 6).
 - [x] Firmware: chain topology discovery and re-scan: plane-logic
   discovery.rs (probe 0x22 per channel, 2 s re-scan, lost after two
   NAKs).

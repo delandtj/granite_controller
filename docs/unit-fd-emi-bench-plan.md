@@ -10,7 +10,8 @@ the board's logic and the CAN link, need a change first?
 Related: docs/adr/0005-chained-plane-boards.md (unit, hot-swaps),
 docs/adr/0006-plane-link-can-fd.md (link, decision 12),
 docs/pm-19v-250w-b.md (module, input ripple, risk 5),
-docs/pm-interface.md (slot currents).
+docs/pm-interface.md (slot currents). Test 6 (short on one slot) is the
+bench side of ADR 0005 decision 3a.
 
 ## Background: what the layout review found
 
@@ -172,6 +173,35 @@ Scope 2, ground on LINK_GND (J303 / J304 pins 3 / 4, or C301 pin 2).
   probably the largest radiated source in the system; that is a module
   question and this plan only notes the level.
 
+## Test 6: short on one slot
+
+Not an EMI test; it is here because it uses the same setup. Background:
+docs/adr/0005-chained-plane-boards.md decision 3a. **With the FETs of FD
+batch 1 (BSC070N10NS5, BSC040N10NS5) this test is expected to destroy
+the slot FET and possibly the unit FETs**: run it on a board that may be
+lost, or after the swap to ISC035N10NM5LF2. Supply current limit set, a
+fuse or breaker in the 48 V lead, eye protection.
+
+Scope 1 on bus GND, single shot, trigger on slot A's output falling:
+VBUS (C214), A_OUT (C2), U_PGD (R238) and B_OUT (C52), or the same in
+two shots.
+
+1. Soft short: an electronic load or a resistor of about 2 ohm switched
+   onto slot A's VIN standoffs with slot B at full load. Expected: slot
+   A limits, folds back and switches off after about 10 ms, then
+   retries about every 2 s; VBUS, B_OUT and U_PGD do not move.
+2. Dead short: a relay or a FET of a few mohm across slot A's VIN
+   standoffs, slot B at full load. Record the VBUS dip and its length,
+   and whether U_PGD falls.
+3. The same with slot B idle (no module, or module off): the bus has
+   only 1.8 uF then and the unit breaker is expected to trip.
+4. After each: slot A's FET still switches off (A_OUT at 0 V with the
+   slot commanded off) and Q202 / Q203 still isolate (U_OFF).
+
+Pass: slot B's node keeps running through 1 and 2, and no FET is left
+conducting in 4. If U_PGD falls in 2: more VBUS capacitance or a series
+inductance per slot (the fallback of tests 1 and 2), then repeat.
+
 ## Verdict
 
 The boards are usable as built when all of these hold:
@@ -184,6 +214,10 @@ The boards are usable as built when all of these hold:
       across the transient set (test 3).
 - [ ] CAN error counters stay at zero over hours at full load (test 4).
 - [ ] INA237 readings are steady (test 5).
+
+Separate from the EMI verdict: test 6 decides whether a short on one
+slot stays on that slot. The boards run without it; they do not protect
+themselves against a short until the FETs are changed.
 
 If test 1 or 2 fails: the choices are a different C201, or a series
 inductor per slot (unit or module side), in that order of cost. If test
