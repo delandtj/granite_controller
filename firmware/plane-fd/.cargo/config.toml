@@ -1,0 +1,17 @@
+# plane-fd is a bare-metal Cortex-M0+ image and keeps its own build
+# settings, like granite-fw does for the ESP32: it is excluded from the
+# firmware/ workspace (firmware/Cargo.toml `exclude`).
+[build]
+target = "thumbv6m-none-eabi"
+
+[target.thumbv6m-none-eabi]
+# link.x comes from cortex-m-rt and includes ./memory.x; defmt.x is the
+# defmt string table.
+rustflags = ["-C", "link-arg=-Tlink.x", "-C", "link-arg=-Tdefmt.x"]
+# Bench flashing and the RTT log in one command (SWD on PA13 / PA14).
+runner = "probe-rs run --chip STM32G070CBTx"
+
+[env]
+# Everything at info and above ends up in the image; trace and debug
+# calls are compiled out.
+DEFMT_LOG = "info"

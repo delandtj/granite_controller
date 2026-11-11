@@ -2053,7 +2053,7 @@
 		)
 		(uuid "7f8de4ac-b693-5ebe-a61b-6b22469fbe4d")
 	)
-	(label "CANH"
+	(label "CAN_P"
 		(at 45.72 88.9 180)
 		(effects
 			(font
@@ -2063,7 +2063,7 @@
 		)
 		(uuid "939da9ff-d0ba-582b-860d-ef7c524c3005")
 	)
-	(label "CANL"
+	(label "CAN_N"
 		(at 58.42 88.9 0)
 		(effects
 			(font
@@ -2073,7 +2073,7 @@
 		)
 		(uuid "69207c3b-63b2-5c73-b2e2-cca5c7b8b1b2")
 	)
-	(label "CANH"
+	(label "CAN_P"
 		(at 45.72 114.3 180)
 		(effects
 			(font
@@ -2083,7 +2083,7 @@
 		)
 		(uuid "fad8650f-7cf5-5d7c-b87e-f20cdf33a1ae")
 	)
-	(label "CANL"
+	(label "CAN_N"
 		(at 58.42 114.3 0)
 		(effects
 			(font
@@ -2173,7 +2173,7 @@
 		)
 		(uuid "d5b1f1e6-ffa7-5fd9-8787-64ecd4e57378")
 	)
-	(label "CANH"
+	(label "CAN_P"
 		(at 96.52 116.84 180)
 		(effects
 			(font
@@ -2183,7 +2183,7 @@
 		)
 		(uuid "ae9abcdf-c869-5528-9623-3845ecaa3f87")
 	)
-	(label "CANL"
+	(label "CAN_N"
 		(at 96.52 119.38 180)
 		(effects
 			(font
@@ -2215,7 +2215,7 @@
 		)
 		(uuid "c819e495-eae7-5307-ba3d-86bee10ea626")
 	)
-	(text "PLANE LINK  J303 IN plug / J304 OUT socket, 1 CANH 2 CANL 3/4 LINK_GND 5/6 AUX_12V straight through (ADR 0006)"
+	(text "PLANE LINK  J303 IN plug / J304 OUT socket, 1 CAN_P 2 CAN_N 3/4 LINK_GND 5/6 AUX_12V straight through (ADR 0006)"
 		(exclude_from_sim no)
 		(at 25.4 78.74 0)
 		(effects
@@ -2579,7 +2579,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "plane link from the left neighbour (left edge, 2x3 right-angle plug); pin n = pin n: 1 CANH 2 CANL 3/4 LINK_GND 5/6 AUX_12V"
+		(property "Description" "plane link from the left neighbour (left edge, 2x3 right-angle plug); pin n = pin n: 1 CAN_P 2 CAN_N 3/4 LINK_GND 5/6 AUX_12V"
 			(at 50.8 91.44 0)
 			(hide yes)
 			(show_name no)
@@ -2815,7 +2815,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "right-end termination, 2x2 2.54 mm header: jumper caps on 1-2 (CANH) and 3-4 (CANL), both on the last board of the row only, none elsewhere (caps C5305, not assembled)"
+		(property "Description" "right-end termination, 2x2 2.54 mm header: jumper caps on 1-2 (CAN_P) and 3-4 (CAN_N), both on the last board of the row only, none elsewhere (caps C5305, not assembled)"
 			(at 101.6 116.84 0)
 			(hide yes)
 			(show_name no)

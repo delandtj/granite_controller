@@ -15,7 +15,7 @@
 #   prune (3 rounds) -> pcbkit silk -> nosilk J2 / J3 / J301. Checks: isocheck.py <filled board> 2.0.
 #   Termination header (2026-11-04, ADR 0006 decision 8: 2x2 jumper-cap header JP1 for the solder jumpers
 #   JP1 / JP2) and J2's pin 1 silk mark: on the routed board, fdsync.py -> fd/core_term.py (places D9 / JP1 /
-#   R25 / R26 / C32 from place_core.py, redraws the channel's CANH / CANL / TERM_* / AUX_12V copper and the
+#   R25 / R26 / C32 from place_core.py, redraws the channel's CAN_P / CAN_N / TERM_* / AUX_12V copper and the
 #   mark); a fresh run of the sequence above places them by place_core.py and lets KRT route them instead.
 # unit: rev D board -> fdsync.py -> place_unit.py (J303 / J304 at v 30, C201 turned, C202 / H3 / Q10 / R31 /
 #   R58 moved, termination in the margin) -> fdstrip.py fd/unit-regions.json -> route_unit.py (link() band
@@ -41,11 +41,11 @@ mkdir -p "$W"
 py() { python3 "$@" 2>&1 | grep -v "Debug\|memory leak" || true; }
 D=$P/pp-48-$B-fd; N=pp-48-$B-fd
 kicad-cli sch export netlist --format kicadxml -o "$W/net.xml" "$D/$N.kicad_sch" > /dev/null
-py "$T/fdsync.py" "$P/pp-48-$B/pp-48-$B.kicad_pcb" "$W/net.xml" "$D" "$W/1-sync.kicad_pcb"
+py "$T/fdsync.py" "$P/../attic/power/pp-48-$B/pp-48-$B.kicad_pcb" "$W/net.xml" "$D" "$W/1-sync.kicad_pcb"
 if [ "$B" = core ]; then
     py "$T/place_core.py" "$W/1-sync.kicad_pcb" "$W/2-placed.kicad_pcb"
     py "$T/fdoutline.py" "$W/2-placed.kicad_pcb" "$W/3-outline.kicad_pcb" 43.5 100 111.5 172
-    python3 "$T/fdstrip.py" "$P/pp-48-core/pp-48-core.kicad_pcb" "$W/3-outline.kicad_pcb" "$W/4-strip.kicad_pcb" \
+    python3 "$T/fdstrip.py" "$P/../attic/power/pp-48-core/pp-48-core.kicad_pcb" "$W/3-outline.kicad_pcb" "$W/4-strip.kicad_pcb" \
         "$T/fd/core-regions.json" --zone VIN 43.8,100.3,111.2,171.7 2> /dev/null > "$W/nets.txt"
     py "$T/route_core.py" "$W/4-strip.kicad_pcb" "$W/5-hand.kicad_pcb"
     cp "$W/5-hand.kicad_pcb" "$D/$N.kicad_pcb"
@@ -57,7 +57,7 @@ if [ "$B" = core ]; then
     (cd "$D" && KRT_EXTRA="--max-ripup 0" "$PK" krt-reroute /Supplies/SW2)
 else
     py "$T/place_unit.py" "$W/1-sync.kicad_pcb" "$W/2-placed.kicad_pcb"
-    python3 "$T/fdstrip.py" "$P/pp-48-unit/pp-48-unit.kicad_pcb" "$W/2-placed.kicad_pcb" "$W/4-strip.kicad_pcb" \
+    python3 "$T/fdstrip.py" "$P/../attic/power/pp-48-unit/pp-48-unit.kicad_pcb" "$W/2-placed.kicad_pcb" "$W/4-strip.kicad_pcb" \
         "$T/fd/unit-regions.json" 2> /dev/null > "$W/nets.txt"
     py "$T/route_unit.py" "$W/4-strip.kicad_pcb" "$W/5-hand.kicad_pcb"
     (cd "$D" && RESUME=1 PASSES=4 SCRATCH="$W/flow" "$T/route_unit.sh" "$W/5-hand.kicad_pcb")

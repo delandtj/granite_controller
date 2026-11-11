@@ -5,7 +5,7 @@ Usage: route_unit.py <in.kicad_pcb> <out.kicad_pcb>
 docs/adr/0005-chained-plane-boards.md, docs/adr/0006-plane-link-can-fd.md. Run after tools/place_unit.py.
 
 - CAN FD link (link()): the link plug J303 to the socket J304 on B in the pad-free band v 19.5-22.5,
-  top-down CANL / CANH (0.2 mm, 0.6 mm apart: the pair), LINK_GND and AUX_12V (0.5 mm), one straight run
+  top-down CAN_N / CAN_P (0.2 mm, 0.6 mm apart: the pair), LINK_GND and AUX_12V (0.5 mm), one straight run
   per net, down to the pins at both ends (the inner column directly, the outer one by a tie between the
   same-net pins); net class LINK (.kicad_pro) keeps 0.5 mm to everything else (decision 12). B has no
   bus GND plane under it (In2 is the VBUS plane); the B GND pour keeps the class clearance.
@@ -220,19 +220,19 @@ def escapes(k):
                  keep_tracks=True, no_vias=True)
 
 
-LINK_Y = {'CANL': 119.6, 'CANH': 120.4, 'LINK_GND': 121.4, 'AUX_12V': 122.4}   # band rows (absolute y)
-LINK_W = {'CANL': 0.2, 'CANH': 0.2, 'LINK_GND': 0.5, 'AUX_12V': 0.5}
+LINK_Y = {'CAN_N': 119.6, 'CAN_P': 120.4, 'LINK_GND': 121.4, 'AUX_12V': 122.4}   # band rows (absolute y)
+LINK_W = {'CAN_N': 0.2, 'CAN_P': 0.2, 'LINK_GND': 0.5, 'AUX_12V': 0.5}
 # where each row turns down to its pins: left end (J303) / right end (J304); the outer column (even pins) of the
 # CAN pair is met from above, LINK_GND / AUX_12V reach the inner pin and tie across to the outer one
-LINK_PIN = {'CANL': '2', 'CANH': '1', 'LINK_GND': '3', 'AUX_12V': '5'}
+LINK_PIN = {'CAN_N': '2', 'CAN_P': '1', 'LINK_GND': '3', 'AUX_12V': '5'}
 
 
 def link(k):
     B = pcbnew.B_Cu
-    xl = {'CANL': pad_at(k.b, 'J303', '2')[0], 'CANH': pad_at(k.b, 'J303', '1')[0]}
-    xl['LINK_GND'], xl['AUX_12V'] = xl['CANH'] + 1.62, xl['CANH'] + 2.62
-    xr = {'CANL': pad_at(k.b, 'J304', '2')[0], 'CANH': pad_at(k.b, 'J304', '1')[0]}
-    xr['LINK_GND'], xr['AUX_12V'] = xr['CANH'] - 1.73, xr['CANH'] - 2.73
+    xl = {'CAN_N': pad_at(k.b, 'J303', '2')[0], 'CAN_P': pad_at(k.b, 'J303', '1')[0]}
+    xl['LINK_GND'], xl['AUX_12V'] = xl['CAN_P'] + 1.62, xl['CAN_P'] + 2.62
+    xr = {'CAN_N': pad_at(k.b, 'J304', '2')[0], 'CAN_P': pad_at(k.b, 'J304', '1')[0]}
+    xr['LINK_GND'], xr['AUX_12V'] = xr['CAN_P'] - 1.73, xr['CAN_P'] - 2.73
     for n, y in LINK_Y.items():
         net, w = '/Chain/' + n, LINK_W[n]
         for ref, x in (('J303', xl[n]), ('J304', xr[n])):
@@ -248,21 +248,21 @@ def link(k):
 
 def link_term(k):
     """the split termination (ADR 0006 decision 8) in the margin above J303 (tools/place_unit.py TERM), on F:
-    the 2x2 jumper-cap header JP301 (CANH / TERM_H column left, CANL / TERM_L column right, TERM row up), the
-    resistors above it, C301 above them. Tied to the B rows of link(): CANH by a via on its row, CANL straight
+    the 2x2 jumper-cap header JP301 (CAN_P / TERM_H column left, CAN_N / TERM_L column right, TERM row up), the
+    resistors above it, C301 above them. Tied to the B rows of link(): CAN_P by a via on its row, CAN_N straight
     down on B from the header's through-hole pad to its row, LINK_GND by a via on its left vertical"""
     F, B = pcbnew.F_Cu, pcbnew.B_Cu
-    h1, h2 = pad_at(k.b, 'JP301', '1'), pad_at(k.b, 'JP301', '2')       # CANH, TERM_H
-    l1, l2 = pad_at(k.b, 'JP301', '3'), pad_at(k.b, 'JP301', '4')       # CANL, TERM_L
+    h1, h2 = pad_at(k.b, 'JP301', '1'), pad_at(k.b, 'JP301', '2')       # CAN_P, TERM_H
+    l1, l2 = pad_at(k.b, 'JP301', '3'), pad_at(k.b, 'JP301', '4')       # CAN_N, TERM_L
     r1h, r1m = pad_at(k.b, 'R301', '1'), pad_at(k.b, 'R301', '2')
     r2m, r2l = pad_at(k.b, 'R302', '1'), pad_at(k.b, 'R302', '2')
     cm, cg = pad_at(k.b, 'C301', '1'), pad_at(k.b, 'C301', '2')
     xh = pad_at(k.b, 'J303', '1')[0]
-    vh = (xh + 1.02, LINK_Y['CANH'])                     # on the CANH row
+    vh = (xh + 1.02, LINK_Y['CAN_P'])                     # on the CAN_P row
     vg = (xh + 1.62, 124.0)                              # on the LINK_GND vertical
-    k.track('/Chain/CANL', [l1, (l1[0], LINK_Y['CANL'])], 0.3, B)
-    k.track('/Chain/CANH', [h1, (h1[0], vh[1] - 1.4), (h1[0] + 1.4, vh[1]), vh], 0.3, F)
-    k.via('/Chain/CANH', vh)
+    k.track('/Chain/CAN_N', [l1, (l1[0], LINK_Y['CAN_N'])], 0.2, B)   # 0.2: tuning profile CAN_DIFF
+    k.track('/Chain/CAN_P', [h1, (h1[0], vh[1] - 1.4), (h1[0] + 1.4, vh[1]), vh], 0.2, F)
+    k.via('/Chain/CAN_P', vh)
     k.track('/Chain/TERM_H', [r1h, h2], 0.3, F)
     k.track('/Chain/TERM_L', [r2l, l2], 0.3, F)
     k.track('/Chain/TERM_MID', [r1m, r2m], 0.3, F)

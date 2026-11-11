@@ -4,7 +4,7 @@ CAN link. Nothing else moves.
 
 Usage: fd_board.py <revd.kicad_pcb> <net.xml> <out.kicad_pcb>
 
-<revd> is controller/granite-controller.kicad_pcb (rev D, routed, DRC
+<revd> is attic/controller-rev-d/granite-controller.kicad_pcb (rev D, routed, DRC
 clean); <net.xml> the FD netlist (kicad-cli sch export netlist --format
 kicadxml), for the new parts' fields (MANUFACTURER / MPN / LCSC /
 Datasheet / Description). Write <out> outside the project (pcbnew rewrites the .kicad_pro

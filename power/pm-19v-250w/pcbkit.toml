@@ -64,7 +64,7 @@ fill = true
 out = "fab"
 skip_dnp = true
 # KiCad -> EasyEDA rotation / centroid per LCSC part (pcbkit jlc.py convention, see
-# power/pp-48-unit/pcbkit.toml). Fitted 2026-11-05 (EasyEDA footprints by easyeda2kicad, numbered
+# attic/power/pp-48-unit/pcbkit.toml). Fitted 2026-11-05 (EasyEDA footprints by easyeda2kicad, numbered
 # pads onto ours); parts shared with PM-19V-250W-B copied from its table. Check them in JLC's preview.
 corrections = [
     ["^CP_EIA-7360-38_Kemet-E$", "C2158991", 180, 0.0, 0.0],         # C24 / C25: EasyEDA pad 1 = + as the Kemet-D entry; check the + mark in the preview

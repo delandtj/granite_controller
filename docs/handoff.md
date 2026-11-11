@@ -1,6 +1,27 @@
-# Handoff - granite-plane (updated 2026-11-06)
+# Handoff - granite-plane (updated 2026-11-09)
 
 Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
+
+## 2026-11-09: JLC order review, CAN pair impedance
+
+- LCSC fixes (JLC engineering questions on the FD orders): unit-fd
+  R19 / R20 / R69 / R70 270R 0402 were C22775 (a 100R 0603) ->
+  C25099; core-fd D3 / D4 / D5 on 0603 pads were C2297 (KT-0805G) ->
+  C12624 (KT-0603G). Generator table fixed. The old pp-48-unit /
+  pp-48-core still carry the wrong numbers (going to the attic).
+  Reproduction orders take these.
+- Link nets renamed CANH / CANL -> CAN_P / CAN_N on core-fd and unit-fd
+  (link.py is shared), so KiCad sees a differential pair. The ISO1044
+  symbol pins keep their names. controller-fd (gen_canlink.py) still
+  says CANH / CANL.
+- unit-fd: net class CAN (CAN_P / CAN_N) with tuning profile CAN_DIFF
+  (differential, 120 ohm target, 0.2 mm / 0.6 mm gap, F over In1, B over
+  In2); rule "link to bus" covers LINK and CAN. Routed pair computed
+  126 ohm differential (124-130 over mask / er), end runs ~132:
+  tools/xsec.py + tools/can_impedance.py (2D field solver, uv run with
+  scipy). Termination stubs narrowed 0.3 -> 0.2 mm. DRC: the known 13
+  plus 2 diff_pair_gap warnings for the 10 mm end runs, where the pair
+  spreads to the 2.54 mm connector pins (by design).
 
 ## 2026-11-05: schematics readable, generators own the layout
 

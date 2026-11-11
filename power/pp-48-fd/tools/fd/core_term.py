@@ -2,13 +2,13 @@
 """core-fd: the right-end termination from two solder jumpers (JP1 / JP2) to the 2x2 jumper-cap header JP1
 (ADR 0006 decision 8), on the routed board, after fdsync.py. Usage: core_term.py <in.kicad_pcb> <out.kicad_pcb>
 
-Places D9, JP1, R25 / R26 / C32 from tools/place_core.py LINKP, deletes the old copper of CANH / CANL / TERM_*
+Places D9, JP1, R25 / R26 / C32 from tools/place_core.py LINKP, deletes the old copper of CAN_P / CAN_N / TERM_*
 in the right link channel (x 101.6-111.2, y 108-130.5; the arrivals from the strip stay), AUX_12V's B run down
 the channel and the LINK_GND via under the old D9, and draws the new copper (group "hand"):
-- CANH on F left of R25 (x 102.2) down to JP1.1, on past D9.1 to J3.1
-- CANL on F at x 108.4 down to JP1.3, on past D9.2 to J3.2
+- CAN_P on F left of R25 (x 102.2) down to JP1.1, on past D9.1 to J3.1
+- CAN_N on F at x 108.4 down to JP1.3, on past D9.2 to J3.2
 - TERM_H / TERM_L straight up from JP1.2 / JP1.4 to R25.1 / R26.2, TERM_MID R25.2 - R26.1 and up to C32.1
-- AUX_12V on B at x 109.8, right of the header's pins (not under CANL)
+- AUX_12V on B at x 109.8, right of the header's pins (not under CAN_N)
 - LINK_GND via above D9.3
 Also a pin 1 silk mark (triangle + "1", F and B) at the bare link plug J2.
 """
@@ -39,11 +39,11 @@ for it in [t[i] for i in range(len(t))]:
     n = it.GetNetname()
     if it.Type() == pcbnew.PCB_VIA_T:
         x, y = mm(it.GetPosition().x), mm(it.GetPosition().y)
-        old = (n in TERM + ('/Link/CANH', '/Link/CANL') and inside(x, y)) or \
+        old = (n in TERM + ('/Link/CAN_P', '/Link/CAN_N') and inside(x, y)) or \
               (n == 'LINK_GND' and 104.0 <= x <= 107.0 and 120.0 <= y <= 124.0)
     else:
         (x1, y1), (x2, y2) = [(mm(p.x), mm(p.y)) for p in (it.GetStart(), it.GetEnd())]
-        old = (n in TERM + ('/Link/CANH', '/Link/CANL') and inside(x1, y1) and inside(x2, y2)) or \
+        old = (n in TERM + ('/Link/CAN_P', '/Link/CAN_N') and inside(x1, y1) and inside(x2, y2)) or \
               (n == 'AUX_12V' and it.GetLayer() == pcbnew.B_Cu and min(x1, x2) > 101.6 and 107.0 <= min(y1, y2)
                and max(y1, y2) <= 124.0)
     if old:
@@ -83,17 +83,17 @@ def via(net, p, d=0.5, drill=0.2):
     grp.AddItem(v)
 
 
-h, th = pad('JP1', '1'), pad('JP1', '2')       # CANH, TERM_H
-l, tl = pad('JP1', '3'), pad('JP1', '4')       # CANL, TERM_L
+h, th = pad('JP1', '1'), pad('JP1', '2')       # CAN_P, TERM_H
+l, tl = pad('JP1', '3'), pad('JP1', '4')       # CAN_N, TERM_L
 dh, dl, dg = pad('D9', '1'), pad('D9', '2'), pad('D9', '3')
 jh, jl = pad('J3', '1'), pad('J3', '2')
-XH, XL = 102.2, 108.4                          # CANH left of R25, CANL right of R26
-track('/Link/CANH', [(103.6, 109.1), (XH, 110.5), (XH, h[1]), h], 0.2)
-track('/Link/CANH', [h, (dh[0], h[1] + dh[0] - h[0]), dh], 0.2)
-track('/Link/CANH', [dh, (dh[0], dh[1] + 0.66), (jh[0], dh[1] + 0.66 + dh[0] - jh[0]), jh], 0.2)
-track('/Link/CANL', [(XL, 111.7), (XL, l[1] - 0.9), (XL - 0.9, l[1]), l], 0.2)
-track('/Link/CANL', [l, (dl[0], l[1] + dl[0] - l[0]), dl], 0.2)
-track('/Link/CANL', [dl, (dl[0], dl[1] + 0.66), (jl[0], dl[1] + 0.66 + dl[0] - jl[0]), jl], 0.2)
+XH, XL = 102.2, 108.4                          # CAN_P left of R25, CAN_N right of R26
+track('/Link/CAN_P', [(103.6, 109.1), (XH, 110.5), (XH, h[1]), h], 0.2)
+track('/Link/CAN_P', [h, (dh[0], h[1] + dh[0] - h[0]), dh], 0.2)
+track('/Link/CAN_P', [dh, (dh[0], dh[1] + 0.66), (jh[0], dh[1] + 0.66 + dh[0] - jh[0]), jh], 0.2)
+track('/Link/CAN_N', [(XL, 111.7), (XL, l[1] - 0.9), (XL - 0.9, l[1]), l], 0.2)
+track('/Link/CAN_N', [l, (dl[0], l[1] + dl[0] - l[0]), dl], 0.2)
+track('/Link/CAN_N', [dl, (dl[0], dl[1] + 0.66), (jl[0], dl[1] + 0.66 + dl[0] - jl[0]), jl], 0.2)
 track('/Link/TERM_H', [pad('R25', '1'), th], 0.2)
 track('/Link/TERM_L', [pad('R26', '2'), tl], 0.2)
 track('/Link/TERM_MID', [pad('R25', '2'), pad('R26', '1')], 0.2)

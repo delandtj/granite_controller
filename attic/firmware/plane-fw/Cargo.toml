@@ -1,0 +1,42 @@
+[package]
+name = "plane-fw"
+description = "Granite plane core firmware for the STM32G070CBT6 on the PP-48 core board"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+
+[dependencies]
+cortex-m = { version = "0.7.10", features = ["critical-section-single-core"] }
+cortex-m-rt = "0.7.7"
+defmt = "1.2.0"
+defmt-rtt = "1.3.1"
+embassy-executor = { version = "0.10.0", features = ["platform-cortex-m", "executor-thread", "defmt"] }
+embassy-stm32 = { version = "0.6.0", features = ["stm32g070cb", "time-driver-any", "defmt", "unstable-pac"] }
+embassy-sync = { version = "0.8.0", features = ["defmt"] }
+embassy-time = { version = "0.5.1", features = ["defmt", "defmt-timestamp-uptime"] }
+granite-proto = { version = "0.1.0", path = "../../../firmware/granite-proto" }
+panic-probe = { version = "1.0.0", features = ["print-defmt"] }
+plane-logic = { version = "0.1.0", path = "../../../firmware/plane-logic" }
+# The M0+ has no atomic compare-and-swap; portable-atomic emulates it
+# in a critical section for the crates that want one (static_cell,
+# embassy-executor).
+portable-atomic = { version = "1.15.0", default-features = false, features = ["critical-section"] }
+static_cell = "2.1.1"
+
+# Size matters: the application has to fit the ~52 KB ACTIVE slot of ADR
+# 0002 decision 2, which leaves no room for inlining for its own sake.
+# "z" over "s" because this image is nowhere near fast enough to care:
+# the poll cycle is 25 ms of I2C wire time out of every 50 ms.
+[profile.release]
+opt-level = "z"
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+overflow-checks = false
+# Debug info costs nothing in flash and is what probe-rs and
+# defmt-decoder need to name a panic location.
+debug = 2
+
+[profile.dev]
+opt-level = "z"
+panic = "abort"

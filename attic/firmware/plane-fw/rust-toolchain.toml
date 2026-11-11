@@ -1,0 +1,7 @@
+# The plane images build on stable for the Cortex-M0+: nothing here needs
+# a nightly feature. The ESP32 side of the project does, and granite-fw
+# carries its own toolchain file for it.
+[toolchain]
+channel = "stable"
+components = ["clippy", "llvm-tools"]
+targets = ["thumbv6m-none-eabi"]

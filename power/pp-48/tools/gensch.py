@@ -4,7 +4,7 @@
 usage: gensch.py core|unit [project dir]
 
 docs/adr/0005-chained-plane-boards.md: two board designs, each its own KiCad
-project next to this one (default power/pp-48-core, power/pp-48-unit); the
+project next to this one (default attic/power/pp-48-core, attic/power/pp-48-unit); the
 engine, blocks, pp.kicad_sym and pp48.pretty stay in power/pp-48 and are
 shared.
 
@@ -33,7 +33,7 @@ KIND = sys.argv[1] if len(sys.argv) > 1 else ""
 if KIND not in ("core", "unit"):
     raise SystemExit("usage: gensch.py core|unit [project dir]")
 PROJECT = "pp-48-" + KIND
-PROJ_DIR = sys.argv[2] if len(sys.argv) > 2 else os.path.join(os.path.dirname(os.path.dirname(HERE)), PROJECT)
+PROJ_DIR = sys.argv[2] if len(sys.argv) > 2 else os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(HERE))), "attic", "power", PROJECT)
 OUT = os.path.join(PROJ_DIR, PROJECT + ".kicad_sch")
 DATE = "2026-10-29"
 SHEETS = "sheets"
@@ -149,7 +149,7 @@ for name, wmm, hmm in PAPERS:
 root.write(OUT)
 print("wrote", OUT, "paper", root.paper)
 if KIND == "core":                       # the MCU pin map for the firmware (same table as the MCU sheet)
-    pins = os.path.join(PROJ_DIR, "..", "..", "firmware", "plane-core-pins.toml")
+    pins = os.path.join(HERE, "..", "..", "..", "attic", "firmware", "plane-core-pins.toml")
     with open(pins, "w") as f:
         f.write(mcu.pins_toml(mcu.mcu_nets(8, tile=False)))
     print("wrote", os.path.normpath(pins))

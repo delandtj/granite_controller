@@ -6,13 +6,14 @@
 # dependencies), shared with the plane firmware.
 # plane-logic is the plane firmware core (no_std, no alloc): it builds for
 # thumbv6m-none-eabi and, with the sim feature, runs on the host.
-# granite-fw and plane-fw are excluded on purpose: each is a firmware
-# crate with its own target, linker script and .cargo/config.toml
-# (riscv32 ESP-IDF and thumbv6m embassy respectively), and must not share
-# this workspace's build settings.
+# granite-fw is excluded on purpose: it is a firmware crate with its own
+# target, linker script and .cargo/config.toml (riscv32 ESP-IDF) and must
+# not share this workspace's build settings. plane-fd (the CAN FD plane
+# binary, thumbv6m) is excluded for the same reason. The rev D (I2C link)
+# plane binary plane-fw is in attic/firmware/plane-fw.
 [workspace]
 members = ["granite-core", "granite-proto", "granite-sim", "mcp2518fd", "plane-logic"]
-exclude = ["granite-fw", "plane-fw"]
+exclude = ["granite-fw", "plane-fd"]
 resolver = "3"
 
 [workspace.package]

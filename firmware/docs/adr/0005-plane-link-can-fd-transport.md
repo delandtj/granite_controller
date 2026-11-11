@@ -2,7 +2,7 @@
 
 **Status**: Accepted (2026-11-04)
 **Date**: 2026-11-04
-**Updated**: 2026-11-04 (open questions answered by the user: EVENT stays a bare flag, bus-off auto recovery); 2026-11-04 (as built: granite-proto::can 7c39a71, plane-fw 8d898e6, mcp2518fd 0af8d56 as a facade over mcp251xfd, granite-core / sim 7319d12); 2026-11-06 (as built, controller side: `granite_core::plane::can_link::CanPlaneLink` over a frame-driver trait, granite-fw features `link-canfd` / `link-i2c` / `link-bench`, MCP2518FD on the W5500's SPI bus, link kind in the image and the OTA guard. See "As built: the controller side" below); 2026-11-06 (as built, plane side: the transport is `plane_logic::can_link` over a small synchronous frame-driver trait, host-tested against a fake controller; STATUS gains the CAN counters as record 0x1D (TEC, REC, bus-off count, reassembly drops, TX-FIFO-full), published by the transport and absent on the I2C link; `granite_proto::frame::trim_padded` cuts the CAN FD padding off a reassembled write before `parse_frame`, which takes an exact length; plane-fw builds `link-i2c` / `link-mcp` (default) / `link-fdcan`, exactly one, the feature carrying the embassy chip (G070CB / G0B1CC), the linker script and the pin map, with INT_OUT dropped on the CAN builds; the G0B1 FDCAN runs off a 40 MHz PLLQ (VCO 320 MHz, R = 5 for SYSCLK 64, Q = 8) with the bit timing written out and TDC set through the PAC, since embassy-stm32 0.6 never writes DBTP.TDC. Nothing has run on hardware: no FD board exists. The `link-fdcan` image is 640 bytes over the 52 KB ACTIVE slot of ADR 0002, which the G0B1CC's spare 128 KB can absorb once that ADR says so)
+**Updated**: 2026-11-04 (open questions answered by the user: EVENT stays a bare flag, bus-off auto recovery); 2026-11-04 (as built: granite-proto::can 7c39a71, plane-fw 8d898e6, mcp2518fd 0af8d56 as a facade over mcp251xfd, granite-core / sim 7319d12); 2026-11-06 (as built, controller side: `granite_core::plane::can_link::CanPlaneLink` over a frame-driver trait, granite-fw features `link-canfd` / `link-i2c` / `link-bench`, MCP2518FD on the W5500's SPI bus, link kind in the image and the OTA guard. See "As built: the controller side" below); 2026-11-06 (as built, plane side: the transport is `plane_logic::can_link` over a small synchronous frame-driver trait, host-tested against a fake controller; STATUS gains the CAN counters as record 0x1D (TEC, REC, bus-off count, reassembly drops, TX-FIFO-full), published by the transport and absent on the I2C link; `granite_proto::frame::trim_padded` cuts the CAN FD padding off a reassembled write before `parse_frame`, which takes an exact length; the G0B1 FDCAN runs off a 40 MHz PLLQ (VCO 320 MHz, R = 5 for SYSCLK 64, Q = 8) with the bit timing written out and TDC set through the PAC, since embassy-stm32 0.6 never writes DBTP.TDC. Nothing has run on hardware: no FD board exists); 2026-11-10 (decision 9: the plane binary for FD is a new FD-only crate; the rev D I2C plane-fw is frozen in attic/firmware/plane-fw); 2026-11-11 (as built: that crate is `firmware/plane-fd`, features `link-mcp` (default, G070CB + MCP2518FD) / `link-fdcan` (G0B1CC + FDCAN1), exactly one, the feature carrying the embassy chip and the linker script, one pin map; its board glue and both CAN link modules come from the 2026-11-06 plane-fw link-feature work, which never reached the frozen copy. The `link-fdcan` image is 8 bytes over the 52 KB ACTIVE slot of ADR 0002, which the G0B1CC's spare 128 KB can absorb once that ADR says so)
 
 Related: docs/adr/0006-plane-link-can-fd.md (hardware: ISO1044 per
 core, MCP2518FD on the G070 or FDCAN on the G0B1, MCP2518FD on the
@@ -112,13 +112,15 @@ written and tested on the host before the boards exist.
      frame, read the error counters, read bus-off), with the
      reassembly, the answer's segmentation, the EVENT schedule and the
      counters of decision 8. Host tests against a fake controller.
-   - Plane binary `plane-fw` (new, outside the workspace like
-     granite-fw: thumbv6m, embassy-stm32): builds the rev D link
-     (I2C1 slave) or one of the CAN transports as features of the same
-     binary, exactly one per image (`link-i2c`, `link-mcp` on the
-     STM32G070CB, `link-fdcan` on the STM32G0B1CC). The link feature
-     carries the MCU, so it also picks the linker script and the pin
-     map.
+   - Plane binary for FD: a new FD-only crate, `firmware/plane-fd` (outside
+     the workspace like granite-fw: thumbv6m, embassy-stm32), pins
+     from firmware/plane-core-fd-pins.toml; the CAN transports
+     (MCP2518FD on the G070, FDCAN on the G0B1) are its features. No
+     I2C link. (Amended 2026-11-10: this was "features of the same
+     binary" as the rev D one. The rev D binary `plane-fw`, I2C1 slave,
+     8d898e6, is frozen in attic/firmware/plane-fw and is the source
+     for the board glue: segment bus, backup registers, config and
+     update stores, reset cause, core pins.)
 
 ---
 
@@ -199,8 +201,8 @@ landed and the three places the code is narrower or wider than the text.
 ## Consequences
 
 ### Positive
-- One protocol and one plane core for rev D and FD; only the
-  transport differs.
+- One protocol and one plane core (plane-logic) for rev D and FD;
+  only the transport and the binary differ.
 - The CAN parts are testable on the host and in the sim before any
   board exists.
 

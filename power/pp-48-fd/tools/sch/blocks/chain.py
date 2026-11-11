@@ -40,8 +40,8 @@ and EXP_RSTN pass straight through (ports to the Unit sheet).
 
 Unit, CAN FD generation (docs/adr/0006-plane-link-can-fd.md): beside the
 chain the unit carries the plane link, a 2x3 plug J303 (left, by J301) and
-a 2x3 socket J304 (right, by J302) of the same CJT A2541 series, CANH,
-CANL, LINK_GND, AUX_12V straight through (pin n = pin n), plus the
+a 2x3 socket J304 (right, by J302) of the same CJT A2541 series, CAN_P,
+CAN_N, LINK_GND, AUX_12V straight through (pin n = pin n), plus the
 right-end split termination (R301 / R302 60.4R, C301 4.7 nF) behind the
 2x2 jumper-cap header JP301 (plane_link(); parts and pinout in link.py).
 
@@ -148,7 +148,7 @@ def plane_link(b):
             b.tie(link.PINS[num], (j, num), 0)
     link.termination(b, ("JP301", "R301", "R302", "C301"), 80, 92)
     b.tie("LINK_GND", ("C301", "2"), 0)
-    b.text("PLANE LINK  J303 IN plug / J304 OUT socket, 1 CANH 2 CANL 3/4 LINK_GND 5/6 AUX_12V straight through (ADR 0006)", P(20, 62))
+    b.text("PLANE LINK  J303 IN plug / J304 OUT socket, 1 CAN_P 2 CAN_N 3/4 LINK_GND 5/6 AUX_12V straight through (ADR 0006)", P(20, 62))
     b.text("TERMINATION  JP301: jumper caps on 1-2 and 3-4 on the last board of the row only", P(70, 86))
 
 

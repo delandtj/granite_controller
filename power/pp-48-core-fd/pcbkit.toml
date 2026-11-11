@@ -1,5 +1,5 @@
 # pcbkit settings for the PP-48 CORE board, CAN FD link generation (docs/adr/0006-plane-link-can-fd.md, 0005).
-# Copied from power/pp-48-core; the board is the rev D layout brought onto the CAN FD schematic (2026-11-04,
+# Copied from power/pp-48-core (now attic/power/pp-48-core); the board is the rev D layout brought onto the CAN FD schematic (2026-11-04,
 # tools/place_core.py, route_core.py): 68 x 72 mm now (grown 8.5 mm left, 3.5 mm right for the link connectors and
 # the link domain's edge channels), origin x 43.5.
 # 4L JLC 1.6 mm: F parts and pours, In1 GND, In2 the VIN plane, B parts and pours.

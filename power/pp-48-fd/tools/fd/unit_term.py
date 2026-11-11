@@ -2,7 +2,7 @@
 """unit-fd: the right-end termination from two solder jumpers (JP301 / JP302) to the 2x2 jumper-cap header JP301
 (ADR 0006 decision 8), on the routed board, after fdsync.py. Usage: unit_term.py <in.kicad_pcb> <out.kicad_pcb>
 
-Deletes the margin's termination copper (TERM_*, CANH / CANL on F and their vias, the LINK_GND F run and via),
+Deletes the margin's termination copper (TERM_*, CAN_P / CAN_N on F and their vias, the LINK_GND F run and via),
 places the TERM table of tools/place_unit.py and redraws it with tools/route_unit.py link_term() (group "hand").
 """
 import os
@@ -30,7 +30,7 @@ for it in [t[i] for i in range(len(t))]:
         x = min(mm(it.GetStart().x), mm(it.GetEnd().x))
         y = min(mm(it.GetStart().y), mm(it.GetEnd().y))
     front = via or it.GetLayer() == pcbnew.F_Cu
-    if n in TERM or (front and x < 100 and (n in ('/Chain/CANH', '/Chain/CANL')
+    if n in TERM or (front and x < 100 and (n in ('/Chain/CAN_P', '/Chain/CAN_N')
                                             or (n == '/Chain/LINK_GND' and y < 125))):
         b.Delete(it)
         gone += 1
