@@ -1,0 +1,14 @@
+Rotation/centroid corrections applied (KiCad -> JLC), derived from
+the EasyEDA footprints. Still check them in the JLC placement preview.
+
+C13 CP_Elec_6.3x7.7 C46550467: rot 0 -> 180, offset (0, 0)
+C14 CP_Elec_6.3x7.7 C46550467: rot 0 -> 180, offset (0, 0)
+C15 CP_Elec_6.3x7.7 C46550467: rot 0 -> 180, offset (0, 0)
+J2 PM_Aux_Header_2x03_P1.27 C41376035: rot 0 -> 270, offset (0, 0)
+Q1 TDSON-8-1 C534398: rot 180 -> 90, offset (0, 0)
+Q2 TDSON-8-1 C534364: rot 180 -> 90, offset (0, 0)
+Q3 SOT-89-3 C123402: rot 0 -> 180, offset (-0.59, 0)
+U1 HTSSOP-20-1EP_4.4x6.5mm_P0.65mm_EP3.4x6.5mm_ThermalVias C13755: rot 90 -> 0, offset (0, 0)
+U2 SOT-23-6 C623510: rot 90 -> 0, offset (0, 0)
+U3 SOT-23-6 C623510: rot 90 -> 0, offset (0, 0)
+U4 SOT-23-6 C132788: rot 0 -> 270, offset (0, 0)
