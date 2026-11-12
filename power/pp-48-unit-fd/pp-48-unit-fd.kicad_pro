@@ -519,25 +519,6 @@
       {
         "bus_width": 12,
         "clearance": 0.15,
-        "diff_pair_gap": 0.25,
-        "diff_pair_via_gap": 0.25,
-        "diff_pair_width": 0.2,
-        "line_style": 0,
-        "microvia_diameter": 0.3,
-        "microvia_drill": 0.1,
-        "name": "LINK",
-        "pcb_color": "rgba(0, 0, 0, 0.000)",
-        "priority": 0,
-        "schematic_color": "rgba(0, 0, 0, 0.000)",
-        "track_width": 0.2,
-        "tuning_profile": "",
-        "via_diameter": 0.5,
-        "via_drill": 0.2,
-        "wire_width": 6
-      },
-      {
-        "bus_width": 12,
-        "clearance": 0.15,
         "diff_pair_gap": 0.6,
         "diff_pair_via_gap": 0.25,
         "diff_pair_width": 0.2,
@@ -550,6 +531,25 @@
         "schematic_color": "rgba(0, 0, 0, 0.000)",
         "track_width": 0.2,
         "tuning_profile": "CAN_DIFF",
+        "via_diameter": 0.5,
+        "via_drill": 0.2,
+        "wire_width": 6
+      },
+      {
+        "bus_width": 12,
+        "clearance": 0.15,
+        "diff_pair_gap": 0.25,
+        "diff_pair_via_gap": 0.25,
+        "diff_pair_width": 0.2,
+        "line_style": 0,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
+        "name": "LINK",
+        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "priority": 0,
+        "schematic_color": "rgba(0, 0, 0, 0.000)",
+        "track_width": 0.2,
+        "tuning_profile": "",
         "via_diameter": 0.5,
         "via_drill": 0.2,
         "wire_width": 6
@@ -735,30 +735,30 @@
     },
     "tuning_profiles_impedance_geometric": [
       {
-        "profile_name": "CAN_DIFF",
-        "type": 1,
-        "target_impedance": 120.0,
         "enable_time_domain_tuning": false,
         "layer_entries": [
           {
+            "bottom_reference_layer": "In1.Cu",
+            "delay": 0,
+            "diff_pair_gap": 600000,
             "signal_layer": "F.Cu",
             "top_reference_layer": "UNDEFINED",
-            "bottom_reference_layer": "In1.Cu",
-            "width": 200000,
-            "diff_pair_gap": 600000,
-            "delay": 0
+            "width": 200000
           },
           {
+            "bottom_reference_layer": "UNDEFINED",
+            "delay": 0,
+            "diff_pair_gap": 600000,
             "signal_layer": "B.Cu",
             "top_reference_layer": "In2.Cu",
-            "bottom_reference_layer": "UNDEFINED",
-            "width": 200000,
-            "diff_pair_gap": 600000,
-            "delay": 0
+            "width": 200000
           }
         ],
-        "via_prop_delay": 0,
-        "via_overrides": []
+        "profile_name": "CAN_DIFF",
+        "target_impedance": 120.0,
+        "type": 1,
+        "via_overrides": [],
+        "via_prop_delay": 0
       }
     ]
   }
