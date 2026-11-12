@@ -242,6 +242,9 @@ fn main() -> anyhow::Result<()> {
     // 6. The console. Physical access is full access; it is the way in
     //    when the network is not.
     platform::console::start(Arc::clone(&platform));
+    if let Ok(hw) = &hw {
+        platform::console::set_ext_bus(hw.ext_i2c.bus().clone());
+    }
 
     // Modbus fault bit 5: a config section that could not be read fell
     // back to its defaults at boot. platform::init logged and published

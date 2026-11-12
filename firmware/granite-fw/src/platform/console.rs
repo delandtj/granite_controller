@@ -14,7 +14,7 @@
 //! The thread holds no locks between commands: everything it needs is
 //! behind the shared handles in [`super::Platform`].
 
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use std::thread;
 use std::time::Duration;
 
@@ -25,6 +25,18 @@ use esp_idf_svc::sys::{
 };
 
 use super::Platform;
+use crate::hw::ext_i2c::EXT_BUS_HZ;
+use crate::hw::i2c::I2cBus;
+
+/// The external bus (J8 / J9, GPIO6 / GPIO7) for the `i2c` command; set
+/// by `main` once the hardware layer is up, absent if it never came up.
+static EXT_BUS: OnceLock<I2cBus> = OnceLock::new();
+
+/// Hand the console its handle on the external bus. The driver
+/// serialises transfers, so sharing it with the hardware layer is safe.
+pub fn set_ext_bus(bus: I2cBus) {
+    let _ = EXT_BUS.set(bus);
+}
 
 /// Receive buffer the driver keeps. One command line is far shorter.
 const RX_BUFFER: u32 = 1024;
@@ -54,6 +66,11 @@ commands:
   log [n]               last n lines of the log ring (default 40)
   stacks                per-task stack headroom, worst first
   link                  plane link: kind, frames, errors, bus state
+  i2c scan              addresses answering on the external bus (J8/J9)
+  i2c read <a> <n>      read n bytes from address a
+  i2c rreg <a> <r> <n>  write register r, read n bytes back
+  i2c write <a> <b>...  write bytes (a register write is <r> <value>...)
+                        numbers are hex with 0x or decimal
   help                  this list";
 
 /// Start the console thread.
@@ -143,6 +160,66 @@ fn read(buf: &mut [u8]) -> usize {
 
 /// One console line. Only `\n`: the USB Serial/JTAG VFS turns it into
 /// CRLF, and writing `\r\n` here would put two CRs on the wire.
+/// `i2c ...` on the external bus: a bench tool for add-on boards.
+fn cmd_i2c(args: &str) {
+    let Some(bus) = EXT_BUS.get() else {
+        say("err: the external bus is not up");
+        return;
+    };
+    let mut words = args.split_whitespace();
+    let sub = words.next().unwrap_or("");
+    let nums: Result<Vec<u8>, String> = words.map(parse_u8).collect();
+    let nums = match nums {
+        Ok(n) => n,
+        Err(e) => return say(&format!("err: {e}")),
+    };
+    let hex = |b: &[u8]| b.iter().map(|x| format!("{x:02x}")).collect::<Vec<_>>().join(" ");
+    let dev = |addr: u8| {
+        if !(0x08..=0x77).contains(&addr) {
+            return Err(format!("address 0x{addr:02x} is outside 0x08..0x77"));
+        }
+        bus.device(addr, EXT_BUS_HZ).map_err(|e| format!("attach 0x{addr:02x}: {e}"))
+    };
+    let result: Result<String, String> = match (sub, nums.as_slice()) {
+        ("scan", []) => {
+            let found = bus.scan();
+            Ok(if found.is_empty() {
+                "no device answered".to_string()
+            } else {
+                found.iter().map(|a| format!("0x{a:02x}")).collect::<Vec<_>>().join(" ")
+            })
+        }
+        ("read", [addr, n]) if *n > 0 && *n <= 32 => dev(*addr).and_then(|d| {
+            let mut buf = vec![0u8; usize::from(*n)];
+            d.read(&mut buf).map_err(|e| e.to_string())?;
+            Ok(hex(&buf))
+        }),
+        ("rreg", [addr, reg, n]) if *n > 0 && *n <= 32 => dev(*addr).and_then(|d| {
+            let mut buf = vec![0u8; usize::from(*n)];
+            d.write_read(&[*reg], &mut buf).map_err(|e| e.to_string())?;
+            Ok(hex(&buf))
+        }),
+        ("write", [addr, bytes @ ..]) if !bytes.is_empty() => dev(*addr).and_then(|d| {
+            d.write(bytes).map_err(|e| e.to_string())?;
+            Ok(format!("wrote {}", hex(bytes)))
+        }),
+        _ => Err("usage: i2c scan | read <a> <n> | rreg <a> <r> <n> | write <a> <b>... (n 1..32)".into()),
+    };
+    match result {
+        Ok(text) => say(&format!("ok: {text}")),
+        Err(e) => say(&format!("err: {e}")),
+    }
+}
+
+/// `0x2a` or `42`.
+fn parse_u8(word: &str) -> Result<u8, String> {
+    let parsed = match word.strip_prefix("0x").or_else(|| word.strip_prefix("0X")) {
+        Some(h) => u8::from_str_radix(h, 16),
+        None => word.parse(),
+    };
+    parsed.map_err(|_| format!("`{word}` is not a byte"))
+}
+
 fn say(text: &str) {
     println!("{text}");
     flush();
@@ -202,6 +279,7 @@ fn handle(platform: &Platform, input: &str) {
                 say(&line);
             }
         }
+        "i2c" => cmd_i2c(rest),
         other => say(&format!("err: unknown command `{other}`; try `help`")),
     }
 }

@@ -392,8 +392,22 @@ granite> help
   reboot                restart through the planned-reboot path
   log [n]               last n lines of the log ring (default 40)
   stacks                per-task stack headroom, worst first
+  link                  plane link: kind, frames, errors, bus state
+  i2c scan              addresses answering on the external bus (J8/J9)
+  i2c read <a> <n>      read n bytes from address a
+  i2c rreg <a> <r> <n>  write register r, read n bytes back
+  i2c write <a> <b>...  write bytes (a register write is <r> <value>...)
+                        numbers are hex with 0x or decimal
   help                  this list
 ```
+
+`i2c` is a bench tool for add-on boards on the external bus (GPIO6 /
+GPIO7, J8 and J9). It talks to the bus directly, beside the hardware
+layer, so it can drive anything on it - including, later, devices a
+driver owns. Physical access is full access, as for the rest of the
+console. For example, a PCA9535 relay board at 0x20: `i2c rreg 0x20 6 2`
+reads the config registers (`ff ff` after power-up), `i2c write 0x20 2
+0xff` then `i2c write 0x20 6 0x00` makes port 0 outputs, all high.
 
 `stacks` lists every FreeRTOS task with its stack high-water mark in
 bytes (ESP-IDF reports bytes, not the words upstream FreeRTOS

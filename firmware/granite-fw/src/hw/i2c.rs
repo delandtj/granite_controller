@@ -21,7 +21,8 @@ use esp_idf_sys::{
     i2c_addr_bit_len_t_I2C_ADDR_BIT_LEN_7, i2c_clock_source_t, i2c_del_master_bus,
     i2c_device_config_t, i2c_master_bus_add_device, i2c_master_bus_handle_t,
     i2c_master_bus_rm_device, i2c_master_dev_handle_t, i2c_master_probe, i2c_master_transmit,
-    i2c_master_transmit_receive, i2c_new_master_bus, i2c_master_bus_config_t,
+    i2c_master_receive, i2c_master_transmit_receive, i2c_new_master_bus,
+    i2c_master_bus_config_t,
 };
 use granite_core::hal::HalError;
 
@@ -162,6 +163,11 @@ impl I2cDev {
         esp!(unsafe {
             i2c_master_transmit(self.handle, bytes.as_ptr(), bytes.len(), XFER_TIMEOUT_MS)
         })
+    }
+
+    /// Read `buf` with no register address first (PCF8574-style parts).
+    pub fn read(&self, buf: &mut [u8]) -> Result<(), EspError> {
+        esp!(unsafe { i2c_master_receive(self.handle, buf.as_mut_ptr(), buf.len(), XFER_TIMEOUT_MS) })
     }
 
     /// Write `bytes`, then read `buf` in the same transaction.
