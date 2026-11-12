@@ -1365,15 +1365,19 @@ fn start_config_watch(
                     "config: {} was not confirmed in time; putting the stored value back",
                     section_list(&due)
                 );
-                platform::api_impl::revert_sections(&platform, &due);
+                platform::api_impl::revert_sections(
+                    &platform,
+                    &due,
+                    platform::api_impl::WHY_TIMEOUT,
+                );
             }
             // Restores queued by a revert, here because this thread
             // holds no guard: the API cannot take the config lock it
             // is already holding (see platform::api_impl).
-            let restore = platform::api_impl::take_restore();
-            if !restore.is_empty() && !restore_live_sections(&platform, &restore) {
+            let (restore, why) = platform::api_impl::take_restore();
+            if !restore.is_empty() && !restore_live_sections(&platform, &restore, why) {
                 // The config guard was busy; try again next pass.
-                platform::api_impl::queue_restore(&restore);
+                platform::api_impl::queue_restore(&restore, why);
             }
 
             thread::sleep(CONFIG_WATCH);
@@ -1400,7 +1404,7 @@ fn section_list(sections: &[Section]) -> String {
 /// False when the config guard was busy, so the caller can retry. Only the
 /// config-watch thread calls this: an HTTP request holds that guard for its
 /// whole lifetime.
-fn restore_live_sections(platform: &Arc<Platform>, sections: &[Section]) -> bool {
+fn restore_live_sections(platform: &Arc<Platform>, sections: &[Section], why: &str) -> bool {
     // NVS first, so the config guard is held for the write and nothing
     // else.
     let mut stored: Vec<(Section, String)> = Vec::new();
@@ -1434,7 +1438,7 @@ fn restore_live_sections(platform: &Arc<Platform>, sections: &[Section]) -> bool
         platform.publish(config_event(
             *section,
             "reverted",
-            Some(String::from("not confirmed in time")),
+            Some(String::from(why)),
         ));
     }
     true

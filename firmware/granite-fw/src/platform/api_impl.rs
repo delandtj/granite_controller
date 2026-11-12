@@ -257,7 +257,15 @@ struct Staged {
     /// store. Carried out by the config-watch thread, never here: this
     /// file may not take the config guard (see the locking note above).
     restore: Vec<Section>,
+    /// Why those sections are restored, for the `reverted` event's
+    /// detail: the window ran out, or someone asked for the revert.
+    restore_why: &'static str,
 }
+
+/// `reverted` event detail when the confirm window ran out.
+pub const WHY_TIMEOUT: &str = "not confirmed in time";
+/// `reverted` event detail when `config_revert` (MQTT, API) asked for it.
+pub const WHY_ASKED: &str = "reverted on request";
 
 impl Staged {
     const fn new() -> Self {
@@ -265,6 +273,7 @@ impl Staged {
             sections: Vec::new(),
             deadline_ms: 0,
             restore: Vec::new(),
+            restore_why: WHY_TIMEOUT,
         }
     }
 
@@ -362,8 +371,9 @@ pub fn take_due_staged(now_ms: u64) -> Vec<Section> {
 
 /// Ask the config-watch thread to put the stored value of these sections
 /// back into the live configuration.
-pub fn queue_restore(sections: &[Section]) {
+pub fn queue_restore(sections: &[Section], why: &'static str) {
     with_staged(|s| {
+        s.restore_why = why;
         for section in sections {
             if !s.restore.contains(section) {
                 s.restore.push(*section);
@@ -373,8 +383,9 @@ pub fn queue_restore(sections: &[Section]) {
 }
 
 /// The restores the config-watch thread still owes.
-pub fn take_restore() -> Vec<Section> {
-    with_staged(|s| core::mem::take(&mut s.restore)).unwrap_or_default()
+pub fn take_restore() -> (Vec<Section>, &'static str) {
+    with_staged(|s| (core::mem::take(&mut s.restore), s.restore_why))
+        .unwrap_or((Vec::new(), WHY_TIMEOUT))
 }
 
 /// Promote staged sections into the stored configuration.
@@ -419,7 +430,7 @@ pub fn promote(platform: &Platform, sections: &[Section]) -> bool {
 /// `net` reboots (the live interface was changed under the session);
 /// `mqtt` and `sec` only need their stored section back in the live
 /// configuration, which the config-watch thread does on its next pass.
-pub fn revert_sections(platform: &Platform, sections: &[Section]) {
+pub fn revert_sections(platform: &Platform, sections: &[Section], why: &'static str) {
     if let Ok(mut store) = platform.store.lock() {
         for section in sections {
             if let Err(e) = store.clear_staged(*section) {
@@ -446,7 +457,7 @@ pub fn revert_sections(platform: &Platform, sections: &[Section]) {
         .filter(|s| Revert::of(*s) == Revert::RestoreLive)
         .collect();
     if !live.is_empty() {
-        queue_restore(&live);
+        queue_restore(&live, why);
     }
     if sections.iter().any(|s| Revert::of(*s) == Revert::Reboot) {
         // net.revert reboots into the stored configuration, which is the
@@ -578,7 +589,7 @@ impl NetControl for NetControlApi {
         if sections.is_empty() {
             return false;
         }
-        revert_sections(&self.platform, &sections);
+        revert_sections(&self.platform, &sections, WHY_ASKED);
         true
     }
 
