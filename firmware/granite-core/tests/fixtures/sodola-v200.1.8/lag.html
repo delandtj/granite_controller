@@ -1,0 +1,122 @@
+<html>
+
+<head>
+<title>Trunking Information</title>
+<link rel="stylesheet" type="text/css" href="/style.css">
+<script type="text/javascript">
+function allchkClick(obj)
+{
+	var ports = document.getElementById('ports');
+	var allport = document.getElementById('all');
+	var selports = document.getElementsByClassName('chkp');
+	for (var i = 0; i< selports.length; i++) {
+		selports[i].checked = allport.checked;
+	}
+	if (allport.checked)
+	{
+		ports.value = document.getElementById('lports').innerHTML;
+	}
+	else
+	{
+		ports.value = 'Select Port';
+	}
+}
+function chkClick(obj)
+{
+	var allport = document.getElementById('all');
+	var ports = document.getElementById('ports');
+	var selports = document.getElementsByClassName('chkp');
+	var count = 0;
+	for (var i = 0; i< selports.length; i++) {
+		if(selports[i].checked) count++;
+	}
+	allport.checked = (i == count)?true:false;
+	ports.value = "";
+	count = 0;
+	for (var i = 0; i< selports.length; i++) {
+		if (selports[i].checked) {
+			if (count>=2) {
+				ports.value +="...";break;
+			}
+			if (count >=1) ports.value += ",";
+			ports.value += document.getElementById('l'+selports[i].id).innerHTML;
+			count++;
+		}
+	}
+	if (count == 0) ports.value='Select Port';
+}
+function tipboxbtnClick()
+{
+	var adom1 = document.getElementById('tipbox');
+	adom1.style.display = "none";
+}
+</script>
+</head>
+
+<body>
+<h3>Port Aggregate Setting</h3>
+<div class="tipdiv" id="tipbox" style="margin-left:500px;display:none"><p style="margin-left:20px;color:red">Error</p><br>
+<p id='tipinfo' style="width:238;margin-left:60px"></p><br>
+<input type="button" value="Confirm" onclick="tipboxbtnClick()" style="margin-left:120px">
+</div>
+<form method="post" action="/trunk.cgi?page=group">
+<div class="tblcfgdiv"><table>
+	<tr>
+		<th style="width:260px;">Aggregate Group ID</th>
+		<th style="width:260px;">Type</th>
+		<th style="width:260px;">Port</th>
+	</tr>
+	<tr>
+		<td >
+			<select name="id" >
+			<option value="1" selected id=trunk_sel1>Trunk1
+			<option value="2" id=trunk_sel2>Trunk2
+			</select>
+		</td>
+		<td >
+			<select name="trunk_type" >
+			<option value="0">static
+			<option value="1">LACP
+			</select>
+		</td>
+		<td style="width:138px;text-align:left">
+	<div class="port-container">
+		<input id="ports" readonly value=Select Port>
+		<div class="arrow-icon"></div>
+		<div class="option-container" id="option-container">
+			<input type="checkbox" id="all" name="all" class="allchkp" onclick=allchkClick(this)><label id="lports" for="all">Select All</label><br>
+			<input type="checkbox" id=port0 name=port0 class="chkp" onclick=chkClick(this)><label id=lport0 for=port0>Port 1</label><br>
+			<input type="checkbox" id=port1 name=port1 class="chkp" onclick=chkClick(this)><label id=lport1 for=port1>Port 2</label><br>
+			<input type="checkbox" id=port2 name=port2 class="chkp" onclick=chkClick(this)><label id=lport2 for=port2>Port 3</label><br>
+			<input type="checkbox" id=port3 name=port3 class="chkp" onclick=chkClick(this)><label id=lport3 for=port3>Port 4</label><br>
+			<input type="checkbox" id=port4 name=port4 class="chkp" onclick=chkClick(this)><label id=lport4 for=port4>Port 5</label><br>
+			<input type="checkbox" id=port5 name=port5 class="chkp" onclick=chkClick(this)><label id=lport5 for=port5>Port 6</label><br>
+			<input type="checkbox" id=port6 name=port6 class="chkp" onclick=chkClick(this)><label id=lport6 for=port6>Port 7</label><br>
+			<input type="checkbox" id=port7 name=port7 class="chkp" onclick=chkClick(this)><label id=lport7 for=port7>Port 8</label><br>
+			<input type="checkbox" id=port8 name=port8 class="chkp" onclick=chkClick(this)><label id=lport8 for=port8>Port 9</label><br>
+	</div>
+		</td>
+	</tr>
+</table>
+<br style="line-height:50%">
+<input type="submit" value="Apply">
+<input type="hidden" name="cmd" value="trunk">
+</div>
+</form>
+<hr>
+<form method="post" action="/trunk.cgi?page=group_remove">
+<div class="tblcfgdiv"><table>
+	<tr>
+		<th style="width:36px;">Select</th>
+		<th style="width:160px;">Aggregate Group ID</th>
+		<th style="width:160px;">Type</th>
+		<th style="width:210px;">Member port</th>
+		<th style="width:210px;">Aggregated Port</th>
+	</tr>
+  </table>
+<br style="line-height:50%">
+<input type="submit" name="Remove" value="Delete">
+<input type="hidden" name="cmd" value="group_remove">
+</div></form>
+</body>
+</html>

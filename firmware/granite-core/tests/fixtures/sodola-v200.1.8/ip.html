@@ -1,0 +1,104 @@
+<html>
+
+<head>
+<title>IP Address Setting</title>
+<link rel="stylesheet" type="text/css" href="/style.css">
+<script type="text/javascript">
+function chkEnable(value)
+{
+	if ( value == '0' ) {
+		document.getElementById('ipaddr').innerHTML = "<input type='text' size='16' name='ip' id='ip' value='192.168.64.241' maxlength='15'><label class='starlabel'>*</label>";
+		document.getElementById('netmask').innerHTML = "<input type='text' size='16' name='netmask' id='mask' value='255.255.255.0' maxlength='15'><label class='starlabel'>*</label>";
+		document.getElementById('gateway').innerHTML = "<input type='text' size='16' name='gateway' value='192.168.64.254' maxlength='15'><label class='starlabel'>*</label>";
+	}
+	else { 
+		document.getElementById('ipaddr').innerHTML = "<label>192.168.64.241</label>";
+		document.getElementById('netmask').innerHTML = "<label>255.255.255.0</label>";
+		document.getElementById('gateway').innerHTML = "<label>192.168.64.254</label>";
+	}
+}
+function tipboxbtnClick()
+{
+	var adom1 = document.getElementById('tipbox');
+	adom1.style.display = "none";
+}
+function checkValid(value)
+{
+	var adom1 = document.getElementById('dhcp_state');
+	var index = adom1.selectedIndex;
+	var opVal=adom1.options[index].value;
+	if (opVal == 0) {
+		var reg=/^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$/;
+		var ipaddr=document.getElementById('ip').value;
+		var reg2=/^(254|252|248|240|224|192|128|0).0.0.0|255.(254|252|248|240|224|192|128|0).0.0|255.255.(254|252|248|240|224|192|128|0).0|255.255.255.(254|252|248|240|224|192|128|0)$/;
+		var netmask=document.getElementById('mask').value;
+		if (ipaddr.trim() == "0.0.0.0"){
+			var adom1 = document.getElementById('tipbox');
+			var adomtip = document.getElementById('tipinfo');
+			adomtip.innerHTML='Invalid IP Address';
+			adom1.style.display = "block";
+			return;
+		}
+		if (!reg.test(ipaddr)){
+			var adom1 = document.getElementById('tipbox');
+			var adomtip = document.getElementById('tipinfo');
+			adomtip.innerHTML='Invalid IP Address';
+			adom1.style.display = "block";
+			return;
+		}
+		if (netmask.trim() == "0.0.0.0"){
+			var adom1 = document.getElementById('tipbox');
+			var adomtip = document.getElementById('tipinfo');
+			adomtip.innerHTML='Invalid Netmask';
+			adom1.style.display = "block";
+			return;
+		}
+		if (!reg2.test(netmask)){
+			var adom1 = document.getElementById('tipbox');
+			var adomtip = document.getElementById('tipinfo');
+			adomtip.innerHTML='Invalid Netmask';
+			adom1.style.display = "block";
+			return;
+		}
+	}
+	document.ip_tbl.submit();
+}
+</script>
+</head>
+
+<body onLoad="chkEnable(document.getElementById('dhcp_state').value)">
+<div><h3>IP Address Setting</h3>
+<div class="tipdiv" id="tipbox" style="margin-left:500px;display:none"><p style="margin-left:20px;color:red">Error</p><br>
+<p id='tipinfo' style="width:238;margin-left:60px"></p><br>
+<input type="button" value="Confirm" onclick="tipboxbtnClick()" style="margin-left:120px">
+</div>
+<div class="cfgdiv"><form method="post" name = "ip_tbl" action="ip.cgi">
+<table class="cfgtbl">
+	<tr>
+		<th>IP Address Mode:</th>
+		<td>
+			<select id="dhcp_state" name="dhcp_state" onload="chkEnable(this.value)" onchange="chkEnable(this.value)">
+			<option value="0" selected>Static IP
+			<option value="1">Dynamic IP(DHCP)
+			</select>
+		</td>
+	</tr>
+	<tr>
+		<th>IP Address:</th>
+		<td id="ipaddr"></td>
+	</tr>
+	<tr>
+		<th>Netmask:</th>
+		<td id="netmask"></td>
+	</tr>
+	<tr>
+		<th>Gateway:</th>
+		<td id="gateway"></td>
+	</tr>
+</table>
+<br>
+<input type="button" value="Apply" style="margin-left:162px" onclick="checkValid()">
+<input type="hidden" name="cmd" value="ip">
+</form>
+</div></div></body>
+</html>

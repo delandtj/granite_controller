@@ -30,6 +30,10 @@
 //!   and a Markdown generator.
 //! - [`modbus_server`]: the Modbus TCP frame handler over byte slices,
 //!   plus the IPv4/CIDR allow-list. No sockets.
+//! - [`switch`]: the block switch (ADR 0006): the model of a Sodola
+//!   SL902-SWTGW218AS, the page parsers, the form builders and the
+//!   reconcile planner. The socket and the schedule live in the
+//!   firmware; what a page means and what a write looks like live here.
 //! - [`dispatch`]: the one entry point every transport funnels through.
 //!
 //! The crate is `no_std` + `alloc`; the `std` feature (on by default, used
@@ -54,6 +58,7 @@ pub mod node;
 pub mod observed;
 pub mod plane;
 pub mod rules;
+pub mod switch;
 
 /// Nodes a controller can serve: 8 planes of 8 slots (ADR 0004
 /// decision 2).

@@ -1,0 +1,58 @@
+<html>
+<head>
+<title>Loop Prevention Setting</title>
+<link rel="stylesheet" type="text/css" href="/style.css">
+<script type="text/javascript">
+function chkEnable(value)
+{
+	if ((value == '1')||(value == '2')) {
+		document.getElementById('ival').style="";
+		document.getElementById('rtime').style = "";
+	}
+else { 
+		document.getElementById('ival').style="display: none;";
+		document.getElementById('rtime').style = "display: none;";
+	}
+}
+function tipboxbtnClick()
+{
+	var adom1 = document.getElementById('tipbox');
+	adom1.style.display = "none";
+}
+</script>
+</head>
+
+<body>
+<h3>Loop protocol Setting</h3>
+<div class="tipdiv" id="tipbox" style="margin-left:500px;display:none"><p style="margin-left:20px;color:red">Error</p><br>
+<p id='tipinfo' style="width:238;margin-left:60px"></p><br>
+<input type="button" value="Confirm" onclick="tipboxbtnClick()" style="margin-left:120px">
+</div>
+<form method="post" name="loop" action="/loop.cgi">
+<div class="tblcfgdiv"><table>
+	<tr>
+		<th style="width:200px">Loop function</th>
+		<td style="width:200px">
+			<select name="func_type" onchange="chkEnable(this.value)">
+			<option value="0" selected >Off
+			<option value="1" >Loop Detection
+			<option value="3" >Spanning Tree
+			</select>
+		</td>
+	</tr>
+	<tr id=ival style="display: none">
+		<th>Time Interval (1~32767)</th>
+		<td><input type="text" size= "8" maxlength="7" name="interval_time" value="2">Second</td>
+	</tr>
+	<tr id=rtime style="display: none">
+		<th>Recover Time (0 or 4~255)</th>
+		<td><input type="text" size= "8" maxlength="7" name="recover_time" value="10">Second</td>
+	</tr>
+</table>
+<br style="line-height:50%">
+<input type="submit" value="Apply">
+<input type="hidden" name="cmd" value="loop">
+</div>
+</form>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<html>
+
+<head>
+<title>Static VLAN Table</title>
+<link rel="stylesheet" type="text/css" href="/style.css">
+<script type="text/javascript">
+function chkboxClick()
+{
+	var adom1 = document.getElementById('vlaneblfrm');
+	adom1.submit();
+}
+function btnClick()
+{
+	var adom1 = document.getElementById('chkVlan');
+	adom1.style.display = "none";
+}
+function addVlanClick()
+{
+	var acVlanId = document.getElementById('vlanID').value;
+	var adom1 = document.getElementById('chkVlan');
+	if ( parseInt(acVlanId) > 4094 || parseInt(acVlanId) <= 0)
+	{
+		var adomtip = document.getElementById('tipinfo');
+		adomtip.innerHTML='VLAN not in the range, should 1-4094';
+		adom1.style.display = "block";
+	}
+	else
+		document.getElementById('formVlanStatic').submit();
+}
+function delVlanChkBoxClick()
+{
+	var selvlans = document.getElementsByClassName('vlanchk');
+	var delvlans = document.getElementById('vlanstatic_del');
+	var count = 0;
+	for (var i = 0; i< selvlans.length; i++) {
+		if(selvlans[i].checked) count++;
+	}
+	delvlans.disabled = (0 == count)?true:false;
+}
+function vlanstatic_selAll(vlanNum)
+{
+	for ( i = 2; i < vlanNum; i++)
+		document.getElementById("vlan_"+i).checked = true;
+	document.getElementById("vlanstatic_del").disabled = false;
+}
+function delVlanClick()
+{
+	var adom1 = document.getElementById('deltipbox');
+	adom1.style.display = "block";
+}
+function btnNoClick()
+{
+	var adom1 = document.getElementById('deltipbox');
+	adom1.style.display = "none";
+}
+function btnYesClick()
+{
+	var adom1 = document.getElementById('formVlanDelStatic');
+	adom1.submit();
+}
+function tipboxbtnClick()
+{
+	var adom1 = document.getElementById('tipbox');
+	adom1.style.display = "none";
+}
+</script>
+</head>
+
+<body>
+<h3>VLAN Setting</h3>
+
+<div class="tipdiv" id="tipbox" style="margin-left:500px;display:none"><p style="margin-left:20px;color:red">Error</p><br>
+<p id='tipinfo' style="width:238;margin-left:60px"></p><br>
+<input type="button" value="Confirm" onclick="tipboxbtnClick()" style="margin-left:120px">
+</div>
+<div class="tipdiv" id="chkVlan" style="margin-left:500px"><p style="margin-left:20px;color:red">Error</p><br>
+<p id='tipinfo' style="width:238;margin-left:60px"></p><br>
+<input type="button" value="Confirm" onclick="btnClick()" style="margin-left:120px">
+</div><div class="tipdiv" id="deltipbox" style="margin-left:500px"><p style="margin-left:20px">Tip</p><br>
+<p style="width:238;margin-left:60px">Confirm delete vlans?</p><br>
+<input type="button" value="Confirm" onclick="btnYesClick()" style="margin-left:80px">
+<input class="btnCancel" type="button" value="Cancel" onclick="btnNoClick()" style="margin-left:30px">
+</div><form method="post" name="vlaneblfrm" id ="vlaneblfrm" action="/vlan.cgi?page=state">
+<div class="tblcfgdiv"><table class="cfgtbl" style="width:800px;margin-top:40px">
+	<tr>
+		<th>VLAN Manage:</th>
+		<td style="width:60px">
+			<div class="switch-container">
+			<input name="enable_vlan" type="checkbox" class="check" id="toggle" onclick="chkboxClick()" checked>
+			<label class="switch" for="toggle"></label>
+			</div>
+		</td>
+		<td style="padding-left:0px">
+			<div class="helpicon">?</div>
+			<div class="tipbox" style="width:400px">
+				<span>1.When enable vlan, packets forward by MAC+VLAN;2.When disabled, ALL the vlans will be preserved, packets forward by MAC,and donot touch packets vlan when forward</span>
+				<div class="tipicon">
+				</div>			</div>		</td>
+		<td style="width:620px;"></th>
+	</tr>
+</table>
+</div></form>
+<form method="post" action="/vlan.cgi?page=static" name=formVlanStatic id=formVlanStatic>
+<div class="tblcfgdiv"><table class="cfgtbl">
+	<tr>
+		<th>VLAN ID:</th>
+		<td><input type="text" name="vid" id='vlanID' maxlength="4"></td>
+		<td style="width:360px;"></th>
+	</tr>
+	<tr>
+		<th></th>
+		<td style="height:16px;line-height:12px;color:#c3c3c3">(VLAN range：1-4094)</td>
+	</tr>
+	<tr>
+		<th>VLAN Name:</th>
+		<td><input type="text" name="name" maxlength="14"></td>
+	</tr>
+	<tr>
+		<th></th>
+		<td style="height:16px;line-height:12px;color:#c3c3c3">（VLAN Name length:0-14）</td>
+	</tr>
+</table>
+<br>
+<input type="button" value="AddVLAN" style="margin-left:-450px" onclick="addVlanClick()">
+</div></form>
+<hr>
+<form method="post" action="/vlan.cgi?page=getRmvVlanEntry" name=formVlanStatic id=formVlanDelStatic>
+<div class="tblcfgdiv"><table>
+	<tr>
+		<th style="width:80px">Select</th>
+		<th style="width:80px">No.</th>
+		<th style="width:180px">VLAN ID</th>
+		<th style="width:380px">VLAN Name</th>
+	</tr>
+	<tr>
+		<td></td>
+		<td>1</td>
+		<td>1</td>
+		<td></td>
+	</tr>
+	<tr>
+		<td><input type="checkbox" name="remove_100" id=vlan_2 class="vlanchk" onclick="delVlanChkBoxClick()"></td>
+		<td>2</td>
+		<td>100</td>
+		<td>data</td>
+	</tr>
+	<tr>
+		<td><input type="checkbox" name="remove_200" id=vlan_3 class="vlanchk" onclick="delVlanChkBoxClick()"></td>
+		<td>3</td>
+		<td>200</td>
+		<td>backend</td>
+	</tr>
+</table>
+<br style="line-height:50%">
+<div><input type="button" value="Select All" onclick="vlanstatic_selAll(4)">
+<input style="margin-left:45px" type="button" id="vlanstatic_del" onclick="delVlanClick()" name="Delete" value="Delete" disabled>
+</div></div></form>
+</body>
+</html>

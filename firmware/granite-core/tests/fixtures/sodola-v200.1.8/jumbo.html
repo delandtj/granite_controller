@@ -1,0 +1,55 @@
+<html>
+<head>
+<title>Jumbo Frame Setting</title>
+<link rel="stylesheet" type="text/css" href="/style.css">
+<script type="text/javascript">
+function chkboxClick()
+{
+	var adom1 = document.getElementById('jumbofrm');
+	adom1.submit();
+}
+</script>
+</head>
+
+<body>
+<div><h3>Jumbo Frame</h3><div class="cfgdiv" id="jumboebl"><form method="post" name="jumboframe" id = "jumbofrm" action="/fwd.cgi?page=jumboframe">
+<table class="cfgtbl" style="width:400px;margin-top:40px">
+	<tr>
+		<th style="width:210px">Jumbo Frame Setting</th>
+		<td style="width:60px">
+			<div class="switch-container">
+			<input name="enable_jumbo" type="checkbox" class="check" id="toggle" onclick="chkboxClick()" checked>
+			<label class="switch" for="toggle"></label>
+			</div>
+		</td>
+		<td style="padding-left:0px">
+			<div class="helpicon">?</div>
+			<div class="tipbox">
+				<span>Jumbo Frame Tips</span>
+				<div class="tipicon">
+				</div>			</div>		</td>
+	</tr>
+</table>
+</form>
+</div><div class="cfgdiv" id="jumbocfg"><form method="post" name="jumboframe" action="/fwd.cgi?page=jumboframe">
+<table class="cfgtbl">
+	<tr>
+		<th>Jumbo Frame Size</th>
+		<td>
+			<select name="jumboframe">
+			<option value="1">1522Bytes
+			<option value="2">1536Bytes
+			<option value="3">1552Bytes
+			<option value="4">9216Bytes
+			<option value="5">10000Bytes
+			<option value="6" selected>12000Bytes
+			</select>
+		</td>
+	</tr>
+</table>
+<br>
+<input type="submit" value="Apply" style="margin-left:162px">
+<input type="hidden" name="cmd" value="jumboframe">
+</form>
+</div></div></body>
+</html>

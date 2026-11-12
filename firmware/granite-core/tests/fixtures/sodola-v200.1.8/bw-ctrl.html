@@ -1,0 +1,325 @@
+<html>
+
+<head>
+<title>Bandwidth Control Setting</title>
+<link rel="stylesheet" type="text/css" href="/style.css">
+<script type="text/javascript">
+function allchkClick(obj)
+{
+	var ports = document.getElementById('ports');
+	var allport = document.getElementById('all');
+	var selports = document.getElementsByClassName('chkp');
+	for (var i = 0; i< selports.length; i++) {
+		selports[i].checked = allport.checked;
+	}
+	if (allport.checked)
+	{
+		ports.value = document.getElementById('lports').innerHTML;
+	}
+	else
+	{
+		ports.value = 'Select Port';
+	}
+}
+function chkClick(obj)
+{
+	var allport = document.getElementById('all');
+	var ports = document.getElementById('ports');
+	var selports = document.getElementsByClassName('chkp');
+	var count = 0;
+	for (var i = 0; i< selports.length; i++) {
+		if(selports[i].checked) count++;
+	}
+	allport.checked = (i == count)?true:false;
+	ports.value = "";
+	count = 0;
+	for (var i = 0; i< selports.length; i++) {
+		if (selports[i].checked) {
+			if (count>=2) {
+				ports.value +="...";break;
+			}
+			if (count >=1) ports.value += ",";
+			ports.value += document.getElementById('l'+selports[i].id).innerHTML;
+			count++;
+		}
+	}
+	if (count == 0) ports.value='Select Port';
+}
+function extallchkClick(obj)
+{
+	var ports = document.getElementById('extports');
+	var allport = document.getElementById('extall');
+	var selports = document.getElementsByClassName('extchkp');
+	for (var i = 0; i< selports.length; i++) {
+		selports[i].checked = allport.checked;
+	}
+	if (allport.checked)
+	{
+		ports.value = document.getElementById('extlports').innerHTML;
+	}
+	else
+	{
+		ports.value = 'Select Port';
+	}
+}
+function extchkClick(obj)
+{
+	var allport = document.getElementById('extall');
+	var ports = document.getElementById('extports');
+	var selports = document.getElementsByClassName('extchkp');
+	var count = 0;
+	for (var i = 0; i< selports.length; i++) {
+		if(selports[i].checked) count++;
+	}
+	allport.checked = (i == count)?true:false;
+	ports.value = "";
+	count = 0;
+	for (var i = 0; i< selports.length; i++) {
+		if (selports[i].checked) {
+			if (count>=2) {
+				ports.value +="...";break;
+			}
+			if (count >=1) ports.value += ",";
+			ports.value += document.getElementById('l'+selports[i].id).innerHTML;
+			count++;
+		}
+	}
+	if (count == 0) ports.value='Select Port';
+}
+function tipboxbtnClick()
+{
+	var adom1 = document.getElementById('tipbox');
+	adom1.style.display = "none";
+}
+function checkValid(value)
+{
+	var in_rate = document.getElementById('in_rate').value;
+	var out_rate = document.getElementById('out_rate').value;
+	var reg=/^[0-9]*[1-9][0-9]*$/;
+	var chkOK=0, chkOK2=0;
+	if ( in_rate.trim() == "")
+	{
+		chkOK = 1;
+	}
+	else if (!reg.test(in_rate))
+	{
+		chkOK = 0;
+	}
+	else if (parseInt(in_rate) > 2500000 || parseInt(in_rate) < 16)
+	{
+		chkOK = 0;
+	}
+	else
+	{
+		chkOK = 1;
+	}
+	if ( out_rate.trim() == "")
+	{
+		chkOK2 = 1;
+	}
+	else if (!reg.test(out_rate))
+	{
+		chkOK2 = 0;
+	}
+	else if (parseInt(out_rate) > 2500000 || parseInt(out_rate) < 16)
+	{
+		chkOK2 = 0;
+	}
+	else
+	{
+		chkOK2 = 1;
+	}
+	if ( chkOK == 0 || chkOK2 == 0)
+	{
+		var adomtip = document.getElementById('tipinfo');
+		var adom1 = document.getElementById('tipbox');
+		adomtip.innerHTML='Rate is not in range';
+		adom1.style.display = "block";
+	}
+	else
+	{
+		document.getElementById('bandctrl').submit();
+	}
+}
+function extcheckValid(value)
+{
+	var ext_in_rate = document.getElementById('ext_in_rate').value;
+	var ext_out_rate = document.getElementById('ext_out_rate').value;
+	var reg=/^[0-9]*[1-9][0-9]*$/;
+	var chkOK=0, chkOK2=0;
+	if ( ext_in_rate.trim() == "")
+	{
+		chkOK = 1;
+	}
+	else if (!reg.test(ext_in_rate))
+	{
+		chkOK = 0;
+	}
+	else if (parseInt(ext_in_rate) > 10000000 || parseInt(ext_in_rate) < 16)
+	{
+		chkOK = 0;
+	}
+	else
+	{
+		chkOK = 1;
+	}
+	if ( ext_out_rate.trim() == "")
+	{
+		chkOK2 = 1;
+	}
+	else if (!reg.test(ext_out_rate))
+	{
+		chkOK2 = 0;
+	}
+	else if (parseInt(ext_out_rate) > 10000000 || parseInt(ext_out_rate) < 16)
+	{
+		chkOK2 = 0;
+	}
+	else
+	{
+		chkOK2 = 1;
+	}
+	if ( chkOK == 0 || chkOK2 == 0)
+	{
+		var adomtip = document.getElementById('tipinfo');
+		var adom1 = document.getElementById('tipbox');
+		adomtip.innerHTML='Rate is not in range';
+		adom1.style.display = "block";
+	}
+	else
+	{
+		document.getElementById('ext_bandctrl').submit();
+	}
+}
+</script>
+</head>
+
+<body>
+<h3>Port Rate Limit Setting</h3>
+<div class="tipdiv" id="tipbox" style="margin-left:500px;display:none"><p style="margin-left:20px;color:red">Error</p><br>
+<p id='tipinfo' style="width:238;margin-left:60px"></p><br>
+<input type="button" value="Confirm" onclick="tipboxbtnClick()" style="margin-left:120px">
+</div>
+<form method="post" name="bandctrl" id = "bandctrl" action="/port.cgi?page=bwctrl">
+<div class="tblcfgdiv"><table>
+	<tr>
+		<th style="width:128px">Port</th>
+		<th style="width:360px">Ingress Rate Limit (Kbit/sec)</th>
+		<th style="width:360px">Egress Rate Limit (Kbit/sec)</th>
+	</tr>
+	<tr>
+		<td style="width:138px;text-align:left">
+	<div class="port-container">
+		<input id="ports" readonly value=Select Port>
+		<div class="arrow-icon"></div>
+		<div class="option-container" id="option-container">
+			<input type="checkbox" id="all" name="all" class="allchkp" onclick=allchkClick(this)><label id="lports" for="all">Select All</label><br>
+			<input type="checkbox" id=port0 name=port0 class="chkp" onclick=chkClick(this)><label id=lport0 for=port0>Port 1</label><br>
+			<input type="checkbox" id=port1 name=port1 class="chkp" onclick=chkClick(this)><label id=lport1 for=port1>Port 2</label><br>
+			<input type="checkbox" id=port2 name=port2 class="chkp" onclick=chkClick(this)><label id=lport2 for=port2>Port 3</label><br>
+			<input type="checkbox" id=port3 name=port3 class="chkp" onclick=chkClick(this)><label id=lport3 for=port3>Port 4</label><br>
+			<input type="checkbox" id=port4 name=port4 class="chkp" onclick=chkClick(this)><label id=lport4 for=port4>Port 5</label><br>
+			<input type="checkbox" id=port5 name=port5 class="chkp" onclick=chkClick(this)><label id=lport5 for=port5>Port 6</label><br>
+			<input type="checkbox" id=port6 name=port6 class="chkp" onclick=chkClick(this)><label id=lport6 for=port6>Port 7</label><br>
+			<input type="checkbox" id=port7 name=port7 class="chkp" onclick=chkClick(this)><label id=lport7 for=port7>Port 8</label><br>
+	</div>
+		</td>
+		<td><input type="text" name="in_rate" id="in_rate">
+			<label style="color:#c3c3c3">16-2500000</label>
+		</td>
+		<td><input type="text" name="out_rate" id="out_rate">
+			<label style="color:#c3c3c3">16-2500000</label>
+		</td>
+	</tr>
+</table>
+<br style="line-height:50%">
+<input type="button" value="Apply" onclick="checkValid()">
+<input type="hidden" name="cmd" value="bandwidthcontrol">
+</div>
+</form>
+<br>
+<form method="post" name="ext_bandctrl" id = "ext_bandctrl" action="/port.cgi?page=bwctrl">
+<div class="tblcfgdiv"><table>
+	<tr>
+		<th style="width:128px">Port</th>
+		<th style="width:360px">Ingress Rate Limit (Kbit/sec)</th>
+		<th style="width:360px">Egress Rate Limit (Kbit/sec)</th>
+	</tr>
+	<tr>
+		<td style="width:138px;text-align:left">
+	<div class="port-container">
+		<input id="extports" readonly value=Select Port>
+		<div class="arrow-icon"></div>
+		<div class="option-container" id="ext_option-container">
+			<input type="checkbox" id="extall" name="extall" class="extallchkp" onclick=extallchkClick(this)><label id="extlports" for="extall">Select All</label><br>
+			<input type="checkbox" id=port8 name=port8 class="extchkp" onclick=extchkClick(this)><label id=lport8 for=port8>Port 9</label><br>
+	</div>
+		</td>
+		<td><input type="text" name="in_rate" id="ext_in_rate">
+			<label style="color:#c3c3c3">16-10000000</label>
+		</td>
+		<td><input type="text" name="out_rate" id="ext_out_rate">
+			<label style="color:#c3c3c3">16-10000000</label>
+		</td>
+	</tr>
+</table>
+<br style="line-height:50%">
+<input type="button" value="Apply" onclick="extcheckValid()">
+<input type="hidden" name="cmd" value="bandwidthcontrol">
+</div>
+</form>
+<hr><div class="showdiv"><table>
+	<tr>
+		<th style="width:128px">Port</th>
+		<th style="width:360px">Ingress Rate Limit (Kbit/sec)</th>
+		<th style="width:360px">Egress Rate Limit (Kbit/sec)</th>
+	</tr>
+	<tr>
+		<td>Port 1</td>
+		<td>Unlimited		</td>
+		<td>Unlimited		</td>
+	</tr>
+	<tr>
+		<td>Port 2</td>
+		<td>Unlimited		</td>
+		<td>Unlimited		</td>
+	</tr>
+	<tr>
+		<td>Port 3</td>
+		<td>Unlimited		</td>
+		<td>Unlimited		</td>
+	</tr>
+	<tr>
+		<td>Port 4</td>
+		<td>Unlimited		</td>
+		<td>Unlimited		</td>
+	</tr>
+	<tr>
+		<td>Port 5</td>
+		<td>Unlimited		</td>
+		<td>Unlimited		</td>
+	</tr>
+	<tr>
+		<td>Port 6</td>
+		<td>Unlimited		</td>
+		<td>Unlimited		</td>
+	</tr>
+	<tr>
+		<td>Port 7</td>
+		<td>Unlimited		</td>
+		<td>Unlimited		</td>
+	</tr>
+	<tr>
+		<td>Port 8</td>
+		<td>Unlimited		</td>
+		<td>Unlimited		</td>
+	</tr>
+	<tr>
+		<td>Port 9</td>
+		<td>Unlimited		</td>
+		<td>Unlimited		</td>
+	</tr>
+</table>
+</div>
+</body>
+</html>

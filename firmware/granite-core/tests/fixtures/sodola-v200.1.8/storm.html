@@ -1,0 +1,346 @@
+<html>
+
+<head>
+<title>Storm Control</title>
+<link rel="stylesheet" type="text/css" href="/style.css">
+<script type="text/javascript">
+function allchkClick(obj)
+{
+	var ports = document.getElementById('ports');
+	var allport = document.getElementById('all');
+	var selports = document.getElementsByClassName('chkp');
+	for (var i = 0; i< selports.length; i++) {
+		selports[i].checked = allport.checked;
+	}
+	if (allport.checked)
+	{
+		ports.value = document.getElementById('lports').innerHTML;
+	}
+	else
+	{
+		ports.value = 'Select Port';
+	}
+}
+function chkClick(obj)
+{
+	var allport = document.getElementById('all');
+	var ports = document.getElementById('ports');
+	var selports = document.getElementsByClassName('chkp');
+	var count = 0;
+	for (var i = 0; i< selports.length; i++) {
+		if(selports[i].checked) count++;
+	}
+	allport.checked = (i == count)?true:false;
+	ports.value = "";
+	count = 0;
+	for (var i = 0; i< selports.length; i++) {
+		if (selports[i].checked) {
+			if (count>=2) {
+				ports.value +="...";break;
+			}
+			if (count >=1) ports.value += ",";
+			ports.value += document.getElementById('l'+selports[i].id).innerHTML;
+			count++;
+		}
+	}
+	if (count == 0) ports.value='Select Port';
+}
+function extallchkClick(obj)
+{
+	var ports = document.getElementById('extports');
+	var allport = document.getElementById('extall');
+	var selports = document.getElementsByClassName('extchkp');
+	for (var i = 0; i< selports.length; i++) {
+		selports[i].checked = allport.checked;
+	}
+	if (allport.checked)
+	{
+		ports.value = document.getElementById('extlports').innerHTML;
+	}
+	else
+	{
+		ports.value = 'Select Port';
+	}
+}
+function extchkClick(obj)
+{
+	var allport = document.getElementById('extall');
+	var ports = document.getElementById('extports');
+	var selports = document.getElementsByClassName('extchkp');
+	var count = 0;
+	for (var i = 0; i< selports.length; i++) {
+		if(selports[i].checked) count++;
+	}
+	allport.checked = (i == count)?true:false;
+	ports.value = "";
+	count = 0;
+	for (var i = 0; i< selports.length; i++) {
+		if (selports[i].checked) {
+			if (count>=2) {
+				ports.value +="...";break;
+			}
+			if (count >=1) ports.value += ",";
+			ports.value += document.getElementById('l'+selports[i].id).innerHTML;
+			count++;
+		}
+	}
+	if (count == 0) ports.value='Select Port';
+}
+function tipboxbtnClick()
+{
+	var adom1 = document.getElementById('tipbox');
+	adom1.style.display = "none";
+}
+function isValid(value)
+{
+	var reg=/^[0-9]*$/;
+	var chkOK=0;
+	if ( value.trim() == "")
+	{
+		chkOK = 1;
+	}
+	else if (!reg.test(value))
+	{
+		chkOK = 0;
+	}
+	else if (parseInt(value) > 2500000 || parseInt(value) < 16)
+	{
+		chkOK = 0;
+	}
+	else
+	{
+		chkOK = 1;
+	}
+	return chkOK?1:0
+}
+function isExtValid(value)
+{
+	var reg=/^[0-9]*$/;
+	var chkOK=0;
+	if ( value.trim() == "")
+	{
+		chkOK = 1;
+	}
+	else if (!reg.test(value))
+	{
+		chkOK = 0;
+	}
+	else if (parseInt(value) > 10000000 || parseInt(value) < 16)
+	{
+		chkOK = 0;
+	}
+	else
+	{
+		chkOK = 1;
+	}
+	return chkOK?1:0
+}
+function checkValid(value)
+{
+	var bc_rate = document.getElementById('bc_rate').value;
+	var mc_rate = document.getElementById('mc_rate').value;
+	var uuc_rate = document.getElementById('uuc_rate').value;
+	var umc_rate = document.getElementById('umc_rate').value;
+	if ( isValid(bc_rate) && isValid(mc_rate) && isValid(uuc_rate) && isValid(umc_rate))
+	{
+		document.getElementById('stormctrl').submit();
+	}
+	else
+	{
+		var adomtip = document.getElementById('tipinfo');
+		var adom1 = document.getElementById('tipbox');
+		adomtip.innerHTML='Rate is not in range';
+		adom1.style.display = "block";
+	}
+}
+function extcheckValid(value)
+{
+	var ext_bc_rate = document.getElementById('ext_bc_rate').value;
+	var ext_mc_rate = document.getElementById('ext_mc_rate').value;
+	var ext_uuc_rate = document.getElementById('ext_uuc_rate').value;
+	var ext_umc_rate = document.getElementById('ext_umc_rate').value;
+	if (isExtValid(ext_bc_rate)&&isExtValid(ext_mc_rate)&&isExtValid(ext_uuc_rate)&&isExtValid(ext_umc_rate))
+	{
+		document.getElementById('extstormctrl').submit();
+	}
+	else
+	{
+		var adomtip = document.getElementById('tipinfo');
+		var adom1 = document.getElementById('tipbox');
+		adomtip.innerHTML='Rate is not in range';
+		adom1.style.display = "block";
+	}
+}
+</script>
+</head>
+<body>
+<h3>Storm Control Setting</h3>
+<div class="tipdiv" id="tipbox" style="margin-left:500px;display:none"><p style="margin-left:20px;color:red">Error</p><br>
+<p id='tipinfo' style="width:238;margin-left:60px"></p><br>
+<input type="button" value="Confirm" onclick="tipboxbtnClick()" style="margin-left:120px">
+</div>
+<form method="post" id="stormctrl" action="/fwd.cgi?page=storm_ctrl">
+<div class="tblcfgdiv"><table>
+	<tr>
+		<th style="width:128px">Port</th>
+		<th style="width:215px">Broadcast Rate (Kbit/sec)</th>
+		<th style="width:215px">Known Multicast Rate (Kbit/sec)</th>
+		<th style="width:215px">Unknown Multicast Rate (Kbit/sec)</th>
+		<th style="width:215px">Unknown Unicast Rate (Kbit/sec)</th>
+	</tr>
+	<tr>
+		<td style="width:138px;text-align:left">
+	<div class="port-container">
+		<input id="ports" readonly value=Select Port>
+		<div class="arrow-icon"></div>
+		<div class="option-container" id="option-container">
+			<input type="checkbox" id="all" name="all" class="allchkp" onclick=allchkClick(this)><label id="lports" for="all">Select All</label><br>
+			<input type="checkbox" id=port0 name=port0 class="chkp" onclick=chkClick(this)><label id=lport0 for=port0>Port 1</label><br>
+			<input type="checkbox" id=port1 name=port1 class="chkp" onclick=chkClick(this)><label id=lport1 for=port1>Port 2</label><br>
+			<input type="checkbox" id=port2 name=port2 class="chkp" onclick=chkClick(this)><label id=lport2 for=port2>Port 3</label><br>
+			<input type="checkbox" id=port3 name=port3 class="chkp" onclick=chkClick(this)><label id=lport3 for=port3>Port 4</label><br>
+			<input type="checkbox" id=port4 name=port4 class="chkp" onclick=chkClick(this)><label id=lport4 for=port4>Port 5</label><br>
+			<input type="checkbox" id=port5 name=port5 class="chkp" onclick=chkClick(this)><label id=lport5 for=port5>Port 6</label><br>
+			<input type="checkbox" id=port6 name=port6 class="chkp" onclick=chkClick(this)><label id=lport6 for=port6>Port 7</label><br>
+			<input type="checkbox" id=port7 name=port7 class="chkp" onclick=chkClick(this)><label id=lport7 for=port7>Port 8</label><br>
+	</div>
+		</td>
+		<td><input type="text" name="bc_rate" id="bc_rate" style="width:70px">
+			<label style="color:#c3c3c3">16-2500000</label>
+		</td>
+		<td><input type="text" name="mc_rate" id="mc_rate" style="width:70px">
+			<label style="color:#c3c3c3">16-2500000</label>
+		</td>
+		<td><input type="text" name="uuc_rate" id="uuc_rate" style="width:70px">
+			<label style="color:#c3c3c3">16-2500000</label>
+		</td>
+		<td><input type="text" name="umc_rate" id="umc_rate" style="width:70px">
+			<label style="color:#c3c3c3">16-2500000</label>
+		</td>
+	</tr>
+</table>
+<br style="line-height:50%">
+<input type="button" value="Apply" onclick="checkValid()">
+<input type="hidden" name="cmd" value="storm">
+</div>
+</form>
+<br>
+<form method="post" id="extstormctrl" action="/fwd.cgi?page=storm_ctrl">
+<div class="tblcfgdiv"><table>
+	<tr>
+		<th style="width:128px">Port</th>
+		<th style="width:215px">Broadcast Rate (Kbit/sec)</th>
+		<th style="width:215px">Known Multicast Rate (Kbit/sec)</th>
+		<th style="width:215px">Unknown Multicast Rate (Kbit/sec)</th>
+		<th style="width:215px">Unknown Unicast Rate (Kbit/sec)</th>
+	</tr>
+	<tr>
+		<td style="width:138px;text-align:left">
+	<div class="port-container">
+		<input id="extports" readonly value=Select Port>
+		<div class="arrow-icon"></div>
+		<div class="option-container" id="ext_option-container">
+			<input type="checkbox" id="extall" name="extall" class="extallchkp" onclick=extallchkClick(this)><label id="extlports" for="extall">Select All</label><br>
+			<input type="checkbox" id=port8 name=port8 class="extchkp" onclick=extchkClick(this)><label id=lport8 for=port8>Port 9</label><br>
+	</div>
+		</td>
+		<td><input type="text" name="bc_rate" id="ext_bc_rate" style="width:70px">
+			<label style="color:#c3c3c3">16-10000000</label>
+		</td>
+		<td><input type="text" name="mc_rate" id="ext_mc_rate" style="width:70px">
+			<label style="color:#c3c3c3">16-10000000</label>
+		</td>
+		<td><input type="text" name="uuc_rate" id="ext_uuc_rate" style="width:70px">
+			<label style="color:#c3c3c3">16-10000000</label>
+		</td>
+		<td><input type="text" name="umc_rate" id="ext_umc_rate" style="width:70px">
+			<label style="color:#c3c3c3">16-10000000</label>
+		</td>
+	</tr>
+</table>
+<br style="line-height:50%">
+<input type="button" value="Apply" onclick="extcheckValid()">
+<input type="hidden" name="cmd" value="storm">
+</div>
+</form>
+<hr>
+<form method="post" action="/fwd.cgi?page=storm_ctrl">
+<div class="tblcfgdiv"><table>
+	<tr>
+		<th style="width:128px">Port</th>
+		<th style="width:215px">Broadcast Rate (Kbit/sec)</th>
+		<th style="width:215px">Known Multicast Rate (Kbit/sec)</th>
+		<th style="width:215px">Unknown Multicast Rate (Kbit/sec)</th>
+		<th style="width:215px">Unknown Unicast Rate (Kbit/sec)</th>
+	</tr>
+	<tr>
+		<td>Port 1</td>
+		<td>Off</td>
+		<td>Off</td>
+		<td>Off</td>
+		<td>Off</td>
+	</tr>
+	<tr>
+		<td>Port 2</td>
+		<td>Off</td>
+		<td>Off</td>
+		<td>Off</td>
+		<td>Off</td>
+	</tr>
+	<tr>
+		<td>Port 3</td>
+		<td>Off</td>
+		<td>Off</td>
+		<td>Off</td>
+		<td>Off</td>
+	</tr>
+	<tr>
+		<td>Port 4</td>
+		<td>Off</td>
+		<td>Off</td>
+		<td>Off</td>
+		<td>Off</td>
+	</tr>
+	<tr>
+		<td>Port 5</td>
+		<td>Off</td>
+		<td>Off</td>
+		<td>Off</td>
+		<td>Off</td>
+	</tr>
+	<tr>
+		<td>Port 6</td>
+		<td>Off</td>
+		<td>Off</td>
+		<td>Off</td>
+		<td>Off</td>
+	</tr>
+	<tr>
+		<td>Port 7</td>
+		<td>Off</td>
+		<td>Off</td>
+		<td>Off</td>
+		<td>Off</td>
+	</tr>
+	<tr>
+		<td>Port 8</td>
+		<td>Off</td>
+		<td>Off</td>
+		<td>Off</td>
+		<td>Off</td>
+	</tr>
+	<tr>
+		<td>Port 9</td>
+		<td>Off</td>
+		<td>Off</td>
+		<td>Off</td>
+		<td>Off</td>
+	</tr>
+</table>
+<br style="line-height:50%">
+<input type="submit" value="Default">
+<input type="hidden" name="cmd" value="storm_dft">
+</div>
+</form>
+</body>
+</html>

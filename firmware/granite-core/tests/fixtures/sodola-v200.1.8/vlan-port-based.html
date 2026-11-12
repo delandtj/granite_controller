@@ -1,0 +1,316 @@
+<html>
+
+<head>
+<title>VLAN Port Information</title>
+<link rel="stylesheet" type="text/css" href="/style.css">
+<script type="text/javascript">
+function vlanallchkClick(obj)
+{
+	var vlans = document.getElementById('vlans');
+	var vlanall = document.getElementById('vlanall');
+	var selvlans = document.getElementsByClassName('chkvlan');
+	for (var i = 0; i< selvlans.length; i++) {
+		selvlans[i].checked = vlanall.checked;
+	}
+	if (vlanall.checked)
+	{
+		vlans.value = document.getElementById('lvlans').innerHTML;
+	}
+	else
+	{
+		vlans.value = 'Select VLAN';
+	}
+}
+function vlanchkClick(obj)
+{
+	var vlanall = document.getElementById('vlanall');
+	var vlans = document.getElementById('vlans');
+	var selvlans = document.getElementsByClassName('chkvlan');
+	var count = 0;
+	for (var i = 0; i< selvlans.length; i++) {
+		if(selvlans[i].checked) count++;
+	}
+	vlanall.checked = (i == count)?true:false;
+	vlans.value = "";
+	count = 0;
+	for (var i = 0; i< selvlans.length; i++) {
+		if (selvlans[i].checked) {
+			if (count>=2) {
+				vlans.value +="...";break;
+			}
+			if (count >=1) vlans.value += ",";
+			vlans.value += document.getElementById('l'+selvlans[i].id).innerHTML;
+			count++;
+		}
+	}
+	if (count == 0) vlans.value='Select VLAN';
+}
+function allchkClick(obj)
+{
+	var ports = document.getElementById('ports');
+	var allport = document.getElementById('all');
+	var selports = document.getElementsByClassName('chkp');
+	for (var i = 0; i< selports.length; i++) {
+		selports[i].checked = allport.checked;
+	}
+	if (allport.checked)
+	{
+		ports.value = document.getElementById('lports').innerHTML;
+	}
+	else
+	{
+		ports.value = 'Select Port';
+	}
+}
+function chkClick(obj)
+{
+	var allport = document.getElementById('all');
+	var ports = document.getElementById('ports');
+	var selports = document.getElementsByClassName('chkp');
+	var count = 0;
+	for (var i = 0; i< selports.length; i++) {
+		if(selports[i].checked) count++;
+	}
+	allport.checked = (i == count)?true:false;
+	ports.value = "";
+	count = 0;
+	for (var i = 0; i< selports.length; i++) {
+		if (selports[i].checked) {
+			if (count>=2) {
+				ports.value +="...";break;
+			}
+			if (count >=1) ports.value += ",";
+			ports.value += document.getElementById('l'+selports[i].id).innerHTML;
+			count++;
+		}
+	}
+	if (count == 0) ports.value='Select Port';
+}
+function VlanTypeChange(obj)
+{
+	var adom1 = document.getElementById('vlan_type');
+	var index = adom1.selectedIndex;
+	var opVal=adom1.options[index].value;
+	if (opVal == 0) {
+		document.getElementById('vlanAccess').disabled=false;
+		document.getElementById('vlanTrunk').disabled=true;
+		document.getElementById('vlanbox').style.display = "none";
+		document.getElementById('vlanboxhidden').style.display = "block";
+	}else {
+		document.getElementById('vlanAccess').disabled=true;
+		document.getElementById('vlanTrunk').disabled=false;
+		document.getElementById('vlanbox').style.display = "block";
+		document.getElementById('vlanboxhidden').style.display = "none";
+		var defVlan=document.getElementById('VLAN1');
+		defVlan.checked=true;
+		vlanchkClick(obj);
+	}
+}
+function VlanTrunkChange(obj)
+{
+	var defVlan=document.getElementById('VLAN1');
+	var vlanTrunk=document.getElementById('vlanTrunk');
+	for (var i = 0; i< vlanTrunk.length; i++) {
+		var vlanId='VLAN'+vlanTrunk.options[i].value;
+		document.getElementById(vlanId).checked=false;
+	}
+	var vlanIndex=vlanTrunk.selectedIndex;
+	var vlanValue = vlanTrunk.options[vlanIndex].value;
+	var pvidVlan=document.getElementById('VLAN'+vlanValue);
+	defVlan.checked=true;
+	pvidVlan.checked=true;
+	vlanchkClick(obj);
+}
+function chkVlanEnable(obj)
+{
+	var vlanEn=document.getElementById('vlanState').value;
+	var adom1 = document.getElementById('portVlan');
+	if(vlanEn==0) {
+		var adombox = document.getElementById('tipbox');
+		var adomtip = document.getElementById('tipinfo');
+		adomtip.innerHTML='VLAN state is disable, can not modify port based vlan';
+		adombox.style.display = "block";
+		return;
+	}else{
+		adom1.submit();
+	}
+}
+function tipboxbtnClick()
+{
+	var adom1 = document.getElementById('tipbox');
+	adom1.style.display = "none";
+}
+</script>
+</head>
+
+<body>
+<h3>Port VLAN</h3>
+<div class="tipdiv" id="tipbox" style="margin-left:500px;display:none"><p style="margin-left:20px;color:red">Error</p><br>
+<p id='tipinfo' style="width:238;margin-left:60px"></p><br>
+<input type="button" value="Confirm" onclick="tipboxbtnClick()" style="margin-left:120px">
+</div>
+<form method="post" id="portVlan" action="/vlan.cgi?page=port_based">
+<div class="tblcfgdiv"><table>
+	<tr>
+		<th style="width:128px;height:50px">Port</th>
+		<th style="width:168px">Port vlan type</th>
+		<th style="width:128px">Access VLAN</th>
+		<th style="width:128px">Native VLAN</th>
+		<th style="width:220px">Trunk vlan</th>
+	</tr>
+	<tr>
+		<td style="width:138px;text-align:left">
+	<div class="port-container">
+		<input id="ports" readonly value=Select Port>
+		<div class="arrow-icon"></div>
+		<div class="option-container" id="option-container">
+			<input type="checkbox" id="all" name="all" class="allchkp" onclick=allchkClick(this)><label id="lports" for="all">Select All</label><br>
+			<input type="checkbox" id=port0 name=port0 class="chkp" onclick=chkClick(this)><label id=lport0 for=port0>Port 1</label><br>
+			<input type="checkbox" id=port1 name=port1 class="chkp" onclick=chkClick(this)><label id=lport1 for=port1>Port 2</label><br>
+			<input type="checkbox" id=port2 name=port2 class="chkp" onclick=chkClick(this)><label id=lport2 for=port2>Port 3</label><br>
+			<input type="checkbox" id=port3 name=port3 class="chkp" onclick=chkClick(this)><label id=lport3 for=port3>Port 4</label><br>
+			<input type="checkbox" id=port4 name=port4 class="chkp" onclick=chkClick(this)><label id=lport4 for=port4>Port 5</label><br>
+			<input type="checkbox" id=port5 name=port5 class="chkp" onclick=chkClick(this)><label id=lport5 for=port5>Port 6</label><br>
+			<input type="checkbox" id=port6 name=port6 class="chkp" onclick=chkClick(this)><label id=lport6 for=port6>Port 7</label><br>
+			<input type="checkbox" id=port7 name=port7 class="chkp" onclick=chkClick(this)><label id=lport7 for=port7>Port 8</label><br>
+			<input type="checkbox" id=port8 name=port8 class="chkp" onclick=chkClick(this)><label id=lport8 for=port8>Port 9</label><br>
+	</div>
+		</td>
+		<td>
+			<select name="vlan_type" id=vlan_type onchange="VlanTypeChange()">
+			<option value="0">Access
+			<option value="1">Trunk
+			</select>
+		</td>
+		<td>
+			<select name="vlan_access" id='vlanAccess'>
+			<option value="1">VLAN 1
+			<option value="100">VLAN 100
+			<option value="200">VLAN 200
+			</select>
+		</td>
+		<td>
+			<select name="vlan_trunk" id='vlanTrunk' onchange="VlanTrunkChange()" disabled>
+			<option value="1">VLAN 1
+			<option value="100">VLAN 100
+			<option value="200">VLAN 200
+			</select>
+		</td>
+		<td style="width:138px;text-align:left">
+		<div class="port-container" style="width:198px;display:none" id='vlanbox'>
+			<input id="vlans" readonly value=Select VLAN style="width:198px">
+			<div class="arrow-icon"></div>
+			<div class="option-container" id="vlan_option-container" style="width:198px">
+			<input type="checkbox" id="vlanall" name="vlanall" class="vlanallchkp" onclick=vlanallchkClick(this)><label id="lvlans" for="vlanall">Select All</label><br>
+			<input type="checkbox" id=VLAN1 name=VLAN1 class="chkvlan" onclick=vlanchkClick(this)><label id=lVLAN1 for=VLAN1>VLAN 1</label><br>
+			<input type="checkbox" id=VLAN100 name=VLAN100 class="chkvlan" onclick=vlanchkClick(this)><label id=lVLAN100 for=VLAN100>VLAN 100</label><br>
+			<input type="checkbox" id=VLAN200 name=VLAN200 class="chkvlan" onclick=vlanchkClick(this)><label id=lVLAN200 for=VLAN200>VLAN 200</label><br>
+			</div>
+		</div>
+		<div style="width:198px;display:block;margin:0 auto" id='vlanboxhidden'>
+			<select style="width:198px" disabled>
+			<option>Select VLAN
+			</select>
+		</div>
+		</td>
+	</tr>
+</table>
+<br style="line-height:50%">
+<input type="button" value="Apply" onclick="chkVlanEnable()">
+<input type="hidden" id="vlanState" value="1">
+</div>
+</form>
+<hr>
+<div class="showdiv"><table>
+	<tr>
+		<th style="width:138px">Port</th>
+		<th style="width:168px">Port vlan type</th>
+		<th style="width:128px">Access VLAN</th>
+		<th style="width:128px">Native VLAN</th>
+		<th style="width:220px">Trunk vlan</th>
+	</tr>
+	<tr>
+		<td>Port 1</td>
+		<td>Trunk</td>
+		<td>-</td>
+		<td>1</td>
+		<td>
+1
+		</td>
+	</tr>
+	<tr>
+		<td>Port 2</td>
+		<td>Trunk</td>
+		<td>-</td>
+		<td>1</td>
+		<td>
+1
+		</td>
+	</tr>
+	<tr>
+		<td>Port 3</td>
+		<td>Trunk</td>
+		<td>-</td>
+		<td>1</td>
+		<td>
+1
+		</td>
+	</tr>
+	<tr>
+		<td>Port 4</td>
+		<td>Trunk</td>
+		<td>-</td>
+		<td>1</td>
+		<td>
+1
+		</td>
+	</tr>
+	<tr>
+		<td>Port 5</td>
+		<td>Trunk</td>
+		<td>-</td>
+		<td>1</td>
+		<td>
+1
+		</td>
+	</tr>
+	<tr>
+		<td>Port 6</td>
+		<td>Trunk</td>
+		<td>-</td>
+		<td>1</td>
+		<td>
+1
+		</td>
+	</tr>
+	<tr>
+		<td>Port 7</td>
+		<td>Trunk</td>
+		<td>-</td>
+		<td>1</td>
+		<td>
+1
+		</td>
+	</tr>
+	<tr>
+		<td>Port 8</td>
+		<td>Trunk</td>
+		<td>-</td>
+		<td>1</td>
+		<td>
+1
+		</td>
+	</tr>
+	<tr>
+		<td>Port 9</td>
+		<td>Trunk</td>
+		<td>-</td>
+		<td>1</td>
+		<td>
+1
+		</td>
+	</tr>
+</table>
+</div>
+</body>
+</html>
