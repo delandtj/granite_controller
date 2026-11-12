@@ -457,6 +457,28 @@ input strip on the far side (right of slot B).
   2026-11-11 covers the slot FETs of 24 units, not all four positions).
 - [ ] Dead short on one slot: does the unit breaker trip with it
   (decision 3a, bench plan test 6).
+- [ ] Protection outside the fluid for the first pods (discussed
+  2026-11-12, not decided). Need: 12 frames of 8 nodes in the first
+  week of December 2026 (48 units; FD batch 1 plus a second order).
+  Each unit has its own XT60, so the 48 V split to a frame's four
+  units is inside the fluid.
+  - Per unit (20 A, 24 devices per 48-node pod): rejected by the user,
+    too many devices and feeds.
+  - Per frame (one device per 8 nodes, about 44 A at 48 V): 63 A,
+    80 V DC or more, a DC breaker on a DIN rail or a fast fuse, about
+    16 mm2 per frame into the tank, branches to the units 4 mm2 or
+    more. It protects the feed cable and bounds a fault's duration;
+    it does not keep the other nodes up during the fault. Not taken
+    yet: every feed through the wall of a liquid pod is costly.
+  - One device for a pod: does not protect anything behind it (about
+    300 A).
+  - What it changes for FD batch 1: with the fitted FETs a module
+    input short is not switched off on the board (decision 3a), so
+    whatever is outside the fluid is the only thing that ends it.
+    With ISC035N10NM5LF2 in the slot positions (2 per unit) the board
+    ends it and the device outside only guards the cabling. The fewer
+    feeds and devices the pod gets, the more the FET rework of FD
+    batch 1 is worth; no rework decided.
 - [x] Firmware: chain topology discovery and re-scan: plane-logic
   discovery.rs (probe 0x22 per channel, 2 s re-scan, lost after two
   NAKs).
