@@ -83,6 +83,7 @@ corrections = [
     ["^SOT-23$", "C8545", 180, 0.0, 0.0],
     ["^TDSON-8-1$", "C534364", 270, 0.0, 0.0],                       # fitted on pins 1-4 (EasyEDA numbers the drain pins 5-8, the pad 9)
     ["^TDSON-8-1$", "C534334", 270, 0.0, 0.0],
+    ["^TDSON-8-1$", "C22408528", 270, 0.0, 0.0],                     # ISC035N10NM5LF2 (2026-11-12): assumed as the two above (same PG-TDSON-8), not fitted against its EasyEDA footprint; check in the preview
     ["^TSOT-23-6$", "C2670157", 180, 0.0, 0.0],
     ["^TSSOP-10_3x3mm_P0.5mm$", "C2864837", 270, 0.0, 0.0],
     ["^TerminalBlock_Degson_DG128-5.0-02P$", "C711349", 0, 0.0, 0.0],
