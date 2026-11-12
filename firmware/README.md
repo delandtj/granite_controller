@@ -448,6 +448,8 @@ for editing.
 
 ## MQTT
 
+Operator guide (topics, commands, config sections, recipes): [`docs/mqtt.md`](docs/mqtt.md).
+
 Off by default. Configured on the MQTT page (or by `config_set`): host,
 port (8883), TLS with a CA in PEM, username plus password or a client
 certificate, QoS, keepalive, `t_state_s`, `site`.

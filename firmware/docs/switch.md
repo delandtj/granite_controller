@@ -1,5 +1,8 @@
 # The block switch: operator guide
 
+The rest of the MQTT interface (topics, the command envelope, acks,
+the other sections): `docs/mqtt.md`.
+
 How to read and configure a block's Sodola SL902-SWTGW218AS through the
 controller, over MQTT (or the HTTPS API, which takes the same
 commands). Design and reasons: `docs/adr/0006-block-switch.md`. The
