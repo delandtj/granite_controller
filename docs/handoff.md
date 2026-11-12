@@ -1,6 +1,121 @@
-# Handoff - granite-plane (updated 2026-11-09)
+# Handoff - granite-plane (updated 2026-11-12)
 
 Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
+
+## 2026-11-12: unit-fd desk review done, plan up to the second order
+
+Where we are: FD batch 1 (tag `fd-batch1`: controller-fd, core-fd,
+unit-fd, PM modules rev A and -B) is at JLC, nothing has arrived, nothing
+is measured. Target: 12 frames of 8 nodes (48 units, 96 modules) in the
+first week of December 2026, so a second order is needed on top of
+batch 1.
+
+### What the desk review of pp-48-unit-fd found (2026-11-11 / 12)
+
+- Layout / EMI: no layout problem. Open is the modules' input ripple,
+  which the unit passes unfiltered (model: about 0.8 V p-p at 252 kHz,
+  power/pp-48-fd/tools/unit_ripple.py). Plan with probe points and
+  limits: docs/unit-fd-emi-bench-plan.md, tests 1 to 5. C201 (47 uF
+  electrolytic) may run warm from ripple; user: live with it, test 2
+  measures it.
+- Current and heat at 14 A (DC drop solver, scratch only, not in the
+  repo): about 4 W per unit, hottest copper the VIN pour on F between
+  the XT60 and the shunts (0.8 W, 4 mohm). No room to widen it; 2 oz
+  outer copper is at the edge of JLC's rules. Left as is until a
+  temperature reading says otherwise.
+- **Hot-swap FETs fail on a short** (ADR 0005 decision 3a): the fitted
+  BSC070N10NS5 (slots, Q1 / Q51) and BSC040N10NS5 (unit input, Q202 /
+  Q203) are far outside their SOA when the LM5069 holds them in power
+  limit. Normal running and switch-on are fine. Hot-plug never happens
+  (user: frames are assembled before the tank is filled), so the case
+  is a module input short while running: on batch 1 boards the slot FET
+  is expected to fail conducting, and the fault ends outside the board.
+- Fix, in the source since 8ea080a: ISC035N10NM5LF2 (JLC C22408528,
+  extended, 58 in stock on 2026-11-12, about 5.4 USD at 100) in all four
+  positions. Same footprint: no copper change, BOM lines only. Rotation
+  entry added to pcbkit.toml (3b2d3ac), assumed 270 as the old parts,
+  not fitted: check the four FETs in JLC's placement preview.
+- Not settled at the desk: on a dead short the slot and unit breakers
+  race (1 to 2 us); the unit may trip with the slot. Bench plan test 6.
+- Protection outside the fluid: open (ADR 0005 open questions). Per
+  unit rejected by the user (24 devices per 48-node pod); per frame
+  (63 A, 80 V DC) described, not taken: feeds through the pod wall are
+  costly. The fewer devices outside, the more the FETs matter.
+- fab-archive/fd-batch1 now also holds the two PM module sets
+  (7995862), regenerated here. -B's Q3 was placed with a scratch copy
+  of pcbkit: pcbkit da29f15 (bottom-side offsets) is unpushed on the
+  portable. User will set the uploaded files aside on the portable;
+  if they differ, they win.
+
+### Plan from here
+
+Each step gates the next. Dates are the user's to set; the second order
+is the one with a deadline.
+
+1. **Now, at the desk** (no boards needed)
+   - [ ] Decide the second order's FET variant: all four positions (96
+     for 24 units, JLC has 58, the rest through global sourcing or
+     consignment, about two weeks) or slot-only (Q1 / Q51 new, Q202 /
+     Q203 stay BSC040N10NS5: 48 parts, in stock; needs the uinput.py
+     value put back for that order).
+   - [ ] Fault-case pass on the unit as routed (UVLO / OVLO with
+     tolerances, OV_KILL latch, module output shorted to input, loss
+     of 3V3 with the bus live). The one desk check that could still
+     change copper, so before the order.
+   - [ ] Optional: sense Kelvin taps (INA237, LM5069), buildability.
+   - [ ] Portable: push pcbkit (da29f15), compare -B's Q3 CPL line
+     ("Q3","153.9459mm","-109.7097mm","Bottom","180").
+   - [ ] User: what supply feeds a pod and how 48 V enters the tank;
+     decides what protection outside the fluid is possible.
+2. **Batch 1 arrives: power-up** (one unit, core, controller, in air)
+   - [ ] Visual, then 48 V from a current-limited bench supply, no
+     modules: 3V3, UVLO threshold, unit and slot hot-swaps switch,
+     INA237s read, CAN link up (STATUS 0x1D counters).
+   - [ ] One module, then two, stepped to full load (13.2 A at 19 V).
+3. **Measure** (docs/unit-fd-emi-bench-plan.md)
+   - [ ] Tests 1 to 5: ripple, C201 temperature, latch inputs steady
+     and through transients, CAN counters over hours, INA237 readings.
+   - [ ] Temperature of the VIN pour and the shunts at full load.
+   - [ ] Fill in "Results" in the bench plan.
+4. **Short test** (bench plan test 6)
+   - [ ] Fit ISC035N10NM5LF2 by hand on one batch 1 unit (4 parts from
+     a distributor), then soft short, dead short with the other slot
+     loaded, dead short with it idle. On an unmodified board the test
+     is expected to destroy the FETs.
+   - [ ] Outcome decides: FET confirmed or not; whether the unit trips
+     with the slot (then more VBUS capacitance or an inductor per slot,
+     a copper change).
+5. **Go / no-go for the second order**
+   - Go as is (BOM change only) when: tests 1 to 5 pass, the short
+     test passes with the new FET, the fault-case pass found nothing.
+   - Copper change first when: test 3 fails (VBUS ceramics per slot),
+     test 6 shows the unit tripping and that is not acceptable, or the
+     VIN pour runs hot.
+   - If the December date does not allow waiting for 2 to 4: order
+     with the BOM change only and accept that it is unproven; say so
+     in the order notes here.
+6. **Re-fab**
+   - [ ] `pcbkit jlcfab` for pp-48-unit-fd from master (not the
+     archived set: that is the old BOM). ERC / parity / DRC as before
+     (DRC 15 known). Check the FET rotation in JLC's preview.
+   - [ ] controller-fd, core-fd, PM modules: reorder from
+     fab-archive/fd-batch1 unchanged, unless 2 to 4 found something.
+   - [ ] Tag the source and add the set under fab-archive/ as a new
+     batch directory.
+7. **Batch 1 boards**
+   - [ ] Decide the rework: slot FETs only (2 per unit, 48 for 24
+     units, by hand) is the minimum that makes a node short stay on
+     its node. Without it they run, and a short costs the unit and
+     possibly dirties the fluid.
+8. **Pod**
+   - [ ] Protection outside the fluid as decided in 1.
+   - [ ] Frames assembled and checked before filling; first power-up
+     frame by frame if the cabling allows it.
+
+Repo: master is ahead of origin by the commits of 2026-11-11 / 12 (this
+one included), not pushed. Uncommitted and not mine:
+power/pp-48-unit-fd/pp-48-unit-fd.kicad_pro (net class entries, as
+KiCad rewrites them).
 
 ## 2026-11-09: JLC order review, CAN pair impedance
 
