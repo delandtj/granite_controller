@@ -1199,6 +1199,14 @@ fn resolve_pending(
                         done.push(Reply::ok(&p.id, "rebooting"));
                         return false;
                     }
+                    // A switch verb is handed to the switch worker, which
+                    // reports through `switch_*` events and never sends
+                    // `action_done`: "accepted" is the ack (ADR 0006
+                    // component 21).
+                    if queued && p.action.is_switch_verb() {
+                        done.push(reply);
+                        return false;
+                    }
                     if queued {
                         // Remember the job so the completion ack can
                         // carry it, and give the action the time its
