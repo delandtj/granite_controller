@@ -156,7 +156,7 @@ characters at most) is answered on that id with
 | `reboot`, `factory_reset` | at once, before the restart | `rebooting` |
 | `ota` | when the image is verified (then it reboots) or the pull failed; at most 600 s | `verified, rebooting into the new image` |
 | switch verbs | at once; the outcome comes as `switch` events (`docs/switch.md`) | `accepted` |
-| `probe_scan` | after about 75 s, as a failure (section 6.2) | - |
+| `probe_scan` | at once; the result lands in `state.probes` and the log (section 6.2) | `accepted` |
 
 "Accepted" means the controller checked the target and handed the job
 to the plane. For node, unit and plane verbs you never see `accepted`
@@ -286,12 +286,23 @@ what the rule did.
 
 ### 6.2 `probe_scan`
 
-Not wired on the firmware: the controller logs
-`probe_scan: ... not wired yet` and does nothing. Over MQTT the ack
-then times out after about 75 s with
-`the action did not finish in time` (over HTTPS the reply is
-`accepted`). The probe list is read from `nodes.probes`, or found by a
-bus scan at boot when that list is empty.
+Walks the 1-wire bus again. The ack is `accepted` at once; the sense
+task does the walk on its next tick (within a second) and logs
+`probes: N on the bus [rom, rom, ...]`, so the ROM ids to put in
+`nodes.probes` can be read off the log.
+
+Which probes are read:
+
+- `nodes.probes` set: exactly those. A scan does not change the list,
+  it only logs what is on the bus.
+- `nodes.probes` empty: whatever the bus reports. The controller walks
+  the bus at boot, again every 60 s, and on `probe_scan`, so a probe
+  plugged in later shows up in `state.probes` within a minute without a
+  reboot. Such a probe is named by its ROM id.
+
+A bus that timed out (a shorted or reversed probe holds the line low)
+gets a fresh driver on the next scan or read, so fixing the wiring is
+enough: no reboot needed.
 
 ### 6.3 `ota`
 
@@ -845,7 +856,7 @@ to `valid`. How to build the `.bin`: `README.md`, "Making the .bin".
 | `off` takes minutes | It waits `t_soft_off_s` for the host. `force_off` for now; lower the setting for later. |
 | `force_off` acks `failed` | Escalation `none` or `hold` on that node, or `no_escalate`. |
 | `timed_out` / `the action did not finish in time` | The plane did not report. Check the plane link; the job may still have run. |
-| `probe_scan` acks a failure after 75 s | Not wired (section 6.2). |
+| `state.probes` is `[]` with a probe plugged in | Check the probe's wire order: the board's JST PH pins are 1 = 3V3, 2 = DQ, 3 = GND. A reversed probe holds the bus low; the log shows `1-wire reset pulse receive timeout`. |
 | A setting went back to its default | `config_set` left the key out (rule 3). |
 | All per-node names gone | `config_set nodes` without `nodes`. |
 | The example rules came back | `config_set rules` without `rules`. |
@@ -875,7 +886,6 @@ credentials, device certificate, fleet key) are HTTPS-only. Details:
 - No plane on the bench: every node, unit and plane verb, `state.nodes`,
   `state.planes` and the `plane` events are verified against the
   simulator and host tests only.
-- `probe_scan` (1-wire re-scan) is not wired.
 - Dry contact inputs: no pin map on rev D, `dry_in` stays `null`.
 - `net.vlan`: ignored. `sys.coredump_report`, `sys.timezone`: unused.
 - `fault` events: never emitted.

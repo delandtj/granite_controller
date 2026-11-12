@@ -1202,8 +1202,12 @@ fn resolve_pending(
                     // A switch verb is handed to the switch worker, which
                     // reports through `switch_*` events and never sends
                     // `action_done`: "accepted" is the ack (ADR 0006
-                    // component 21).
-                    if queued && p.action.is_switch_verb() {
+                    // component 21). A probe scan is the same: the sense
+                    // task walks the bus and the result lands in
+                    // `state.probes` and the log, with no `action_done`.
+                    if queued
+                        && (p.action.is_switch_verb() || p.action == CommandKind::ProbeScan)
+                    {
                         done.push(reply);
                         return false;
                     }

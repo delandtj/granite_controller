@@ -18,6 +18,7 @@
 //! empty list on an empty bus and [`Probes::read`] answers
 //! [`HalError::NotPresent`] for a ROM id that no longer responds.
 
+use std::cell::Cell;
 use std::time::Duration;
 
 use esp_idf_hal::gpio::{Gpio16, Gpio17, Input, PinDriver, Pull};
@@ -53,6 +54,12 @@ pub struct OneWireProbes {
     /// GPIO17 parked as a passive input; kept so nothing re-claims it.
     _rx_idle: PinDriver<'static, Input>,
     last_convert_ms: u64,
+    /// Set when the RMT driver reported a timeout or a bad state. The
+    /// `onewire_bus` component leaves its RX channel mid-receive after a
+    /// reset pulse that never came back, and every later call then fails
+    /// with "channel not in enable state". The only way out is a new
+    /// driver, which the next [`Probes`] call builds.
+    stuck: Cell<bool>,
 }
 
 impl OneWireProbes {
@@ -63,25 +70,55 @@ impl OneWireProbes {
     /// and must not block bring-up.
     pub fn new(dq: Gpio16<'static>, uart_rx: Gpio17<'static>) -> Result<Self, EspError> {
         let rx_idle = PinDriver::input(uart_rx, Pull::Floating)?;
-        let bus = match esp_idf_hal::onewire::OWDriver::new(dq) {
-            Ok(bus) => {
-                log::info!("probes: 1-wire bus up on GPIO16 (RMT)");
-                Some(bus)
-            }
-            Err(err) => {
-                log::error!("probes: 1-wire bus on GPIO16 failed: {err}");
-                None
-            }
-        };
+        let bus = open_bus(dq);
+        if bus.is_some() {
+            log::info!("probes: 1-wire bus up on GPIO16 (RMT)");
+        }
         let mut probes = OneWireProbes {
             bus,
             _rx_idle: rx_idle,
             last_convert_ms: 0,
+            stuck: Cell::new(false),
         };
         if let Ok(found) = probes.scan() {
             log::info!("probes: {} device(s) on the bus", found.len());
         }
         Ok(probes)
+    }
+
+    /// Replace a driver that is stuck (see [`OneWireProbes::stuck`]) with
+    /// a fresh one on the same pin.
+    fn recover(&mut self) {
+        if !self.stuck.replace(false) {
+            return;
+        }
+        // Drop the old driver first: that releases its RMT channels and
+        // GPIO16, so the pin taken back below is the only user of it.
+        self.bus = None;
+        self.last_convert_ms = 0;
+        // SAFETY: GPIO16 was handed to `new` and lived only inside the
+        // driver just dropped; nothing else in the firmware claims it.
+        let pin = unsafe { Gpio16::steal() };
+        self.bus = open_bus(pin);
+        if self.bus.is_some() {
+            log::info!("probes: 1-wire driver rebuilt after a bus timeout");
+        }
+    }
+
+    /// Note an RMT error: a timeout or a bad channel state means the
+    /// driver needs rebuilding before the next transaction.
+    fn note(&self, err: &EspError) {
+        if driver_stuck(err) {
+            self.stuck.set(true);
+        }
+    }
+
+    /// A failed reset: nothing answered the presence slot, or the driver
+    /// timed out (then it is marked for rebuilding).
+    fn presence_err(&self, err: EspError) -> HalError {
+        self.note(&err);
+        log::debug!("probes: 1-wire presence detect failed: {err}");
+        HalError::NotPresent
     }
 
     fn bus(&self) -> HalResult<&esp_idf_hal::onewire::OWDriver<'static>> {
@@ -91,7 +128,7 @@ impl OneWireProbes {
     /// Reset the bus and address one device.
     fn select(&self, rom: RomId) -> HalResult<()> {
         let bus = self.bus()?;
-        bus.reset().map_err(presence_err)?;
+        bus.reset().map_err(|e| self.presence_err(e))?;
         let mut frame = [0u8; 9];
         frame[0] = CMD_MATCH_ROM;
         frame[1..9].copy_from_slice(&rom.to_le_bytes());
@@ -104,7 +141,7 @@ impl OneWireProbes {
     /// Reset the bus and address every device.
     fn select_all(&self) -> HalResult<()> {
         let bus = self.bus()?;
-        bus.reset().map_err(presence_err)?;
+        bus.reset().map_err(|e| self.presence_err(e))?;
         bus.write(&[CMD_SKIP_ROM]).map_err(|_| HalError::Bus)
     }
 
@@ -157,6 +194,8 @@ impl OneWireProbes {
 
 impl Probes for OneWireProbes {
     fn scan(&mut self) -> HalResult<Vec<RomId>> {
+        self.recover();
+        let mut stuck = false;
         let bus = match self.bus.as_mut() {
             Some(bus) => bus,
             None => return Ok(Vec::new()),
@@ -179,6 +218,7 @@ impl Probes for OneWireProbes {
                         }
                         Err(err) => {
                             log::error!("probes: ROM search failed: {err}");
+                            stuck = driver_stuck(&err);
                             break;
                         }
                     }
@@ -188,8 +228,11 @@ impl Probes for OneWireProbes {
                 // An empty bus fails the presence detect; that is "no
                 // probes", not a fault.
                 log::info!("probes: no device answered the ROM search ({err})");
-                return Ok(Vec::new());
+                stuck = driver_stuck(&err);
             }
+        }
+        if stuck {
+            self.stuck.set(true);
         }
         if !found.is_empty()
             && let Err(err) = self.set_resolution_12bit()
@@ -200,6 +243,7 @@ impl Probes for OneWireProbes {
     }
 
     fn read(&mut self, rom: RomId) -> HalResult<i16> {
+        self.recover();
         self.convert_all()?;
         let pad = self.scratchpad(rom)?;
         let raw = i16::from_le_bytes([pad[0], pad[1]]);
@@ -215,10 +259,24 @@ impl Probes for OneWireProbes {
     }
 }
 
-/// A failed reset means nothing answered the presence slot.
-fn presence_err(err: EspError) -> HalError {
-    log::debug!("probes: 1-wire presence detect failed: {err}");
-    HalError::NotPresent
+/// True for the RMT errors after which the driver needs rebuilding.
+fn driver_stuck(err: &EspError) -> bool {
+    matches!(
+        err.code(),
+        esp_idf_sys::ESP_ERR_TIMEOUT | esp_idf_sys::ESP_ERR_INVALID_STATE
+    )
+}
+
+/// Create the RMT-based driver on GPIO16; a failure is logged and leaves
+/// no bus, which reads as an empty one.
+fn open_bus(dq: Gpio16<'static>) -> Option<esp_idf_hal::onewire::OWDriver<'static>> {
+    match esp_idf_hal::onewire::OWDriver::new(dq) {
+        Ok(bus) => Some(bus),
+        Err(err) => {
+            log::error!("probes: 1-wire bus on GPIO16 failed: {err}");
+            None
+        }
+    }
 }
 
 /// Maxim/Dallas CRC-8, polynomial x^8 + x^5 + x^4 + 1.

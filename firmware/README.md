@@ -423,8 +423,7 @@ every `GET` route, for monitoring tools that probe with it.
 go through one dispatcher in `granite-core`: status, config sections
 (with staging and confirm for anything that can cut the session), node
 actions, rules, firmware upload and rollback, log tail, export/import,
-factory reset, recovery. (`probe_scan` is accepted and still logs a
-TODO: the 1-wire re-scan is not wired to the hardware layer yet.)
+factory reset, recovery, 1-wire probe re-scan.
 
 A node action answers `accepted` at queue time and the outcome lands in
 `state.nodes[i].last_action` and on the MQTT `ack` topic.

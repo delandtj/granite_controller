@@ -26,6 +26,13 @@ const CFG_CONTINUOUS: u16 = 0x00ff;
 /// [`BoardTemp`] over the TMP1075.
 pub struct Tmp1075 {
     dev: I2cDev,
+    /// The CFG write at start-up failed; retried once, on the first read
+    /// that succeeds.
+    unconfigured: bool,
+    /// The last read failed. Only the change is logged: the sense task
+    /// reads every second, and a sensor that is not there would otherwise
+    /// fill the log ring and push everything else out of it.
+    failing: bool,
 }
 
 impl Tmp1075 {
@@ -38,9 +45,16 @@ impl Tmp1075 {
             log::error!("tmp1075: cannot attach at 0x{ADDR:02x}: {err}");
             hal_err(err)
         })?;
-        let sensor = Tmp1075 { dev };
+        let mut sensor = Tmp1075 {
+            dev,
+            unconfigured: true,
+            failing: false,
+        };
         match sensor.configure() {
-            Ok(()) => log::info!("tmp1075: 0x{ADDR:02x} in continuous mode"),
+            Ok(()) => {
+                sensor.unconfigured = false;
+                log::info!("tmp1075: 0x{ADDR:02x} in continuous mode");
+            }
             Err(err) => log::error!("tmp1075: configuring 0x{ADDR:02x} failed: {err}"),
         }
         Ok(sensor)
@@ -63,9 +77,31 @@ impl Tmp1075 {
 
 impl BoardTemp for Tmp1075 {
     fn read_centi_c(&mut self) -> HalResult<i16> {
-        let raw = self.read_raw().inspect_err(|err| {
-            log::error!("tmp1075: read failed: {err}");
-        })?;
+        let raw = match self.read_raw() {
+            Ok(raw) => raw,
+            Err(err) => {
+                if !self.failing {
+                    self.failing = true;
+                    log::error!(
+                        "tmp1075: read failed: {err} (not logged again until it answers)"
+                    );
+                }
+                return Err(err);
+            }
+        };
+        if self.failing {
+            self.failing = false;
+            log::info!("tmp1075: answering again");
+        }
+        if self.unconfigured {
+            // One retry: the power-on default is continuous mode too, so a
+            // sensor that reads but will not take the write still works.
+            self.unconfigured = false;
+            match self.configure() {
+                Ok(()) => log::info!("tmp1075: 0x{ADDR:02x} in continuous mode"),
+                Err(err) => log::warn!("tmp1075: configuring 0x{ADDR:02x} failed: {err}"),
+            }
+        }
         // 0.0625 C/LSB = 6.25 centi-C/LSB, exact in integers as * 25 / 4.
         let centi = i32::from(raw) * 25 / 4;
         i16::try_from(centi).map_err(|_| HalError::OutOfRange)

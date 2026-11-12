@@ -26,7 +26,7 @@
 #[allow(unused_imports)]
 use granite_fw as _;
 
-use std::sync::atomic::{AtomicU16, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU16, Ordering};
 use std::sync::mpsc::{Receiver, RecvTimeoutError};
 use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
@@ -69,6 +69,13 @@ const RULES_PERIOD_MS: u64 = 1000;
 /// Sense tick: the dry inputs, the TMP1075 and VIN are all 1 s in the
 /// ADR.
 const SENSE_TICK: Duration = Duration::from_secs(1);
+/// How often the sense task walks the 1-wire bus again when the probe
+/// list comes from the bus rather than the configuration, so a probe
+/// plugged in later shows up without a reboot.
+const PROBE_RESCAN_MS: u64 = 60_000;
+/// Set by a `probe_scan` command; the sense task, which owns the bus,
+/// walks it on its next tick and clears the flag.
+static PROBE_SCAN: AtomicBool = AtomicBool::new(false);
 /// How often the config watcher looks for a `sec.modbus` change and
 /// refreshes the broker state the status page reads.
 const CONFIG_WATCH: Duration = Duration::from_secs(5);
@@ -1111,9 +1118,9 @@ fn apply_effect(
             // Bench test of the dispatcher's task-watchdog subscription.
             #[cfg(feature = "dispatcher-hang-test")]
             dispatcher_hang();
-            // TODO(ADR 0001 4): a probe scan is the hardware layer's
-            // 1-wire bus walk; it lands when src/hw exposes it.
-            log::warn!("probe_scan: the 1-wire bus is owned by the hardware layer, not wired yet");
+            // The sense task owns the bus; it walks it on its next tick
+            // and logs what it found. The result shows in `state.probes`.
+            PROBE_SCAN.store(true, Ordering::Relaxed);
         }
     }
 }
@@ -1170,6 +1177,7 @@ fn start_sense(
         // Where apply_config leaves a change to any of the four.
         let mut cfg_generation = SENSE_CFG.lock().map(|c| c.generation).unwrap_or(0);
         let mut last_probe_ms = 0u64;
+        let mut last_scan_ms = platform::now_ms();
         let mut vin_warned = false;
         drop(cfg);
 
@@ -1206,6 +1214,34 @@ fn start_sense(
                     vin_min_mv,
                     vin_max_mv
                 );
+            }
+
+            // Walk the bus again: on request, or now and then while the
+            // list comes from the bus. A configured list is left alone;
+            // the scan is still logged so an operator can read ROM ids.
+            let asked = PROBE_SCAN.swap(false, Ordering::Relaxed);
+            if asked || (!configured && now.saturating_sub(last_scan_ms) >= PROBE_RESCAN_MS) {
+                last_scan_ms = now;
+                platform::feed_task_watchdog();
+                match probes.scan() {
+                    Ok(found) => {
+                        if asked || found != scanned {
+                            let ids: Vec<String> =
+                                found.iter().map(|r| granite_core::hal::rom_id_hex(*r)).collect();
+                            log::info!("probes: {} on the bus [{}]", found.len(), ids.join(", "));
+                        }
+                        scanned = found;
+                        if !configured {
+                            roms = scanned
+                                .iter()
+                                .map(|rom| (*rom, granite_core::hal::rom_id_hex(*rom)))
+                                .collect();
+                        }
+                        // Read the new list now rather than a period later.
+                        last_probe_ms = 0;
+                    }
+                    Err(e) => log::warn!("probes: bus scan failed: {e}"),
+                }
             }
 
             let dry = dry_inputs.read_dry().ok();
