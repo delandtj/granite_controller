@@ -637,6 +637,10 @@ fn dispatcher<L: PlaneLink>(
                     .unwrap_or_else(|_| Observed::new());
                 let before = cfg.clone();
                 let device_id = platform.identity.device_id.clone();
+                // What is waiting for a confirmation, so `config_confirm`
+                // and `config_revert` can answer "nothing is staged"
+                // (ADR 0001 component 6).
+                let staged = platform::api_impl::staged_sections();
                 let mut ctx = DispatchCtx {
                     now_ms: now,
                     device_id: &device_id,
@@ -645,6 +649,7 @@ fn dispatcher<L: PlaneLink>(
                     jobs: &mut jobs,
                     rules: &mut rules,
                     config: &mut cfg,
+                    staged: &staged,
                     verify_sig: None,
                 };
                 let out = dispatch(&cmd, &mut ctx);
@@ -829,6 +834,9 @@ fn dispatcher<L: PlaneLink>(
                     jobs: &mut jobs,
                     rules: &mut rules,
                     config: &mut cfg,
+                    // A boot policy is a node verb; it never confirms
+                    // configuration.
+                    staged: &[],
                     verify_sig: None,
                 };
                 let out = dispatch(&cmd, &mut ctx);
@@ -872,6 +880,9 @@ fn dispatcher<L: PlaneLink>(
                         jobs: &mut jobs,
                         rules: &mut rules,
                         config: &mut cfg,
+                        // A rule acts on nodes; it never confirms
+                        // configuration.
+                        staged: &[],
                         verify_sig: None,
                     };
                     let out = dispatch(&cmd, &mut ctx);
@@ -1063,6 +1074,28 @@ fn apply_effect(
             });
             if let Err(e) = spawned {
                 log::error!("ota: pull thread could not start: {e}");
+            }
+        }
+        // The commit-confirm cycle from a transport that is not the
+        // setup page (ADR 0001 component 6). Both go through exactly
+        // the API's own `NetControl`, so an MQTT confirm and an HTTPS
+        // confirm promote the same staging slots, run the same `net`
+        // and switch hooks, and publish the same event.
+        SideEffect::ConfirmStaged | SideEffect::RevertStaged => {
+            let confirm = effect == SideEffect::ConfirmStaged;
+            let mut net = platform::api_impl::NetControlApi::new(Arc::clone(platform));
+            let done = if confirm {
+                granite_core::api::NetControl::confirm(&mut net)
+            } else {
+                granite_core::api::NetControl::revert(&mut net)
+            };
+            let change = if confirm { "confirmed" } else { "reverted" };
+            if done {
+                log::warn!("config: {change} over the command channel");
+                platform.publish(config_event_all(change));
+            } else {
+                // The window passed between the ack and here.
+                log::warn!("config: nothing was staged any more, so nothing was {change}");
             }
         }
         SideEffect::Switch(request) => {
@@ -1463,6 +1496,20 @@ fn config_event(section: Section, change: &str, detail: Option<String>) -> Event
             section: Some(section),
             change: change.to_string(),
             detail,
+        },
+    )
+}
+
+/// A config event about the whole document rather than one section:
+/// what a confirm or a revert over any transport publishes, the same
+/// shape the HTTP routes use (`section: null`).
+fn config_event_all(change: &str) -> Event {
+    Event::new(
+        platform::now_ms(),
+        EventKind::Config {
+            section: None,
+            change: change.to_string(),
+            detail: None,
         },
     )
 }

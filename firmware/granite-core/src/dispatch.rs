@@ -47,6 +47,13 @@ pub enum SideEffect {
     /// Persist one config section through the commit-confirm path,
     /// because getting it wrong can cut the session.
     StageSection(Section),
+    /// Promote every staged section into the stored configuration: the
+    /// confirm of ADR 0001 component 6, the same one the HTTP API does
+    /// through `POST /api/v1/config/confirm`.
+    ConfirmStaged,
+    /// Put every staged section back to its stored value now, instead
+    /// of waiting out the confirm window.
+    RevertStaged,
     /// Pull and install an image.
     Ota {
         /// HTTPS URL.
@@ -132,6 +139,12 @@ pub struct DispatchCtx<'a> {
     pub rules: &'a mut RuleEngine,
     /// The live configuration.
     pub config: &'a mut Config,
+    /// The sections that are staged and waiting for a confirmation
+    /// (ADR 0001 component 6). Read-only: the registry itself lives in
+    /// the platform layer, and this is what lets `config_confirm` and
+    /// `config_revert` answer "nothing is staged" without talking to
+    /// it.
+    pub staged: &'a [Section],
     /// The reserved signature hook (ADR: `Command.sig`). `None` means
     /// "the transport is the authentication", which is the shipped
     /// behaviour.
@@ -195,6 +208,27 @@ pub fn dispatch(cmd: &Command, ctx: &mut DispatchCtx<'_>) -> Dispatched {
                     Reply::ok(&cmd.id, if staged { "staged" } else { "saved" })
                 }
                 Err(e) => Reply::err(&cmd.id, e),
+            }
+        }
+        // The commit-confirm cycle over any transport, not just HTTPS
+        // (ADR 0001 component 6; the MQTT command list of component 7
+        // ties `config_set` to "the same commit-confirm rules" and this
+        // is what makes finishing the cycle possible without the setup
+        // page). Both answer `nothing is staged` rather than pretending
+        // to have done something, the way the API's 409 does.
+        CommandKind::ConfigConfirm | CommandKind::ConfigRevert => {
+            if ctx.staged.is_empty() {
+                Reply::err(&cmd.id, "nothing is staged")
+            } else {
+                let sections = section_list(ctx.staged);
+                let confirm = cmd.action == CommandKind::ConfigConfirm;
+                effects.push(if confirm {
+                    SideEffect::ConfirmStaged
+                } else {
+                    SideEffect::RevertStaged
+                });
+                Reply::ok(&cmd.id, if confirm { "confirmed" } else { "reverted" })
+                    .with_data(Value::Array(sections))
             }
         }
         CommandKind::Ota => match (&cmd.args.url, &cmd.args.sha256) {
@@ -306,6 +340,14 @@ fn switch_request(cmd: &Command, ctx: &DispatchCtx<'_>) -> Result<SwitchRequest,
         }
         other => Err(alloc::format!("{} is not a switch action", other.as_str())),
     }
+}
+
+/// The staged sections as JSON strings, for the ack's `data`.
+fn section_list(sections: &[Section]) -> Vec<Value> {
+    sections
+        .iter()
+        .map(|s| Value::String(String::from(s.key())))
+        .collect()
 }
 
 fn done(reply: Reply, effects: Vec<SideEffect>) -> Dispatched {

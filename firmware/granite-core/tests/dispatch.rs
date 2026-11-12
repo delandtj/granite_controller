@@ -27,6 +27,8 @@ struct Harness {
     jobs: JobLog,
     rules: RuleEngine,
     config: Config,
+    /// What the platform layer has staged, as the dispatcher sees it.
+    staged: Vec<granite_core::config::Section>,
     now_ms: u64,
 }
 
@@ -38,6 +40,7 @@ impl Harness {
             jobs: JobLog::new(),
             rules: RuleEngine::with_rules(Config::default().rules.rules),
             config: Config::default(),
+            staged: Vec::new(),
             now_ms: 1_000,
         };
         h.add_plane(0);
@@ -103,6 +106,7 @@ impl Harness {
             jobs: &mut self.jobs,
             rules: &mut self.rules,
             config: &mut self.config,
+            staged: &self.staged,
             verify_sig: None,
         };
         dispatch(cmd, &mut ctx)
@@ -486,6 +490,84 @@ fn modbus_writes_build_the_same_commands() {
         reply.ok,
         "a Modbus-born command goes through the dispatcher"
     );
+}
+
+#[test]
+fn the_commit_confirm_cycle_closes_over_the_dispatcher() {
+    use granite_core::config::Section;
+
+    let mut h = Harness::new();
+
+    // Nothing staged: both verbs say so instead of pretending, which
+    // is the 409 the HTTP route answers with.
+    for action in [CommandKind::ConfigConfirm, CommandKind::ConfigRevert] {
+        let (reply, effects) = h.run(&Command::new("c-0", action));
+        assert!(!reply.ok, "{action} with nothing staged");
+        assert_eq!(reply.error.as_deref(), Some("nothing is staged"));
+        assert!(effects.is_empty(), "and nothing is carried out");
+    }
+
+    // A staged section is confirmed, and the ack names what was
+    // confirmed so a client knows which cycle it closed.
+    h.staged = vec![Section::Net, Section::Switch];
+    let (reply, effects) = h.run(&Command::new("c-1", CommandKind::ConfigConfirm));
+    assert!(reply.ok);
+    assert_eq!(reply.result.as_deref(), Some("confirmed"));
+    assert_eq!(
+        reply.data,
+        Some(serde_json::json!(["net", "switch"])),
+        "the sections, by their config keys"
+    );
+    assert_eq!(effects, vec![SideEffect::ConfirmStaged]);
+
+    // And reverted the same way.
+    let (reply, effects) = h.run(&Command::new("c-2", CommandKind::ConfigRevert));
+    assert!(reply.ok);
+    assert_eq!(reply.result.as_deref(), Some("reverted"));
+    assert_eq!(effects, vec![SideEffect::RevertStaged]);
+
+    // The verbs are in the vocabulary both ways round.
+    assert_eq!(
+        CommandKind::from_str_opt("config_confirm"),
+        Some(CommandKind::ConfigConfirm)
+    );
+    assert_eq!(
+        CommandKind::from_str_opt("config_revert"),
+        Some(CommandKind::ConfigRevert)
+    );
+    assert_eq!(CommandKind::ConfigConfirm.as_str(), "config_confirm");
+    // They are not plane verbs, so they need no target and no job.
+    assert!(!CommandKind::ConfigConfirm.is_plane_verb());
+    assert!(!CommandKind::ConfigRevert.is_switch_verb());
+}
+
+#[test]
+fn a_staged_switch_section_is_confirmed_over_mqtt_without_the_setup_page() {
+    use granite_core::config::Section;
+    use serde_json::json;
+
+    let mut h = Harness::new();
+    // Stage the switch section the way an MQTT client would.
+    let set = Command::new("c-1", CommandKind::ConfigSet).with_args(Args {
+        section: Some(Section::Switch),
+        config: Some(json!({
+            "enabled": true,
+            "manage": true,
+            "host": "10.0.202.5",
+            "desired": {"vlans": [{"id": 300, "name": "storage"}]}
+        })),
+        ..Args::default()
+    });
+    let (reply, effects) = h.run(&set);
+    assert_eq!(reply.result.as_deref(), Some("staged"));
+    assert_eq!(effects, vec![SideEffect::StageSection(Section::Switch)]);
+
+    // The platform layer records it; the same client then confirms.
+    h.staged = vec![Section::Switch];
+    let (reply, effects) = h.run(&Command::new("c-2", CommandKind::ConfigConfirm));
+    assert!(reply.ok, "{:?}", reply.error);
+    assert_eq!(effects, vec![SideEffect::ConfirmStaged]);
+    assert_eq!(reply.data, Some(json!(["switch"])));
 }
 
 // ---------------------------------------------------------------------

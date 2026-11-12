@@ -58,6 +58,11 @@ pub struct SimCore {
     pub observed: Observed,
     /// A copy of the live configuration, synced before every request.
     pub config: Config,
+    /// The sections waiting for a confirmation, copied from
+    /// [`SimNet`](crate::platform::SimNet) on every tick: what lets
+    /// `config_confirm` and `config_revert` answer (ADR 0001
+    /// component 6).
+    pub staged: Vec<Section>,
     /// Side effects the dispatcher asked for.
     pub effects: Vec<SideEffect>,
     /// Events, drained by the tick loop into the MQTT stream.
@@ -89,6 +94,7 @@ impl SimCore {
             rules: RuleEngine::with_rules(config.rules.rules.clone()),
             observed: Observed::new(),
             config: config.clone(),
+            staged: Vec::new(),
             effects: Vec::new(),
             events: Vec::new(),
             acks: Vec::new(),
@@ -295,6 +301,7 @@ impl Dispatcher for SimCore {
             jobs: &mut self.jobs,
             rules: &mut self.rules,
             config: &mut self.config,
+            staged: &self.staged,
             verify_sig: None,
         };
         let out = dispatch(cmd, &mut ctx);
@@ -420,6 +427,9 @@ impl Sim {
         self.now_ms = self.started.elapsed().as_millis() as u64;
         self.platform.now_ms = self.now_ms;
         self.net.now_ms = self.now_ms;
+        // What the commit-confirm view holds, so a `config_confirm`
+        // dispatched during this tick sees it.
+        self.core.staged = self.net.staged.iter().map(|(section, _)| *section).collect();
         // The core ticks the planes itself: they run on their own clock
         // and the controller sees whatever they have got to by now.
         self.core.tick(self.now_ms);
@@ -473,6 +483,22 @@ impl Sim {
                 SideEffect::FactoryReset => {
                     self.platform.log_line("warn", "factory reset");
                     self.factory_reset();
+                }
+                // The commit-confirm cycle over the command channel
+                // (ADR 0001 component 6), through the same `NetControl`
+                // the HTTP routes use, so `resolve_staged` finishes it
+                // exactly as it does for the setup page.
+                SideEffect::ConfirmStaged => {
+                    if granite_core::api::NetControl::confirm(&mut self.net) {
+                        self.platform
+                            .log_line("info", "configuration confirmed over the command channel");
+                    }
+                }
+                SideEffect::RevertStaged => {
+                    if granite_core::api::NetControl::revert(&mut self.net) {
+                        self.platform
+                            .log_line("warn", "configuration reverted over the command channel");
+                    }
                 }
                 SideEffect::Switch(request) => {
                     // The switch worker is a firmware thread with a

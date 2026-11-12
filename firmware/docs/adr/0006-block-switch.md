@@ -278,7 +278,10 @@ Numbered after ADR 0001's list.
       `switch_save`, `switch_reboot` and `switch_factory_reset` (both
       need `"confirm":"<device id>"` like `factory_reset`),
       `switch_reconcile`, `switch_backup` (refresh the stored backup).
-      Config changes go through `config_set` with section `switch`.
+      Config changes go through `config_set` with section `switch`, and
+      the cycle is closed with `config_confirm` or `config_revert`
+      (ADR 0001 components 6 and 7), so an operator who only has MQTT
+      can stage, confirm and revert a switch change.
 
 22. **Pairing check and node-port map** (`granite-core/src/switch/pair.rs`,
     driven from the worker)
@@ -690,7 +693,11 @@ rather than left in the code only.
   switch is gone.
 - **Component 21**: `state.switch`, the `.../switch/counters` topic,
   the commands `switch_port`, `switch_reconcile`, `switch_save`,
-  `switch_reboot` and `switch_factory_reset`.
+  `switch_reboot` and `switch_factory_reset`. A staged switch change is
+  confirmed or reverted with `config_confirm` / `config_revert`
+  (added to ADR 0001 components 6 and 7 for this: the confirm used to
+  exist only as an HTTP route, which would have made every switch
+  change from an MQTT-only client revert after `t_confirm_s`).
 - **Component 22, the pairing check only**: a switch whose `info.cgi`
   MAC is not `switch.mac` raises `switch_mismatch` and is not talked to
   beyond `info.cgi`.

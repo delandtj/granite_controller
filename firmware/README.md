@@ -177,11 +177,12 @@ directory instead - the flash commands below assume the default, so
 substitute the path.
 
 Image size, release, default features (`link-canfd`, 2026-11-12):
-1,866,288 bytes of the 3,997,696-byte slot, 46.7 % - the block switch
+1,868,800 bytes of the 3,997,696-byte slot, 46.7 % - the block switch
 (ADR 0006: the scanner, the page parsers, the form builders, the
 planner, the client and the worker, plus the `switch` config section
 and its serde) is +159,856 bytes on the 1,706,432 of 2026-11-06, which
-is more than the 30-80 KB the ADR guessed at. Before that, the CAN
+is more than the 30-80 KB the ADR guessed at, and `config_confirm` /
+`config_revert` are the 2,512 bytes after that. Before all of it, the CAN
 transport, `mcp251xfd` and the link marker were +51,616 bytes on the
 1,654,816 of 2026-11-04. `cargo build --release` keeps
 `opt-level = "s"` and `lto = true`; do not switch the release profile to
@@ -464,6 +465,13 @@ Topic root `<topic_root>/<site>/<device>`, default
 | `.../ack/<id>` | out | no | published when the action *completes* |
 | `.../switch/counters` | out | no | per-port totals plus pps and bit/s, every `switch.poll.counters_s` (ADR 0006) |
 
+A commit-confirm cycle can be finished over MQTT: `config_set` stages a
+section that affects reachability, `config_confirm` promotes every
+staged section (the same promote the setup page's confirm does, acked
+with the section list in `data`) and `config_revert` puts them back
+without waiting out `net.t_confirm_s`. Both answer `nothing is staged`
+when nothing is.
+
 ADR 0001 component 7 has the authoritative table and the command list;
 `granite-core/src/msg.rs` is the implementation and its tests are the
 payload fixtures. The worker reconnects on an exponential ladder (1 s to
@@ -523,13 +531,14 @@ as `net` and `mqtt`:
   switch, plans the ops (create VLANs, port VLANs, delete VLANs,
   jumbo/storm/loop, the address last) and applies them **without
   saving**, keeping a snapshot of what it read,
-- a confirm is the only thing that calls `save.cgi`, so the switch's
+- a confirm (`POST /api/v1/config/confirm`, or the `config_confirm`
+  command) is the only thing that calls `save.cgi`, so the switch's
   flash always holds the last confirmed configuration,
-- no confirm inside `net.t_confirm_s` and the worker plans from the
-  switch's current state back to its snapshot and applies that; if the
-  switch is gone or the undo does not verify, it reboots the switch,
-  which drops everything unsaved (about 3 s of downtime for every
-  port).
+- no confirm inside `net.t_confirm_s` - or an explicit
+  `config_revert` - and the worker plans from the switch's current
+  state back to its snapshot and applies that; if the switch is gone
+  or the undo does not verify, it reboots the switch, which drops
+  everything unsaved (about 3 s of downtime for every port).
 
 The uplink port and the port the controller's own MAC is seen on are
 protected: a plan that would re-VLAN or disable one is refused unless

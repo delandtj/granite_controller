@@ -82,6 +82,14 @@ pub enum CommandKind {
     ConfigGet,
     /// Write the configuration (`args.section` plus `args.config`).
     ConfigSet,
+    /// Confirm every staged section, promoting it into the stored
+    /// configuration (ADR 0001 component 6). The same confirm the HTTP
+    /// API's `POST /api/v1/config/confirm` performs, so a client that
+    /// only has MQTT can finish a commit-confirm cycle.
+    ConfigConfirm,
+    /// Put every staged section back to its stored value now, instead
+    /// of waiting out the confirm window.
+    ConfigRevert,
     /// Pull and install a firmware image (`args.url`, `args.sha256`).
     Ota,
     /// Restart the controller.
@@ -139,6 +147,8 @@ impl CommandKind {
             CommandKind::ProbeScan => "probe_scan",
             CommandKind::ConfigGet => "config_get",
             CommandKind::ConfigSet => "config_set",
+            CommandKind::ConfigConfirm => "config_confirm",
+            CommandKind::ConfigRevert => "config_revert",
             CommandKind::Ota => "ota",
             CommandKind::Reboot => "reboot",
             CommandKind::FactoryReset => "factory_reset",
@@ -183,6 +193,8 @@ impl CommandKind {
             CommandKind::ProbeScan,
             CommandKind::ConfigGet,
             CommandKind::ConfigSet,
+            CommandKind::ConfigConfirm,
+            CommandKind::ConfigRevert,
             CommandKind::Ota,
             CommandKind::Reboot,
             CommandKind::FactoryReset,

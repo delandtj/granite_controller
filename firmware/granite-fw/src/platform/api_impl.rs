@@ -319,6 +319,15 @@ pub fn is_staged(section: Section) -> bool {
     with_staged(|s| s.sections.contains(&section)).unwrap_or(false)
 }
 
+/// Everything that is staged, in staging order.
+///
+/// What the dispatcher is handed, so `config_confirm` and
+/// `config_revert` can answer "nothing is staged" without reaching into
+/// this registry themselves (ADR 0001 component 6).
+pub fn staged_sections() -> Vec<Section> {
+    with_staged(|s| s.sections.clone()).unwrap_or_default()
+}
+
 /// What is staged, for the status page.
 pub fn staged_info() -> Option<StagedInfo> {
     let now = super::now_ms();

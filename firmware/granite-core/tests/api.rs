@@ -328,6 +328,7 @@ impl Dispatcher for CoreDispatcher {
             jobs: &mut self.jobs,
             rules: &mut self.rules,
             config: &mut self.config,
+            staged: &[],
             verify_sig: None,
         };
         let out = dispatch(cmd, &mut ctx);

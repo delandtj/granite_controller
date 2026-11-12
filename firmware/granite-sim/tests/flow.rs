@@ -247,6 +247,45 @@ async fn first_boot_then_power_a_node_on() {
     let (_, st) = s.get("/api/v1/status").await;
     assert!(st["staged"].is_null());
 
+    // The same cycle closed by a command instead of the route, which is
+    // what an MQTT-only client sends (ADR 0001 component 6): nothing
+    // staged is an error, a staged section is confirmed and named.
+    let (status, reply) = s
+        .post(
+            "/api/v1/cmd",
+            serde_json::json!({"v":1,"id":"t-2","action":"config_confirm"}),
+        )
+        .await;
+    // The route answers a refused command with 400 and the ack body,
+    // the way it does for every other refusal.
+    assert_eq!(status, 400, "{reply}");
+    assert_eq!(reply["ok"], false, "{reply}");
+    assert_eq!(reply["error"], "nothing is staged");
+
+    let (status, staged) = s
+        .call(
+            reqwest::Method::PUT,
+            "/api/v1/config/net",
+            Some(serde_json::json!({"hostname": "granite-lab-2"})),
+        )
+        .await;
+    assert_eq!(status, 200, "{staged}");
+    let (_, st) = s.get("/api/v1/status").await;
+    assert_eq!(st["staged"]["sections"][0], "net");
+
+    let (status, reply) = s
+        .post(
+            "/api/v1/cmd",
+            serde_json::json!({"v":1,"id":"t-3","action":"config_confirm"}),
+        )
+        .await;
+    assert_eq!(status, 200, "{reply}");
+    assert_eq!(reply["ok"], true, "{reply}");
+    assert_eq!(reply["result"], "confirmed");
+    assert_eq!(reply["data"][0], "net", "the ack names what it confirmed");
+    let (_, st) = s.get("/api/v1/status").await;
+    assert!(st["staged"].is_null(), "the command promoted it: {st}");
+
     // Logging out invalidates the cookie.
     let (status, _) = s
         .call(reqwest::Method::DELETE, "/api/v1/session", None)

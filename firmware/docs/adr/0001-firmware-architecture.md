@@ -3,6 +3,10 @@
 **Status**: Accepted
 **Date**: 2026-10-09
 **Updated**: 2026-10-10 (user review: off escalates after t_soft_off, fleet recovery key added, Modbus TCP in release 1, signed OTA without eFuses confirmed)
+**Updated**: 2026-11-12 (components 6 and 7: `config_confirm` and
+`config_revert` commands, so the commit-confirm cycle closes over any
+transport and not only over HTTPS; the MQTT command list also names the
+block switch's verbs of ADR 0006)
 
 ---
 
@@ -216,6 +220,12 @@ firmware/
      changes: confirm = the new broker connects and the client confirms,
      or auto-confirm after a successful connection if the user ticked
      "auto-confirm on connect".
+     The confirm is not HTTPS-only: `POST /api/v1/config/confirm` and
+     the `config_confirm` command (component 7) are the same promote,
+     and `config_revert` is the same revert, so a client that stages
+     over MQTT can finish the cycle over MQTT. Over the broker the
+     session itself is the proof the new configuration works, the way
+     a request through the new address is over HTTPS.
    - Static-config dead-man: if a static IP config has had no gateway
      ARP reply and no accepted TCP connection for `t_deadman` (default
      1 h, 0 = off), DHCP is started alongside as a fallback without
@@ -241,9 +251,17 @@ firmware/
 
    - Commands: every actuator action, `rule_ack`, `probe_scan`,
      `config_get`, `config_set` (same JSON as the HTTP API, same
-     commit-confirm rules), `ota` (`{"url":..,"sha256":..}`; the
-     controller pulls the image over HTTPS), `reboot`, `factory_reset`
-     (needs `"confirm":"<device id>"`).
+     commit-confirm rules), `config_confirm` and `config_revert` (the
+     other half of those rules: the same promote and revert that
+     `POST /api/v1/config/{confirm,revert}` perform, over every staged
+     section at once. Both answer `nothing is staged` when nothing is,
+     and a successful ack's `data` names the sections, e.g.
+     `{"id":"c-9","ok":true,"result":"confirmed","data":["switch"]}`),
+     `ota` (`{"url":..,"sha256":..}`; the controller pulls the image
+     over HTTPS), `reboot`, `factory_reset` (needs
+     `"confirm":"<device id>"`), and the block switch's verbs of ADR
+     0006 (`switch_port`, `switch_reconcile`, `switch_save`,
+     `switch_reboot`, `switch_factory_reset`).
    - The broker is trusted for control; authentication is the broker's
      TLS + credentials. There is no second signature layer on commands.
 
