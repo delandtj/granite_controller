@@ -501,6 +501,9 @@ protocol will reuse the same semantics.
 
 ## The block switch
 
+Operator guide, with every key, the confirm cycle, recipes and
+troubleshooting: [`docs/switch.md`](docs/switch.md).
+
 Off by default, and **read-only** when it is on. The `switch` section
 (ADR 0006) says where the switch is, whether the controller may write
 to it and what it should look like:
