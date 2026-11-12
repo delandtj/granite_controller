@@ -1,4 +1,4 @@
-# Block switch: the controller manages its Sodola switch
+# Block switch: the controller reads its Sodola switch, my_metal commissions the nodes
 
 **Status**: Proposed
 **Date**: 2026-11-11
@@ -6,10 +6,17 @@
 yes, but revert by re-applying the previous state while the switch is
 reachable, reboot only as the fallback; drift is report-only; counters
 on their own topic; switches are pre-provisioned with the infra script)
+**Updated**: 2026-11-12 (switch and controller of a block are paired by
+pre-provisioning; node commissioning is done by the my_metal provider,
+the controller is a power device and a switch-port source for it;
+the controller reads the switch by default, writes become optional)
 
 Related: firmware/docs/adr/0001-firmware-architecture.md (components 6
 Network, 7 MQTT, 8 HTTP API, 10 Configuration; commit-confirm),
 firmware/docs/adr/0004-controller-rev-d-node-model.md (nodes).
+Node commissioning: geomind_code/my_metal_provider_and_broker
+(`crates/my_metal_provider_server`: README scan steps, `src/pdu.rs`,
+`oschema/provider/provider.oschema` LanPlan/LanNode/LanPdu/NodeView).
 Switch protocol, quirks and a reference client: Granite/infra
 `docs/sodola.md` and `tools/sodola.py` (reverse-engineered and tested
 against a live unit, 2026-11-11).
@@ -27,6 +34,28 @@ We want the block to be self-contained: the controller reports the
 switch to MQTT and applies switch settings that come in over MQTT, the
 same way it already does for its nodes. Today the switch is configured
 by hand or with the infra script from a laptop.
+
+Physical layout (2026-11-12): controllers are not cabled to their own
+block's switch. The controllers of two pods hang off one switch with
+one uplink to the core; every block's Sodola has its own uplink to the
+pod ToR. All 12 controllers and 12 Sodolas of a pod share one
+management VLAN. So "which switch is mine" cannot be read from the
+controller's own link; it comes from pre-provisioning and is checked
+through the nodes, which are cabled to the block's switch.
+
+Node commissioning already exists in the my_metal provider
+(`my_metal_provider_server`): one provider per LAN, a `LanPlan` with
+`nodes: [LanNode]` keyed by MAC (`pdu`, `pdu_outlet`, `ip`, `proven`)
+and `pdus: [LanPdu]` (`kind` = "netio" | "racktivity"). Its scan cuts
+and restores each PDU outlet in turn and takes the machine that then
+fetches `boot.ipxe` as the machine on that outlet, writing it into the
+plan. The provider serves TFTP and iPXE itself; DHCP is the RouterOS
+router. Switch ports are only seen from the router's bridge host table
+(`NodeView.port`), so behind a dumb block switch the provider sees the
+whole block on one router port. The provider has no MQTT; its RPC is
+OpenRPC on a Unix socket behind hero_router, admin verbs gated by a
+mycelium key. PDU drivers are a private `enum Drv` in `src/pdu.rs`
+picked by `LanPdu.kind`, one credential profile per kind.
 
 What the infra work established about the switch (details in
 `docs/sodola.md`):
@@ -65,9 +94,26 @@ commit-confirmed, and nothing slow in the actuator or CAN path.
 ## Decision
 
 Add a **switch** component to granite-fw. It owns all traffic to the
-block switch, polls it, publishes what changed, and holds the switch
-configuration as **desired state** in the controller config, applied
-by a reconcile step with commit-confirm.
+block switch, polls it and publishes what changed. Reading is the
+default and the first deliverable. Writing the switch configuration as
+**desired state** in the controller config, applied by a reconcile step
+with commit-confirm, is an optional part (`switch.manage = true`,
+default false): switches arrive pre-provisioned by the infra script, so
+a block works without it.
+
+Node commissioning stays in the my_metal provider. The controller does
+not run its own discovery or registration; it makes the provider's
+existing scan work on a Granite block:
+
+- **Power device**: the controller is a my_metal PDU of a new kind
+  `granite`. `LanPdu` = the controller, `LanNode.pdu_outlet` = the node
+  id (1-8). The provider's scan, `power` and `outlet_*` verbs drive it
+  through the controller's existing HTTP API (ADR 0001 component 8).
+- **Switch-port source**: the controller publishes which MAC sits on
+  which block-switch port, so the provider can show and check the real
+  port instead of the router port the whole block shares.
+- **Pairing**: switch and controller are paired by pre-provisioning and
+  checked by the controller through the nodes (component 22).
 
 1. One worker thread talks to the switch. Nothing else in the firmware
    does. Requests are strictly serial, spaced, and retried as the
@@ -93,6 +139,10 @@ by a reconcile step with commit-confirm.
    or the configured uplink, unless the command says `force`.
 7. Parsing and planning are pure functions in granite-core, tested on
    the host against HTML captured from the real switch.
+8. Items 3-6 (desired state, imperative writes other than port
+   enable/disable, password rotation, protection) only run with
+   `switch.manage = true`. Without it the controller never POSTs to
+   the switch except to log in.
 
 ---
 
@@ -196,6 +246,8 @@ Numbered after ADR 0001's list.
       `pending` first, then `current`. Ack carries only success and a
       timestamp.
 
+    Components 18 and 19 are only active with `switch.manage = true`.
+
 20. **Switch backup** (`granite-fw/src/switch/backup.rs`)
     - After every successful save, `config_back.cgi?cmd=conf_backup`
       (about 2.7 KB, contains credential material) is stored in NVS,
@@ -207,12 +259,13 @@ Numbered after ADR 0001's list.
 21. **MQTT and API glue** (`granite-fw/src/mqtt.rs`, `http.rs`,
     messages in `granite-core/src/msg.rs`)
     - `state` gains `switch`: `{reachable, fw, uptime_s, mac,
-      ports: [{port, enabled, link, speed, vlan_mode, node}],
+      ports: [{port, enabled, link, speed, vlan_mode, node, macs}],
       drift, last_reconcile}`. Coalesced with the rest of `state`.
     - New events: `switch_port` (port, link, speed, node),
       `switch_reboot`, `switch_unreachable`, `switch_reachable`,
       `switch_drift` (what differs), `switch_reverted`,
-      `switch_node_moved` (a known node MAC seen on another port).
+      `switch_node_moved` (a known node MAC seen on another port),
+      `switch_node_unbound` and `switch_mismatch` (component 22).
     - New topic `.../switch/counters`, out, not retained, every
       `t_counters_s` (default 60 s): per port tx/rx packets and bytes
       (totals) plus pps and bit/s over the interval.
@@ -223,12 +276,72 @@ Numbered after ADR 0001's list.
       `switch_reconcile`, `switch_backup` (refresh the stored backup).
       Config changes go through `config_set` with section `switch`.
 
+22. **Pairing check and node-port map** (`granite-core/src/switch/pair.rs`,
+    driven from the worker)
+    - The pairing itself is configuration: `switch.host` and
+      `switch.mac`, written by the infra provisioning script from its
+      inventory (block -> switch MAC, IP; controller). The controller
+      refuses to talk to a switch whose MAC (`info.cgi`) differs from
+      `switch.mac` (`switch_mismatch` fault, no polling beyond `info`).
+    - Node-port map: on every node power change the controller already
+      makes (on, off, cycle, on_all), the worker reads link state before
+      and after. A port whose link appears, disappears or changes speed
+      within `t_link_s` (default 20 s) of the action is bound to that
+      node: `{node, port, mac[], since}`. MACs come from the MAC table
+      walk on that port. Several MACs on one port are all kept (BMC on a
+      shared NIC plus the PXE NIC); the switch cannot tell them apart and
+      the provider's scan decides which one booted.
+    - Nodes whose NIC keeps link while off (standby, WoL, shared BMC)
+      give no link edge; for them only a MAC appearing on a port after
+      power-on binds, which may take until the node first sends a frame.
+    - Check, not discovery: if a node action is followed by no edge on
+      any port for 3 actions in a row while other nodes bind fine, raise
+      `switch_node_unbound`; if no node binds at all, raise
+      `switch_mismatch` (wrong switch, or cabling into another block).
+    - The map is kept in RAM and in the retained `state`; it is rebuilt
+      by normal operation and never needs to be configured.
+
+23. **my_metal integration** (provider side lives in
+    geomind_code/my_metal_provider_and_broker, not in this repo)
+    - Provider: a new `Drv::Granite` in `src/pdu.rs`, `kind = "granite"`.
+      Calls `POST /api/v1/nodes/<n>/{on,off,force_off,cycle}?wait=1`
+      on the controller with `Authorization: Bearer <token>`; outlet
+      list and state from `GET /api/v1/nodes`. `cycle` is done by the
+      controller, like Netio ShortOff. TLS: the controller's cert is
+      self-signed; the provider pins `cert_sha256` from the
+      unauthenticated `/id` endpoint at `pdu_set` time.
+    - Credentials: my_metal keeps one profile per PDU kind, so all
+      controllers of a provider accept the same API token. The infra
+      provisioning script installs it on each controller.
+    - Switch ports: `GET /api/v1/switch/hosts` -> `[{port, mac, vlan,
+      node}]` and `GET /api/v1/switch/ports` -> `[{port, link, speed,
+      node}]` (HTTP, same data as the MQTT `state.switch`). The
+      provider reads them for a `granite` PDU and fills a block-switch
+      port next to the router port in `NodeView` (provider change:
+      new optional field, e.g. `switch_port`).
+    - Commissioning is the provider's scan, unchanged in shape: it
+      powers each controller outlet off and on (one at a time, which
+      also spreads inrush), takes the MAC that fetches `boot.ipxe`, and
+      writes `LanNode {mac, pdu = <controller>, pdu_outlet = <node>}`.
+      The controller adds the switch port and the link evidence through
+      the endpoints above; with the provider's boot.ipxe proof plus
+      the controller's port binding, outlet, MAC and switch port all
+      line up or the mismatch is visible on one screen.
+    - Cold start of a whole block (after install or a pod power loss)
+      is the controller's own `on_all` stagger (ADR 0004), not the
+      provider's job.
+    - MQTT stays the controller's telemetry path to whoever listens;
+      my_metal does not need it. Nothing in commissioning depends on
+      MQTT delivery, because the provider's plan is the durable record.
+
 ### Config section `switch`
 
 ```json
 {
   "enabled": false,
+  "manage": false,
   "host": "192.168.2.1",
+  "mac": "1c:2a:a3:24:26:7e",
   "user": "admin",
   "uplink_port": 9,
   "enforce": false,
@@ -247,7 +360,8 @@ Numbered after ADR 0001's list.
 }
 ```
 
-Absent keys in `desired` mean "do not manage", so a partly described
+`desired` is ignored unless `manage` is true. `mac` is the pairing
+from pre-provisioning. Absent keys in `desired` mean "do not manage", so a partly described
 switch is valid and the rest is left alone. `node` on a port is the
 operator's statement of cabling; the MAC table check reports when it
 does not hold.
@@ -277,6 +391,29 @@ does not hold.
 ---
 
 ## Alternatives Considered
+
+### Controller-driven commissioning, registration over MQTT
+- **The idea**: the controller powers its nodes one by one, binds
+  power port -> switch port -> MAC itself and publishes
+  `node_discovered`; something registers it.
+- **Optimizes for**: a block that commissions itself with nothing else
+  running.
+- **Sharpest tradeoff**: duplicates the my_metal scan, and my_metal has
+  no MQTT and admits admin callers only by mycelium key, so it needs a
+  new MQTT-to-RPC gateway with its own auth. The MAC seen on the switch
+  is also weaker proof than the provider's "this MAC fetched boot.ipxe
+  after that outlet came back".
+- **Bets on**: blocks get commissioned somewhere without a my_metal
+  provider.
+
+### Central switch service instead of the controller
+- **The idea**: one host process (tools/sodola.py logic) reads all 12
+  switches of a pod and feeds my_metal directly.
+- **Optimizes for**: less firmware (no client, parser, worker).
+- **Sharpest tradeoff**: needs the node power events from the
+  controllers to bind ports, so it ends up talking to both anyway; one
+  more always-on service per pod.
+- **Bets on**: firmware flash and effort are scarcer than a pod host.
 
 ### Sidecar on a host (the infra Python tool + an MQTT bridge)
 - **The idea**: run `tools/sodola.py` logic as a small daemon on some
@@ -329,15 +466,21 @@ does not hold.
 - Screen-scraping a vendor UI: a firmware update can break parsers.
   Mitigated by the fingerprint check and fixtures per firmware.
 - Detection latency is the poll period (5 s default); there is no push.
-- Roughly 900-1200 lines of Rust and 30-80 KB of flash, plus fixtures.
+- Roughly 900-1200 lines of Rust and 30-80 KB of flash, plus fixtures;
+  the read-only part (client, parsers, worker, pairing) is about half.
+- A change in another repo (my_metal `Drv::Granite`, `switch_port` in
+  `NodeView`) is needed before commissioning works end to end.
 - The switch credentials sit on the controller; anyone with the
   controller's secrets has the switch.
 
 ### Risks
 - **The switch web server degrades under polling** (hangs, leaks,
   reboots). Mitigation: the soak test (`tools/sodola_soak.py`, 1 s
-  stats + 10 s info/port + 60 s MAC walk + 5 min write) runs before
-  this ADR is accepted; defaults are 5x slower than the soak.
+  stats + 10 s info/port + 60 s MAC walk + 5 min write); defaults are
+  5x slower than the soak. Result 2026-11-11, 3 h, about 12,900
+  requests: 0 errors, 0 lost logins, 0 reboots, latency flat (stats
+  median 390 ms, max 436 ms in every 30 min bucket). Not covered: a
+  human on the web UI at the same time, runs longer than 3 h.
 - **Lock-out**: a switch IP or VLAN change that cuts the controller off.
   Mitigation: protected ports, commit-confirm, revert by undo or, when
   the switch is unreachable, by reboot.
@@ -385,6 +528,24 @@ enable changes until it is found; a forced command still works. If the
 controller hangs off another switch upstream, its MAC shows on the
 uplink port, which is protected anyway.
 
+**Q: Why does the controller bind ports at all, if my_metal's scan
+already proves which MAC is on which outlet?**
+A: The scan proves outlet -> MAC. It cannot see the block switch: the
+router sees all 8 nodes on its one port toward the pod ToR. The switch
+port matters for cabling faults (two cables swapped between nodes look
+fine to the scan), for port-level telemetry per node, and for
+disabling a node's port. The binding costs no extra node actions: it
+rides on power changes that happen anyway.
+
+**Q: What if the scan runs while the controller's own rules also switch
+nodes?**
+A: The provider's `power` calls go through the same dispatcher and
+queue as every other node command, so they serialise with rule actions.
+A rule that turns a node back on during a scan would confuse the scan's
+timing; the provider's outlet scan should be run with the block's
+rules paused. Open question whether the controller should pause rules
+itself when a `granite` PDU caller sends a cycle with a scan flag.
+
 **Q: Why not always revert by rebooting the switch? It is simpler.**
 A: A reboot interrupts every port for about 3 s, including nodes the
 change never touched, so it is the fallback, not the default. While the
@@ -426,15 +587,25 @@ monitored if the pages parse and otherwise reported as unsupported.
   2026-11-11).
   - Alternative: true, the controller is the source of truth.
   - Cost to change later: trivial (a default).
+- **Read-only by default, `manage` opt-in** (user direction 2026-11-12).
+  - Alternative: the controller always owns the switch config.
+  - Cost to change later: trivial; a default, the code is there.
+- **The controller is a my_metal PDU (`kind = "granite"`)**, using the
+  existing HTTP API, rather than a new my_metal device type.
+  - Alternative: a dedicated "block" entity in my_metal (controller +
+    switch + nodes).
+  - Cost to change later: medium; my_metal schema and UI change, the
+    controller API stays the same.
 - **Poll defaults** (5 s stats, 60 s info, 120 s MAC, 10 min drift).
   - Cost to change later: trivial; set from the soak result.
 
 ### Known unknowns and how the plan absorbs them
 
-- **Soak result.** Default: the periods above. Pivot signal: errors,
-  timeouts, rising latency or switch reboots in the soak -> slower
-  periods and the optional auto-reboot; a web server that dies outright
-  -> reconsider the alternatives above.
+- **Soak result.** Answered 2026-11-11: 3 h clean (see Risks), so the
+  periods above stand and the optional auto-reboot is not added. Pivot
+  signal now: `switch_unreachable` events in the field. Note each stats
+  page costs about 0.4 s of switch time, so the worker does at most one
+  request at a time and never polls faster than the soak did.
 - **Restore upload.** Default: backup only. Pivot signal: a tested
   restore on the unit -> add `switch_restore` (admin HTTP only).
 - **Newer firmware.** Default: V200.1.8 only. Pivot signal: a unit
@@ -445,10 +616,13 @@ monitored if the pages parse and otherwise reported as unsupported.
   signal: provisioning by hand becomes a bottleneck -> an adoption mode
   with a temporary second address on the controller (needs lwIP/netif
   work, its own ADR).
-- **Node MACs.** Default: `node` on a port is the operator's cabling
-  statement; the MAC check only reports MACs seen. Pivot signal: node
-  NIC/BMC MACs become known to the controller (inventory) -> automatic
-  node-to-port mapping and `switch_node_moved` with real node ids.
+- **Node MACs.** Answered 2026-11-12: the node-port map is built from
+  the controller's own power actions (component 22) and MACs come from
+  the switch; my_metal's scan decides which MAC is the machine. `node`
+  on a port in `desired` stays an optional cabling statement.
+- **Standby link.** Default: link edges, with MAC-appearance fallback.
+  Pivot signal: most of our nodes keep link while off -> bind on MAC
+  appearance only and lengthen `t_link_s`.
 
 ### The mechanical work
 
@@ -481,10 +655,16 @@ monitored if the pages parse and otherwise reported as unsupported.
       switch management address, and is the switch's VLAN 1 mapped to
       it through the upstream PVID (the workaround in docs/sodola.md)?
       This decides what "protected" must cover.
-- [ ] Does the controller learn node MACs (BMC and data NIC) anywhere,
-      or is the cabling always declared?
+- [ ] my_metal side: who owns `Drv::Granite` and the `switch_port`
+      field in `NodeView`, and is a `granite` PDU one controller per
+      `LanPdu` (12 per pod), or should my_metal grow a block entity?
+- [ ] API token for my_metal: one shared token across all controllers
+      of a provider (my_metal's per-kind credential model), or
+      per-controller tokens (needs a my_metal change)?
 
 **Behavior definers**
+- [ ] Should the controller pause its rules while my_metal scans its
+      outlets, and how does it know a scan is running?
 - [ ] Auto-reboot the switch after N minutes unreachable: wanted at
       all, and what N?
 - [ ] Should `switch_port` disable of a node also power-cycle or
