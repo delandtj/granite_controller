@@ -1,6 +1,6 @@
 # Block switch: the controller reads its Sodola switch, my_metal commissions the nodes
 
-**Status**: Proposed
+**Status**: Accepted
 **Date**: 2026-11-11
 **Updated**: 2026-11-11 (review asks answered by the user: desired state
 yes, but revert by re-applying the previous state while the switch is
@@ -10,6 +10,10 @@ on their own topic; switches are pre-provisioned with the infra script)
 pre-provisioning; node commissioning is done by the my_metal provider,
 the controller is a power device and a switch-port source for it;
 the controller reads the switch by default, writes become optional)
+**Updated**: 2026-11-12 (built: components 15, 16, 17, 18, 21 and the
+pairing check of 22 are in the firmware; desired state is in scope with
+`manage` gating every write. See "Implementation" for what was built
+differently and what is not built yet)
 
 Related: firmware/docs/adr/0001-firmware-architecture.md (components 6
 Network, 7 MQTT, 8 HTTP API, 10 Configuration; commit-confirm),
@@ -647,6 +651,122 @@ monitored if the pages parse and otherwise reported as unsupported.
    mode for now.
 
 ---
+
+## Implementation (2026-11-12)
+
+What is in the firmware, where, and where it differs from the plan
+above. The differences are all reversible; they are recorded here
+rather than left in the code only.
+
+### Built
+
+- **Component 15** in `granite-core/src/switch/`: `scan.rs` (the
+  hand-written scanner), `model.rs`, `parse.rs`, `forms.rs`, `plan.rs`,
+  `counters.rs`, `obs.rs`, `md5.rs`. Fixtures for every page used are
+  in `granite-core/tests/fixtures/sodola-v200.1.8/`, captured read-only
+  from the bench unit; `granite-core/tests/switch.rs` parses all of
+  them, checks that each parser **rejects** the other fourteen pages,
+  and plans this ADR's own example plus its revert.
+- **Component 16** in `granite-fw/src/switch/client.rs`: one
+  `EspHttpConnection` per request, cookie and `Referer`, one re-login
+  on the login redirect, 100 ms minimum spacing, 10 s timeout, the 2 s
+  settle after a port write, and "a timeout is the expected answer" for
+  the STP and address writes. Pages are capped at 48 KB and dropped
+  after their parse. The firmware fingerprint is checked at every
+  `info.cgi`: an unknown version is monitored while its pages parse and
+  never written.
+- **Component 17** in `granite-fw/src/switch/mod.rs`: the worker
+  thread, the poll schedule from `switch.poll`, reachability after
+  three failed polls with an exponential retry, counter rates with a
+  decrease treated as a reset, and the reboot check on `info.cgi`
+  uptime.
+- **Component 18**: the `switch` config section goes through the
+  existing staging and commit-confirm path
+  (`Section::affects_reachability` is true for it), so `config_set`
+  stages it over MQTT and HTTP alike. The worker applies the plan
+  without saving and keeps the snapshot; a confirm (`promote`) is the
+  only caller of `save.cgi`; the deadline's revert plans back to the
+  snapshot and falls through to a switch reboot when that fails or the
+  switch is gone.
+- **Component 21**: `state.switch`, the `.../switch/counters` topic,
+  the commands `switch_port`, `switch_reconcile`, `switch_save`,
+  `switch_reboot` and `switch_factory_reset`.
+- **Component 22, the pairing check only**: a switch whose `info.cgi`
+  MAC is not `switch.mac` raises `switch_mismatch` and is not talked to
+  beyond `info.cgi`.
+
+### Differences from the plan above
+
+- **Events are one kind, not nine.** `EventKind::Switch { what, port,
+  node, detail }`, exactly like `EventKind::Plane`, with `what` one of
+  `switch_port`, `switch_reachable`, `switch_unreachable`,
+  `switch_reboot`, `switch_drift`, `switch_reconciled`,
+  `switch_reverting`, `switch_reverted`, `switch_refused`,
+  `switch_mismatch`, `switch_fw_unknown`, `switch_saved`,
+  `switch_factory_reset`. It follows the vocabulary ADR 0001 already
+  has and keeps `msg.rs` from growing nine near-identical variants.
+  `switch_refused` is new and carries every reason a write was not
+  attempted (not managed, protected port, unknown firmware, a refusal
+  from the planner).
+- **MD5 is written out** in `granite-core/src/switch/md5.rs` rather
+  than pulled in as a crate: the cookie is a payload like any other, it
+  is built and tested on the host (RFC 1321 vectors), and no crate
+  lands in the flash budget for it. It is not used as a security
+  primitive; the scheme it serves is CVE-2026-27754.
+- **The MAC walk posts in read-only mode too.** The paging is
+  server-side state, so the walk is a GET (which drops a stuck search
+  filter) plus `cmd=perpage` / `cmd=goto` POSTs. Those move the table's
+  view and no configuration. The alternative - reading only the first
+  ten rows - would lose the node-to-port map, which is the main thing
+  the read-only mode is for. So "never POSTs except to log in" now
+  reads "except to log in and to page the MAC table".
+- **Two Modbus fault bits**, not the names in component 21: bit 8
+  `switch_unreachable`, bit 9 `switch_unsupported` (unknown firmware,
+  a page that does not parse, or a MAC mismatch).
+- **`switch_port` resolves a node through `switch.desired.ports[].node`**,
+  because the link-edge binding of component 22 is not built yet. A
+  command that names a node the configuration does not place is refused
+  by the dispatcher before any traffic.
+- **The counters payload goes through a slot**: the worker builds it
+  and the MQTT worker publishes it on its next pass, because the broker
+  session belongs to the MQTT worker. Nothing queues up while there is
+  no session.
+- **`switch_reconcile` applies without saving**, like a staged change;
+  `switch_save` is what persists. That keeps the "nothing is saved
+  before a confirm" invariant true on every path.
+- **Jumbo `0` means off** in `desired`, and a storm rate of `0` means
+  unlimited (which is an empty field on the wire). An absent key still
+  means "do not manage".
+- **The drift pass reads the storm page only when `desired` mentions
+  storm**: two more 400 ms pages per 10 minutes otherwise buy nothing.
+- **Flash cost**: +159,856 bytes (1,706,432 to 1,866,288, 46.7 % of
+  the slot), against the 30-80 KB this ADR guessed at. Roughly half is
+  the parsers, the planner and their strings; the rest is the `switch`
+  config section's serde and the worker.
+- **No schema bump.** `SCHEMA_VERSION` stays 1: a document without a
+  `switch` section loads with the section at its default, which is
+  "off", so an older export needs no migration.
+
+### Not built yet
+
+- **Component 19** (password rotation) and **component 20** (config
+  backup). `Secrets::switch_password` exists and is used - empty means
+  the factory `admin` - so rotation is a command and a `user.cgi` form
+  away.
+- **Component 22's node-port binding** from link edges around a power
+  change, `switch_node_moved` and `switch_node_unbound`. The MAC table
+  is walked and published, so the map is there as an operator
+  statement, not yet as something the controller proves.
+- **Component 23** (the my_metal `/api/v1/switch/...` endpoints).
+- **Desired-state keys not covered**: rate limits (read and published,
+  not managed), port isolation, LAG, mirroring, IGMP snooping, STP
+  parameters beyond the `loop` mode, and the device name. The pages for
+  rate limits are parsed; the others are captured as fixtures but have
+  no parser.
+- **The granite-sim fake switch.** The simulator records a switch
+  request and logs that it is not simulated; it has no HTTP server
+  serving the fixtures, because the worker that would drive it lives in
+  `granite-fw` and does not build on the host.
 
 ## Open Questions
 

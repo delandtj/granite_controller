@@ -29,7 +29,8 @@ firmware/
   granite-core/       no ESP-IDF, host-tested: hal traits, node state
                       machine, actuator, rules, config, messages,
                       dispatcher, the HTTP API handlers, the Modbus
-                      frame handler and the register map
+                      frame handler and the register map, the block
+                      switch's model, parsers, forms and planner
   granite-fw/         the ESP-IDF binary for the board. A standalone
                       cargo crate, deliberately NOT a workspace member:
                       it has its own target, toolchain and linker
@@ -40,6 +41,10 @@ firmware/
     src/http.rs       HTTPS server and the API glue
     src/mqtt.rs       the broker session
     src/modbus.rs     the Modbus TCP listener
+    src/switch/       the block switch (ADR 0006): the HTTP client and
+                      the worker thread. The model, the page parsers,
+                      the form builders and the reconcile planner are
+                      host-tested in granite-core/src/switch
     src/main.rs       boot order and the integration of all of it
   granite-sim/        host binary: granite-core over fake hardware with
                       the real setup page, for UI work and integration
@@ -171,11 +176,14 @@ The build output is `target/riscv32imac-esp-espidf/release/granite-fw`
 directory instead - the flash commands below assume the default, so
 substitute the path.
 
-Image size, release, default features (`link-canfd`, 2026-11-06):
-1,706,432 bytes of the 3,997,696-byte slot, 42.7 % - the CAN transport,
-`mcp251xfd` and the link marker are +51,616 bytes on the 1,654,816 of
-2026-11-04. The `link-i2c` image is 1,681,792 bytes (42.1 %): the stub
-link, but the same new platform code. `cargo build --release` keeps
+Image size, release, default features (`link-canfd`, 2026-11-12):
+1,866,288 bytes of the 3,997,696-byte slot, 46.7 % - the block switch
+(ADR 0006: the scanner, the page parsers, the form builders, the
+planner, the client and the worker, plus the `switch` config section
+and its serde) is +159,856 bytes on the 1,706,432 of 2026-11-06, which
+is more than the 30-80 KB the ADR guessed at. Before that, the CAN
+transport, `mcp251xfd` and the link marker were +51,616 bytes on the
+1,654,816 of 2026-11-04. `cargo build --release` keeps
 `opt-level = "s"` and `lto = true`; do not switch the release profile to
 `3` without checking that number again. The number comes from
 
@@ -454,6 +462,7 @@ Topic root `<topic_root>/<site>/<device>`, default
 | `.../log` | out | no | one JSON line per log record at or above `sys.log_level` |
 | `.../cmd` | in | - | `{"id":..,"action":..,"target":..,"args":{..}}` |
 | `.../ack/<id>` | out | no | published when the action *completes* |
+| `.../switch/counters` | out | no | per-port totals plus pps and bit/s, every `switch.poll.counters_s` (ADR 0006) |
 
 ADR 0001 component 7 has the authoritative table and the command list;
 `granite-core/src/msg.rs` is the implementation and its tests are the
@@ -481,6 +490,72 @@ The register map is `docs/modbus_map.md`, generated from
 `granite-core/src/modbus_map.rs` with `cargo run -p granite-sim --
 modbus-map`. It is versioned (input register 14) because the RS-485 duck
 protocol will reuse the same semantics.
+
+## The block switch
+
+Off by default, and **read-only** when it is on. The `switch` section
+(ADR 0006) says where the switch is, whether the controller may write
+to it and what it should look like:
+
+```json
+{"enabled": true, "manage": false, "host": "10.0.202.5",
+ "mac": "1c:2a:a3:24:26:7e", "user": "admin", "uplink_port": 9,
+ "enforce": false,
+ "poll": {"stats_s": 5, "info_s": 60, "mac_s": 120, "drift_s": 600,
+          "counters_s": 60},
+ "desired": {"vlans": [{"id": 300, "name": "storage"}],
+             "ports": [{"port": 7, "mode": "access", "vlan": 300,
+                        "node": 7}],
+             "jumbo": 9216, "loop": "loop",
+             "ip": {"mode": "static", "addr": "10.0.202.5/24",
+                    "gw": "10.0.202.1"}}}
+```
+
+The switch is a Sodola SL902-SWTGW218AS with a CGI web UI and nothing
+else; `Granite/infra` has the protocol notes (`docs/sodola.md`) and a
+reference client (`tools/sodola.py`). One worker thread owns every byte
+that goes to it. With `manage` false it polls and publishes and the
+only POSTs it sends are the login and the MAC table's paging; with
+`manage` true `desired` is applied through the same commit-confirm path
+as `net` and `mqtt`:
+
+- a `config_set` of `switch` is **staged**: the worker reads the
+  switch, plans the ops (create VLANs, port VLANs, delete VLANs,
+  jumbo/storm/loop, the address last) and applies them **without
+  saving**, keeping a snapshot of what it read,
+- a confirm is the only thing that calls `save.cgi`, so the switch's
+  flash always holds the last confirmed configuration,
+- no confirm inside `net.t_confirm_s` and the worker plans from the
+  switch's current state back to its snapshot and applies that; if the
+  switch is gone or the undo does not verify, it reboots the switch,
+  which drops everything unsaved (about 3 s of downtime for every
+  port).
+
+The uplink port and the port the controller's own MAC is seen on are
+protected: a plan that would re-VLAN or disable one is refused unless
+the command says `"force": true`, and while the controller cannot find
+its own MAC in the table *every* port counts as protected. Drift from
+`desired` is reported as a `switch_drift` event and only put back when
+`enforce` is true.
+
+Commands: `switch_port` (`{"port":N}` or `{"node":N}` plus
+`"enabled":bool`, optional `"force":true`), `switch_reconcile`,
+`switch_save`, `switch_reboot` and `switch_factory_reset` (both need
+`"confirm":"<device id>"`). Events are `kind:"switch"` with a `what`:
+`switch_port`, `switch_reachable`, `switch_unreachable`,
+`switch_reboot`, `switch_drift`, `switch_reconciled`,
+`switch_reverted`, `switch_refused`, `switch_mismatch`,
+`switch_fw_unknown`, `switch_saved`. `state.switch` carries the
+summary; the counters have their own topic.
+
+Parsers are written against firmware V200.1.8 and tested against pages
+captured from a real unit
+(`granite-core/tests/fixtures/sodola-v200.1.8/`). Another version is
+monitored while its pages still parse, and never written
+(`switch_fw_unknown`); a switch whose MAC is not `switch.mac` is not
+talked to beyond `info.cgi` (`switch_mismatch`). Both set Modbus fault
+bit 9; three failed polls in a row set bit 8 and
+`state.switch.reachable` to false.
 
 ## OTA, signing and probation
 
