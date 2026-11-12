@@ -470,6 +470,10 @@ pub struct Observed {
     pub vin_mv: Stamped<Option<u32>>,
     /// Dry contacts, bit 0 = input 1, true = closed.
     pub dry_in: Stamped<Option<u8>>,
+    /// The block switch, as the switch worker last read it (ADR 0006
+    /// component 17). `None` while no switch is configured.
+    #[serde(default)]
+    pub switch: Option<crate::switch::SwitchObs>,
     /// Ethernet link.
     pub link_up: Stamped<bool>,
     /// MQTT session.
@@ -488,6 +492,7 @@ impl Default for Observed {
             board_temp: Stamped::never(None),
             vin_mv: Stamped::never(None),
             dry_in: Stamped::never(None),
+            switch: None,
             link_up: Stamped::never(false),
             mqtt_connected: Stamped::never(false),
             uptime_s: Stamped::never(0),

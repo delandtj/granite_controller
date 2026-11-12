@@ -373,6 +373,10 @@ pub struct Sim {
     scenario: Scenario,
     /// Set when the dispatcher asked for a reboot.
     pub reboot_requested: bool,
+    /// Block-switch verbs the dispatcher handed to the switch worker
+    /// (ADR 0006 component 21). The simulator has no switch to talk to,
+    /// so they are recorded here instead of carried out.
+    pub switch_requests: Vec<granite_core::dispatch::SwitchRequest>,
 }
 
 impl Sim {
@@ -394,6 +398,7 @@ impl Sim {
             config,
             scenario,
             reboot_requested: false,
+            switch_requests: Vec::new(),
         };
         sim.platform.log_line(
             "info",
@@ -468,6 +473,18 @@ impl Sim {
                 SideEffect::FactoryReset => {
                     self.platform.log_line("warn", "factory reset");
                     self.factory_reset();
+                }
+                SideEffect::Switch(request) => {
+                    // The switch worker is a firmware thread with a
+                    // socket (ADR 0006 components 16 and 17), so there
+                    // is nothing here to carry the verb out: it is
+                    // recorded, and a fake switch serving the captured
+                    // pages would plug in at this point.
+                    self.platform.log_line(
+                        "warn",
+                        format!("block switch: {request:?} is not simulated"),
+                    );
+                    self.switch_requests.push(request);
                 }
             }
         }

@@ -88,6 +88,18 @@ pub enum CommandKind {
     Reboot,
     /// Erase everything but the factory namespace (`args.confirm`).
     FactoryReset,
+    /// Enable or disable one block-switch port (`args.port` or
+    /// `args.node`, `args.enabled`, optional `args.force`).
+    SwitchPort,
+    /// Write the switch's running configuration to its flash.
+    SwitchSave,
+    /// Reboot the switch, which drops everything unsaved
+    /// (`args.confirm` must be the device id).
+    SwitchReboot,
+    /// Factory-reset the switch (`args.confirm` must be the device id).
+    SwitchFactoryReset,
+    /// Read the switch and apply the desired state now.
+    SwitchReconcile,
 }
 
 impl CommandKind {
@@ -130,7 +142,25 @@ impl CommandKind {
             CommandKind::Ota => "ota",
             CommandKind::Reboot => "reboot",
             CommandKind::FactoryReset => "factory_reset",
+            CommandKind::SwitchPort => "switch_port",
+            CommandKind::SwitchSave => "switch_save",
+            CommandKind::SwitchReboot => "switch_reboot",
+            CommandKind::SwitchFactoryReset => "switch_factory_reset",
+            CommandKind::SwitchReconcile => "switch_reconcile",
         }
+    }
+
+    /// True when the verb is for the block switch, which the switch
+    /// worker carries out and not the dispatcher (ADR 0006).
+    pub const fn is_switch_verb(self) -> bool {
+        matches!(
+            self,
+            CommandKind::SwitchPort
+                | CommandKind::SwitchSave
+                | CommandKind::SwitchReboot
+                | CommandKind::SwitchFactoryReset
+                | CommandKind::SwitchReconcile
+        )
     }
 
     /// Parse a verb name.
@@ -156,6 +186,11 @@ impl CommandKind {
             CommandKind::Ota,
             CommandKind::Reboot,
             CommandKind::FactoryReset,
+            CommandKind::SwitchPort,
+            CommandKind::SwitchSave,
+            CommandKind::SwitchReboot,
+            CommandKind::SwitchFactoryReset,
+            CommandKind::SwitchReconcile,
         ]
         .into_iter()
         .find(|k| k.as_str() == name)
@@ -251,9 +286,20 @@ pub struct Args {
     /// Expected image digest for `ota`, hex.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sha256: Option<String>,
-    /// Device id, required by `factory_reset`.
+    /// Device id, required by `factory_reset` and by the two switch
+    /// verbs that interrupt every node.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub confirm: Option<String>,
+    /// Block-switch port for `switch_port`, 1-based.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub port: Option<u8>,
+    /// The node whose switch port `switch_port` means, as an
+    /// alternative to naming the port.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub node: Option<NodeId>,
+    /// What `switch_port` should set the port to.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
 }
 
 impl Args {
@@ -515,6 +561,31 @@ pub enum EventKind {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         detail: Option<String>,
     },
+    /// Something the switch worker learned (ADR 0006 component 21).
+    ///
+    /// One kind with a `what`, like [`EventKind::Plane`], rather than
+    /// nine kinds: the firmware's event vocabulary already works that
+    /// way and a consumer filters on `what`.
+    ///
+    /// `what` is one of `switch_port` (link, speed or admin state
+    /// changed), `switch_reboot`, `switch_unreachable`,
+    /// `switch_reachable`, `switch_drift`, `switch_reconciled`,
+    /// `switch_reverted`, `switch_refused`, `switch_mismatch`,
+    /// `switch_fw_unknown`, `switch_saved`.
+    Switch {
+        /// Which kind.
+        what: String,
+        /// The switch port, when it is about one.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        port: Option<u8>,
+        /// The node on that port, when the configuration names one.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        node: Option<NodeId>,
+        /// Free text: the link state and speed, the ops applied, what
+        /// drifted, how a revert was done.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        detail: Option<String>,
+    },
     /// A rule fired.
     RuleFired {
         /// Rule id.
@@ -677,6 +748,25 @@ pub fn event_from_client(ev: &ClientEvent, ts: u64) -> Option<Event> {
             detail,
         },
     ))
+}
+
+/// A switch event, which is always built the same way.
+pub fn switch_event(
+    ts: u64,
+    what: &str,
+    port: Option<u8>,
+    node: Option<NodeId>,
+    detail: Option<String>,
+) -> Event {
+    Event::new(
+        ts,
+        EventKind::Switch {
+            what: String::from(what),
+            port,
+            node,
+            detail,
+        },
+    )
 }
 
 /// Translate a fired rule into a published event.
@@ -869,6 +959,11 @@ pub struct State {
     pub vin_v: Option<f32>,
     /// Dry contacts, index 0 is input 1; `null` when never read.
     pub dry_in: Option<Vec<bool>>,
+    /// The block switch, absent while none is configured (ADR 0006
+    /// component 21). The counters are not in here: they move on their
+    /// own and go to `.../switch/counters`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub switch: Option<crate::switch::SwitchObs>,
     /// Ethernet link.
     pub link_up: bool,
     /// MQTT session.
@@ -929,6 +1024,7 @@ impl State {
                     .map(|i| bits & (1 << i) != 0)
                     .collect::<Vec<bool>>()
             }),
+            switch: o.switch.clone(),
             link_up: o.link_up.value,
             mqtt_connected: o.mqtt_connected.value,
             uptime_s: o.uptime_s.value,
@@ -963,6 +1059,13 @@ impl State {
         b.uptime_s = 0;
         a.vin_v = None;
         b.vin_v = None;
+        // The switch's uptime moves on its own, like the controller's:
+        // it must not republish `state` on every poll.
+        for state in [&mut a, &mut b] {
+            if let Some(switch) = state.switch.as_mut() {
+                switch.uptime_s = 0;
+            }
+        }
         vin_close && a == b
     }
 }
@@ -1078,5 +1181,11 @@ impl Topics {
     /// Ack for one command id.
     pub fn ack(&self, id: &str) -> String {
         format!("{}/ack/{}", self.base, id)
+    }
+
+    /// Block-switch counters: out, not retained, every
+    /// `switch.poll.counters_s` (ADR 0006 component 21).
+    pub fn switch_counters(&self) -> String {
+        format!("{}/switch/counters", self.base)
     }
 }

@@ -421,9 +421,89 @@ fn an_mqtt_section_from_an_older_firmware_still_loads() {
 }
 
 #[test]
+fn the_switch_section_is_off_and_read_only_by_default() {
+    let c = Config::default();
+    assert!(!c.switch.enabled, "no switch until one is configured");
+    assert!(!c.switch.manage, "reading is the default (ADR 0006)");
+    assert!(!c.switch.enforce, "drift is reported, not fixed");
+    assert_eq!(c.switch.user, "admin");
+    assert_eq!(c.switch.uplink_port, granite_core::switch::SFP_PORT);
+    assert!(c.switch.desired.is_empty(), "nothing is managed");
+    assert!(!c.switch.should_poll() && !c.switch.may_write());
+    assert_eq!(c.switch.poll.stats_s, 5);
+    assert_eq!(c.switch.poll.counters_s, 60);
+
+    // An empty document is the default, and a round trip changes
+    // nothing.
+    let mut bare = Config::default();
+    bare.set_section_json(Section::Switch, "{}").unwrap();
+    assert_eq!(bare.switch, granite_core::config::SwitchCfg::default());
+    let json = bare.section_json(Section::Switch).expect("serialises");
+    let mut back = Config::default();
+    back.set_section_json(Section::Switch, &json).unwrap();
+    assert_eq!(back.switch, bare.switch);
+}
+
+#[test]
+fn an_enabled_switch_needs_a_host_and_a_sane_desired_state() {
+    let mut c = Config::default();
+    c.switch.enabled = true;
+    let errs = c.validate().expect_err("no host");
+    assert!(errs.iter().any(|e| e.contains("switch.host")), "{errs:?}");
+
+    c.switch.host = String::from("10.0.202.5");
+    c.validate().expect("a host is all it needs to be polled");
+    assert!(c.switch.should_poll());
+    assert!(!c.switch.may_write(), "manage is still false");
+
+    c.switch.uplink_port = 12;
+    let errs = c.validate().expect_err("port 12");
+    assert!(
+        errs.iter().any(|e| e.contains("switch.uplink_port")),
+        "{errs:?}"
+    );
+    c.switch.uplink_port = 0;
+    c.validate().expect("0 means no uplink");
+    assert_eq!(c.switch.uplink(), None);
+
+    // The desired document is validated with the section.
+    c.switch.desired.jumbo = Some(4_711);
+    let errs = c.validate().expect_err("not a frame size the switch has");
+    assert!(
+        errs.iter().any(|e| e.contains("switch.desired.jumbo")),
+        "{errs:?}"
+    );
+}
+
+#[test]
+fn the_switch_password_is_a_secret_and_not_part_of_an_export() {
+    let mut s = Secrets::default();
+    assert_eq!(
+        s.switch_password(),
+        "admin",
+        "a switch nobody provisioned still has its factory password"
+    );
+    s.switch_password = String::from("a-generated-one");
+    assert_eq!(s.switch_password(), "a-generated-one");
+
+    let mut c = Config::default();
+    c.switch.enabled = true;
+    c.switch.host = String::from("10.0.202.5");
+    let export = c.export_json().expect("exports");
+    assert!(
+        !export.contains("a-generated-one") && !export.contains("switch_password"),
+        "a Config cannot carry a secret"
+    );
+}
+
+#[test]
 fn section_keys_and_reachability_flags() {
     assert_eq!(Section::from_key("mqtt"), Some(Section::Mqtt));
+    assert_eq!(Section::from_key("switch"), Some(Section::Switch));
     assert_eq!(Section::from_key("nope"), None);
+    // A VLAN or address change on the block switch can cut the
+    // controller off, so it is commit-confirmed too (ADR 0006).
+    assert!(Section::Switch.affects_reachability());
     assert!(Section::Net.affects_reachability());
     assert!(Section::Mqtt.affects_reachability());
     assert!(Section::Sec.affects_reachability());

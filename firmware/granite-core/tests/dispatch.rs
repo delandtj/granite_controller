@@ -487,3 +487,235 @@ fn modbus_writes_build_the_same_commands() {
         "a Modbus-born command goes through the dispatcher"
     );
 }
+
+// ---------------------------------------------------------------------
+// The block switch (ADR 0006 component 21)
+// ---------------------------------------------------------------------
+
+/// A controller with a managed switch and node 7 on switch port 7.
+fn with_switch(h: &mut Harness) {
+    h.config.switch.enabled = true;
+    h.config.switch.manage = true;
+    h.config.switch.host = String::from("10.0.202.5");
+    h.config.switch.desired.ports = vec![granite_core::switch::DesiredPort {
+        port: 7,
+        node: Some(7),
+        ..Default::default()
+    }];
+    h.observed.switch = Some(granite_core::switch::SwitchObs {
+        reachable: true,
+        ports: vec![granite_core::switch::SwitchPortObs {
+            port: 7,
+            enabled: true,
+            link: true,
+            speed: String::from("2.5g"),
+            vlan_mode: String::from("access"),
+            vlan: Some(100),
+            node: Some(7),
+            macs: Vec::new(),
+        }],
+        ..Default::default()
+    });
+}
+
+#[test]
+fn switch_verbs_need_the_section_enabled_and_managed() {
+    let mut h = Harness::new();
+    let cmd = Command::new("c-1", CommandKind::SwitchReconcile);
+    let reply = h.run(&cmd).0;
+    assert!(!reply.ok);
+    assert_eq!(
+        reply.error.as_deref(),
+        Some("the switch section is not enabled")
+    );
+
+    h.config.switch.enabled = true;
+    h.config.switch.host = String::from("10.0.202.5");
+    let reply = h.run(&cmd).0;
+    assert!(!reply.ok, "reading is allowed, writing is not");
+    assert!(
+        reply
+            .error
+            .as_deref()
+            .expect("an error")
+            .contains("switch.manage is false")
+    );
+
+    h.config.switch.manage = true;
+    let (reply, effects) = h.run(&cmd);
+    assert!(reply.ok);
+    assert_eq!(reply.result.as_deref(), Some("accepted"));
+    assert_eq!(
+        effects,
+        vec![SideEffect::Switch(
+            granite_core::dispatch::SwitchRequest::Reconcile
+        )]
+    );
+}
+
+#[test]
+fn switch_port_takes_a_port_or_a_node() {
+    use granite_core::dispatch::SwitchRequest;
+
+    let mut h = Harness::new();
+    with_switch(&mut h);
+
+    let by_port = Command::new("c-1", CommandKind::SwitchPort).with_args(Args {
+        port: Some(3),
+        enabled: Some(false),
+        ..Args::default()
+    });
+    assert_eq!(
+        h.run(&by_port).1,
+        vec![SideEffect::Switch(SwitchRequest::Port {
+            port: 3,
+            enabled: false,
+            force: false
+        })]
+    );
+
+    // By node: the port comes from the node-to-port map in `state`.
+    let by_node = Command::new("c-2", CommandKind::SwitchPort).with_args(Args {
+        node: Some(7),
+        enabled: Some(true),
+        force: true,
+        ..Args::default()
+    });
+    assert_eq!(
+        h.run(&by_node).1,
+        vec![SideEffect::Switch(SwitchRequest::Port {
+            port: 7,
+            enabled: true,
+            force: true
+        })]
+    );
+
+    // A node nothing is bound to is refused here, before any traffic.
+    let unknown = Command::new("c-3", CommandKind::SwitchPort).with_args(Args {
+        node: Some(5),
+        enabled: Some(true),
+        ..Args::default()
+    });
+    let reply = h.run(&unknown).0;
+    assert!(!reply.ok);
+    assert!(
+        reply
+            .error
+            .as_deref()
+            .expect("an error")
+            .contains("no switch port is bound to node 5")
+    );
+
+    // And so is a port the switch does not have, and a command that
+    // does not say what to set.
+    for args in [
+        Args {
+            port: Some(12),
+            enabled: Some(true),
+            ..Args::default()
+        },
+        Args {
+            port: Some(1),
+            ..Args::default()
+        },
+    ] {
+        let cmd = Command::new("c-4", CommandKind::SwitchPort).with_args(args);
+        assert!(!h.run(&cmd).0.ok);
+    }
+}
+
+#[test]
+fn rebooting_or_resetting_the_switch_needs_the_device_id() {
+    use granite_core::dispatch::SwitchRequest;
+
+    let mut h = Harness::new();
+    with_switch(&mut h);
+    for (action, request) in [
+        (CommandKind::SwitchReboot, SwitchRequest::Reboot),
+        (CommandKind::SwitchFactoryReset, SwitchRequest::FactoryReset),
+    ] {
+        let bare = Command::new("c-1", action);
+        let reply = h.run(&bare).0;
+        assert!(!reply.ok, "{action} without a confirmation");
+        assert_eq!(
+            reply.error.as_deref(),
+            Some("args.confirm must be the device id")
+        );
+
+        let confirmed = Command::new("c-2", action).with_args(Args {
+            confirm: Some(String::from("granite-test")),
+            ..Args::default()
+        });
+        assert_eq!(
+            h.run(&confirmed).1,
+            vec![SideEffect::Switch(request)],
+            "{action} with the device id"
+        );
+    }
+
+    // `switch_save` only writes what is already running to flash, so it
+    // needs no confirmation.
+    let save = Command::new("c-3", CommandKind::SwitchSave);
+    assert_eq!(
+        h.run(&save).1,
+        vec![SideEffect::Switch(SwitchRequest::Save)]
+    );
+}
+
+#[test]
+fn the_switch_section_is_staged_and_not_saved_straight_through() {
+    use granite_core::config::Section;
+    use serde_json::json;
+
+    let mut h = Harness::new();
+    let cmd = Command::new("c-1", CommandKind::ConfigSet).with_args(Args {
+        section: Some(Section::Switch),
+        config: Some(json!({
+            "enabled": true,
+            "manage": true,
+            "host": "10.0.202.5",
+            "mac": "1c:2a:a3:24:26:7e",
+            "uplink_port": 9,
+            "desired": {
+                "vlans": [{"id": 300, "name": "storage"}],
+                "ports": [{"port": 7, "mode": "access", "vlan": 300, "node": 7}]
+            }
+        })),
+        ..Args::default()
+    });
+    let (reply, effects) = h.run(&cmd);
+    assert!(reply.ok, "{:?}", reply.error);
+    assert_eq!(
+        reply.result.as_deref(),
+        Some("staged"),
+        "a switch change can cut the controller off, so it is staged"
+    );
+    assert_eq!(effects, vec![SideEffect::StageSection(Section::Switch)]);
+    assert!(h.config.switch.manage);
+    assert_eq!(h.config.switch.mac, "1C:2A:A3:24:26:7E", "normalised");
+    assert_eq!(h.config.switch.desired.ports[0].vlan, Some(300));
+    // The poll periods take their defaults, not zeroes.
+    assert_eq!(h.config.switch.poll.stats_s, 5);
+
+    // A desired document that cannot hold is refused, and nothing is
+    // staged.
+    let bad = Command::new("c-2", CommandKind::ConfigSet).with_args(Args {
+        section: Some(Section::Switch),
+        config: Some(json!({
+            "enabled": true,
+            "host": "10.0.202.5",
+            "desired": {"ports": [{"port": 1, "mode": "access"}]}
+        })),
+        ..Args::default()
+    });
+    let (reply, effects) = h.run(&bad);
+    assert!(!reply.ok);
+    assert!(
+        reply
+            .error
+            .as_deref()
+            .expect("an error")
+            .contains("an access port needs \"vlan\"")
+    );
+    assert!(effects.is_empty());
+}

@@ -25,7 +25,7 @@ pub const SECRETS_NAMESPACE: &str = "secrets";
 /// NVS namespace that survives a factory reset.
 pub const FACTORY_NAMESPACE: &str = "factory";
 
-/// The six stored sections.
+/// The seven stored sections.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Section {
@@ -33,6 +33,9 @@ pub enum Section {
     Net,
     /// Broker, TLS, topics, publish cadence.
     Mqtt,
+    /// The block switch: where it is, whether it is managed, how often
+    /// it is polled and the desired state (ADR 0006).
+    Switch,
     /// Node names, boot policy, LED sense, soft-off window, escalation,
     /// the plane update policy and the probes.
     Nodes,
@@ -46,9 +49,10 @@ pub enum Section {
 
 impl Section {
     /// Every section, in storage order.
-    pub const ALL: [Section; 6] = [
+    pub const ALL: [Section; 7] = [
         Section::Net,
         Section::Mqtt,
+        Section::Switch,
         Section::Nodes,
         Section::Rules,
         Section::Sec,
@@ -60,6 +64,7 @@ impl Section {
         match self {
             Section::Net => "net",
             Section::Mqtt => "mqtt",
+            Section::Switch => "switch",
             Section::Nodes => "nodes",
             Section::Rules => "rules",
             Section::Sec => "sec",
@@ -74,8 +79,16 @@ impl Section {
 
     /// True for sections where a mistake can cut the session, and which
     /// therefore go through the commit-confirm path.
+    ///
+    /// `switch` is one of them: a VLAN or address change on the block
+    /// switch can cut the controller off exactly like a change to its
+    /// own interface, so it is staged, applied without saving, and
+    /// reverted when nobody confirms (ADR 0006 component 18).
     pub const fn affects_reachability(self) -> bool {
-        matches!(self, Section::Net | Section::Mqtt | Section::Sec)
+        matches!(
+            self,
+            Section::Net | Section::Mqtt | Section::Sec | Section::Switch
+        )
     }
 }
 
@@ -222,6 +235,102 @@ impl Default for MqttCfg {
             t_state_s: 60,
             auto_confirm_on_connect: false,
         }
+    }
+}
+
+/// How often the switch worker reads each page, in seconds (ADR 0006
+/// component 17; the defaults are five times slower than the soak test
+/// that ran clean for three hours).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct SwitchPollCfg {
+    /// Link state and counters (`port.cgi?page=stats`).
+    pub stats_s: u32,
+    /// Device info and uptime (`info.cgi`).
+    pub info_s: u32,
+    /// The MAC table walk.
+    pub mac_s: u32,
+    /// The drift check over the configuration pages.
+    pub drift_s: u32,
+    /// How often the counters topic is published.
+    pub counters_s: u32,
+}
+
+impl Default for SwitchPollCfg {
+    fn default() -> Self {
+        SwitchPollCfg {
+            stats_s: 5,
+            info_s: 60,
+            mac_s: 120,
+            drift_s: 600,
+            counters_s: 60,
+        }
+    }
+}
+
+/// The `switch` section: the block switch (ADR 0006).
+///
+/// Reading is the default. `manage` is what lets the controller write
+/// anything at all; without it the only POST it ever sends is the
+/// login. `desired` is ignored unless `manage` is true.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct SwitchCfg {
+    /// Off by default: a block works without the controller talking to
+    /// its switch at all.
+    pub enabled: bool,
+    /// Whether the controller may write to the switch.
+    pub manage: bool,
+    /// Management address or hostname.
+    pub host: String,
+    /// The switch's own MAC, from pre-provisioning. The controller
+    /// refuses to talk past `info.cgi` to a switch whose MAC differs
+    /// (`switch_mismatch`). Empty means "do not check".
+    pub mac: String,
+    /// Login user. The password lives in [`Secrets`].
+    pub user: String,
+    /// The uplink port, which is protected from VLAN and admin-state
+    /// changes unless a command says `force`. 0 means "no uplink".
+    pub uplink_port: u8,
+    /// Put the desired state back when the switch drifts from it.
+    /// Off by default: drift is reported, not fixed.
+    pub enforce: bool,
+    /// The poll schedule.
+    pub poll: SwitchPollCfg,
+    /// What the switch should look like. Absent keys are not managed.
+    pub desired: crate::switch::SwitchDesired,
+}
+
+impl Default for SwitchCfg {
+    fn default() -> Self {
+        SwitchCfg {
+            enabled: false,
+            manage: false,
+            host: String::new(),
+            mac: String::new(),
+            user: String::from("admin"),
+            uplink_port: crate::switch::SFP_PORT,
+            enforce: false,
+            poll: SwitchPollCfg::default(),
+            desired: crate::switch::SwitchDesired::default(),
+        }
+    }
+}
+
+impl SwitchCfg {
+    /// The uplink port, if one is configured.
+    pub fn uplink(&self) -> Option<u8> {
+        crate::switch::is_port(self.uplink_port).then_some(self.uplink_port)
+    }
+
+    /// True when the worker should poll at all.
+    pub fn should_poll(&self) -> bool {
+        self.enabled && !self.host.trim().is_empty()
+    }
+
+    /// True when the worker may write (`enabled` and `manage`).
+    pub fn may_write(&self) -> bool {
+        self.should_poll() && self.manage
     }
 }
 
@@ -505,6 +614,8 @@ pub struct Config {
     pub net: NetCfg,
     /// Broker.
     pub mqtt: MqttCfg,
+    /// The block switch.
+    pub switch: SwitchCfg,
     /// Nodes, timings, probes.
     pub nodes: NodesCfg,
     /// Rules.
@@ -521,6 +632,7 @@ impl Default for Config {
             schema_version: SCHEMA_VERSION,
             net: NetCfg::default(),
             mqtt: MqttCfg::default(),
+            switch: SwitchCfg::default(),
             nodes: NodesCfg::default(),
             rules: RulesCfg::default(),
             sec: SecCfg::default(),
@@ -563,6 +675,7 @@ impl Config {
         match section {
             Section::Net => to_json(&self.net),
             Section::Mqtt => to_json(&self.mqtt),
+            Section::Switch => to_json(&self.switch),
             Section::Nodes => to_json(&self.nodes),
             Section::Rules => to_json(&self.rules),
             Section::Sec => to_json(&self.sec),
@@ -576,6 +689,7 @@ impl Config {
         match section {
             Section::Net => self.net = from_json(json)?,
             Section::Mqtt => self.mqtt = from_json(json)?,
+            Section::Switch => self.switch = from_json(json)?,
             Section::Nodes => self.nodes = from_json(json)?,
             Section::Rules => self.rules = from_json(json)?,
             Section::Sec => self.sec = from_json(json)?,
@@ -590,6 +704,7 @@ impl Config {
         match section {
             Section::Net => self.net = NetCfg::default(),
             Section::Mqtt => self.mqtt = MqttCfg::default(),
+            Section::Switch => self.switch = SwitchCfg::default(),
             Section::Nodes => self.nodes = NodesCfg::default(),
             Section::Rules => self.rules = RulesCfg::default(),
             Section::Sec => self.sec = SecCfg::default(),
@@ -694,6 +809,21 @@ impl Config {
         if self.mqtt.topic_root.trim().is_empty() {
             self.mqtt.topic_root = String::from("granite");
         }
+        // A poll period of 0 would turn the switch worker into a busy
+        // loop against a web server that needs 400 ms per page, so
+        // every one of them has a floor (ADR 0006 component 17).
+        let poll = &mut self.switch.poll;
+        poll.stats_s = poll.stats_s.max(1);
+        poll.info_s = poll.info_s.max(5);
+        poll.mac_s = poll.mac_s.max(10);
+        poll.drift_s = poll.drift_s.max(30);
+        poll.counters_s = poll.counters_s.max(5);
+        if self.switch.user.trim().is_empty() {
+            self.switch.user = String::from("admin");
+        }
+        self.switch.mac = crate::switch::model::normalise_mac(&self.switch.mac);
+        self.switch.desired.ports.sort_unstable_by_key(|p| p.port);
+        self.switch.desired.ports.dedup_by_key(|p| p.port);
     }
 
     /// Everything that must hold before the config is used.
@@ -763,6 +893,19 @@ impl Config {
         if self.mqtt.enabled && self.mqtt.host.trim().is_empty() {
             errs.push(String::from("mqtt.host is required when mqtt is enabled"));
         }
+        if self.switch.enabled && self.switch.host.trim().is_empty() {
+            errs.push(String::from(
+                "switch.host is required when the switch is enabled",
+            ));
+        }
+        if self.switch.uplink_port != 0 && !crate::switch::is_port(self.switch.uplink_port) {
+            errs.push(format!(
+                "switch.uplink_port ({}) is not a port (1..={}) or 0 for none",
+                self.switch.uplink_port,
+                crate::switch::PORT_COUNT
+            ));
+        }
+        errs.extend(self.switch.desired.validate());
         if self.sec.modbus.enabled && self.sec.modbus.allow.is_empty() {
             errs.push(String::from(
                 "sec.modbus.allow must list at least one peer when Modbus is enabled",
@@ -817,6 +960,10 @@ pub struct Secrets {
     pub device_key_pem: String,
     /// Per-device recovery token, base32.
     pub recovery_token: String,
+    /// The block switch's login password (ADR 0006 component 19).
+    /// Empty means the factory default, `admin`. Never exported,
+    /// logged or published.
+    pub switch_password: String,
 }
 
 impl Default for Secrets {
@@ -831,9 +978,13 @@ impl Default for Secrets {
             mqtt_client_key_pem: String::new(),
             device_key_pem: String::new(),
             recovery_token: String::new(),
+            switch_password: String::new(),
         }
     }
 }
+
+/// The factory password of a switch that has not been provisioned.
+pub const SWITCH_DEFAULT_PASSWORD: &str = "admin";
 
 impl Secrets {
     /// Serialise for the secrets namespace.
@@ -849,5 +1000,15 @@ impl Secrets {
     /// True when first-setup mode applies.
     pub fn admin_password_missing(&self) -> bool {
         self.admin_hash.is_empty()
+    }
+
+    /// The switch password to log in with: the stored one, or the
+    /// factory default while none was stored.
+    pub fn switch_password(&self) -> &str {
+        if self.switch_password.is_empty() {
+            SWITCH_DEFAULT_PASSWORD
+        } else {
+            &self.switch_password
+        }
     }
 }

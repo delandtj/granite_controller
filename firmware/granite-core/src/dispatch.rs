@@ -58,6 +58,42 @@ pub enum SideEffect {
     Reboot,
     /// Erase everything but the factory namespace, then restart.
     FactoryReset,
+    /// Hand one verb to the block-switch worker (ADR 0006 component
+    /// 21). The dispatcher does not talk to the switch itself: the
+    /// worker is the only thing that may, and it answers through
+    /// events, not through this ack.
+    Switch(SwitchRequest),
+}
+
+/// What the switch worker is asked to do.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SwitchRequest {
+    /// Enable or disable one port. `port` is a switch port; a command
+    /// that named a node has already been resolved to one.
+    Port {
+        /// Which port, 1-based.
+        port: u8,
+        /// Admin state to set.
+        enabled: bool,
+        /// Touch a protected port anyway.
+        force: bool,
+    },
+    /// Write the running configuration to the switch's flash.
+    Save,
+    /// Reboot the switch.
+    Reboot,
+    /// Factory-reset the switch.
+    FactoryReset,
+    /// Read the switch and apply the desired state now.
+    Reconcile,
+    /// The `switch` section was staged: apply it without saving and let
+    /// the confirm timer run (ADR 0006 component 18).
+    Staged,
+    /// The staged section was confirmed: save the switch.
+    Confirmed,
+    /// The staged section was not confirmed in time: undo while the
+    /// switch is reachable, reboot it otherwise.
+    Revert,
 }
 
 /// Everything one command produced.
@@ -185,11 +221,91 @@ pub fn dispatch(cmd: &Command, ctx: &mut DispatchCtx<'_>) -> Dispatched {
             }
             _ => Reply::err(&cmd.id, "args.confirm must be the device id"),
         },
+        action if action.is_switch_verb() => match switch_request(cmd, ctx) {
+            Ok(request) => {
+                effects.push(SideEffect::Switch(request));
+                Reply::accepted(&cmd.id)
+            }
+            Err(e) => Reply::err(&cmd.id, e),
+        },
         // Every plane verb is handled above.
         _ => Reply::err(&cmd.id, "unhandled action"),
     };
 
     done(reply, effects)
+}
+
+/// One switch verb as the worker's request, or why it cannot be one.
+///
+/// Everything that can be decided without talking to the switch is
+/// decided here: that a switch is configured at all, that writes are
+/// allowed (`switch.manage`), that `switch_port` names a port the
+/// switch has - by port number or through the node the configuration
+/// says is cabled to it - and that the two verbs which interrupt every
+/// node carry the device id.
+fn switch_request(cmd: &Command, ctx: &DispatchCtx<'_>) -> Result<SwitchRequest, String> {
+    let cfg = &ctx.config.switch;
+    if !cfg.enabled {
+        return Err(String::from("the switch section is not enabled"));
+    }
+    if !cfg.manage {
+        return Err(String::from(
+            "switch.manage is false, so the controller does not write to the switch",
+        ));
+    }
+    let confirmed = || -> Result<(), String> {
+        match &cmd.args.confirm {
+            Some(c) if c == ctx.device_id => Ok(()),
+            _ => Err(String::from("args.confirm must be the device id")),
+        }
+    };
+    match cmd.action {
+        CommandKind::SwitchPort => {
+            let enabled = cmd
+                .args
+                .enabled
+                .ok_or_else(|| String::from("args.enabled is required"))?;
+            let port = match (cmd.args.port, cmd.args.node.or_else(|| cmd.target.node())) {
+                (Some(port), _) => port,
+                (None, Some(node)) => ctx
+                    .observed
+                    .switch
+                    .as_ref()
+                    .and_then(|s| s.port_of_node(node))
+                    .ok_or_else(|| {
+                        alloc::format!(
+                            "no switch port is bound to node {node}; name a port with args.port \
+                             or set \"node\" on the port in switch.desired"
+                        )
+                    })?,
+                (None, None) => {
+                    return Err(String::from("args.port or args.node is required"));
+                }
+            };
+            if !crate::switch::is_port(port) {
+                return Err(alloc::format!(
+                    "{port} is not a switch port (1..={})",
+                    crate::switch::PORT_COUNT
+                ));
+            }
+            Ok(SwitchRequest::Port {
+                port,
+                enabled,
+                force: cmd.args.force,
+            })
+        }
+        CommandKind::SwitchSave => Ok(SwitchRequest::Save),
+        CommandKind::SwitchReconcile => Ok(SwitchRequest::Reconcile),
+        CommandKind::SwitchReboot => {
+            confirmed()?;
+            Ok(SwitchRequest::Reboot)
+        }
+        CommandKind::SwitchFactoryReset => {
+            confirmed()?;
+            Ok(SwitchRequest::FactoryReset)
+        }
+        other => Err(alloc::format!("{} is not a switch action", other.as_str())),
+    }
 }
 
 fn done(reply: Reply, effects: Vec<SideEffect>) -> Dispatched {

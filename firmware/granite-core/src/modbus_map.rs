@@ -182,6 +182,13 @@ pub mod fault_bits {
     pub const MQTT_DOWN: u16 = 1 << 6;
     /// No plane answers at all.
     pub const NO_PLANE: u16 = 1 << 7;
+    /// The block switch is configured but not answering (ADR 0006
+    /// component 17: three failed polls in a row).
+    pub const SWITCH_UNREACHABLE: u16 = 1 << 8;
+    /// The block switch runs a firmware these parsers were not written
+    /// against, so it is monitored but never written (ADR 0006
+    /// component 16), or its MAC is not the one `switch.mac` names.
+    pub const SWITCH_UNSUPPORTED: u16 = 1 << 9;
 }
 
 /// The fault bits [`plane_faults`] decides, so a caller can clear the
