@@ -148,9 +148,17 @@ erratum ceiling at a 40 MHz SYSCLK; the W5500 keeps its 20 MHz.
 The link-related features in full:
 
 - `link-canfd`, `link-i2c`: above, exactly one.
+- `rev-c`: the rev C bench board. Rev C has the `link-i2c` pin map
+  (TMP1075 U5 and the U14 / U15 expanders on GPIO2 / GPIO3, EXP_INT on
+  GPIO0) and no MCP2518FD, so this is an alias for `link-i2c`; the
+  board temperature reads and the image confirms itself without
+  `link-bench`. Build it with
+  `cargo build --release --no-default-features --features rev-c`.
 - `link-bench`: a link that does not come up is logged instead of
   keeping the image from confirming itself (see "probation" below). For
-  the rev C bench board, which has no MCP2518FD on it. In `devboard`.
+  an FD image on a board with no MCP2518FD on it (the rev C bench board
+  before `rev-c`, a devkit). In `devboard`. An FD image on rev C cannot
+  read the TMP1075, which it looks for on GPIO6 / GPIO7.
   **Never in a shipped image.**
 
 `link` on the console prints the link kind and, on an FD build, the

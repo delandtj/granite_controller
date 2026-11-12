@@ -28,6 +28,13 @@ link-canfd = ["dep:mcp2518fd"]
 # Still the NAK stub of src/hw/plane_link.rs: the rev D driver is not
 # written until a rev D board is ordered (ADR 0006, "First batch").
 link-i2c = []
+# The rev C bench board: an image for the board the firmware is tried on
+# today. Rev C has no MCP2518FD; its GPIO2 / GPIO3 are the internal I2C
+# bus (U14, U15 and the TMP1075 U5 at 0x48) and GPIO0 is EXP_INT - the
+# same pin map as link-i2c, so it is that build under the board's name.
+# The TMP1075 reads off GPIO2 / GPIO3 and the stub plane link confirms
+# the image without link-bench. Build with --no-default-features.
+rev-c = ["link-i2c"]
 # Bench relief for a board with no MCP2518FD on it (the rev C board the
 # image is tried on): a link that does not come up is logged instead of
 # keeping the image from marking itself valid. A shipped image must never

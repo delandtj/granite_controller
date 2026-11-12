@@ -13,7 +13,7 @@
 //! feature decides what GPIO0, GPIO2 and GPIO3 are and which plane link
 //! [`Hw::plane`] holds:
 //!
-//! | pin | `link-i2c` (rev D) | `link-canfd` (controller-fd) |
+//! | pin | `link-i2c` (rev D, rev C) | `link-canfd` (controller-fd) |
 //! |---|---|---|
 //! | GPIO0 | EXP_INT, the planes' wired-OR interrupt | TCAN1044V STB, driven low for normal mode |
 //! | GPIO2 | plane link SDA (HP I2C) | MCP2518FD nCS |
@@ -26,6 +26,12 @@
 //! rev D keeps the TMP1075 on the HP bus beside the planes. So an FD
 //! build does not open `I2C_NUM_0`, and the board temperature comes off
 //! the LP bus.
+//!
+//! The rev C bench board has the `link-i2c` pin map (TMP1075 U5 and the
+//! U14 / U15 expanders on GPIO2 / GPIO3, EXP_INT on GPIO0) and no
+//! MCP2518FD, so its image is the `rev-c` feature, an alias for
+//! `link-i2c`. An FD image on rev C runs (with `link-bench`) but cannot
+//! read the board temperature: it looks for the TMP1075 on GPIO6 / GPIO7.
 //!
 //! Two parts of this layer are placeholders until the rev D board
 //! exists, and both say so loudly: [`dry::DryGpio::unwired`] (every read
