@@ -403,6 +403,14 @@ pub fn start(t_validate_s: u32, events: Option<Sender<Event>>, nvs: Option<EspDe
 fn probation(window_s: u32, events: Option<Sender<Event>>) {
     let deadline = super::now_ms() + u64::from(window_s) * 1000;
     loop {
+        // Someone marked the image valid by hand (the Firmware page's
+        // "mark current as valid", `POST /api/v1/firmware/mark-valid`):
+        // probation is over. Without this the deadline below marked a
+        // valid image invalid and the bootloader rolled it back anyway.
+        if ota_state() == OtaState::Valid {
+            log::info!("ota: image marked valid by hand; probation ends");
+            return;
+        }
         if let Some(why) = ladder_passed() {
             match mark_valid() {
                 Ok(()) => {
