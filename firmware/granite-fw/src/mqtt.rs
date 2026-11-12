@@ -895,6 +895,23 @@ fn run(ctx: &mut MqttCtx, stop: &AtomicBool) -> anyhow::Result<Outcome> {
             }
         }
 
+        // 6b. The block switch's counters, on their own topic and not
+        //     retained (ADR 0006 component 21). The switch worker
+        //     builds the payload on its own period and leaves it in a
+        //     slot; this only carries it to the broker, so nothing
+        //     queues up while there is no session.
+        if session
+            && let Some(payload) = crate::switch::take_counters()
+        {
+            publish(
+                &mut client,
+                &topics.switch_counters(),
+                qos,
+                false,
+                payload.as_bytes(),
+            );
+        }
+
         // 7. The reconnect ladder. esp-mqtt retries on its own 60 s timer;
         //    this asks for an earlier attempt and doubles the wait.
         if !session

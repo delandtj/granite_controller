@@ -33,4 +33,5 @@ pub mod platform;
 pub mod http;
 pub mod mqtt;
 pub mod modbus;
+pub mod switch;
 pub use granite_core as core;

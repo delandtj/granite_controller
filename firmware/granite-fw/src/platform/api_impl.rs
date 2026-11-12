@@ -28,6 +28,7 @@ use granite_core::api::{
     Platform as ApiPlatform, Rng, SlotInfo, StagedInfo, Store as ApiStore,
 };
 use granite_core::config::{Section, Secrets};
+use granite_core::dispatch::SwitchRequest;
 use granite_core::hal::BootReason;
 use granite_core::msg::{Event, EventKind};
 
@@ -389,6 +390,17 @@ pub fn promote(platform: &Platform, sections: &[Section]) -> bool {
     if sections.contains(&Section::Net) {
         platform.net.confirm();
     }
+    if sections.contains(&Section::Switch) {
+        // The switch holds the change in its running configuration and
+        // nothing has been written to its flash yet; this is the one
+        // place that lets the worker save it (ADR 0006 component 18).
+        if !crate::switch::submit(SwitchRequest::Confirmed) {
+            log::error!(
+                "switch: the worker is not running, so the confirmed switch configuration was \
+                 not saved to the switch's flash"
+            );
+        }
+    }
     with_staged(|s| s.sections.retain(|s| !sections.contains(s)));
     promoted
 }
@@ -404,6 +416,19 @@ pub fn revert_sections(platform: &Platform, sections: &[Section]) {
             if let Err(e) = store.clear_staged(*section) {
                 log::error!("staging slot for {section} could not be cleared: {e}");
             }
+        }
+    }
+    if sections.contains(&Section::Switch) {
+        // The switch needs more than its stored section back in the
+        // live config: what was applied to it has to be undone there
+        // too. The worker plans from the switch's current state back to
+        // the snapshot it took, and reboots the switch when that cannot
+        // be done (ADR 0006 component 18).
+        if !crate::switch::submit(SwitchRequest::Revert) {
+            log::error!(
+                "switch: the worker is not running, so the unconfirmed switch change was not \
+                 undone; power-cycling the switch restores its saved configuration"
+            );
         }
     }
     let live: Vec<Section> = sections
@@ -510,6 +535,20 @@ impl NetControl for NetControlApi {
                 "{section} staged and applied live; confirm within {window} s or the stored value \
                  comes back (a new device certificate needs a reboot either way)"
             ),
+        }
+        if section == Section::Switch {
+            // The switch worker is what applies this one: it reads the
+            // switch, plans, applies the ops and keeps the snapshot a
+            // revert goes back to, without saving anything to the
+            // switch's flash (ADR 0006 component 18). Same call the
+            // dispatcher's StageSection effect makes, so a change over
+            // MQTT and one over HTTP take the same path.
+            if !crate::switch::submit(SwitchRequest::Staged) {
+                log::error!(
+                    "switch: the worker is not running, so the staged switch section was not \
+                     applied to the switch"
+                );
+            }
         }
 
         note_staged(section, window);

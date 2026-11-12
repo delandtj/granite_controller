@@ -37,7 +37,7 @@ use esp_idf_svc::hal::gpio::PinDriver;
 use esp_idf_svc::hal::peripherals::Peripherals;
 use granite_core::boot::BootPolicyWatch;
 use granite_core::config::Section;
-use granite_core::dispatch::{DispatchCtx, SideEffect, dispatch};
+use granite_core::dispatch::{DispatchCtx, SideEffect, SwitchRequest, dispatch};
 use granite_core::hal::{
     BoardTemp, BusVoltage, DryInputs, LedPattern, PlaneLink, Probes, StatusLed,
 };
@@ -50,7 +50,7 @@ use granite_core::plane::PlaneClient;
 use granite_core::rules::RuleEngine;
 use granite_core::{NodeId, Target};
 use granite_fw::platform::{self, Platform};
-use granite_fw::{http, hw, modbus, mqtt};
+use granite_fw::{http, hw, modbus, mqtt, switch};
 
 /// Heartbeat interval of the idle loop.
 const HEARTBEAT: Duration = Duration::from_secs(10);
@@ -431,6 +431,57 @@ fn main() -> anyhow::Result<()> {
             // A broker that cannot be used must not stop the board from
             // serving its page: the configuration is the thing to fix.
             log::error!("mqtt worker did not start: {e:#}");
+            None
+        }
+    };
+
+    // INTEGRATION: the block-switch worker (ADR 0006 components 17 and
+    // 18). Started whatever the configuration says, like the MQTT
+    // worker: it idles on the `switch` section and starts polling as
+    // soon as it says it may, which is what makes a staged switch
+    // change testable before it is confirmed. It is also the only
+    // thread that may talk to the switch.
+    let _switch = match switch::start(switch::SwitchCtx {
+        config: Box::new({
+            let p = Arc::clone(&platform);
+            move || p.config()
+        }),
+        password: Box::new({
+            let p = Arc::clone(&platform);
+            move || {
+                p.store
+                    .lock()
+                    .map(|mut s| s.load_secrets().switch_password().to_string())
+                    .unwrap_or_else(|_| {
+                        String::from(granite_core::config::SWITCH_DEFAULT_PASSWORD)
+                    })
+            }
+        }),
+        observed: Arc::clone(&platform.observed),
+        events: Box::new({
+            let p = Arc::clone(&platform);
+            move |event| p.publish(event)
+        }),
+        faults: Arc::clone(&faults),
+        own_mac: platform::identity::mac_string(&platform.identity.mac),
+    }) {
+        Ok(handle) => {
+            if cfg_at_boot.switch.should_poll() {
+                log::info!(
+                    "switch worker started for {} ({})",
+                    cfg_at_boot.switch.host,
+                    if cfg_at_boot.switch.manage {
+                        "managed"
+                    } else {
+                        "read-only"
+                    }
+                );
+            }
+            Some(handle)
+        }
+        Err(e) => {
+            // A switch that cannot be polled must not stop the board.
+            log::error!("switch worker did not start: {e:#}");
             None
         }
     };
@@ -942,6 +993,18 @@ fn apply_effect(
                 // The net section is the one that can cut the session, so
                 // it is applied live with the confirm timer running.
                 Section::Net => platform.net.apply(&cfg.net, cfg.net.t_confirm_s),
+                // The switch section is applied by the switch worker,
+                // which reads the switch, plans and applies the ops
+                // without saving, and keeps the snapshot a revert goes
+                // back to (ADR 0006 component 18).
+                Section::Switch => {
+                    if !switch::submit(SwitchRequest::Staged) {
+                        log::error!(
+                            "config: the switch worker is not running, so the staged switch \
+                             section was not applied"
+                        );
+                    }
+                }
                 // mqtt and sec are applied live by their owners: the MQTT
                 // worker rebuilds its client when the live section stops
                 // matching it (mqtt::supervise) and the config watcher
@@ -1000,6 +1063,15 @@ fn apply_effect(
             });
             if let Err(e) = spawned {
                 log::error!("ota: pull thread could not start: {e}");
+            }
+        }
+        SideEffect::Switch(request) => {
+            // The dispatcher never talks to the switch itself: the
+            // worker is the only thread that may (ADR 0006 component
+            // 17), and it answers through events, not through the ack
+            // this command already got.
+            if !switch::submit(request) {
+                log::error!("switch: the worker is not running; the command was dropped");
             }
         }
         SideEffect::ProbeScan => {
