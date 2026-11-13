@@ -48,7 +48,7 @@ gl=('\t(global_label "AUX_12V"\n\t\t(shape input)\n\t\t(at 30.48 114.3 180)\n\t\
 t=t[:a]+gl+t[b:]
 old='12 V input: two plane aux feeds (plane J4: PH 2p, 1 CTRL_12V, 2 CTRL_GND) -> one SS34 each (OR-ing + reverse polarity) -> SMAJ15A -> LMR51430 buck (1.1 MHz) -> 5.2 V. No fuse: the plane iso module limits its own output.'
 assert old in t
-t=t.replace(old,'12 V input: AUX_12V from the plane link box header J15 pins 5 / 6 (OR-ed from every core, ADR 0006 decision 4) -> SS34 D10 (reverse polarity) -> SMAJ15A -> LMR51430 buck (1.1 MHz) -> 5.2 V. No fuse: the cores\' iso modules limit their own output. GND = LINK_GND.')
+t=t.replace(old,'12 V input: AUX_12V from the plane link box header J15 pins 5 / 6 (OR-ed from every core, ADR 0006 decision 4) -> SS34 D10 (reverse polarity) -> SMAJ15A -> LMR51430 buck (1.1 MHz) -> 5.44 V (BUCK_5V). No fuse: the cores\' iso modules limit their own output. GND = LINK_GND.')
 t=t.replace('(title "Granite controller rev D - ','(title "Granite controller FD - ')
 open(p,'w').write(t)
 

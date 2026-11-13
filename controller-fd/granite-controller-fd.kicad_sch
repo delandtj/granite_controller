@@ -12,7 +12,7 @@
 		(comment 2 "ESP32-C6 + W5500, CAN FD plane link (MCP2518FD + TCAN1044V, 2x3 socket with AUX_12V in), probes, dry contacts, Qwiic")
 	)
 	(lib_symbols)
-	(text "Granite controller rev D: Ethernet controller and plane link master for up to 8 power planes, immersion-cooled."
+	(text "Granite controller FD: Ethernet controller and CAN FD plane link master for up to 8 power planes, immersion-cooled."
 		(exclude_from_sim no)
 		(at 31.75 22.86 0)
 		(effects
@@ -23,7 +23,7 @@
 		)
 		(uuid "045eacc2-e355-46bf-a599-8c5d82e8fc12")
 	)
-	(text "Powered from two planes' isolated 12 V aux (PH 2p). Node control lives on the planes. Spec: docs/controller-rev-d.md (delta to rev C docs/controller.md)"
+	(text "Powered from AUX_12V on the plane link header J15 (OR-ed from every core's isolated 12 V). Node control lives on the planes. Spec: docs/adr/0006-plane-link-can-fd.md (delta to rev D docs/controller-rev-d.md)"
 		(exclude_from_sim no)
 		(at 31.75 27.94 0)
 		(effects
