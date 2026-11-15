@@ -524,7 +524,6 @@ fn plan_port_vlans(
                 let Some(native) = want.native else { continue };
                 let mut vids: Vec<u16> = want.allowed.clone();
                 vids.push(native);
-                vids.push(1);
                 vids.sort_unstable();
                 vids.dedup();
                 if let Some(missing) = missing_vlan(actual, desired, &vids) {

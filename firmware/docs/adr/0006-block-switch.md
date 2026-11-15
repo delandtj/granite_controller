@@ -961,15 +961,14 @@ are read either way.
 
 Differences from component 25 as written:
 
-- **A desired trunk is judged on what it names, and that leaves a
-  hole.** The check is literal: a `node` port with `mode: "trunk"`,
-  `native: 100`, `allowed: [200]` names no VLAN 1 and passes. But
-  `forms::port_trunk` always submits VLAN 1 (the web UI checks it
-  itself), so the port does end up carrying it and the run-time report
-  lists it. A node port that must not see the management VLAN has to be
-  an access port; `docs/switch.md` says so at the trunk recipe. A
-  stricter check - "a `node` port may not be a trunk at all" - was not
-  written, because that is a new rule and not this component's.
+- **A desired trunk is judged on what it names, and the trunk write
+  now says the same.** `forms::port_trunk` used to add VLAN 1 to every
+  trunk, on the belief that the web UI insists on it, so a `node`
+  trunk that named no VLAN 1 passed the check and still ended up
+  carrying it. The bench unit accepts a trunk without VLAN 1 (port 1,
+  native 200, allowed 300 and 400, 2026-11-15), so the form and the
+  planner now put VLAN 1 on a trunk only when `native` or `allowed`
+  names it. An uplink entry must therefore name it.
 - **The event detail is a plain comma list** (`"2,3,4"`), not the range
   form `desired.storm.ports` uses: it is read by a human and parsed by
   nothing.

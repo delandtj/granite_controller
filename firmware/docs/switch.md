@@ -214,11 +214,10 @@ a desired state that makes the node ports access ports in a data VLAN:
          {"port":9,"mode":"trunk","native":1,"allowed":[1,100]}]
 ```
 
-A node on a *trunk* cannot be closed this way: the switch's web UI
-checks VLAN 1 itself on every trunk, so the controller's trunk writes
-always include it (`forms::port_trunk`) and the port stays in
-`mgmt_exposed`. A node port that must not see the management VLAN is an
-access port.
+A node on a *trunk* is closed the same way: a trunk carries its native
+VLAN and the VLANs in `allowed`, and VLAN 1 only when one of the two
+names it. So `{"port":2,"mode":"trunk","native":200,"allowed":[300,400]}`
+is a trunk without the management VLAN.
 
 ## 7. Recipes
 
@@ -264,9 +263,9 @@ it in the same change. The VLAN is deleted after the ports moved:
 "ports":[{"port":3,"mode":"trunk","native":100,"allowed":[200,300],"node":3}]
 ```
 
-The switch's UI puts VLAN 1 on every trunk, so this port shows up in
-`state.switch.mgmt_exposed` (section 6, "The management VLAN"). Use an
-access port for a node that must not reach the switch itself.
+VLAN 1 is not on this trunk because nothing names it (section 6, "The
+management VLAN"). The uplink's entry must name it, as `native` or in
+`allowed`.
 
 **Disable a port** (persistent, through config):
 

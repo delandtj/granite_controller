@@ -136,14 +136,14 @@ pub fn port_access(ports: &[u8], vid: u16) -> Form {
 
 /// `vlan.cgi?page=port_based`: make ports trunks.
 ///
-/// The native VLAN and VLAN 1 are always in the list: a trunk carries
-/// its native VLAN by definition, and the web UI checks VLAN 1 itself,
-/// so leaving it out would mean "the form said something else than the
-/// UI would have".
+/// The native VLAN is always in the list: a trunk carries its native
+/// VLAN by definition. VLAN 1 is in it only when it is named: the
+/// switch accepts a trunk without VLAN 1 (tried on the bench unit,
+/// 2026-11-15), and VLAN 1 is the management VLAN, which a node port
+/// must not carry (ADR 0006 component 25).
 pub fn port_trunk(ports: &[u8], native: u16, allowed: &[u16]) -> Form {
     let mut vids: Vec<u16> = allowed.to_vec();
     vids.push(native);
-    vids.push(1);
     vids.sort_unstable();
     vids.dedup();
     let mut form = port_fields(ports);
@@ -357,10 +357,14 @@ mod tests {
     }
 
     #[test]
-    fn a_trunk_always_carries_its_native_vlan_and_vlan_1() {
+    fn a_trunk_carries_its_native_vlan_and_vlan_1_only_when_named() {
         assert_eq!(
-            encode(&port_trunk(&[9], 100, &[200])),
-            "port8=on&vlan_type=1&vlan_trunk=100&VLAN1=on&VLAN100=on&VLAN200=on"
+            encode(&port_trunk(&[2], 200, &[300, 400])),
+            "port1=on&vlan_type=1&vlan_trunk=200&VLAN200=on&VLAN300=on&VLAN400=on"
+        );
+        assert_eq!(
+            encode(&port_trunk(&[9], 1, &[100])),
+            "port8=on&vlan_type=1&vlan_trunk=1&VLAN1=on&VLAN100=on"
         );
     }
 
