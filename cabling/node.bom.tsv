@@ -1,0 +1,8 @@
+Id	Description	Qty	Unit	Designators
+1	Cable, 4 x 28 AWG	0.3	m	W_FP
+2	Connector, DG128-5.0-02P screw terminal, unit J1 (slot A) / J51 (slot B), 2 pins	1		UNIT_19V
+3	Connector, JST GH GHR-04V-S, plug to unit J2 (slot A) / J52 (slot B), 4 pins	1		UNIT_FP
+4	Connector, Motherboard front-panel header, 2.54 mm, pinout not confirmed, 4 pins	1		NODE_FP
+5	Connector, Node 19 V input, barrel plug, or leads soldered to the DC jack pins, 2 pins	1		NODE_DC
+6	Wire, 14 AWG, BK	0.3	m	W_19V
+7	Wire, 14 AWG, RD	0.3	m	W_19V

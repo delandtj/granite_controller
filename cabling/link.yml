@@ -1,0 +1,38 @@
+# The controller's one cable to its plane. It carries the CAN FD link
+# and the controller's only supply. Source: docs/adr/0006 decisions 3,
+# 4, 8 and 9.
+metadata:
+  title: Controller link
+  notes: >-
+    A ready-made 6-way IDC ribbon (AVR-ISP type), female both ends, pin
+    n to pin n, 1 m at most. The controller end is keyed; the core end
+    is a bare plug and is not, and a reversed cable puts 12 V on CANH /
+    CANL (survived by both transceivers, the link stays down). The
+    controller terminates its end of the bus. The other end is two
+    jumper caps on JP301 of the last unit (1-2 and 3-4), none anywhere
+    else.
+
+connectors:
+  CTRL:
+    type: IDC socket 2x3, 2.54 mm
+    subtype: to controller-fd J15 (keyed box header)
+    pinlabels: [CANH, CANL, LINK_GND, LINK_GND, AUX_12V, AUX_12V]
+    notes: the controller's only power input
+  CORE:
+    type: IDC socket 2x3, 2.54 mm
+    subtype: to core J2 LINK IN (bare plug, not keyed)
+    pinlabels: [CAN_P, CAN_N, LINK_GND, LINK_GND, AUX_12V, AUX_12V]
+    notes: isolated from the 48 V bus at the core
+
+cables:
+  W_LINK:
+    gauge: 28 AWG
+    length: 0.3
+    wirecount: 6
+    color_code: IEC
+    notes: flat ribbon, 1.27 mm pitch; about 2 W on AUX_12V
+
+connections:
+  - - CTRL: [1-6]
+    - W_LINK: [1-6]
+    - CORE: [1-6]

@@ -1,0 +1,101 @@
+# Ethernet of one block. Sources: firmware/docs/adr/0006 (switch model,
+# VLAN 1 invariant, where controllers are cabled), bench reading of
+# 2026-11-15.
+metadata:
+  title: Block network
+  notes: >-
+    The switch has eight copper ports and one SFP+, and a block has
+    eight nodes, so there is no port left for the controller: it goes
+    to a management switch outside the block (10/100 only, no
+    auto-MDIX, so a straight patch cable). Node ports are access or
+    trunk ports that do not carry VLAN 1; only the uplink carries it,
+    and the upstream port's PVID puts it in the management VLAN.
+
+connectors:
+  SWITCH:
+    type: Sodola SL902-SWTGW218AS
+    subtype: block switch
+    pinlabels: [P1, P2, P3, P4, P5, P6, P7, P8, P9 SFP+]
+    notes: 2.5G copper, 10G SFP+
+  N1: &node
+    type: RJ45
+    subtype: node, 2.5G
+    pinlabels: [ETH]
+  N2: *node
+  N3: *node
+  N4: *node
+  N5: *node
+  N6: *node
+  N7: *node
+  N8: *node
+  TOR:
+    type: SFP+ port
+    subtype: top-of-rack switch
+    pinlabels: [10G]
+    notes: PVID = management VLAN, data VLANs tagged
+  CTRL:
+    type: RJ45
+    subtype: controller-fd J1, 10/100
+    pinlabels: [ETH]
+  MGMT:
+    type: RJ45
+    subtype: management switch port
+    pinlabels: [ETH]
+    notes: access port in the management VLAN
+
+cables:
+  P1: &patch
+    type: Cat6 patch
+    length: 0.3
+    wirecount: 1
+    colors: [BU]
+  P2: *patch
+  P3: *patch
+  P4: *patch
+  P5: *patch
+  P6: *patch
+  P7: *patch
+  P8: *patch
+  UP:
+    type: SFP+ DAC, 10G
+    length: 3
+    wirecount: 1
+    colors: [BK]
+    notes: or two SFP+ modules and fibre
+  PC:
+    <<: *patch
+    length: 3
+    colors: [GY]
+    notes: straight, not crossover
+
+connections:
+  - - N1: [1]
+    - P1: [1]
+    - SWITCH: [1]
+  - - N2: [1]
+    - P2: [1]
+    - SWITCH: [2]
+  - - N3: [1]
+    - P3: [1]
+    - SWITCH: [3]
+  - - N4: [1]
+    - P4: [1]
+    - SWITCH: [4]
+  - - N5: [1]
+    - P5: [1]
+    - SWITCH: [5]
+  - - N6: [1]
+    - P6: [1]
+    - SWITCH: [6]
+  - - N7: [1]
+    - P7: [1]
+    - SWITCH: [7]
+  - - N8: [1]
+    - P8: [1]
+    - SWITCH: [8]
+  - - SWITCH: [9]
+    - UP: [1]
+    - TOR: [1]
+  - - CTRL: [1]
+    - PC: [1]
+    - MGMT: [1]

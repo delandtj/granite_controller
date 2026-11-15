@@ -1,0 +1,55 @@
+# The two cables from a unit slot to its node. Eight sets per block:
+# slot A uses J1 / J2, slot B uses J51 / J52 of the same unit.
+# Sources: docs/adr/0004 decision 1a (connectors), docs/pm-interface.md
+# (19 V, 13.2 A), site/src/reference/pinouts.md (front panel).
+metadata:
+  title: Node cables (one slot)
+  notes: >-
+    The front-panel cable has no ground wire. The photoMOS outputs close
+    PWR_SW and RST_SW to the slot's ground, which reaches the node over
+    the 19 V cable, so presses only work with the power cable connected.
+    The motherboard's front-panel pinout and its power LED drive are not
+    confirmed.
+
+connectors:
+  UNIT_19V:
+    type: DG128-5.0-02P screw terminal
+    subtype: unit J1 (slot A) / J51 (slot B)
+    pinlabels: [GND, +19V]
+    notes: 12-24 AWG, 15 A
+  NODE_DC:
+    type: Node 19 V input
+    subtype: barrel plug, or leads soldered to the DC jack pins
+    pinlabels: [+19V, GND]
+    notes: jack DC-045D on the AXB35; how the cable ends is open
+  UNIT_FP:
+    type: JST GH GHR-04V-S
+    subtype: plug to unit J2 (slot A) / J52 (slot B)
+    pinlabels: [PWR_SW, RST_SW, PLED+, PLED-]
+    notes: crimp SSHL-002T-P0.2, latching
+  NODE_FP:
+    type: Motherboard front-panel header
+    subtype: 2.54 mm, pinout not confirmed
+    pinlabels: [PWR_SW, RST_SW, PLED+, PLED-]
+    notes: the header's ground pins stay open
+
+cables:
+  W_19V:
+    category: bundle
+    gauge: 14 AWG
+    length: 0.3
+    colors: [RD, BK]
+    notes: 13.2 A continuous at 250 W, about 8.7 A at 165 W
+  W_FP:
+    gauge: 28 AWG
+    length: 0.3
+    colors: [WH, GN, YE, BK]
+    notes: PLED is polarised
+
+connections:
+  - - UNIT_19V: [2, 1]
+    - W_19V: [1, 2]
+    - NODE_DC: [1, 2]
+  - - UNIT_FP: [1-4]
+    - W_FP: [1-4]
+    - NODE_FP: [1-4]

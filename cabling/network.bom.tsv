@@ -1,0 +1,8 @@
+Id	Description	Qty	Unit	Designators
+1	Cable, Cat6 patch, 1 wires	5.4	m	P1, P2, P3, P4, P5, P6, P7, P8, PC
+2	Cable, SFP+ DAC, 10G, 1 wires	3	m	UP
+3	Connector, RJ45, controller-fd J1, 10/100, 1 pins	1		CTRL
+4	Connector, RJ45, management switch port, 1 pins	1		MGMT
+5	Connector, RJ45, node, 2.5G, 1 pins	8		N1, N2, N3, N4, N5, N6, N7, N8
+6	Connector, SFP+ port, top-of-rack switch, 1 pins	1		TOR
+7	Connector, Sodola SL902-SWTGW218AS, block switch, 9 pins	1		SWITCH

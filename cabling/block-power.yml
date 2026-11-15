@@ -1,0 +1,120 @@
+# 48 V power wiring of one block: 8 nodes, one plane (core + 4 units),
+# one block switch. Sources: docs/adr/0005 (unit XT60, core XT30, no
+# VBUS in the chain, protection options), docs/adr/0008 (switch supply,
+# proposed). Lengths are placeholders until the block is laid out.
+metadata:
+  title: Block 48 V power
+  notes: >-
+    One feed per block from outside the fluid, split to the four units,
+    the core and the switch supply inside it. The breaker and the feed
+    size are the "per frame" option of ADR 0005, discussed and not
+    decided. The 48 V bus is earthed at one point, at the supply.
+
+connectors:
+  PSU:
+    type: 48 V supply bus
+    subtype: outside the fluid
+    pinlabels: [+48V, GND]
+    notes: 48-60 V, earthed here and nowhere else
+  Q1:
+    type: DC breaker 63 A
+    subtype: 80 V DC or more, DIN rail
+    pinlabels: [LINE, LOAD]
+    notes: outside the fluid, one per block (not decided)
+  DIST:
+    type: Distribution block
+    subtype: 2 pole, 6 taps, in the fluid
+    pinlabels: [+48V, GND]
+    notes: part not chosen
+  U1: &xt60
+    type: XT60H-F
+    subtype: cable plug to unit J201 (XT60PW-M)
+    pinlabels: [GND, VIN]
+    notes: keyed; hot-swap limit 18.3 A
+  U2: *xt60
+  U3: *xt60
+  U4: *xt60
+  CORE: &xt30
+    type: XT30U-F
+    subtype: cable plug to core J1 (XT30PW-M)
+    pinlabels: [GND, VIN]
+    notes: keyed, no fuse on the board
+  SW12_IN:
+    <<: *xt30
+    subtype: cable plug to pp-48-sw12 J1 (proposed board)
+    notes: 0.56-0.88 A at 48 V
+  SW12_OUT:
+    type: Micro-Fit 3.0 2 pin
+    subtype: plug to pp-48-sw12 J2 (proposed board)
+    pinlabels: [+12V, 0V]
+    notes: floating output; pin order not fixed yet
+  SWITCH:
+    type: DC barrel plug
+    subtype: to the Sodola SL902 12 V inlet
+    pinlabels: [+12V, 0V]
+    notes: plug size not measured; switch budget 30 W
+
+cables:
+  W1:
+    category: bundle
+    gauge: 16 mm2
+    length: 0.3
+    colors: [RD]
+    notes: supply to breaker
+  W2:
+    category: bundle
+    gauge: 16 mm2
+    length: 3
+    colors: [RD, BK]
+    notes: block feed through the tank wall, about 44 A
+  W3: &unitfeed
+    category: bundle
+    gauge: 4 mm2
+    length: 0.4
+    colors: [RD, BK]
+    notes: 14 A continuous; check 4 mm2 fits the XT60 cup
+  W4: *unitfeed
+  W5: *unitfeed
+  W6: *unitfeed
+  W7: &small
+    category: bundle
+    gauge: 0.75 mm2
+    length: 0.4
+    colors: [RD, BK]
+  W8: *small
+  W9:
+    <<: *small
+    length: 0.3
+    notes: 12 V, up to 2.5 A
+
+connections:
+  - - PSU: [1]
+    - W1: [1]
+    - Q1: [1]
+  - - Q1: [2]
+    - W2: [1]
+    - DIST: [1]
+  - - PSU: [2]
+    - W2: [2]
+    - DIST: [2]
+  - - DIST: [1, 2]
+    - W3: [1, 2]
+    - U1: [2, 1]
+  - - DIST: [1, 2]
+    - W4: [1, 2]
+    - U2: [2, 1]
+  - - DIST: [1, 2]
+    - W5: [1, 2]
+    - U3: [2, 1]
+  - - DIST: [1, 2]
+    - W6: [1, 2]
+    - U4: [2, 1]
+  - - DIST: [1, 2]
+    - W7: [1, 2]
+    - CORE: [2, 1]
+  - - DIST: [1, 2]
+    - W8: [1, 2]
+    - SW12_IN: [2, 1]
+  - - SW12_OUT: [1, 2]
+    - W9: [1, 2]
+    - SWITCH: [1, 2]
