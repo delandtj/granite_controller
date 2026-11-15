@@ -1,0 +1,101 @@
+# Power distribution of one container: 2 pods of 48 nodes, 3 GPU nodes,
+# 4 storage nodes, the switches. Feed 3 x 400 V + N, 63 A per phase.
+# Sources: docs/container-power.md (budget, assumptions), docs/adr/0005
+# (block feed), cabling/block-power.yml (what hangs on a block breaker).
+# Sizes and lengths are placeholders until the container is laid out.
+metadata:
+  title: Container power
+  notes: >-
+    Each pod has its own 48 V bus, fed by a rectifier shelf whose
+    modules are spread evenly over the three phases, so the pod loads
+    the phases equally whatever nodes are on. The 230 V loads (GPU,
+    storage, switches) hang on one three-phase rack PDU and are spread
+    by hand. Rectifiers, PDU and cooling are not chosen.
+
+connectors:
+  FEED:
+    type: Container feed
+    subtype: 3 x 400 V + N + PE, 63 A per phase
+    pinlabels: [L1, L2, L3, N, PE]
+  BOARD:
+    type: Distribution board
+    subtype: main switch 63 A 4 pole, one 3 phase breaker per branch
+    pinlabels: [L1, L2, L3, N, PE]
+    notes: branches - pod A 32 A, pod B 32 A, rack PDU 32 A, cooling (not sized)
+  RECT_A: &rect
+    type: Rectifier shelf, pod A
+    subtype: 230 V modules in multiples of 3, one third per phase
+    pinlabels: [L1, L2, L3, N, PE, +48V, GND]
+    notes: 13.5 kW in, 12.8 kW out at most; 19.6 A per phase; GND earthed here
+  RECT_B:
+    <<: *rect
+    type: Rectifier shelf, pod B
+  BUS_A: &bus
+    type: 48 V bus, pod A
+    subtype: bar with 6 block breakers of 63 A DC
+    pinlabels: [+48V, GND]
+    notes: each breaker feeds one block (cabling/block-power.yml, PSU and Q1)
+  BUS_B:
+    <<: *bus
+    type: 48 V bus, pod B
+  PDU:
+    type: Rack PDU
+    subtype: 3 phase, 32 A, outlets grouped per phase
+    pinlabels: [L1, L2, L3, N, PE]
+    notes: 3 GPU nodes, 4 storage nodes, switches; loads not known yet
+  COOL:
+    type: Cooling
+    subtype: pumps and dry cooler
+    pinlabels: [L1, L2, L3, N, PE]
+    notes: not sized, shares the 63 A
+
+cables:
+  W_FEED:
+    gauge: 16 mm2
+    length: 5
+    wirecount: 5
+    colors: [BN, BK, GY, BU, GNYE]
+    notes: 63 A per phase
+  W_RA: &branch
+    gauge: 6 mm2
+    length: 3
+    wirecount: 5
+    colors: [BN, BK, GY, BU, GNYE]
+    notes: 32 A breaker, 19.6 A per phase at most
+  W_RB: *branch
+  W_PDU:
+    <<: *branch
+    notes: 32 A breaker, load not known yet
+  W_COOL:
+    <<: *branch
+    notes: not sized
+  W_DCA: &dc
+    category: bundle
+    gauge: 95 mm2
+    length: 1
+    colors: [RD, BK]
+    notes: about 270 A at 48 V; shorter is better, or bolt the shelf to the bar
+  W_DCB: *dc
+
+connections:
+  - - FEED: [1-5]
+    - W_FEED: [1-5]
+    - BOARD: [1-5]
+  - - BOARD: [1-5]
+    - W_RA: [1-5]
+    - RECT_A: [1-5]
+  - - BOARD: [1-5]
+    - W_RB: [1-5]
+    - RECT_B: [1-5]
+  - - BOARD: [1-5]
+    - W_PDU: [1-5]
+    - PDU: [1-5]
+  - - BOARD: [1-5]
+    - W_COOL: [1-5]
+    - COOL: [1-5]
+  - - RECT_A: [6, 7]
+    - W_DCA: [1, 2]
+    - BUS_A: [1, 2]
+  - - RECT_B: [6, 7]
+    - W_DCB: [1, 2]
+    - BUS_B: [1, 2]

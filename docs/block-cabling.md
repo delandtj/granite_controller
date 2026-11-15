@@ -23,6 +23,9 @@ uvx wireviz -f st *.yml
 | `cabling/link.yml` | the controller's ribbon to the core (CAN FD and its 12 V) |
 | `cabling/network.yml` | node patch cables, the switch uplink, the controller's port |
 
+The level above, the container's three-phase feed and the 48 V bus per
+pod, is in `docs/container-power.md`.
+
 ## What is cabled and what is not
 
 Board to board, no cable (docs/adr/0005, 0006):

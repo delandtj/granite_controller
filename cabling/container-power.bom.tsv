@@ -1,0 +1,13 @@
+Id	Description	Qty	Unit	Designators
+1	Cable, 5 x 16 mm²	5	m	W_FEED
+2	Cable, 5 x 6 mm²	12	m	W_COOL, W_PDU, W_RA, W_RB
+3	Connector, 48 V bus, pod A, bar with 6 block breakers of 63 A DC, 2 pins	1		BUS_A
+4	Connector, 48 V bus, pod B, bar with 6 block breakers of 63 A DC, 2 pins	1		BUS_B
+5	Connector, Container feed, 3 x 400 V + N + PE, 63 A per phase, 5 pins	1		FEED
+6	Connector, Cooling, pumps and dry cooler, 5 pins	1		COOL
+7	Connector, Distribution board, main switch 63 A 4 pole, one 3 phase breaker per branch, 5 pins	1		BOARD
+8	Connector, Rack PDU, 3 phase, 32 A, outlets grouped per phase, 5 pins	1		PDU
+9	Connector, Rectifier shelf, pod A, 230 V modules in multiples of 3, one third per phase, 7 pins	1		RECT_A
+10	Connector, Rectifier shelf, pod B, 230 V modules in multiples of 3, one third per phase, 7 pins	1		RECT_B
+11	Wire, 95 mm², BK	2	m	W_DCA, W_DCB
+12	Wire, 95 mm², RD	2	m	W_DCA, W_DCB
