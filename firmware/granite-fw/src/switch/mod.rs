@@ -1,12 +1,24 @@
-//! The block-switch worker (ADR 0006 components 17 and 18).
+//! The block-switch worker (ADR 0006 components 17, 18 and 26).
 //!
-//! One thread owns the client and therefore every byte that goes to the
+//! One thread owns the clients and therefore every byte that goes to a
 //! switch. It talks to the rest of the firmware the way the MQTT worker
 //! does: it reads the live configuration, writes the `switch` part of
 //! the [`Observed`] snapshot, publishes events on the bus, and takes
 //! requests on a channel. It never touches the actuator, the plane link
 //! or the dispatcher, and it is the only thread that blocks on the
 //! switch's slow web server (400 ms a page).
+//!
+//! ### Two switches, one thread
+//!
+//! A controller that serves two blocks has two block switches, the
+//! `switch` and `switch2` sections (ADR 0006 component 26). The thread
+//! holds one [`Unit`] per switch and serves them in turn, so requests to
+//! the two never overlap and at most one page is in memory. A switch
+//! that does not answer delays the other by one request timeout per
+//! attempt; the backoff spaces the attempts. Everything per switch is
+//! per switch: client, profile, pairing, own port, drift, snapshot,
+//! reachability, password. The faults are shared, raised while either
+//! switch has the condition and cleared when neither has.
 //!
 //! ### The schedule
 //!
@@ -21,7 +33,7 @@
 //!
 //! ### Reconcile, and the invariant
 //!
-//! A staged `switch` section is applied **without saving**: the switch's
+//! A staged switch section is applied **without saving**: the switch's
 //! flash keeps the last confirmed configuration, so a reboot of the
 //! switch is always a valid way back. On a confirm the worker saves; on
 //! a revert it plans from the current state back to the snapshot it took
@@ -42,7 +54,7 @@
 //!
 //! ### Read-only by default
 //!
-//! With `switch.manage` false the worker polls and publishes and writes
+//! With `manage` false the worker polls and publishes and writes
 //! nothing: the only POSTs it sends are the login and the MAC table's
 //! paging, which moves the table's view and no configuration.
 
@@ -54,8 +66,8 @@ use std::sync::{Arc, Mutex, RwLock};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
-use granite_core::config::{Config, SwitchCfg};
-use granite_core::dispatch::SwitchRequest;
+use granite_core::config::{Config, SwitchCfg, SwitchId};
+use granite_core::dispatch::{SwitchRequest, SwitchVerb};
 use granite_core::modbus_map::fault_bits;
 use granite_core::msg::{Event, switch_event};
 use granite_core::observed::Observed;
@@ -86,32 +98,45 @@ const MAC_PAGES: u32 = 10;
 const THREAD: &core::ffi::CStr = c"switch";
 const STACK: usize = 10_240;
 
-/// True while the switch answers, for anything that only wants the bit.
-static REACHABLE: AtomicBool = AtomicBool::new(false);
+/// True while a switch answers, per switch, for anything that only
+/// wants the bit.
+static REACHABLE: [AtomicBool; 2] = [AtomicBool::new(false), AtomicBool::new(false)];
 
-/// True while a switch is configured at all.
-static CONFIGURED: AtomicBool = AtomicBool::new(false);
+/// True while a switch is configured at all, per switch.
+static CONFIGURED: [AtomicBool; 2] = [AtomicBool::new(false), AtomicBool::new(false)];
+
+/// What each switch would set in the Modbus fault word on its own. The
+/// word itself gets the union, so a shared fault bit is raised while
+/// either switch has the condition and cleared when neither has (ADR
+/// 0006 component 26).
+static FAULT_SHADOW: [AtomicU16; 2] = [AtomicU16::new(0), AtomicU16::new(0)];
+
+/// The fault bits the two switches share.
+const SWITCH_FAULTS: u16 = fault_bits::SWITCH_UNREACHABLE | fault_bits::SWITCH_UNSUPPORTED;
 
 /// Where a request to the worker goes. Set once, when the worker
 /// starts: the dispatcher's side effect, the HTTP API's confirm and the
 /// config watcher's revert all reach the worker through this and none
-/// of them has a handle.
+/// of them has a handle. The request itself says which switch it is for.
 static REQUESTS: Mutex<Option<Sender<SwitchRequest>>> = Mutex::new(None);
 
-/// The counters payload waiting to be published, if any. The MQTT
+/// The counters payload waiting to be published, per switch. The MQTT
 /// worker owns the broker session, so the switch worker leaves the
 /// payload here and MQTT picks it up on its next pass (ADR 0006
-/// component 21, `.../switch/counters`).
-static COUNTERS: Mutex<Option<String>> = Mutex::new(None);
+/// components 21 and 26, `.../switch/counters` and
+/// `.../switch2/counters`).
+static COUNTERS: [Mutex<Option<String>>; 2] = [Mutex::new(None), Mutex::new(None)];
 
-/// True while the switch is reachable (false when none is configured).
-pub fn reachable() -> bool {
-    CONFIGURED.load(Ordering::Relaxed) && REACHABLE.load(Ordering::Relaxed)
+/// True while this switch is reachable (false when it is not
+/// configured).
+pub fn reachable(which: SwitchId) -> bool {
+    let i = which.index();
+    CONFIGURED[i].load(Ordering::Relaxed) && REACHABLE[i].load(Ordering::Relaxed)
 }
 
-/// True while a switch is configured and polled.
-pub fn configured() -> bool {
-    CONFIGURED.load(Ordering::Relaxed)
+/// True while this switch is configured and polled.
+pub fn configured(which: SwitchId) -> bool {
+    CONFIGURED[which.index()].load(Ordering::Relaxed)
 }
 
 /// Hand a request to the worker. False when no worker is running, which
@@ -126,28 +151,32 @@ pub fn submit(request: SwitchRequest) -> bool {
     }
 }
 
-/// Take the counters payload the worker last built, if it has not been
-/// published yet. Called by the MQTT worker.
-pub fn take_counters() -> Option<String> {
-    COUNTERS.lock().ok().and_then(|mut slot| slot.take())
+/// Take the counters payload the worker last built for this switch, if
+/// it has not been published yet. Called by the MQTT worker.
+pub fn take_counters(which: SwitchId) -> Option<String> {
+    COUNTERS[which.index()]
+        .lock()
+        .ok()
+        .and_then(|mut slot| slot.take())
 }
 
 /// What the worker is handed. Mirrors `mqtt::MqttCtx`: closures for the
 /// live configuration and the secrets, the shared snapshot, the event
-/// bus and the fault word.
+/// bus and the fault word. Shared by the two per-switch units, so the
+/// closures have to be callable from the worker thread.
 pub struct SwitchCtx {
     /// The live configuration, re-read every tick that needs it.
-    pub config: Box<dyn Fn() -> Config + Send>,
-    /// The switch password out of the secrets namespace.
-    pub password: Box<dyn Fn() -> String + Send>,
-    /// The snapshot the worker writes `switch` into.
+    pub config: Box<dyn Fn() -> Config + Send + Sync>,
+    /// The login password of one switch out of the secrets namespace.
+    pub password: Box<dyn Fn(SwitchId) -> String + Send + Sync>,
+    /// The snapshot the worker writes `switch` and `switch2` into.
     pub observed: Arc<RwLock<Observed>>,
     /// Where events go.
-    pub events: Box<dyn Fn(Event) + Send>,
+    pub events: Box<dyn Fn(Event) + Send + Sync>,
     /// The Modbus fault word.
     pub faults: Arc<AtomicU16>,
     /// The controller's own Ethernet MAC, `aa:bb:cc:dd:ee:ff`. The port
-    /// it shows up on in the switch's table is the one the controller
+    /// it shows up on in a switch's table is the one the controller
     /// is reached through, and therefore protected.
     pub own_mac: String,
 }
@@ -181,8 +210,8 @@ impl Drop for SwitchHandle {
 /// Start the worker.
 ///
 /// Started whatever the configuration says, like the MQTT worker: it
-/// idles on the configuration and starts polling as soon as the section
-/// says it may, so enabling the switch needs no reboot.
+/// idles on the configuration and starts polling as soon as a section
+/// says it may, so enabling a switch needs no reboot.
 pub fn start(ctx: SwitchCtx) -> anyhow::Result<SwitchHandle> {
     let (tx, rx) = channel::<SwitchRequest>();
     if let Ok(mut slot) = REQUESTS.lock() {
@@ -191,7 +220,7 @@ pub fn start(ctx: SwitchCtx) -> anyhow::Result<SwitchHandle> {
     let stop = Arc::new(AtomicBool::new(false));
     let worker_stop = Arc::clone(&stop);
     let join = crate::platform::spawn(THREAD, STACK, move || {
-        Worker::new(ctx).run(&rx, &worker_stop);
+        Worker::new(Arc::new(ctx)).run(&rx, &worker_stop);
     })?;
     Ok(SwitchHandle {
         stop,
@@ -199,9 +228,62 @@ pub fn start(ctx: SwitchCtx) -> anyhow::Result<SwitchHandle> {
     })
 }
 
-/// Everything the worker remembers between ticks.
+/// The thread: one unit per switch, served in turn.
 struct Worker {
-    ctx: SwitchCtx,
+    units: [Unit; 2],
+}
+
+impl Worker {
+    fn new(ctx: Arc<SwitchCtx>) -> Self {
+        Worker {
+            units: [
+                Unit::new(Arc::clone(&ctx), SwitchId::One),
+                Unit::new(ctx, SwitchId::Two),
+            ],
+        }
+    }
+
+    fn run(mut self, rx: &Receiver<SwitchRequest>, stop: &AtomicBool) {
+        crate::platform::watch_this_thread("switch");
+        log::info!("switch worker started");
+        while !stop.load(Ordering::Relaxed) {
+            // Once per loop, as before: a request step feeds it again
+            // from inside the client (ADR 0006 component 26 keeps the
+            // watchdog as it was).
+            crate::platform::feed_task_watchdog();
+            for unit in self.units.iter_mut() {
+                unit.refresh_config();
+            }
+            // Requests are taken even while a switch is not polled,
+            // so a command gets an answer either way.
+            loop {
+                match rx.try_recv() {
+                    Ok(request) => {
+                        self.units[request.which.index()].handle(request.verb);
+                    }
+                    Err(TryRecvError::Empty) => break,
+                    Err(TryRecvError::Disconnected) => return,
+                }
+            }
+            // In turn: the second switch's pass starts when the first
+            // one's is done, so two slow web servers never overlap.
+            for unit in self.units.iter_mut() {
+                if unit.cfg.should_poll() {
+                    unit.poll();
+                }
+            }
+            thread::sleep(TICK);
+        }
+        log::info!("switch worker stopped");
+    }
+}
+
+/// Everything the worker remembers about one switch between ticks.
+struct Unit {
+    ctx: Arc<SwitchCtx>,
+    /// Which switch this is: the section it reads, the log prefix, the
+    /// slot in `state` and the number its events carry.
+    which: SwitchId,
     cfg: SwitchCfg,
     client: Option<SwitchClient>,
     /// What the switch last read as.
@@ -248,11 +330,12 @@ struct Worker {
     backoff_s: u64,
 }
 
-impl Worker {
-    fn new(ctx: SwitchCtx) -> Self {
-        let cfg = (ctx.config)().switch;
-        Worker {
+impl Unit {
+    fn new(ctx: Arc<SwitchCtx>, which: SwitchId) -> Self {
+        let cfg = (ctx.config)().switch_cfg(which).clone();
+        Unit {
             ctx,
+            which,
             cfg,
             client: None,
             state: SwitchState::default(),
@@ -281,40 +364,24 @@ impl Worker {
         }
     }
 
-    fn run(mut self, rx: &Receiver<SwitchRequest>, stop: &AtomicBool) {
-        crate::platform::watch_this_thread("switch");
-        log::info!("switch worker started");
-        while !stop.load(Ordering::Relaxed) {
-            crate::platform::feed_task_watchdog();
-            self.refresh_config();
-            // Requests are taken even while the switch is not polled,
-            // so a command gets an answer either way.
-            loop {
-                match rx.try_recv() {
-                    Ok(request) => self.handle(request),
-                    Err(TryRecvError::Empty) => break,
-                    Err(TryRecvError::Disconnected) => return,
-                }
-            }
-            if self.cfg.should_poll() {
-                self.poll();
-            }
-            thread::sleep(TICK);
-        }
-        log::info!("switch worker stopped");
+    /// `switch` or `switch2`: what the log lines say, and the name of
+    /// the section this unit reads.
+    fn tag(&self) -> &'static str {
+        self.which.key()
     }
 
     /// Pick up a configuration change. A new host or login means a new
     /// client; turning the section off drops the client and the state.
     fn refresh_config(&mut self) {
-        let next = (self.ctx.config)().switch;
-        let password = (self.ctx.password)();
+        let next = (self.ctx.config)().switch_cfg(self.which).clone();
+        let password = (self.ctx.password)(self.which);
         let changed = next != self.cfg;
         self.cfg = next;
-        CONFIGURED.store(self.cfg.should_poll(), Ordering::Relaxed);
+        CONFIGURED[self.which.index()].store(self.cfg.should_poll(), Ordering::Relaxed);
+        let tag = self.tag();
         if !self.cfg.should_poll() {
             if self.client.is_some() {
-                log::info!("switch: the section is off; dropping the client");
+                log::info!("{tag}: the section is off; dropping the client");
                 self.client = None;
                 self.state = SwitchState::default();
                 self.set_reachable(false);
@@ -329,7 +396,7 @@ impl Worker {
             None => true,
         };
         if fresh {
-            log::info!("switch: talking to {host} as {user}");
+            log::info!("{tag}: talking to {host} as {user}");
             self.client = Some(SwitchClient::new(&host, &user, &password));
             self.state = SwitchState::default();
             self.last_stats = None;
@@ -434,14 +501,15 @@ impl Worker {
         if !self.reachable {
             self.set_reachable(true);
             self.event("switch_reachable", None, None);
-            log::info!("switch: answering again");
+            log::info!("{}: answering again", self.tag());
         }
     }
 
     fn note_failure(&mut self, error: &ClientError) {
         self.fails += 1;
         log::warn!(
-            "switch: poll failed ({error}), {} in a row",
+            "{}: poll failed ({error}), {} in a row",
+            self.tag(),
             self.fails
         );
         if error.is_unreachable() || matches!(error, ClientError::Auth) {
@@ -450,35 +518,50 @@ impl Worker {
         }
         if self.fails >= UNREACHABLE_AFTER && self.reachable {
             self.set_reachable(false);
-            self.event(
-                "switch_unreachable",
-                None,
-                Some(format!("{error}")),
-            );
+            self.event("switch_unreachable", None, Some(format!("{error}")));
             self.publish_obs(None);
         }
         if matches!(error, ClientError::Page(_)) {
             // A page that does not parse means the firmware is not one
             // this image knows, which is a write-blocking fault.
             self.fw_unknown = true;
-            self.ctx
-                .faults
-                .fetch_or(fault_bits::SWITCH_UNSUPPORTED, Ordering::Relaxed);
+            self.raise(fault_bits::SWITCH_UNSUPPORTED);
         }
     }
 
     fn set_reachable(&mut self, up: bool) {
         self.reachable = up;
-        REACHABLE.store(up, Ordering::Relaxed);
+        REACHABLE[self.which.index()].store(up, Ordering::Relaxed);
         if up {
-            self.ctx
-                .faults
-                .fetch_and(!fault_bits::SWITCH_UNREACHABLE, Ordering::Relaxed);
+            self.lower(fault_bits::SWITCH_UNREACHABLE);
         } else {
-            self.ctx
-                .faults
-                .fetch_or(fault_bits::SWITCH_UNREACHABLE, Ordering::Relaxed);
+            self.raise(fault_bits::SWITCH_UNREACHABLE);
         }
+    }
+
+    /// Note that this switch has a fault condition, and put the union
+    /// of the two switches into the Modbus word (ADR 0006 component
+    /// 26: raised while either has it).
+    fn raise(&self, bit: u16) {
+        FAULT_SHADOW[self.which.index()].fetch_or(bit, Ordering::Relaxed);
+        self.publish_faults();
+    }
+
+    /// Note that this switch no longer has the condition. The bit goes
+    /// out only when the other switch has not got it either.
+    fn lower(&self, bit: u16) {
+        FAULT_SHADOW[self.which.index()].fetch_and(!bit, Ordering::Relaxed);
+        self.publish_faults();
+    }
+
+    fn publish_faults(&self) {
+        let union = FAULT_SHADOW[0].load(Ordering::Relaxed) | FAULT_SHADOW[1].load(Ordering::Relaxed);
+        self.ctx
+            .faults
+            .fetch_or(union & SWITCH_FAULTS, Ordering::Relaxed);
+        self.ctx
+            .faults
+            .fetch_and(!(SWITCH_FAULTS & !union), Ordering::Relaxed);
     }
 
     /// Resolve the (model, firmware) pair against the profile table and
@@ -488,10 +571,11 @@ impl Worker {
     /// row both keep `switch_fw_unknown` and the `switch_unsupported`
     /// fault bit; the log line says which of the two it is.
     fn resolve_profile(&mut self, model: &str, firmware: &str) {
+        let tag = self.tag();
         let found = profile::lookup(model, firmware);
         let layout: &'static Layout = found.map_or_else(Layout::widest, |p| &p.layout);
         if !core::ptr::eq(layout, self.layout) {
-            log::info!("switch: reading it as a {} port unit", layout.ports);
+            log::info!("{tag}: reading it as a {} port unit", layout.ports);
             self.uplink_warned = None;
         }
         self.layout = layout;
@@ -509,12 +593,12 @@ impl Worker {
         if unknown {
             match found {
                 Some(row) => log::warn!(
-                    "switch: {model} {firmware} is a {} profile in this image; monitoring \
+                    "{tag}: {model} {firmware} is a {} profile in this image; monitoring \
                      continues, writes are refused",
                     row.tier.as_str()
                 ),
                 None => log::warn!(
-                    "switch: {model} {firmware} is not a switch this image was tested against; \
+                    "{tag}: {model} {firmware} is not a switch this image was tested against; \
                      monitoring continues, writes are refused"
                 ),
             }
@@ -523,22 +607,18 @@ impl Worker {
                 None,
                 Some(format!("{model} {firmware}")),
             );
-            self.ctx
-                .faults
-                .fetch_or(fault_bits::SWITCH_UNSUPPORTED, Ordering::Relaxed);
+            self.raise(fault_bits::SWITCH_UNSUPPORTED);
         } else {
-            log::info!("switch: {model} {firmware} is a verified profile; writes are allowed");
+            log::info!("{tag}: {model} {firmware} is a verified profile; writes are allowed");
             if !self.mismatch {
-                self.ctx
-                    .faults
-                    .fetch_and(!fault_bits::SWITCH_UNSUPPORTED, Ordering::Relaxed);
+                self.lower(fault_bits::SWITCH_UNSUPPORTED);
             }
         }
         self.check_uplink();
     }
 
-    /// Say once when `switch.uplink_port` names a port this unit has
-    /// not got: it then counts as "no uplink declared" and protects
+    /// Say once when the section's `uplink_port` names a port this unit
+    /// has not got: it then counts as "no uplink declared" and protects
     /// nothing (ADR 0006 component 24).
     fn check_uplink(&mut self) {
         let Some(port) = self.cfg.uplink() else {
@@ -553,15 +633,17 @@ impl Worker {
         }
         self.uplink_warned = Some(port);
         log::warn!(
-            "switch: switch.uplink_port is {port} but this switch has {} port(s), so no uplink \
+            "{tag}: {tag}.uplink_port is {port} but this switch has {} port(s), so no uplink \
              is declared and only the controller's own port is protected",
-            self.layout.ports
+            self.layout.ports,
+            tag = self.tag()
         );
     }
 
     /// `info.cgi`: the pairing check, the firmware check and the
     /// reboot check.
     fn read_health(&mut self) -> Result<(), ClientError> {
+        let tag = self.tag();
         let Some(client) = self.client.as_mut() else {
             return Ok(());
         };
@@ -575,7 +657,7 @@ impl Worker {
             self.mismatch = wrong;
             if wrong {
                 log::error!(
-                    "switch: {} answers with MAC {} but switch.mac says {want}; talking to \
+                    "{tag}: {} answers with MAC {} but {tag}.mac says {want}; talking to \
                      nothing but info.cgi",
                     self.cfg.host,
                     info.mac
@@ -585,13 +667,9 @@ impl Worker {
                     None,
                     Some(format!("MAC {} is not {want}", info.mac)),
                 );
-                self.ctx
-                    .faults
-                    .fetch_or(fault_bits::SWITCH_UNSUPPORTED, Ordering::Relaxed);
+                self.raise(fault_bits::SWITCH_UNSUPPORTED);
             } else {
-                self.ctx
-                    .faults
-                    .fetch_and(!fault_bits::SWITCH_UNSUPPORTED, Ordering::Relaxed);
+                self.lower(fault_bits::SWITCH_UNSUPPORTED);
             }
         }
 
@@ -604,7 +682,7 @@ impl Worker {
         // everything that was applied but not saved.
         if self.last_uptime_s != 0 && info.uptime_s + 5 < self.last_uptime_s {
             log::warn!(
-                "switch: uptime went from {} s to {} s, so it rebooted",
+                "{tag}: uptime went from {} s to {} s, so it rebooted",
                 self.last_uptime_s,
                 info.uptime_s
             );
@@ -643,6 +721,7 @@ impl Worker {
     /// `port.cgi?page=stats`: link state and the counters, plus the
     /// `switch_port` events a change produces.
     fn read_stats(&mut self) -> Result<(), ClientError> {
+        let tag = self.tag();
         let Some(client) = self.client.as_mut() else {
             return Ok(());
         };
@@ -655,7 +734,7 @@ impl Worker {
         if let Some((previous, _)) = self.last_stats.as_ref()
             && counters::counters_went_backwards(previous, &stats)
         {
-            log::info!("switch: the counters were reset");
+            log::info!("{tag}: the counters were reset");
         }
 
         let mut link_changed = false;
@@ -677,7 +756,7 @@ impl Worker {
             if let Some(client) = self.client.as_mut() {
                 match client.read_ports() {
                     Ok(ports) => self.state.ports = ports,
-                    Err(e) => log::warn!("switch: the port page did not read back: {e}"),
+                    Err(e) => log::warn!("{tag}: the port page did not read back: {e}"),
                 }
             }
             for port in self.state.stats.clone() {
@@ -712,6 +791,7 @@ impl Worker {
     /// The MAC table walk, which is also how the controller finds its
     /// own port and therefore what is protected.
     fn read_macs(&mut self) -> Result<(), ClientError> {
+        let tag = self.tag();
         let Some(client) = self.client.as_mut() else {
             return Ok(());
         };
@@ -721,11 +801,11 @@ impl Worker {
         if found != self.own_port {
             match found {
                 Some(port) => log::info!(
-                    "switch: the controller's own MAC {own_mac} is on port {port}, which is \
+                    "{tag}: the controller's own MAC {own_mac} is on port {port}, which is \
                      protected from VLAN and admin-state changes"
                 ),
                 None => log::info!(
-                    "switch: the controller's own MAC {own_mac} is not in the switch's table, so \
+                    "{tag}: the controller's own MAC {own_mac} is not in the switch's table, so \
                      every port is protected until it is"
                 ),
             }
@@ -758,6 +838,7 @@ impl Worker {
     /// Report what differs from the desired state, and put it back when
     /// `enforce` says so.
     fn check_drift(&mut self) {
+        let tag = self.tag();
         if !self.cfg.manage || self.cfg.desired.is_empty() {
             self.drift.clear();
             return;
@@ -770,17 +851,13 @@ impl Worker {
         if self.drift.is_empty() {
             return;
         }
-        log::warn!("switch: drifted from the desired state: {:?}", self.drift);
-        self.event(
-            "switch_drift",
-            None,
-            Some(self.drift.join("; ")),
-        );
+        log::warn!("{tag}: drifted from the desired state: {:?}", self.drift);
+        self.event("switch_drift", None, Some(self.drift.join("; ")));
         if self.cfg.enforce {
             // The desired state was confirmed once already, so putting
             // it back is applied and saved at once, with no new confirm
             // window (ADR 0006, "Who wins").
-            log::warn!("switch: enforce is on, putting the desired state back");
+            log::warn!("{tag}: enforce is on, putting the desired state back");
             if self.apply_desired(false).is_some() {
                 self.save_now();
             }
@@ -798,6 +875,7 @@ impl Worker {
     /// Called whenever the port VLAN page, the controller's own port or
     /// the uplink can have changed, so at the latest on the drift tick.
     fn check_mgmt_exposure(&mut self) {
+        let tag = self.tag();
         let Some(exposed) =
             mgmt::exposed(self.layout, &self.state, self.cfg.uplink(), self.own_port)
         else {
@@ -811,15 +889,13 @@ impl Worker {
         }
         self.mgmt_exposed = exposed;
         if self.mgmt_exposed.is_empty() {
-            log::info!(
-                "switch: only the uplink and the controller's own port carry VLAN 1 again"
-            );
+            log::info!("{tag}: only the uplink and the controller's own port carry VLAN 1 again");
             self.event("switch_mgmt_closed", None, None);
             return;
         }
         let list = mgmt::port_list(&self.mgmt_exposed);
         log::warn!(
-            "switch: port(s) {list} carry VLAN 1, the switch's management VLAN: whatever hangs \
+            "{tag}: port(s) {list} carry VLAN 1, the switch's management VLAN: whatever hangs \
              there can reach the switch's web UI"
         );
         self.event("switch_mgmt_exposed", None, Some(list));
@@ -829,23 +905,26 @@ impl Worker {
     // Requests
     // -----------------------------------------------------------------
 
-    fn handle(&mut self, request: SwitchRequest) {
+    fn handle(&mut self, verb: SwitchVerb) {
         if !self.cfg.should_poll() {
-            log::warn!("switch: {request:?} ignored, no switch is configured");
+            log::warn!(
+                "{}: {verb:?} ignored, no switch is configured",
+                self.tag()
+            );
             return;
         }
-        if !matches!(request, SwitchRequest::Revert) && !self.writes_allowed() {
+        if !matches!(verb, SwitchVerb::Revert) && !self.writes_allowed() {
             return;
         }
-        match request {
-            SwitchRequest::Port {
+        match verb {
+            SwitchVerb::Port {
                 port,
                 enabled,
                 force,
             } => self.port_command(port, enabled, force),
-            SwitchRequest::Save => self.save_now(),
-            SwitchRequest::Reboot => self.reboot_switch(),
-            SwitchRequest::FactoryReset => {
+            SwitchVerb::Save => self.save_now(),
+            SwitchVerb::Reboot => self.reboot_switch(),
+            SwitchVerb::FactoryReset => {
                 if let Some(client) = self.client.as_mut() {
                     match client.factory_reset() {
                         Ok(()) => self.event("switch_factory_reset", None, None),
@@ -856,12 +935,12 @@ impl Worker {
                 self.snapshot = None;
                 self.applied = None;
             }
-            SwitchRequest::Reconcile | SwitchRequest::Staged => {
-                let staged = matches!(request, SwitchRequest::Staged);
+            SwitchVerb::Reconcile | SwitchVerb::Staged => {
+                let staged = matches!(verb, SwitchVerb::Staged);
                 self.reconcile(staged);
             }
-            SwitchRequest::Confirmed => self.confirm(),
-            SwitchRequest::Revert => self.revert(),
+            SwitchVerb::Confirmed => self.confirm(),
+            SwitchVerb::Revert => self.revert(),
         }
     }
 
@@ -869,14 +948,16 @@ impl Worker {
     /// reported once, as a `switch_refused` event.
     fn writes_allowed(&mut self) -> bool {
         if !self.cfg.manage {
-            self.refuse(String::from(
-                "switch.manage is false, so nothing is written to the switch",
+            self.refuse(format!(
+                "{}.manage is false, so nothing is written to the switch",
+                self.tag()
             ));
             return false;
         }
         if self.mismatch {
-            self.refuse(String::from(
-                "the switch's MAC is not the one switch.mac names",
+            self.refuse(format!(
+                "the switch's MAC is not the one {}.mac names",
+                self.tag()
             ));
             return false;
         }
@@ -896,9 +977,10 @@ impl Worker {
     }
 
     fn refuse(&self, reason: String) {
-        log::warn!("switch: refused: {reason}");
+        log::warn!("{}: refused: {reason}", self.tag());
         (self.ctx.events)(switch_event(
             crate::platform::now_ms(),
+            self.which,
             "switch_refused",
             None,
             None,
@@ -939,28 +1021,33 @@ impl Worker {
         }
     }
 
-    /// Read, plan, apply. `staged` means the `switch` section is in its
-    /// confirm window: the snapshot is kept so a revert can undo it,
-    /// and nothing is saved.
+    /// Read, plan, apply. `staged` means this switch's section is in
+    /// its confirm window: the snapshot is kept so a revert can undo
+    /// it, and nothing is saved.
     fn reconcile(&mut self, staged: bool) {
+        let tag = self.tag();
         if self.cfg.desired.is_empty() {
-            self.refuse(String::from("switch.desired is empty, so there is nothing to apply"));
+            self.refuse(format!(
+                "{tag}.desired is empty, so there is nothing to apply"
+            ));
             return;
         }
         if !self.step(|w| w.read_config_pages()) {
-            self.refuse(String::from("the switch could not be read, so nothing was applied"));
+            self.refuse(String::from(
+                "the switch could not be read, so nothing was applied",
+            ));
             return;
         }
         match self.apply_desired(staged) {
             Some(applied) => {
                 if staged {
                     log::warn!(
-                        "switch: {applied} op(s) applied and not saved; a confirm saves them, the \
+                        "{tag}: {applied} op(s) applied and not saved; a confirm saves them, the \
                          deadline undoes them"
                     );
                 }
             }
-            None => log::info!("switch: already in the desired state"),
+            None => log::info!("{tag}: already in the desired state"),
         }
     }
 
@@ -972,11 +1059,7 @@ impl Worker {
         let protected = self.protected(false);
         let made = plan::plan(self.layout, &self.state, &desired, &protected);
         for refusal in &made.refusals {
-            self.refuse(format!(
-                "{}: {}",
-                refusal.kind.as_str(),
-                refusal.reason
-            ));
+            self.refuse(format!("{}: {}", refusal.kind.as_str(), refusal.reason));
         }
         if !made.unread.is_empty() {
             self.refuse(format!(
@@ -1002,6 +1085,7 @@ impl Worker {
 
     /// Carry out a list of ops, read back and report.
     fn apply_ops(&mut self, ops: &[Op], what: &str) {
+        let tag = self.tag();
         let mut done: Vec<String> = Vec::new();
         for op in ops {
             let Some(client) = self.client.as_mut() else {
@@ -1024,7 +1108,7 @@ impl Worker {
                 && let Some(host) = addr.split('/').next()
                 && let Some(client) = self.client.as_mut()
             {
-                log::warn!("switch: following it to its new address {host}");
+                log::warn!("{tag}: following it to its new address {host}");
                 client.set_host(host);
             }
         }
@@ -1042,7 +1126,7 @@ impl Worker {
             };
             if !self.drift.is_empty() {
                 log::warn!(
-                    "switch: after applying, these still differ: {:?}",
+                    "{tag}: after applying, these still differ: {:?}",
                     self.drift
                 );
             }
@@ -1057,7 +1141,10 @@ impl Worker {
     /// A confirm: the one place that saves (ADR 0006's invariant).
     fn confirm(&mut self) {
         if self.applied.is_none() {
-            log::info!("switch: a confirm with nothing applied; saving anyway is not done");
+            log::info!(
+                "{}: a confirm with nothing applied; saving anyway is not done",
+                self.tag()
+            );
             return;
         }
         self.save_now();
@@ -1078,15 +1165,16 @@ impl Worker {
     /// A revert: undo while the switch is reachable, reboot it
     /// otherwise, and say which it was (ADR 0006 component 18).
     fn revert(&mut self) {
+        let tag = self.tag();
         let Some(snapshot) = self.snapshot.clone() else {
-            log::info!("switch: a revert with nothing applied; nothing to undo");
+            log::info!("{tag}: a revert with nothing applied; nothing to undo");
             return;
         };
         let applied = self.applied.clone().unwrap_or_default();
         if self.reachable && self.step(|w| w.read_config_pages()) {
             let back = plan::undo(self.layout, &self.state, &snapshot, &applied);
             if !back.ops.is_empty() {
-                log::warn!("switch: undoing {} op(s)", back.ops.len());
+                log::warn!("{tag}: undoing {} op(s)", back.ops.len());
                 self.apply_ops(&back.ops, "switch_reverting");
             }
             // Did it land? The read-back has to match the snapshot.
@@ -1097,17 +1185,13 @@ impl Worker {
                 &Protected::none(),
             );
             if left.ops.is_empty() {
-                self.event(
-                    "switch_reverted",
-                    None,
-                    Some(String::from("undo")),
-                );
+                self.event("switch_reverted", None, Some(String::from("undo")));
                 self.snapshot = None;
                 self.applied = None;
                 return;
             }
             log::error!(
-                "switch: the undo did not verify ({:?}); rebooting the switch instead",
+                "{tag}: the undo did not verify ({:?}); rebooting the switch instead",
                 left.summary()
             );
         }
@@ -1115,11 +1199,7 @@ impl Worker {
         // reboot drops everything unsaved, and the flash still holds
         // the last confirmed configuration.
         self.reboot_switch();
-        self.event(
-            "switch_reverted",
-            None,
-            Some(String::from("reboot")),
-        );
+        self.event("switch_reverted", None, Some(String::from("reboot")));
         self.snapshot = None;
         self.applied = None;
     }
@@ -1167,6 +1247,7 @@ impl Worker {
     ) {
         (self.ctx.events)(switch_event(
             crate::platform::now_ms(),
+            self.which,
             what,
             port,
             node,
@@ -1174,19 +1255,21 @@ impl Worker {
         ));
     }
 
-    /// Write the summary into the shared snapshot.
+    /// Write the summary into this switch's slot of the shared
+    /// snapshot (ADR 0006 component 26: `switch` and `switch2`).
     fn publish_obs(&self, _now: Option<u64>) {
         let Ok(mut observed) = self.ctx.observed.write() else {
             return;
         };
+        let slot = observed.switch_slot(self.which);
         if !self.cfg.should_poll() {
-            observed.switch = None;
+            *slot = None;
             return;
         }
         let mut obs = if self.reachable {
             SwitchObs::of_state(self.layout, &self.state, &self.cfg.desired)
         } else {
-            SwitchObs::unreachable(observed.switch.as_ref())
+            SwitchObs::unreachable(slot.as_ref())
         };
         obs.drift = self.drift.clone();
         obs.mgmt_exposed = self.mgmt_exposed.clone();
@@ -1194,7 +1277,7 @@ impl Worker {
         obs.mismatch = self.mismatch;
         obs.fw_unknown = self.fw_unknown;
         obs.managed = self.cfg.manage;
-        observed.switch = Some(obs);
+        *slot = Some(obs);
     }
 
     /// Build the counters payload and leave it for the MQTT worker.
@@ -1210,11 +1293,14 @@ impl Worker {
         self.last_stats = Some((self.state.stats.clone(), now));
         match rates.to_json() {
             Ok(json) => {
-                if let Ok(mut slot) = COUNTERS.lock() {
+                if let Ok(mut slot) = COUNTERS[self.which.index()].lock() {
                     *slot = Some(json);
                 }
             }
-            Err(e) => log::warn!("switch: the counters payload did not serialise: {e}"),
+            Err(e) => log::warn!(
+                "{}: the counters payload did not serialise: {e}",
+                self.tag()
+            ),
         }
     }
 }

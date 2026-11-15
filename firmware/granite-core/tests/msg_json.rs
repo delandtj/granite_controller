@@ -2,12 +2,12 @@
 //! These are the wire contract; changing one means changing clients.
 
 use granite_core::Target;
-use granite_core::config::{NodesCfg, Section};
+use granite_core::config::{NodesCfg, Section, SwitchId};
 use granite_core::hal::{BootReason, Switch};
 use granite_core::jobs::{JobLog, SubmittedJob};
 use granite_core::msg::{
     Args, Command, CommandKind, Event, EventKind, LWT_PAYLOAD, PROTOCOL_VERSION, Reply, State,
-    Status, Topics, event_from_client, event_from_rule,
+    Status, Topics, event_from_client, event_from_rule, switch_event,
 };
 use granite_core::node::NodeSettings;
 use granite_core::observed::{NodeObs, Observed, PlaneObs, ProbeObs, Stamped, UnitObs};
@@ -72,7 +72,7 @@ fn command_fixtures() {
         &Command::new("c-6", CommandKind::Press)
             .with_target(Target::Node(5))
             .with_args(Args {
-                switch: Some(Switch::Rst),
+                switch: Some(granite_core::msg::SwitchArg::Side(Switch::Rst)),
                 duration_ms: Some(1_500),
                 ..Args::default()
             }),
@@ -675,6 +675,110 @@ fn topic_tree() {
     assert_eq!(t.log(), "granite/default/granite-aabbcc/log");
     assert_eq!(t.cmd(), "granite/default/granite-aabbcc/cmd");
     assert_eq!(t.ack("c-1"), "granite/default/granite-aabbcc/ack/c-1");
+    // The counters of each switch on their own topic (ADR 0006
+    // components 21 and 26).
+    assert_eq!(
+        t.switch_counters(),
+        "granite/default/granite-aabbcc/switch/counters"
+    );
+    assert_eq!(
+        t.switch_counters_of(SwitchId::One),
+        "granite/default/granite-aabbcc/switch/counters"
+    );
+    assert_eq!(
+        t.switch_counters_of(SwitchId::Two),
+        "granite/default/granite-aabbcc/switch2/counters"
+    );
+}
+
+/// One switch as the snapshot holds it.
+fn switch_obs(port: u8, node: u8) -> granite_core::switch::SwitchObs {
+    granite_core::switch::SwitchObs {
+        reachable: true,
+        fw: "V200.1.8".into(),
+        uptime_s: 4_000,
+        mac: "1C:2A:A3:24:26:7E".into(),
+        ports: vec![granite_core::switch::SwitchPortObs {
+            port,
+            enabled: true,
+            link: true,
+            speed: "2.5G".into(),
+            vlan_mode: "access".into(),
+            vlan: Some(100),
+            node: Some(node),
+            macs: Vec::new(),
+        }],
+        ..Default::default()
+    }
+}
+
+#[test]
+fn state_carries_the_second_switch_only_when_there_is_one() {
+    // A controller with one switch: `switch` exactly as before, and no
+    // `switch2` key at all (ADR 0006 component 26).
+    let mut o = Observed::new();
+    o.switch = Some(switch_obs(7, 7));
+    let one = State::from_observed(&o, &NodesCfg::default(), 1_000);
+    let v: Value = serde_json::from_str(&one.to_json().unwrap()).unwrap();
+    assert_eq!(v["switch"]["fw"], json!("V200.1.8"));
+    assert_eq!(v["switch"]["ports"][0]["node"], json!(7));
+    assert!(
+        v.get("switch2").is_none(),
+        "no second switch, no second key: {v}"
+    );
+
+    // With one, it is the same shape under its own key.
+    o.switch2 = Some(switch_obs(3, 11));
+    let two = State::from_observed(&o, &NodesCfg::default(), 1_000);
+    let v2: Value = serde_json::from_str(&two.to_json().unwrap()).unwrap();
+    assert_eq!(v2["switch"], v["switch"], "switch 1 is untouched");
+    assert_eq!(v2["switch2"]["ports"][0]["port"], json!(3));
+    assert_eq!(v2["switch2"]["ports"][0]["node"], json!(11));
+    assert_eq!(v2["switch2"]["reachable"], json!(true));
+
+    // Round trip: a payload with two switches parses back.
+    let back: State = serde_json::from_str(&two.to_json().unwrap()).unwrap();
+    assert_eq!(back.switch2, two.switch2);
+
+    // The second switch's uptime moves on its own too, so it is not a
+    // reason to republish `state`.
+    let mut later = two.clone();
+    later.switch2.as_mut().unwrap().uptime_s += 60;
+    assert!(later.same_content(&two));
+    later.switch2.as_mut().unwrap().ports[0].link = false;
+    assert!(!later.same_content(&two), "a link change is a change");
+}
+
+#[test]
+fn a_switch_event_says_which_switch_only_when_it_is_the_second() {
+    // Switch 1: byte for byte the event a controller with one switch
+    // has always published.
+    roundtrip_event(
+        &switch_event(
+            2_000,
+            SwitchId::One,
+            "switch_port",
+            Some(7),
+            Some(7),
+            Some("link up at 2.5G, admin enabled".into()),
+        ),
+        json!({"v":1,"ts":2000,"kind":"switch","what":"switch_port","port":7,"node":7,
+               "detail":"link up at 2.5G, admin enabled"}),
+    );
+    // Switch 2 says so, and nothing else changes (ADR 0006 component
+    // 26).
+    roundtrip_event(
+        &switch_event(
+            2_100,
+            SwitchId::Two,
+            "switch_unreachable",
+            None,
+            None,
+            Some("timeout".into()),
+        ),
+        json!({"v":1,"ts":2100,"kind":"switch","what":"switch_unreachable","switch":2,
+               "detail":"timeout"}),
+    );
 }
 
 /// A `state` built from a snapshot whose only reading is `vin_mv`.

@@ -474,6 +474,10 @@ pub struct Observed {
     /// component 17). `None` while no switch is configured.
     #[serde(default)]
     pub switch: Option<crate::switch::SwitchObs>,
+    /// The second block switch (ADR 0006 component 26). `None` while
+    /// `switch2` is not enabled, which is the normal case.
+    #[serde(default)]
+    pub switch2: Option<crate::switch::SwitchObs>,
     /// Ethernet link.
     pub link_up: Stamped<bool>,
     /// MQTT session.
@@ -493,6 +497,7 @@ impl Default for Observed {
             vin_mv: Stamped::never(None),
             dry_in: Stamped::never(None),
             switch: None,
+            switch2: None,
             link_up: Stamped::never(false),
             mqtt_connected: Stamped::never(false),
             uptime_s: Stamped::never(0),
@@ -504,6 +509,25 @@ impl Observed {
     /// Empty snapshot: everything unknown.
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// One switch's summary (ADR 0006 component 26).
+    pub fn switch_of(&self, which: crate::config::SwitchId) -> Option<&crate::switch::SwitchObs> {
+        match which {
+            crate::config::SwitchId::One => self.switch.as_ref(),
+            crate::config::SwitchId::Two => self.switch2.as_ref(),
+        }
+    }
+
+    /// One switch's slot, for the worker that fills it.
+    pub fn switch_slot(
+        &mut self,
+        which: crate::config::SwitchId,
+    ) -> &mut Option<crate::switch::SwitchObs> {
+        match which {
+            crate::config::SwitchId::One => &mut self.switch,
+            crate::config::SwitchId::Two => &mut self.switch2,
+        }
     }
 
     /// Copy the plane client's models into the snapshot.

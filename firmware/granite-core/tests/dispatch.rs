@@ -630,14 +630,16 @@ fn switch_verbs_need_the_section_enabled_and_managed() {
     assert_eq!(
         effects,
         vec![SideEffect::Switch(
-            granite_core::dispatch::SwitchRequest::Reconcile
+            granite_core::dispatch::SwitchRequest::one(
+                granite_core::dispatch::SwitchVerb::Reconcile
+            )
         )]
     );
 }
 
 #[test]
 fn switch_port_takes_a_port_or_a_node() {
-    use granite_core::dispatch::SwitchRequest;
+    use granite_core::dispatch::{SwitchRequest, SwitchVerb};
 
     let mut h = Harness::new();
     with_switch(&mut h);
@@ -649,11 +651,11 @@ fn switch_port_takes_a_port_or_a_node() {
     });
     assert_eq!(
         h.run(&by_port).1,
-        vec![SideEffect::Switch(SwitchRequest::Port {
+        vec![SideEffect::Switch(SwitchRequest::one(SwitchVerb::Port {
             port: 3,
             enabled: false,
             force: false
-        })]
+        }))]
     );
 
     // By node: the port comes from the node-to-port map in `state`.
@@ -665,11 +667,11 @@ fn switch_port_takes_a_port_or_a_node() {
     });
     assert_eq!(
         h.run(&by_node).1,
-        vec![SideEffect::Switch(SwitchRequest::Port {
+        vec![SideEffect::Switch(SwitchRequest::one(SwitchVerb::Port {
             port: 7,
             enabled: true,
             force: true
-        })]
+        }))]
     );
 
     // A node nothing is bound to is refused here, before any traffic.
@@ -708,13 +710,19 @@ fn switch_port_takes_a_port_or_a_node() {
 
 #[test]
 fn rebooting_or_resetting_the_switch_needs_the_device_id() {
-    use granite_core::dispatch::SwitchRequest;
+    use granite_core::dispatch::{SwitchRequest, SwitchVerb};
 
     let mut h = Harness::new();
     with_switch(&mut h);
     for (action, request) in [
-        (CommandKind::SwitchReboot, SwitchRequest::Reboot),
-        (CommandKind::SwitchFactoryReset, SwitchRequest::FactoryReset),
+        (
+            CommandKind::SwitchReboot,
+            SwitchRequest::one(SwitchVerb::Reboot),
+        ),
+        (
+            CommandKind::SwitchFactoryReset,
+            SwitchRequest::one(SwitchVerb::FactoryReset),
+        ),
     ] {
         let bare = Command::new("c-1", action);
         let reply = h.run(&bare).0;
@@ -740,7 +748,7 @@ fn rebooting_or_resetting_the_switch_needs_the_device_id() {
     let save = Command::new("c-3", CommandKind::SwitchSave);
     assert_eq!(
         h.run(&save).1,
-        vec![SideEffect::Switch(SwitchRequest::Save)]
+        vec![SideEffect::Switch(SwitchRequest::one(SwitchVerb::Save))]
     );
 }
 
@@ -798,6 +806,241 @@ fn the_switch_section_is_staged_and_not_saved_straight_through() {
             .as_deref()
             .expect("an error")
             .contains("an access port needs \"vlan\"")
+    );
+    assert!(effects.is_empty());
+}
+
+// ---------------------------------------------------------------------
+// Two switches (ADR 0006 component 26)
+// ---------------------------------------------------------------------
+
+/// A controller that serves two blocks: nodes 1-8 on switch 1, nodes
+/// 9-16 on switch 2, both managed.
+fn with_two_switches(h: &mut Harness) {
+    use granite_core::switch::DesiredPort;
+
+    with_switch(h);
+    h.config.switch.desired.ports = vec![DesiredPort {
+        port: 7,
+        node: Some(7),
+        ..Default::default()
+    }];
+    h.config.switch2.enabled = true;
+    h.config.switch2.manage = true;
+    h.config.switch2.host = String::from("10.0.202.6");
+    h.config.switch2.desired.ports = vec![DesiredPort {
+        port: 3,
+        node: Some(11),
+        ..Default::default()
+    }];
+    h.observed.switch2 = Some(granite_core::switch::SwitchObs {
+        reachable: true,
+        ports: vec![granite_core::switch::SwitchPortObs {
+            port: 3,
+            enabled: true,
+            link: true,
+            speed: String::from("2.5g"),
+            vlan_mode: String::from("access"),
+            vlan: Some(100),
+            node: Some(11),
+            macs: Vec::new(),
+        }],
+        ..Default::default()
+    });
+}
+
+#[test]
+fn a_switch_command_says_which_switch_or_is_routed_by_its_node() {
+    use granite_core::config::SwitchId;
+    use granite_core::dispatch::{SwitchRequest, SwitchVerb};
+    use granite_core::msg::SwitchArg;
+
+    let mut h = Harness::new();
+    with_two_switches(&mut h);
+
+    // Explicit: "switch": 2.
+    let explicit = Command::new("c-1", CommandKind::SwitchSave).with_args(Args {
+        switch: Some(SwitchArg::Index(2)),
+        ..Args::default()
+    });
+    assert_eq!(
+        h.run(&explicit).1,
+        vec![SideEffect::Switch(SwitchRequest::new(
+            SwitchId::Two,
+            SwitchVerb::Save
+        ))]
+    );
+
+    // By node label: node 11 is on switch 2, and the port comes from
+    // that switch's own map.
+    let by_node = Command::new("c-2", CommandKind::SwitchPort).with_args(Args {
+        node: Some(11),
+        enabled: Some(false),
+        ..Args::default()
+    });
+    assert_eq!(
+        h.run(&by_node).1,
+        vec![SideEffect::Switch(SwitchRequest::new(
+            SwitchId::Two,
+            SwitchVerb::Port {
+                port: 3,
+                enabled: false,
+                force: false
+            }
+        ))]
+    );
+
+    // A node on the first switch still goes to the first switch.
+    let first = Command::new("c-3", CommandKind::SwitchPort).with_args(Args {
+        node: Some(7),
+        enabled: Some(true),
+        ..Args::default()
+    });
+    assert_eq!(
+        h.run(&first).1,
+        vec![SideEffect::Switch(SwitchRequest::one(SwitchVerb::Port {
+            port: 7,
+            enabled: true,
+            force: false
+        }))]
+    );
+
+    // No node and no "switch": switch 1, which is every command of a
+    // controller with one switch.
+    let bare = Command::new("c-4", CommandKind::SwitchReconcile);
+    assert_eq!(
+        h.run(&bare).1,
+        vec![SideEffect::Switch(SwitchRequest::one(
+            SwitchVerb::Reconcile
+        ))]
+    );
+
+    // Explicit 1 is the same thing.
+    let one = Command::new("c-5", CommandKind::SwitchReconcile).with_args(Args {
+        switch: Some(SwitchArg::Index(1)),
+        ..Args::default()
+    });
+    assert_eq!(
+        h.run(&one).1,
+        vec![SideEffect::Switch(SwitchRequest::one(
+            SwitchVerb::Reconcile
+        ))]
+    );
+
+    // A node neither section labels is refused by the verb, as before,
+    // and on switch 1.
+    let unknown = Command::new("c-6", CommandKind::SwitchPort).with_args(Args {
+        node: Some(40),
+        enabled: Some(true),
+        ..Args::default()
+    });
+    let reply = h.run(&unknown).0;
+    assert!(!reply.ok);
+    assert!(
+        reply
+            .error
+            .as_deref()
+            .expect("an error")
+            .contains("no switch port is bound to node 40"),
+        "{reply:?}"
+    );
+}
+
+#[test]
+fn switch_2_is_refused_while_the_section_is_not_enabled() {
+    use granite_core::msg::SwitchArg;
+
+    let mut h = Harness::new();
+    with_switch(&mut h);
+    let cmd = Command::new("c-1", CommandKind::SwitchSave).with_args(Args {
+        switch: Some(SwitchArg::Index(2)),
+        ..Args::default()
+    });
+    let (reply, effects) = h.run(&cmd);
+    assert!(!reply.ok);
+    assert_eq!(
+        reply.error.as_deref(),
+        Some("the switch2 section is not enabled")
+    );
+    assert!(effects.is_empty());
+
+    // And a switch number that is not one of the two.
+    let three = Command::new("c-2", CommandKind::SwitchSave).with_args(Args {
+        switch: Some(SwitchArg::Index(3)),
+        ..Args::default()
+    });
+    let reply = h.run(&three).0;
+    assert!(!reply.ok);
+    assert_eq!(
+        reply.error.as_deref(),
+        Some("args.switch must be 1 or 2, not 3")
+    );
+
+    // An enabled but unmanaged switch2 refuses a write in its own
+    // name.
+    h.config.switch2.enabled = true;
+    h.config.switch2.host = String::from("10.0.202.6");
+    let reply = h.run(&cmd).0;
+    assert!(!reply.ok);
+    assert_eq!(
+        reply.error.as_deref(),
+        Some("switch2.manage is false, so the controller does not write to the switch")
+    );
+}
+
+#[test]
+fn the_second_switch_section_is_staged_like_the_first() {
+    use granite_core::config::Section;
+    use serde_json::json;
+
+    let mut h = Harness::new();
+    let cmd = Command::new("c-1", CommandKind::ConfigSet).with_args(Args {
+        section: Some(Section::Switch2),
+        config: Some(json!({
+            "enabled": true,
+            "manage": true,
+            "host": "10.0.202.6",
+            "desired": {"ports": [{"port": 1, "mode": "access", "vlan": 300, "node": 9}]}
+        })),
+        ..Args::default()
+    });
+    let (reply, effects) = h.run(&cmd);
+    assert!(reply.ok, "{:?}", reply.error);
+    assert_eq!(reply.result.as_deref(), Some("staged"));
+    assert_eq!(effects, vec![SideEffect::StageSection(Section::Switch2)]);
+    assert!(h.config.switch2.manage);
+    assert!(
+        !h.config.switch.enabled,
+        "the other switch is not touched, let alone re-applied"
+    );
+
+    // The cross checks run whichever section is being set: the same
+    // node on both is refused, and nothing is staged.
+    h.config.switch.enabled = true;
+    h.config.switch.host = String::from("10.0.202.5");
+    h.config.switch.desired.ports = vec![granite_core::switch::DesiredPort {
+        port: 4,
+        node: Some(9),
+        ..Default::default()
+    }];
+    let clash = Command::new("c-2", CommandKind::ConfigSet).with_args(Args {
+        section: Some(Section::Switch2),
+        config: Some(json!({
+            "enabled": true,
+            "host": "10.0.202.6",
+            "desired": {"ports": [{"port": 1, "mode": "access", "vlan": 300, "node": 9}]}
+        })),
+        ..Args::default()
+    });
+    let (reply, effects) = h.run(&clash);
+    assert!(!reply.ok);
+    assert!(
+        reply
+            .error
+            .as_deref()
+            .expect("an error")
+            .contains("node 9 is on switch port 4 and on switch2 port 1"),
+        "{reply:?}"
     );
     assert!(effects.is_empty());
 }

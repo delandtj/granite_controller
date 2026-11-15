@@ -260,6 +260,22 @@ impl core::fmt::Display for CommandKind {
     }
 }
 
+/// What `args.switch` can say.
+///
+/// Two verbs with nothing in common share the field: a raw `press`
+/// names a node's momentary switch (`"pwr"`, `"rst"`), and a `switch_*`
+/// command names one of the two block switches (`1`, `2`, ADR 0006
+/// component 26). Each verb reads its own form and ignores the other,
+/// which is what keeps `press` on the wire exactly as it was.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum SwitchArg {
+    /// A node's power or reset button, for `press`.
+    Side(Switch),
+    /// Block switch 1 or 2, for every `switch_*` command.
+    Index(u8),
+}
+
 /// The `args` object. Every field is optional; unknown fields are
 /// ignored so an older firmware does not choke on a newer client.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -277,9 +293,10 @@ pub struct Args {
     /// `cycle` does not wait for the host's LED on the way back up.
     #[serde(skip_serializing_if = "is_false")]
     pub hard: bool,
-    /// Which switch a raw `press` uses.
+    /// Which switch a raw `press` uses, or which block switch a
+    /// `switch_*` command is for.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub switch: Option<Switch>,
+    pub switch: Option<SwitchArg>,
     /// Raw `press` duration, 100 ms to 10 s.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub duration_ms: Option<u32>,
@@ -334,7 +351,20 @@ impl Args {
 
     /// The switch a raw `press` uses; PWR unless the client said RST.
     pub fn press_switch(&self) -> Switch {
-        self.switch.unwrap_or(Switch::Pwr)
+        match self.switch {
+            Some(SwitchArg::Side(s)) => s,
+            _ => Switch::Pwr,
+        }
+    }
+
+    /// The block switch a `switch_*` command names, when it names one
+    /// (ADR 0006 component 26). The number is not checked here: the
+    /// dispatcher refuses one that is not 1 or 2 with a reason.
+    pub fn switch_index(&self) -> Option<u8> {
+        match self.switch {
+            Some(SwitchArg::Index(n)) => Some(n),
+            _ => None,
+        }
     }
 
     /// The node options these args ask for, on top of the node's own
@@ -590,6 +620,11 @@ pub enum EventKind {
     Switch {
         /// Which kind.
         what: String,
+        /// Which of the two block switches, left out for switch 1 so an
+        /// event of a controller with one switch is what it always was
+        /// (ADR 0006 component 26).
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        switch: Option<u8>,
         /// The switch port, when it is about one.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         port: Option<u8>,
@@ -766,8 +801,13 @@ pub fn event_from_client(ev: &ClientEvent, ts: u64) -> Option<Event> {
 }
 
 /// A switch event, which is always built the same way.
+///
+/// `which` is the switch it came from: switch 1 carries no `switch`
+/// field at all, so its events are byte for byte what they were before
+/// a second switch existed (ADR 0006 component 26).
 pub fn switch_event(
     ts: u64,
+    which: crate::config::SwitchId,
     what: &str,
     port: Option<u8>,
     node: Option<NodeId>,
@@ -777,6 +817,10 @@ pub fn switch_event(
         ts,
         EventKind::Switch {
             what: String::from(what),
+            switch: match which {
+                crate::config::SwitchId::One => None,
+                crate::config::SwitchId::Two => Some(which.num()),
+            },
             port,
             node,
             detail,
@@ -979,6 +1023,11 @@ pub struct State {
     /// own and go to `.../switch/counters`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub switch: Option<crate::switch::SwitchObs>,
+    /// The second block switch, in the same shape and absent while
+    /// `switch2` is not enabled (ADR 0006 component 26). Its counters
+    /// go to `.../switch2/counters`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub switch2: Option<crate::switch::SwitchObs>,
     /// Ethernet link.
     pub link_up: bool,
     /// MQTT session.
@@ -1040,6 +1089,7 @@ impl State {
                     .collect::<Vec<bool>>()
             }),
             switch: o.switch.clone(),
+            switch2: o.switch2.clone(),
             link_up: o.link_up.value,
             mqtt_connected: o.mqtt_connected.value,
             uptime_s: o.uptime_s.value,
@@ -1077,7 +1127,7 @@ impl State {
         // The switch's uptime moves on its own, like the controller's:
         // it must not republish `state` on every poll.
         for state in [&mut a, &mut b] {
-            if let Some(switch) = state.switch.as_mut() {
+            for switch in [state.switch.as_mut(), state.switch2.as_mut()].into_iter().flatten() {
                 switch.uptime_s = 0;
             }
         }
@@ -1201,6 +1251,12 @@ impl Topics {
     /// Block-switch counters: out, not retained, every
     /// `switch.poll.counters_s` (ADR 0006 component 21).
     pub fn switch_counters(&self) -> String {
-        format!("{}/switch/counters", self.base)
+        self.switch_counters_of(crate::config::SwitchId::One)
+    }
+
+    /// The counters topic of one of the two switches: `.../switch/
+    /// counters` and `.../switch2/counters` (ADR 0006 component 26).
+    pub fn switch_counters_of(&self, which: crate::config::SwitchId) -> String {
+        format!("{}/{}/counters", self.base, which.key())
     }
 }

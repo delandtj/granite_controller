@@ -37,7 +37,7 @@ use esp_idf_svc::hal::gpio::PinDriver;
 use esp_idf_svc::hal::peripherals::Peripherals;
 use granite_core::boot::BootPolicyWatch;
 use granite_core::config::Section;
-use granite_core::dispatch::{DispatchCtx, SideEffect, SwitchRequest, dispatch};
+use granite_core::dispatch::{DispatchCtx, SideEffect, SwitchRequest, SwitchVerb, dispatch};
 use granite_core::hal::{
     BoardTemp, BusVoltage, DryInputs, LedPattern, PlaneLink, Probes, StatusLed,
 };
@@ -445,12 +445,12 @@ fn main() -> anyhow::Result<()> {
         }
     };
 
-    // INTEGRATION: the block-switch worker (ADR 0006 components 17 and
-    // 18). Started whatever the configuration says, like the MQTT
-    // worker: it idles on the `switch` section and starts polling as
-    // soon as it says it may, which is what makes a staged switch
-    // change testable before it is confirmed. It is also the only
-    // thread that may talk to the switch.
+    // INTEGRATION: the block-switch worker (ADR 0006 components 17, 18
+    // and 26). Started whatever the configuration says, like the MQTT
+    // worker: it idles on the `switch` and `switch2` sections and starts
+    // polling as soon as one says it may, which is what makes a staged
+    // switch change testable before it is confirmed. It is also the only
+    // thread that may talk to a switch, and it serves the two in turn.
     let _switch = match switch::start(switch::SwitchCtx {
         config: Box::new({
             let p = Arc::clone(&platform);
@@ -458,10 +458,10 @@ fn main() -> anyhow::Result<()> {
         }),
         password: Box::new({
             let p = Arc::clone(&platform);
-            move || {
+            move |which| {
                 p.store
                     .lock()
-                    .map(|mut s| s.load_secrets().switch_password().to_string())
+                    .map(|mut s| s.load_secrets().switch_password_of(which).to_string())
                     .unwrap_or_else(|_| {
                         String::from(granite_core::config::SWITCH_DEFAULT_PASSWORD)
                     })
@@ -476,16 +476,16 @@ fn main() -> anyhow::Result<()> {
         own_mac: platform::identity::mac_string(&platform.identity.mac),
     }) {
         Ok(handle) => {
-            if cfg_at_boot.switch.should_poll() {
-                log::info!(
-                    "switch worker started for {} ({})",
-                    cfg_at_boot.switch.host,
-                    if cfg_at_boot.switch.manage {
-                        "managed"
-                    } else {
-                        "read-only"
-                    }
-                );
+            for which in granite_core::config::SwitchId::ALL {
+                let cfg = cfg_at_boot.switch_cfg(which);
+                if cfg.should_poll() {
+                    log::info!(
+                        "switch worker started for {} at {} ({})",
+                        which.key(),
+                        cfg.host,
+                        if cfg.manage { "managed" } else { "read-only" }
+                    );
+                }
             }
             Some(handle)
         }
@@ -1014,14 +1014,16 @@ fn apply_effect(
                 // The net section is the one that can cut the session, so
                 // it is applied live with the confirm timer running.
                 Section::Net => platform.net.apply(&cfg.net, cfg.net.t_confirm_s),
-                // The switch section is applied by the switch worker,
-                // which reads the switch, plans and applies the ops
+                // A switch section is applied by the switch worker,
+                // which reads that switch, plans and applies the ops
                 // without saving, and keeps the snapshot a revert goes
-                // back to (ADR 0006 component 18).
-                Section::Switch => {
-                    if !switch::submit(SwitchRequest::Staged) {
+                // back to (ADR 0006 components 18 and 26).
+                Section::Switch | Section::Switch2 => {
+                    let which = granite_core::config::SwitchId::of_section(section)
+                        .unwrap_or_default();
+                    if !switch::submit(SwitchRequest::new(which, SwitchVerb::Staged)) {
                         log::error!(
-                            "config: the switch worker is not running, so the staged switch \
+                            "config: the switch worker is not running, so the staged {section} \
                              section was not applied"
                         );
                     }

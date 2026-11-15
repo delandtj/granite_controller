@@ -25,7 +25,7 @@ pub const SECRETS_NAMESPACE: &str = "secrets";
 /// NVS namespace that survives a factory reset.
 pub const FACTORY_NAMESPACE: &str = "factory";
 
-/// The seven stored sections.
+/// The eight stored sections.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Section {
@@ -36,6 +36,10 @@ pub enum Section {
     /// The block switch: where it is, whether it is managed, how often
     /// it is polled and the desired state (ADR 0006).
     Switch,
+    /// The second block switch, for a controller that serves two blocks
+    /// (ADR 0006 component 26). The same shape as [`Section::Switch`]
+    /// and disabled by default.
+    Switch2,
     /// Node names, boot policy, LED sense, soft-off window, escalation,
     /// the plane update policy and the probes.
     Nodes,
@@ -49,10 +53,11 @@ pub enum Section {
 
 impl Section {
     /// Every section, in storage order.
-    pub const ALL: [Section; 7] = [
+    pub const ALL: [Section; 8] = [
         Section::Net,
         Section::Mqtt,
         Section::Switch,
+        Section::Switch2,
         Section::Nodes,
         Section::Rules,
         Section::Sec,
@@ -65,6 +70,7 @@ impl Section {
             Section::Net => "net",
             Section::Mqtt => "mqtt",
             Section::Switch => "switch",
+            Section::Switch2 => "switch2",
             Section::Nodes => "nodes",
             Section::Rules => "rules",
             Section::Sec => "sec",
@@ -83,12 +89,89 @@ impl Section {
     /// `switch` is one of them: a VLAN or address change on the block
     /// switch can cut the controller off exactly like a change to its
     /// own interface, so it is staged, applied without saving, and
-    /// reverted when nobody confirms (ADR 0006 component 18).
+    /// reverted when nobody confirms (ADR 0006 component 18). `switch2`
+    /// is the same section for the second switch, so it is staged and
+    /// confirmed the same way (component 26).
     pub const fn affects_reachability(self) -> bool {
         matches!(
             self,
-            Section::Net | Section::Mqtt | Section::Sec | Section::Switch
+            Section::Net | Section::Mqtt | Section::Sec | Section::Switch | Section::Switch2
         )
+    }
+}
+
+/// Which of the two block switches something is about (ADR 0006
+/// component 26).
+///
+/// Switch 1 is the `switch` section, switch 2 the optional `switch2`.
+/// Two is the limit: it is what a controller serving two blocks of eight
+/// nodes needs, and more switches would mean a list.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum SwitchId {
+    /// The `switch` section.
+    #[default]
+    One,
+    /// The `switch2` section.
+    Two,
+}
+
+impl SwitchId {
+    /// Both switches, switch 1 first.
+    pub const ALL: [SwitchId; 2] = [SwitchId::One, SwitchId::Two];
+
+    /// 1 or 2, as the commands and the events write it.
+    pub const fn num(self) -> u8 {
+        match self {
+            SwitchId::One => 1,
+            SwitchId::Two => 2,
+        }
+    }
+
+    /// The switch a command's `"switch": 1|2` names.
+    pub const fn from_num(n: u8) -> Option<Self> {
+        match n {
+            1 => Some(SwitchId::One),
+            2 => Some(SwitchId::Two),
+            _ => None,
+        }
+    }
+
+    /// Index into a two-element per-switch array.
+    pub const fn index(self) -> usize {
+        match self {
+            SwitchId::One => 0,
+            SwitchId::Two => 1,
+        }
+    }
+
+    /// The switch a config section configures, when it is one of the
+    /// two switch sections.
+    pub const fn of_section(section: Section) -> Option<Self> {
+        match section {
+            Section::Switch => Some(SwitchId::One),
+            Section::Switch2 => Some(SwitchId::Two),
+            _ => None,
+        }
+    }
+
+    /// The config section this switch is configured in.
+    pub const fn section(self) -> Section {
+        match self {
+            SwitchId::One => Section::Switch,
+            SwitchId::Two => Section::Switch2,
+        }
+    }
+
+    /// `switch` or `switch2`: the section name, the log prefix and the
+    /// counters topic segment.
+    pub const fn key(self) -> &'static str {
+        self.section().key()
+    }
+}
+
+impl fmt::Display for SwitchId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.key())
     }
 }
 
@@ -346,6 +429,57 @@ impl SwitchCfg {
     pub fn may_write(&self) -> bool {
         self.should_poll() && self.manage
     }
+
+    /// The port the desired state says this node is cabled to, which is
+    /// also what routes a command without `"switch"` to a switch (ADR
+    /// 0006 component 26).
+    pub fn port_of_node(&self, node: NodeId) -> Option<u8> {
+        self.desired.port_of_node(node)
+    }
+}
+
+/// Fix up one switch section: the poll floors, the login user and the
+/// port list. Both sections go through this (ADR 0006 component 26).
+fn normalise_switch(cfg: &mut SwitchCfg) {
+    // A poll period of 0 would turn the switch worker into a busy loop
+    // against a web server that needs 400 ms per page, so every one of
+    // them has a floor (ADR 0006 component 17).
+    let poll = &mut cfg.poll;
+    poll.stats_s = poll.stats_s.max(1);
+    poll.info_s = poll.info_s.max(5);
+    poll.mac_s = poll.mac_s.max(10);
+    poll.drift_s = poll.drift_s.max(30);
+    poll.counters_s = poll.counters_s.max(5);
+    if cfg.user.trim().is_empty() {
+        cfg.user = String::from("admin");
+    }
+    cfg.mac = crate::switch::model::normalise_mac(&cfg.mac);
+    cfg.desired.ports.sort_unstable_by_key(|p| p.port);
+    cfg.desired.ports.dedup_by_key(|p| p.port);
+}
+
+/// Everything that is wrong with one switch section on its own.
+/// `name` is `switch` or `switch2`, so the message names the section
+/// the operator wrote.
+fn validate_switch(cfg: &SwitchCfg, name: &str) -> Vec<String> {
+    let mut errs: Vec<String> = Vec::new();
+    if cfg.enabled && cfg.host.trim().is_empty() {
+        errs.push(format!(
+            "{name}.host is required when the switch is enabled"
+        ));
+    }
+    // The widest layout in the profile table: at configuration time
+    // there is no switch to ask which ports it has (ADR 0006
+    // component 24, "Config is checked twice").
+    let widest = crate::switch::Layout::widest();
+    if cfg.uplink_port != 0 && !widest.is_port(cfg.uplink_port) {
+        errs.push(format!(
+            "{name}.uplink_port ({}) is not a port (1..={}) or 0 for none",
+            cfg.uplink_port, widest.ports
+        ));
+    }
+    errs.extend(cfg.desired.validate_in(name));
+    errs
 }
 
 /// A probe's ROM id mapped to a user name and a slot.
@@ -630,6 +764,9 @@ pub struct Config {
     pub mqtt: MqttCfg,
     /// The block switch.
     pub switch: SwitchCfg,
+    /// The second block switch, disabled unless a controller serves two
+    /// blocks (ADR 0006 component 26).
+    pub switch2: SwitchCfg,
     /// Nodes, timings, probes.
     pub nodes: NodesCfg,
     /// Rules.
@@ -647,6 +784,7 @@ impl Default for Config {
             net: NetCfg::default(),
             mqtt: MqttCfg::default(),
             switch: SwitchCfg::default(),
+            switch2: SwitchCfg::default(),
             nodes: NodesCfg::default(),
             rules: RulesCfg::default(),
             sec: SecCfg::default(),
@@ -690,6 +828,7 @@ impl Config {
             Section::Net => to_json(&self.net),
             Section::Mqtt => to_json(&self.mqtt),
             Section::Switch => to_json(&self.switch),
+            Section::Switch2 => to_json(&self.switch2),
             Section::Nodes => to_json(&self.nodes),
             Section::Rules => to_json(&self.rules),
             Section::Sec => to_json(&self.sec),
@@ -704,6 +843,7 @@ impl Config {
             Section::Net => self.net = from_json(json)?,
             Section::Mqtt => self.mqtt = from_json(json)?,
             Section::Switch => self.switch = from_json(json)?,
+            Section::Switch2 => self.switch2 = from_json(json)?,
             Section::Nodes => self.nodes = from_json(json)?,
             Section::Rules => self.rules = from_json(json)?,
             Section::Sec => self.sec = from_json(json)?,
@@ -719,6 +859,7 @@ impl Config {
             Section::Net => self.net = NetCfg::default(),
             Section::Mqtt => self.mqtt = MqttCfg::default(),
             Section::Switch => self.switch = SwitchCfg::default(),
+            Section::Switch2 => self.switch2 = SwitchCfg::default(),
             Section::Nodes => self.nodes = NodesCfg::default(),
             Section::Rules => self.rules = RulesCfg::default(),
             Section::Sec => self.sec = SecCfg::default(),
@@ -823,21 +964,10 @@ impl Config {
         if self.mqtt.topic_root.trim().is_empty() {
             self.mqtt.topic_root = String::from("granite");
         }
-        // A poll period of 0 would turn the switch worker into a busy
-        // loop against a web server that needs 400 ms per page, so
-        // every one of them has a floor (ADR 0006 component 17).
-        let poll = &mut self.switch.poll;
-        poll.stats_s = poll.stats_s.max(1);
-        poll.info_s = poll.info_s.max(5);
-        poll.mac_s = poll.mac_s.max(10);
-        poll.drift_s = poll.drift_s.max(30);
-        poll.counters_s = poll.counters_s.max(5);
-        if self.switch.user.trim().is_empty() {
-            self.switch.user = String::from("admin");
-        }
-        self.switch.mac = crate::switch::model::normalise_mac(&self.switch.mac);
-        self.switch.desired.ports.sort_unstable_by_key(|p| p.port);
-        self.switch.desired.ports.dedup_by_key(|p| p.port);
+        // Both switch sections are normalised the same way (ADR 0006
+        // component 26).
+        normalise_switch(&mut self.switch);
+        normalise_switch(&mut self.switch2);
     }
 
     /// Everything that must hold before the config is used.
@@ -907,28 +1037,82 @@ impl Config {
         if self.mqtt.enabled && self.mqtt.host.trim().is_empty() {
             errs.push(String::from("mqtt.host is required when mqtt is enabled"));
         }
-        if self.switch.enabled && self.switch.host.trim().is_empty() {
-            errs.push(String::from(
-                "switch.host is required when the switch is enabled",
-            ));
+        for which in SwitchId::ALL {
+            errs.extend(validate_switch(self.switch_cfg(which), which.key()));
         }
-        // The widest layout in the profile table: at configuration time
-        // there is no switch to ask which ports it has (ADR 0006
-        // component 24, "Config is checked twice").
-        let widest = crate::switch::Layout::widest();
-        if self.switch.uplink_port != 0 && !widest.is_port(self.switch.uplink_port) {
-            errs.push(format!(
-                "switch.uplink_port ({}) is not a port (1..={}) or 0 for none",
-                self.switch.uplink_port, widest.ports
-            ));
-        }
-        errs.extend(self.switch.desired.validate());
+        errs.extend(self.switch_cross_checks());
         if self.sec.modbus.enabled && self.sec.modbus.allow.is_empty() {
             errs.push(String::from(
                 "sec.modbus.allow must list at least one peer when Modbus is enabled",
             ));
         }
         if errs.is_empty() { Ok(()) } else { Err(errs) }
+    }
+
+    /// One of the two switch sections (ADR 0006 component 26).
+    pub fn switch_cfg(&self, which: SwitchId) -> &SwitchCfg {
+        match which {
+            SwitchId::One => &self.switch,
+            SwitchId::Two => &self.switch2,
+        }
+    }
+
+    /// One of the two switch sections, to write.
+    pub fn switch_cfg_mut(&mut self, which: SwitchId) -> &mut SwitchCfg {
+        match which {
+            SwitchId::One => &mut self.switch,
+            SwitchId::Two => &mut self.switch2,
+        }
+    }
+
+    /// Which switch the configuration says this node is cabled to: the
+    /// one whose `desired.ports` labels it, or `None` when neither does
+    /// (ADR 0006 component 26).
+    pub fn switch_of_node(&self, node: NodeId) -> Option<SwitchId> {
+        SwitchId::ALL.into_iter().find(|which| {
+            let cfg = self.switch_cfg(*which);
+            cfg.enabled && cfg.port_of_node(node).is_some()
+        })
+    }
+
+    /// What may not hold between the two switch sections while both are
+    /// enabled (ADR 0006 component 26): the same address, the same MAC,
+    /// or a node that both claim to have cabled.
+    ///
+    /// Checked from [`Config::validate`], so it runs whichever of the
+    /// two sections is being set.
+    fn switch_cross_checks(&self) -> Vec<String> {
+        let mut errs: Vec<String> = Vec::new();
+        let (one, two) = (&self.switch, &self.switch2);
+        if !(one.enabled && two.enabled) {
+            return errs;
+        }
+        let (host1, host2) = (one.host.trim(), two.host.trim());
+        if !host1.is_empty() && host1.eq_ignore_ascii_case(host2) {
+            errs.push(format!(
+                "switch and switch2 are both at {host1}: the two sections are two switches"
+            ));
+        }
+        // Both MACs are normalised to the same form by `normalise`.
+        if !one.mac.is_empty() && one.mac == two.mac {
+            errs.push(format!(
+                "switch and switch2 both have MAC {}: the two sections are two switches",
+                one.mac
+            ));
+        }
+        for p in &one.desired.ports {
+            let Some(node) = p.node else {
+                continue;
+            };
+            if let Some(other) = two.port_of_node(node) {
+                errs.push(format!(
+                    "node {node} is on switch port {} and on switch2 port {other}: a node is \
+                     cabled to one switch",
+                    p.port
+                ));
+            }
+        }
+        errs
     }
 
     /// Topic root for this device: `<root>/<site>/<device>`.
@@ -981,6 +1165,10 @@ pub struct Secrets {
     /// Empty means the factory default, `admin`. Never exported,
     /// logged or published.
     pub switch_password: String,
+    /// The second block switch's login password, its own slot in the
+    /// same namespace (ADR 0006 component 26). Empty means the factory
+    /// default, like the first.
+    pub switch2_password: String,
 }
 
 impl Default for Secrets {
@@ -996,6 +1184,7 @@ impl Default for Secrets {
             device_key_pem: String::new(),
             recovery_token: String::new(),
             switch_password: String::new(),
+            switch2_password: String::new(),
         }
     }
 }
@@ -1026,6 +1215,24 @@ impl Secrets {
             SWITCH_DEFAULT_PASSWORD
         } else {
             &self.switch_password
+        }
+    }
+
+    /// The same for the second switch, which has its own slot (ADR
+    /// 0006 component 26).
+    pub fn switch2_password(&self) -> &str {
+        if self.switch2_password.is_empty() {
+            SWITCH_DEFAULT_PASSWORD
+        } else {
+            &self.switch2_password
+        }
+    }
+
+    /// The password of one of the two switches.
+    pub fn switch_password_of(&self, which: SwitchId) -> &str {
+        match which {
+            SwitchId::One => self.switch_password(),
+            SwitchId::Two => self.switch2_password(),
         }
     }
 }

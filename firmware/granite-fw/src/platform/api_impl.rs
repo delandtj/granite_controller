@@ -27,8 +27,8 @@ use granite_core::api::{
     Identity as ApiIdentity, MqttStatus, NetControl, NetStatus as ApiNetStatus, OtaStatus,
     Platform as ApiPlatform, Rng, SlotInfo, StagedInfo, Store as ApiStore,
 };
-use granite_core::config::{Section, Secrets};
-use granite_core::dispatch::SwitchRequest;
+use granite_core::config::{Section, Secrets, SwitchId};
+use granite_core::dispatch::{SwitchRequest, SwitchVerb};
 use granite_core::hal::BootReason;
 use granite_core::msg::{Event, EventKind};
 
@@ -410,13 +410,16 @@ pub fn promote(platform: &Platform, sections: &[Section]) -> bool {
     if sections.contains(&Section::Net) {
         platform.net.confirm();
     }
-    if sections.contains(&Section::Switch) {
+    for which in SwitchId::ALL {
+        if !sections.contains(&which.section()) {
+            continue;
+        }
         // The switch holds the change in its running configuration and
         // nothing has been written to its flash yet; this is the one
         // place that lets the worker save it (ADR 0006 component 18).
-        if !crate::switch::submit(SwitchRequest::Confirmed) {
+        if !crate::switch::submit(SwitchRequest::new(which, SwitchVerb::Confirmed)) {
             log::error!(
-                "switch: the worker is not running, so the confirmed switch configuration was \
+                "{which}: the worker is not running, so the confirmed switch configuration was \
                  not saved to the switch's flash"
             );
         }
@@ -438,15 +441,18 @@ pub fn revert_sections(platform: &Platform, sections: &[Section], why: &'static 
             }
         }
     }
-    if sections.contains(&Section::Switch) {
+    for which in SwitchId::ALL {
+        if !sections.contains(&which.section()) {
+            continue;
+        }
         // The switch needs more than its stored section back in the
         // live config: what was applied to it has to be undone there
         // too. The worker plans from the switch's current state back to
         // the snapshot it took, and reboots the switch when that cannot
         // be done (ADR 0006 component 18).
-        if !crate::switch::submit(SwitchRequest::Revert) {
+        if !crate::switch::submit(SwitchRequest::new(which, SwitchVerb::Revert)) {
             log::error!(
-                "switch: the worker is not running, so the unconfirmed switch change was not \
+                "{which}: the worker is not running, so the unconfirmed switch change was not \
                  undone; power-cycling the switch restores its saved configuration"
             );
         }
@@ -556,16 +562,16 @@ impl NetControl for NetControlApi {
                  comes back (a new device certificate needs a reboot either way)"
             ),
         }
-        if section == Section::Switch {
+        if let Some(which) = SwitchId::of_section(section) {
             // The switch worker is what applies this one: it reads the
             // switch, plans, applies the ops and keeps the snapshot a
             // revert goes back to, without saving anything to the
             // switch's flash (ADR 0006 component 18). Same call the
             // dispatcher's StageSection effect makes, so a change over
             // MQTT and one over HTTP take the same path.
-            if !crate::switch::submit(SwitchRequest::Staged) {
+            if !crate::switch::submit(SwitchRequest::new(which, SwitchVerb::Staged)) {
                 log::error!(
-                    "switch: the worker is not running, so the staged switch section was not \
+                    "{which}: the worker is not running, so the staged switch section was not \
                      applied to the switch"
                 );
             }

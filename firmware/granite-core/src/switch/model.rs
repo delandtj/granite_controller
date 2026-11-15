@@ -703,24 +703,40 @@ impl SwitchDesired {
         self.port(port).and_then(|p| p.node)
     }
 
-    /// Everything that is wrong with this document.
+    /// The port the operator says this node is cabled to.
+    pub fn port_of_node(&self, node: u8) -> Option<u8> {
+        self.ports
+            .iter()
+            .find(|p| p.node == Some(node))
+            .map(|p| p.port)
+    }
+
+    /// Everything that is wrong with this document, in the `switch`
+    /// section.
+    pub fn validate(&self) -> Vec<String> {
+        self.validate_in("switch")
+    }
+
+    /// Everything that is wrong with this document, named after the
+    /// section it was read from (`switch` or `switch2`, ADR 0006
+    /// component 26).
     ///
     /// Port numbers are checked against the widest layout in the
     /// profile table: at configuration time there is no switch to ask
     /// which ports it has. The planner checks them again against the
     /// unit's own layout once it is fingerprinted (ADR 0006 component
     /// 24, "Config is checked twice").
-    pub fn validate(&self) -> Vec<String> {
+    pub fn validate_in(&self, section: &str) -> Vec<String> {
         let layout = Layout::widest();
         let mut errs: Vec<String> = Vec::new();
         if let Some(vlans) = &self.vlans {
             for v in vlans {
                 if v.id == 0 || v.id > 4094 {
-                    errs.push(format!("switch.desired.vlans: {} is not a VLAN id", v.id));
+                    errs.push(format!("{section}.desired.vlans: {} is not a VLAN id", v.id));
                 }
                 if v.name.chars().count() > 14 {
                     errs.push(format!(
-                        "switch.desired.vlans: name \"{}\" is longer than 14 characters",
+                        "{section}.desired.vlans: name \"{}\" is longer than 14 characters",
                         v.name
                     ));
                 }
@@ -729,7 +745,7 @@ impl SwitchDesired {
         for p in &self.ports {
             if !layout.is_port(p.port) {
                 errs.push(format!(
-                    "switch.desired.ports: {} is not a port (1..={})",
+                    "{section}.desired.ports: {} is not a port (1..={})",
                     p.port, layout.ports
                 ));
                 continue;
@@ -737,13 +753,13 @@ impl SwitchDesired {
             match p.mode {
                 Some(VlanMode::Access) if p.vlan.is_none() => {
                     errs.push(format!(
-                        "switch.desired.ports[{}]: an access port needs \"vlan\"",
+                        "{section}.desired.ports[{}]: an access port needs \"vlan\"",
                         p.port
                     ));
                 }
                 Some(VlanMode::Trunk) if p.native.is_none() => {
                     errs.push(format!(
-                        "switch.desired.ports[{}]: a trunk port needs \"native\"",
+                        "{section}.desired.ports[{}]: a trunk port needs \"native\"",
                         p.port
                     ));
                 }
@@ -753,7 +769,7 @@ impl SwitchDesired {
                 && speed.impossible_on(layout, p.port)
             {
                 errs.push(format!(
-                    "switch.desired.ports[{}]: port {} has no {speed}",
+                    "{section}.desired.ports[{}]: port {} has no {speed}",
                     p.port, p.port
                 ));
             }
@@ -761,7 +777,7 @@ impl SwitchDesired {
                 && !crate::is_node(node)
             {
                 errs.push(format!(
-                    "switch.desired.ports[{}]: {node} is not a node id",
+                    "{section}.desired.ports[{}]: {node} is not a node id",
                     p.port
                 ));
             }
@@ -772,7 +788,7 @@ impl SwitchDesired {
             // so an entry without `node` cannot be judged here.
             if p.node.is_some() && super::mgmt::desired_carries_mgmt(p) {
                 errs.push(format!(
-                    "switch.desired.ports[{}]: a node port may not carry VLAN {}, the switch's \
+                    "{section}.desired.ports[{}]: a node port may not carry VLAN {}, the switch's \
                      management VLAN",
                     p.port,
                     super::mgmt::MGMT_VLAN
@@ -785,7 +801,7 @@ impl SwitchDesired {
         {
             let offered: Vec<String> = JUMBO_SIZES.iter().map(|(b, _)| b.to_string()).collect();
             errs.push(format!(
-                "switch.desired.jumbo: {size} is not one of 0 (off), {}",
+                "{section}.desired.jumbo: {size} is not one of 0 (off), {}",
                 offered.join(", ")
             ));
         }
@@ -793,7 +809,7 @@ impl SwitchDesired {
             && parse_port_list(layout, &storm.ports).is_none()
         {
             errs.push(format!(
-                "switch.desired.storm.ports: \"{}\" is not a port list",
+                "{section}.desired.storm.ports: \"{}\" is not a port list",
                 storm.ports
             ));
         }
@@ -802,13 +818,13 @@ impl SwitchDesired {
         {
             if parse_cidr(&ip.addr).is_none() {
                 errs.push(format!(
-                    "switch.desired.ip.addr: \"{}\" is not an address/prefix",
+                    "{section}.desired.ip.addr: \"{}\" is not an address/prefix",
                     ip.addr
                 ));
             }
             if parse_ipv4(&ip.gw).is_none() {
                 errs.push(format!(
-                    "switch.desired.ip.gw: \"{}\" is not an address",
+                    "{section}.desired.ip.gw: \"{}\" is not an address",
                     ip.gw
                 ));
             }

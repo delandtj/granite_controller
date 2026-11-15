@@ -545,14 +545,252 @@ fn the_switch_password_is_a_secret_and_not_part_of_an_export() {
 fn section_keys_and_reachability_flags() {
     assert_eq!(Section::from_key("mqtt"), Some(Section::Mqtt));
     assert_eq!(Section::from_key("switch"), Some(Section::Switch));
+    assert_eq!(Section::from_key("switch2"), Some(Section::Switch2));
     assert_eq!(Section::from_key("nope"), None);
     // A VLAN or address change on the block switch can cut the
     // controller off, so it is commit-confirmed too (ADR 0006).
     assert!(Section::Switch.affects_reachability());
+    assert!(
+        Section::Switch2.affects_reachability(),
+        "the second switch is staged and confirmed like the first (component 26)"
+    );
     assert!(Section::Net.affects_reachability());
     assert!(Section::Mqtt.affects_reachability());
     assert!(Section::Sec.affects_reachability());
     assert!(!Section::Nodes.affects_reachability());
     assert!(!Section::Rules.affects_reachability());
     assert!(!Section::Sys.affects_reachability());
+}
+
+// ---------------------------------------------------------------------
+// The second switch (ADR 0006 component 26)
+// ---------------------------------------------------------------------
+
+/// A desired port entry that labels a node.
+fn node_port(port: u8, node: u8) -> DesiredPort {
+    DesiredPort {
+        port,
+        mode: Some(VlanMode::Access),
+        vlan: Some(100),
+        node: Some(node),
+        ..DesiredPort::default()
+    }
+}
+
+#[test]
+fn the_second_switch_section_is_off_by_default_and_round_trips() {
+    let c = Config::default();
+    assert_eq!(
+        c.switch2,
+        granite_core::config::SwitchCfg::default(),
+        "the same shape and the same defaults as `switch`"
+    );
+    assert!(!c.switch2.enabled, "a controller has one switch unless told");
+    assert!(!c.switch2.should_poll() && !c.switch2.may_write());
+    assert_eq!(c.switch2.user, "admin");
+    assert_eq!(c.switch2.poll.counters_s, 60);
+    c.validate().expect("defaults still validate");
+
+    // Written, normalised and read back unchanged.
+    let mut set = Config::default();
+    set.set_section_json(
+        Section::Switch2,
+        r#"{"enabled":true,"manage":true,"host":"10.0.202.6",
+            "mac":"1c:2a:a3:24:26:7f","user":"","uplink_port":9,
+            "poll":{"stats_s":0},
+            "desired":{"ports":[{"port":2,"mode":"access","vlan":100,"node":10},
+                                {"port":1,"mode":"access","vlan":100,"node":9}]}}"#,
+    )
+    .expect("the second section parses");
+    set.validate().expect("and validates");
+    assert_eq!(set.switch2.mac, "1C:2A:A3:24:26:7F", "normalised like switch");
+    assert_eq!(set.switch2.user, "admin", "the login user has a default");
+    assert_eq!(set.switch2.poll.stats_s, 1, "the poll floor applies");
+    assert_eq!(
+        set.switch2
+            .desired
+            .ports
+            .iter()
+            .map(|p| p.port)
+            .collect::<Vec<u8>>(),
+        vec![1, 2],
+        "the port list is sorted like switch's"
+    );
+    assert_eq!(set.switch2.port_of_node(10), Some(2));
+    assert!(
+        !set.switch.enabled,
+        "writing switch2 leaves the first switch alone"
+    );
+
+    let json = set.section_json(Section::Switch2).expect("serialises");
+    let mut back = Config::default();
+    back.set_section_json(Section::Switch2, &json).unwrap();
+    assert_eq!(back.switch2, set.switch2);
+
+    // And a whole-document round trip.
+    let imported = Config::import_json(&set.export_json().unwrap()).expect("imports");
+    assert_eq!(imported.switch2, set.switch2);
+}
+
+#[test]
+fn a_stored_config_without_switch2_loads_unchanged() {
+    // What a controller that was configured before the second switch
+    // existed has in NVS: six sections and no `switch2` key at all.
+    let mut stored = Config::default();
+    stored.sys.device_id = "granite-aabbcc".into();
+    stored.switch.enabled = true;
+    stored.switch.manage = true;
+    stored.switch.host = "192.168.64.241".into();
+    stored.switch.desired.ports = vec![node_port(1, 1)];
+
+    let mut store: BTreeMap<Section, String> = BTreeMap::new();
+    for section in [Section::Switch, Section::Sys] {
+        store.insert(section, stored.section_json(section).unwrap());
+    }
+    let (cfg, fallbacks) = Config::from_sections(|s| store.get(&s).cloned());
+    assert!(fallbacks.is_empty(), "{fallbacks:?}");
+    cfg.validate().expect("an old config is still valid");
+    assert_eq!(cfg.switch, stored.switch, "switch 1 is what it was");
+    assert_eq!(
+        cfg.switch2,
+        granite_core::config::SwitchCfg::default(),
+        "and the missing section is simply off"
+    );
+
+    // An exported document from before the second switch imports too.
+    let old = r#"{"schema_version":1,"switch":{"enabled":true,"host":"10.0.202.5"}}"#;
+    let imported = Config::import_json(old).expect("imports");
+    assert!(imported.switch.enabled && !imported.switch2.enabled);
+}
+
+#[test]
+fn the_two_switch_sections_may_not_be_the_same_switch() {
+    let mut c = Config::default();
+    c.switch.enabled = true;
+    c.switch.host = String::from("10.0.202.5");
+    c.switch.mac = String::from("1C:2A:A3:24:26:7E");
+    c.switch2.enabled = true;
+    c.switch2.host = String::from("10.0.202.6");
+    c.switch2.mac = String::from("1C:2A:A3:24:26:7F");
+    c.validate().expect("two switches, two addresses, two MACs");
+
+    // The same host.
+    let mut same_host = c.clone();
+    same_host.switch2.host = String::from("10.0.202.5");
+    let errs = same_host.validate().expect_err("one address, two sections");
+    assert!(
+        errs.iter().any(|e| e.contains("both at 10.0.202.5")),
+        "{errs:?}"
+    );
+
+    // The same MAC. An empty MAC on both is "do not check" and no
+    // clash.
+    let mut same_mac = c.clone();
+    same_mac.switch2.mac = String::from("1c:2a:a3:24:26:7e");
+    same_mac.normalise();
+    let errs = same_mac.validate().expect_err("one MAC, two sections");
+    assert!(
+        errs.iter().any(|e| e.contains("both have MAC")),
+        "{errs:?}"
+    );
+    let mut no_mac = c.clone();
+    no_mac.switch.mac = String::new();
+    no_mac.switch2.mac = String::new();
+    no_mac.validate().expect("no MAC is not a clash");
+
+    // The same node on both.
+    let mut same_node = c.clone();
+    same_node.switch.desired.ports = vec![node_port(1, 9)];
+    same_node.switch2.desired.ports = vec![node_port(3, 9)];
+    let errs = same_node.validate().expect_err("node 9 on two switches");
+    assert!(
+        errs.iter()
+            .any(|e| e.contains("node 9 is on switch port 1 and on switch2 port 3")),
+        "{errs:?}"
+    );
+    // Different nodes are the point of the second switch.
+    let mut two_blocks = c.clone();
+    two_blocks.switch.desired.ports = vec![node_port(1, 1)];
+    two_blocks.switch2.desired.ports = vec![node_port(1, 9)];
+    two_blocks.validate().expect("nodes 1 and 9, one each");
+    assert_eq!(
+        two_blocks.switch_of_node(9),
+        Some(granite_core::config::SwitchId::Two)
+    );
+    assert_eq!(
+        two_blocks.switch_of_node(1),
+        Some(granite_core::config::SwitchId::One)
+    );
+    assert_eq!(two_blocks.switch_of_node(20), None);
+
+    // While switch2 is off, nothing is cross-checked: the sections are
+    // not two switches then.
+    let mut off = same_host.clone();
+    off.switch2.enabled = false;
+    off.validate().expect("a disabled section clashes with nothing");
+}
+
+#[test]
+fn the_second_switch_is_validated_under_its_own_name() {
+    let mut c = Config::default();
+    c.switch2.enabled = true;
+    let errs = c.validate().expect_err("no host");
+    assert!(errs.iter().any(|e| e.contains("switch2.host")), "{errs:?}");
+
+    c.switch2.host = String::from("10.0.202.6");
+    c.switch2.uplink_port = 12;
+    let errs = c.validate().expect_err("port 12");
+    assert!(
+        errs.iter().any(|e| e.contains("switch2.uplink_port")),
+        "{errs:?}"
+    );
+
+    c.switch2.uplink_port = 9;
+    c.switch2.desired.jumbo = Some(4_711);
+    let errs = c.validate().expect_err("not a frame size the switch has");
+    assert!(
+        errs.iter().any(|e| e.contains("switch2.desired.jumbo")),
+        "{errs:?}"
+    );
+
+    // The management VLAN invariant holds per section (component 25).
+    c.switch2.desired.jumbo = None;
+    c.switch2.desired.ports = vec![DesiredPort {
+        port: 1,
+        mode: Some(VlanMode::Access),
+        vlan: Some(1),
+        node: Some(9),
+        ..DesiredPort::default()
+    }];
+    let errs = c.validate().expect_err("a node port in VLAN 1");
+    assert!(
+        errs.iter()
+            .any(|e| e.starts_with("switch2.desired.ports[1]") && e.contains("VLAN 1")),
+        "{errs:?}"
+    );
+}
+
+#[test]
+fn the_second_switch_has_its_own_password_slot() {
+    let mut s = Secrets::default();
+    assert_eq!(s.switch2_password(), "admin", "the factory password");
+    s.switch_password = String::from("first-one");
+    s.switch2_password = String::from("second-one");
+    assert_eq!(
+        s.switch_password_of(granite_core::config::SwitchId::One),
+        "first-one"
+    );
+    assert_eq!(
+        s.switch_password_of(granite_core::config::SwitchId::Two),
+        "second-one"
+    );
+
+    let mut c = Config::default();
+    c.switch2.enabled = true;
+    c.switch2.host = String::from("10.0.202.6");
+    let export = c.export_json().expect("exports");
+    assert!(
+        !export.contains("second-one") && !export.contains("switch2_password"),
+        "a Config cannot carry a secret"
+    );
 }

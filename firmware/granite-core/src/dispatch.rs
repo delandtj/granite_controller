@@ -26,7 +26,7 @@ use alloc::vec::Vec;
 
 use serde_json::Value;
 
-use crate::config::{Config, Section};
+use crate::config::{Config, Section, SwitchId};
 use crate::jobs::{JobLog, SubmittedJob};
 use crate::msg::{Args, Command, CommandKind, PROTOCOL_VERSION, Reply, TargetKind};
 use crate::observed::Observed;
@@ -72,9 +72,32 @@ pub enum SideEffect {
     Switch(SwitchRequest),
 }
 
+/// What the switch worker is asked to do, and which switch it is about
+/// (ADR 0006 component 26).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SwitchRequest {
+    /// Switch 1 (`switch`) or switch 2 (`switch2`).
+    pub which: SwitchId,
+    /// The verb.
+    pub verb: SwitchVerb,
+}
+
+impl SwitchRequest {
+    /// One verb for one switch.
+    pub fn new(which: SwitchId, verb: SwitchVerb) -> Self {
+        SwitchRequest { which, verb }
+    }
+
+    /// One verb for switch 1, the only switch a one-block controller
+    /// has.
+    pub fn one(verb: SwitchVerb) -> Self {
+        SwitchRequest::new(SwitchId::One, verb)
+    }
+}
+
 /// What the switch worker is asked to do.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum SwitchRequest {
+pub enum SwitchVerb {
     /// Enable or disable one port. `port` is a switch port; a command
     /// that named a node has already been resolved to one.
     Port {
@@ -93,8 +116,8 @@ pub enum SwitchRequest {
     FactoryReset,
     /// Read the switch and apply the desired state now.
     Reconcile,
-    /// The `switch` section was staged: apply it without saving and let
-    /// the confirm timer run (ADR 0006 component 18).
+    /// This switch's section was staged: apply it without saving and
+    /// let the confirm timer run (ADR 0006 component 18).
     Staged,
     /// The staged section was confirmed: save the switch.
     Confirmed,
@@ -269,22 +292,51 @@ pub fn dispatch(cmd: &Command, ctx: &mut DispatchCtx<'_>) -> Dispatched {
     done(reply, effects)
 }
 
+/// Which switch a `switch_*` command is for (ADR 0006 component 26).
+///
+/// `"switch": 1` or `2` says it outright; `2` while `switch2` is not
+/// enabled is refused. Without it, a command that names a node goes to
+/// the switch whose `desired.ports` labels that node, and anything else
+/// goes to switch 1 - which is every command of a controller that has
+/// one switch.
+///
+/// A node neither section labels gives switch 1, where the verb itself
+/// refuses it for the reason it always did ("no switch port is bound to
+/// node N").
+pub fn switch_target(cmd: &Command, config: &Config) -> Result<SwitchId, String> {
+    if let Some(n) = cmd.args.switch_index() {
+        let which = SwitchId::from_num(n)
+            .ok_or_else(|| alloc::format!("args.switch must be 1 or 2, not {n}"))?;
+        if which == SwitchId::Two && !config.switch2.enabled {
+            return Err(String::from("the switch2 section is not enabled"));
+        }
+        return Ok(which);
+    }
+    let node = cmd.args.node.or_else(|| cmd.target.node());
+    Ok(node
+        .and_then(|node| config.switch_of_node(node))
+        .unwrap_or(SwitchId::One))
+}
+
 /// One switch verb as the worker's request, or why it cannot be one.
 ///
 /// Everything that can be decided without talking to the switch is
-/// decided here: that a switch is configured at all, that writes are
-/// allowed (`switch.manage`), that `switch_port` names a port the
-/// switch has - by port number or through the node the configuration
-/// says is cabled to it - and that the two verbs which interrupt every
-/// node carry the device id.
+/// decided here: which of the two switches it is for (component 26),
+/// that that switch is configured at all, that writes are allowed
+/// (`manage`), that `switch_port` names a port the switch has - by port
+/// number or through the node the configuration says is cabled to it -
+/// and that the two verbs which interrupt every node carry the device
+/// id.
 fn switch_request(cmd: &Command, ctx: &DispatchCtx<'_>) -> Result<SwitchRequest, String> {
-    let cfg = &ctx.config.switch;
+    let which = switch_target(cmd, ctx.config)?;
+    let name = which.key();
+    let cfg = ctx.config.switch_cfg(which);
     if !cfg.enabled {
-        return Err(String::from("the switch section is not enabled"));
+        return Err(alloc::format!("the {name} section is not enabled"));
     }
     if !cfg.manage {
-        return Err(String::from(
-            "switch.manage is false, so the controller does not write to the switch",
+        return Err(alloc::format!(
+            "{name}.manage is false, so the controller does not write to the switch"
         ));
     }
     let confirmed = || -> Result<(), String> {
@@ -293,7 +345,7 @@ fn switch_request(cmd: &Command, ctx: &DispatchCtx<'_>) -> Result<SwitchRequest,
             _ => Err(String::from("args.confirm must be the device id")),
         }
     };
-    match cmd.action {
+    let verb = match cmd.action {
         CommandKind::SwitchPort => {
             let enabled = cmd
                 .args
@@ -303,13 +355,12 @@ fn switch_request(cmd: &Command, ctx: &DispatchCtx<'_>) -> Result<SwitchRequest,
                 (Some(port), _) => port,
                 (None, Some(node)) => ctx
                     .observed
-                    .switch
-                    .as_ref()
+                    .switch_of(which)
                     .and_then(|s| s.port_of_node(node))
                     .ok_or_else(|| {
                         alloc::format!(
                             "no switch port is bound to node {node}; name a port with args.port \
-                             or set \"node\" on the port in switch.desired"
+                             or set \"node\" on the port in {name}.desired"
                         )
                     })?,
                 (None, None) => {
@@ -326,24 +377,27 @@ fn switch_request(cmd: &Command, ctx: &DispatchCtx<'_>) -> Result<SwitchRequest,
                     widest.ports
                 ));
             }
-            Ok(SwitchRequest::Port {
+            SwitchVerb::Port {
                 port,
                 enabled,
                 force: cmd.args.force,
-            })
+            }
         }
-        CommandKind::SwitchSave => Ok(SwitchRequest::Save),
-        CommandKind::SwitchReconcile => Ok(SwitchRequest::Reconcile),
+        CommandKind::SwitchSave => SwitchVerb::Save,
+        CommandKind::SwitchReconcile => SwitchVerb::Reconcile,
         CommandKind::SwitchReboot => {
             confirmed()?;
-            Ok(SwitchRequest::Reboot)
+            SwitchVerb::Reboot
         }
         CommandKind::SwitchFactoryReset => {
             confirmed()?;
-            Ok(SwitchRequest::FactoryReset)
+            SwitchVerb::FactoryReset
         }
-        other => Err(alloc::format!("{} is not a switch action", other.as_str())),
-    }
+        other => {
+            return Err(alloc::format!("{} is not a switch action", other.as_str()));
+        }
+    };
+    Ok(SwitchRequest::new(which, verb))
 }
 
 /// The staged sections as JSON strings, for the ack's `data`.
