@@ -20,6 +20,9 @@ layout is profile data instead of constants. New component 24)
 **Updated**: 2026-11-15 (VLAN 1 invariant: node ports never carry the
 management VLAN; a config check and a report-only exposure list. New
 component 25)
+**Updated**: 2026-11-15 (second switch: a controller that serves two
+blocks reads and manages both block switches. Optional, a second
+config section `switch2`. New component 26)
 
 Related: firmware/docs/adr/0001-firmware-architecture.md (components 6
 Network, 7 MQTT, 8 HTTP API, 10 Configuration; commit-confirm),
@@ -444,6 +447,59 @@ Numbered after ADR 0001's list.
       the bench: an access port in a data VLAN must not reach the web
       UI. Recorded in Granite/infra `docs/sodola.md` as a TODO.
 
+26. **Second switch** (`granite-core/src/config.rs`, `dispatch.rs`,
+    the worker)
+    - A controller serves up to 64 nodes on 8 planes (ADR 0004), and a
+      switch has 8 node ports. A controller that serves two blocks (16
+      nodes, nodes 1-8 and 9-16) therefore has two block switches. The
+      second one is optional: a controller with one switch is
+      configured, reports and behaves exactly as before.
+    - Configuration: a second config section `switch2`, the same shape
+      as `switch` and disabled by default. `switch` is switch 1,
+      `switch2` is switch 2. A section, not a list inside `switch`:
+      the section is the unit that is staged, confirmed and reverted,
+      so a change to one switch never re-applies or reverts the other.
+      `switch2` is staged and confirmed like `switch`.
+    - Two is the limit. It is what 16 nodes per controller needs; more
+      switches per controller means a list and is designed when a
+      controller has to serve more than two blocks.
+    - Not discovered: the switch has no discovery protocol and the
+      controller's own link says nothing about it (Context, "Physical
+      layout"), so the address and MAC of the second switch come from
+      pre-provisioning like those of the first. What the controller
+      works out by itself is which switch a node is on (below).
+    - Everything per switch stays per switch: profile, pairing check,
+      own-port search, uplink, protection, drift, snapshot and revert,
+      VLAN 1 exposure, reachability and backoff, password. The second
+      switch has its own password in the secrets namespace.
+    - Worker: still one thread. It holds one worker state per switch
+      and serves them in turn, so requests to the two switches never
+      overlap and at most one page is in memory. A switch that does
+      not answer delays the other by one request timeout per attempt;
+      the backoff spaces the attempts.
+    - Cross checks at config time, when both sections are enabled: the
+      same `host`, or the same non-empty `mac`, in both is rejected; a
+      `node` label that appears in both `desired.ports` lists is
+      rejected. They are checked whichever section is being set.
+    - Report: `state.switch2`, the same shape as `state.switch`, left
+      out while `switch2` is not enabled. Counters of the second
+      switch go to `.../switch2/counters`.
+    - Events keep their names. An event from switch 2 says so
+      (`"switch": 2`); an event from switch 1 is unchanged.
+    - Faults are shared: a switch fault is raised while either switch
+      has the condition and cleared when neither has. The event tells
+      which one.
+    - Commands: every `switch_*` command takes an optional
+      `"switch": 1` or `2`. Without it, a command that names a `node`
+      goes to the switch whose `desired.ports` labels that node, and
+      any other command goes to switch 1. A `node` labelled on
+      neither switch is refused as before. `"switch": 2` while
+      `switch2` is not enabled is refused.
+    - Node labels use the controller's node numbers (1-64), so the
+      ports of the second switch are labelled 9-16 when the second
+      block is plane 1. Nothing ties a switch to a plane: the labels
+      are the whole map.
+
 ### Config section `switch`
 
 ```json
@@ -469,6 +525,9 @@ Numbered after ADR 0001's list.
   }
 }
 ```
+
+Section `switch2` has the same shape and the same defaults (component
+26).
 
 `desired` is ignored unless `manage` is true. `mac` is the pairing
 from pre-provisioning. Absent keys in `desired` mean "do not manage", so a partly described
