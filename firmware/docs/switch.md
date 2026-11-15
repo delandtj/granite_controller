@@ -9,6 +9,14 @@ commands). Design and reasons: `docs/adr/0006-block-switch.md`. The
 switch itself, its quirks and a stand-alone CLI: Granite infra
 `docs/sodola.md` and `tools/sodola.py`.
 
+Which units a controller image knows is a table in the image, one row
+per (model, firmware) pair whose pages were captured and tested (ADR
+0006 component 24). Today that is one row: `SL902-SWTGW218AS` on
+`V200.1.8`, with writes allowed. Any other model or version is polled
+and published while its pages parse and never written
+(`switch_fw_unknown`); adding one is a controller update, and there is
+no setting that forces writes.
+
 Topics below use the bench prefix `granite/bench/granite-cb374b`;
 replace it with your controller's `<prefix>/<device id>`. Examples use
 `mosquitto_pub` / `mosquitto_sub` against a broker on 127.0.0.1.
@@ -72,7 +80,7 @@ The switch password is not in this section; it is a controller secret
 | `host` | `""` | Management address. Empty = do not poll. |
 | `mac` | `""` | The switch's MAC from provisioning. If set and the switch reports another MAC, the controller stops after `info.cgi` and raises `switch_mismatch`. Empty = no check. |
 | `user` | `"admin"` | Login user. |
-| `uplink_port` | `9` | Protected port (section 6). `0` = none. |
+| `uplink_port` | `9` | Protected port (section 6). `0` = none. A port the switch in front of the controller has not got counts as none and is logged. |
 | `enforce` | `false` | On drift, put `desired` back by itself (and save). Off: drift is only reported. |
 | `poll.stats_s` | `5` | Link state and counters. |
 | `poll.info_s` | `60` | Uptime, firmware, MAC; a falling uptime = switch rebooted. |
@@ -285,7 +293,7 @@ Events (`.../event`, `kind:"switch"`, the name in `what`):
 | `switch_drift` | The switch no longer matches `desired` (someone used its web UI?). |
 | `switch_refused` | An op or command was refused; `detail` says why. |
 | `switch_mismatch` | The switch's MAC is not `switch.mac`. |
-| `switch_fw_unknown` | Firmware other than V200.1.8: monitored, never written. |
+| `switch_fw_unknown` | The switch's model and firmware (the `detail` says which) have no verified profile in this image: monitored while its pages parse, never written. |
 
 `switch_unreachable` and `switch_mismatch` / `switch_fw_unknown` also
 set Modbus fault bits (`docs/modbus_map.md`).
@@ -300,6 +308,8 @@ set Modbus fault bits (`docs/modbus_map.md`).
 | `switch_refused` on port 9 | Uplink protection (section 6). |
 | Change undone after 5 minutes | No `config_confirm` was sent. |
 | `switch_mismatch` | Wrong switch at `host`, or `mac` mistyped. |
+| `switch_fw_unknown` | This controller image has no verified profile for that model and firmware. Monitoring still works; writes are refused. A profile is part of the image, so enabling the unit is a controller update, not a setting (ADR 0006 component 24). |
+| `switch_refused` `"... has no port N"` | The port exists in `desired` but not on the switch this image fingerprinted. Fix `desired`, or the unit is not the one you think. |
 | `state.switch.reachable` false | Wrong `host`, switch off, or not on a subnet the controller can reach; the switch has no management VLAN setting. |
 | Someone used the switch web UI | Expect `switch_drift`; with `enforce: false` nothing is put back. Avoid the web UI on a managed switch: it shares paging state with the controller's MAC walk. |
 

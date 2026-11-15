@@ -18,26 +18,7 @@ use core::fmt;
 
 use serde::{Deserialize, Serialize};
 
-/// Ports on an SL902-SWTGW218AS: 8x 2.5G copper plus the SFP+.
-pub const PORT_COUNT: u8 = 9;
-
-/// The SFP+ port, the only one that does 10G and the usual uplink.
-pub const SFP_PORT: u8 = 9;
-
-/// Firmware versions whose pages these parsers were written against.
-/// Anything else is monitored if it parses, never written (ADR 0006
-/// component 16, `switch_fw_unknown`).
-pub const KNOWN_FIRMWARE: [&str; 1] = ["V200.1.8"];
-
-/// True when `port` is a port of this switch.
-pub const fn is_port(port: u8) -> bool {
-    port >= 1 && port <= PORT_COUNT
-}
-
-/// True when the firmware string is one the writes were tested against.
-pub fn firmware_known(firmware: &str) -> bool {
-    KNOWN_FIRMWARE.contains(&firmware.trim())
-}
+use super::profile::Layout;
 
 /// A MAC address in the switch's own notation, normalised to uppercase
 /// colon form (`1C:2A:A3:24:26:7E`).
@@ -145,12 +126,13 @@ impl Speed {
         }
     }
 
-    /// True when this speed cannot be set on `port`: no 10G on the
-    /// copper ports, no 10M on the SFP+ (`docs/sodola.md`, "Quirks").
-    pub const fn impossible_on(self, port: u8) -> bool {
+    /// True when this speed cannot be set on `port` of a unit with
+    /// this layout: no 10G on the copper ports, no 10M on an SFP+
+    /// (`docs/sodola.md`, "Quirks").
+    pub fn impossible_on(self, layout: &Layout, port: u8) -> bool {
         match self {
-            Speed::G10 => port != SFP_PORT,
-            Speed::M10 => port == SFP_PORT,
+            Speed::G10 => !layout.is_sfp(port),
+            Speed::M10 => layout.is_sfp(port),
             _ => false,
         }
     }
@@ -579,6 +561,12 @@ impl SwitchState {
     pub fn firmware(&self) -> &str {
         self.info.as_ref().map_or("", |i| i.firmware.as_str())
     }
+
+    /// The model string, empty when `info.cgi` was not read. Half of
+    /// the profile key (ADR 0006 component 24).
+    pub fn model(&self) -> &str {
+        self.info.as_ref().map_or("", |i| i.model.as_str())
+    }
 }
 
 // ---------------------------------------------------------------------
@@ -716,7 +704,14 @@ impl SwitchDesired {
     }
 
     /// Everything that is wrong with this document.
+    ///
+    /// Port numbers are checked against the widest layout in the
+    /// profile table: at configuration time there is no switch to ask
+    /// which ports it has. The planner checks them again against the
+    /// unit's own layout once it is fingerprinted (ADR 0006 component
+    /// 24, "Config is checked twice").
     pub fn validate(&self) -> Vec<String> {
+        let layout = Layout::widest();
         let mut errs: Vec<String> = Vec::new();
         if let Some(vlans) = &self.vlans {
             for v in vlans {
@@ -732,10 +727,10 @@ impl SwitchDesired {
             }
         }
         for p in &self.ports {
-            if !is_port(p.port) {
+            if !layout.is_port(p.port) {
                 errs.push(format!(
-                    "switch.desired.ports: {} is not a port (1..={PORT_COUNT})",
-                    p.port
+                    "switch.desired.ports: {} is not a port (1..={})",
+                    p.port, layout.ports
                 ));
                 continue;
             }
@@ -755,7 +750,7 @@ impl SwitchDesired {
                 _ => {}
             }
             if let Some(speed) = p.speed
-                && speed.impossible_on(p.port)
+                && speed.impossible_on(layout, p.port)
             {
                 errs.push(format!(
                     "switch.desired.ports[{}]: port {} has no {speed}",
@@ -782,7 +777,7 @@ impl SwitchDesired {
             ));
         }
         if let Some(storm) = &self.storm
-            && parse_port_list(&storm.ports).is_none()
+            && parse_port_list(layout, &storm.ports).is_none()
         {
             errs.push(format!(
                 "switch.desired.storm.ports: \"{}\" is not a port list",
@@ -810,8 +805,8 @@ impl SwitchDesired {
 }
 
 /// `"1-4,9"` to `[1, 2, 3, 4, 9]`. `None` when it is not a port list or
-/// names a port the switch does not have.
-pub fn parse_port_list(spec: &str) -> Option<Vec<u8>> {
+/// names a port `layout` does not have.
+pub fn parse_port_list(layout: &Layout, spec: &str) -> Option<Vec<u8>> {
     let mut out: Vec<u8> = Vec::new();
     for part in spec.split(',') {
         let part = part.trim();
@@ -832,7 +827,7 @@ pub fn parse_port_list(spec: &str) -> Option<Vec<u8>> {
             None => out.push(part.parse().ok()?),
         }
     }
-    if out.is_empty() || out.iter().any(|p| !is_port(*p)) {
+    if out.is_empty() || out.iter().any(|p| !layout.is_port(*p)) {
         return None;
     }
     out.sort_unstable();
@@ -889,13 +884,17 @@ mod tests {
 
     #[test]
     fn port_lists_and_addresses_parse() {
-        assert_eq!(parse_port_list("1-4,9"), Some(alloc::vec![1, 2, 3, 4, 9]));
-        assert_eq!(parse_port_list("9"), Some(alloc::vec![9]));
-        assert_eq!(parse_port_list("1-8"), Some((1u8..=8).collect()));
-        assert_eq!(parse_port_list("0-3"), None, "there is no port 0");
-        assert_eq!(parse_port_list("1-10"), None, "there is no port 10");
-        assert_eq!(parse_port_list("4-1"), None);
-        assert_eq!(parse_port_list(""), None);
+        let layout = Layout::widest();
+        assert_eq!(
+            parse_port_list(layout, "1-4,9"),
+            Some(alloc::vec![1, 2, 3, 4, 9])
+        );
+        assert_eq!(parse_port_list(layout, "9"), Some(alloc::vec![9]));
+        assert_eq!(parse_port_list(layout, "1-8"), Some((1u8..=8).collect()));
+        assert_eq!(parse_port_list(layout, "0-3"), None, "there is no port 0");
+        assert_eq!(parse_port_list(layout, "1-10"), None, "there is no port 10");
+        assert_eq!(parse_port_list(layout, "4-1"), None);
+        assert_eq!(parse_port_list(layout, ""), None);
         assert_eq!(parse_cidr("10.0.202.5/24"), Some(([10, 0, 202, 5], 24)));
         assert_eq!(parse_cidr("10.0.202.5"), None);
         assert_eq!(parse_cidr("10.0.202.5/0"), None);
@@ -907,9 +906,11 @@ mod tests {
 
     #[test]
     fn speeds_know_which_port_can_do_them() {
-        assert!(Speed::G10.impossible_on(1));
-        assert!(!Speed::G10.impossible_on(SFP_PORT));
-        assert!(Speed::M10.impossible_on(SFP_PORT));
+        let layout = Layout::widest();
+        let sfp = *layout.sfp.last().expect("a unit has an SFP+ cage");
+        assert!(Speed::G10.impossible_on(layout, 1));
+        assert!(!Speed::G10.impossible_on(layout, sfp));
+        assert!(Speed::M10.impossible_on(layout, sfp));
         assert_eq!(Speed::parse("2.5G"), Some(Speed::G2P5));
         assert_eq!(Speed::parse("2500M"), Some(Speed::G2P5));
         assert_eq!(Speed::parse("40G"), None);

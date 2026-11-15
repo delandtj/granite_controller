@@ -316,10 +316,14 @@ fn switch_request(cmd: &Command, ctx: &DispatchCtx<'_>) -> Result<SwitchRequest,
                     return Err(String::from("args.port or args.node is required"));
                 }
             };
-            if !crate::switch::is_port(port) {
+            // The widest layout in the profile table: the dispatcher
+            // has no switch in hand. The worker refuses a port the unit
+            // itself has not got (ADR 0006 component 24).
+            let widest = crate::switch::Layout::widest();
+            if !widest.is_port(port) {
                 return Err(alloc::format!(
                     "{port} is not a switch port (1..={})",
-                    crate::switch::PORT_COUNT
+                    widest.ports
                 ));
             }
             Ok(SwitchRequest::Port {

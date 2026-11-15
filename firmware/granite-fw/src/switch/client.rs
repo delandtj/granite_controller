@@ -22,6 +22,12 @@
 //!
 //! One page is buffered at a time and dropped after its parse; nothing
 //! here keeps a page or a form around.
+//!
+//! The client also carries the [`Layout`] the pages are read with (ADR
+//! 0006 component 24). It starts as the widest in the profile table,
+//! because the layout is not known before `info.cgi` has been read, and
+//! the worker narrows it with [`SwitchClient::set_layout`] as soon as
+//! the (model, firmware) pair resolves to a row.
 
 use std::thread;
 use std::time::Duration;
@@ -34,6 +40,7 @@ use granite_core::switch::model::{
     VlanTable,
 };
 use granite_core::switch::parse::{self, ParseError, PortLink};
+use granite_core::switch::profile::Layout;
 use granite_core::switch::{md5, plan::Op};
 
 /// Shortest gap between two requests \[ms\].
@@ -105,6 +112,9 @@ pub struct SwitchClient {
     next_ms: u64,
     /// Requests sent since the client was built, for the log.
     requests: u32,
+    /// The layout the per-port pages are read with: the resolved
+    /// profile's, or the widest in the table while none is resolved.
+    layout: &'static Layout,
 }
 
 impl SwitchClient {
@@ -118,7 +128,20 @@ impl SwitchClient {
             logged_in: false,
             next_ms: 0,
             requests: 0,
+            layout: Layout::widest(),
         }
+    }
+
+    /// Read the per-port pages with this layout from now on: the
+    /// resolved profile's, or the widest in the table for a switch
+    /// without a row.
+    pub fn set_layout(&mut self, layout: &'static Layout) {
+        self.layout = layout;
+    }
+
+    /// The layout the pages are currently read with.
+    pub fn layout(&self) -> &'static Layout {
+        self.layout
     }
 
     /// True when this client is for exactly this host and login, which
@@ -326,13 +349,13 @@ impl SwitchClient {
     /// `port.cgi`: the per-port configuration.
     pub fn read_ports(&mut self) -> Result<Vec<PortCfg>, ClientError> {
         let page = self.get("port.cgi")?;
-        Ok(parse::port_config(&page)?)
+        Ok(parse::port_config(self.layout, &page)?)
     }
 
     /// `port.cgi?page=stats`: link state and the counters.
     pub fn read_stats(&mut self) -> Result<Vec<PortStats>, ClientError> {
         let page = self.get("port.cgi?page=stats")?;
-        Ok(parse::stats(&page)?)
+        Ok(parse::stats(self.layout, &page)?)
     }
 
     /// `vlan.cgi?page=static`.
@@ -344,7 +367,7 @@ impl SwitchClient {
     /// `vlan.cgi?page=port_based`.
     pub fn read_port_vlans(&mut self) -> Result<Vec<PortVlan>, ClientError> {
         let page = self.get("vlan.cgi?page=port_based")?;
-        Ok(parse::port_vlans(&page)?)
+        Ok(parse::port_vlans(self.layout, &page)?)
     }
 
     /// `fwd.cgi?page=jumboframe`.
@@ -356,13 +379,13 @@ impl SwitchClient {
     /// `fwd.cgi?page=storm_ctrl`.
     pub fn read_storm(&mut self) -> Result<Vec<StormPort>, ClientError> {
         let page = self.get("fwd.cgi?page=storm_ctrl")?;
-        Ok(parse::storm(&page)?)
+        Ok(parse::storm(self.layout, &page)?)
     }
 
     /// `port.cgi?page=bw_ctrl`.
     pub fn read_rate_limits(&mut self) -> Result<Vec<RatePort>, ClientError> {
         let page = self.get("port.cgi?page=bw_ctrl")?;
-        Ok(parse::rate_limits(&page)?)
+        Ok(parse::rate_limits(self.layout, &page)?)
     }
 
     /// `loop.cgi`.
@@ -388,12 +411,12 @@ impl SwitchClient {
         const PATH: &str = "mac.cgi?page=fwd_tbl";
         self.get(PATH)?;
         let first = self.post(PATH, &forms::mac_perpage())?;
-        let page = parse::mac_page(&first)?;
+        let page = parse::mac_page(self.layout, &first)?;
         let mut entries = page.entries;
         let pages = page.pages.min(max_pages);
         for index in 2..=pages {
             let body = self.post(PATH, &forms::mac_goto(index))?;
-            let more = parse::mac_page(&body)?;
+            let more = parse::mac_page(self.layout, &body)?;
             entries.extend(more.entries);
         }
         entries.sort_by_key(|e| (e.port, e.vlan, e.mac.clone()));

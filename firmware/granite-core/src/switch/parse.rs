@@ -7,9 +7,16 @@
 //! firmware turns that into "unsupported firmware", which is the whole
 //! point of the fingerprint check in component 16.
 //!
-//! The fixtures these are tested against live in
-//! `granite-core/tests/fixtures/sodola-v200.1.8/`, captured from a live
-//! unit with `tools/sodola.py get`.
+//! Every parser that reads a per-port table takes the [`Layout`] of the
+//! resolved profile (ADR 0006 component 24): how many ports a unit has
+//! is row data, not a constant in here. [`info`] is the exception, and
+//! has to be: it is the page that says which row the unit is, so it
+//! reads its port rows with the widest layout in the table.
+//!
+//! The fixtures these are tested against live in one directory per
+//! profile row under `granite-core/tests/fixtures/`, named
+//! `<model>-<firmware>` in lower case and captured from a live unit
+//! with `tools/sodola.py get`.
 
 use alloc::format;
 use alloc::string::String;
@@ -20,6 +27,7 @@ use super::model::{
     Duplex, IpCfg, Jumbo, JUMBO_SIZES, LoopCfg, LoopMode, MacEntry, MacPage, PortCfg, PortStats,
     PortVlan, RatePort, Speed, StormPort, SwitchInfo, Vlan, VlanMode, VlanTable, normalise_mac,
 };
+use super::profile::Layout;
 use super::scan;
 
 /// Why a page could not be read.
@@ -149,13 +157,14 @@ fn scale(unit: &str) -> Option<u32> {
 }
 
 /// The per-port rows of a table, keyed by port: every row whose first
-/// cell is `Port N` and which has `columns` cells in total.
-fn port_rows(html: &str, columns: usize) -> Vec<(u8, Vec<String>)> {
+/// cell is `Port N`, which has `columns` cells in total and whose port
+/// the unit has.
+fn port_rows(layout: &Layout, html: &str, columns: usize) -> Vec<(u8, Vec<String>)> {
     scan::rows(html)
         .into_iter()
         .filter(|r| r.len() == columns)
         .filter_map(|r| port_cell(&r[0]).map(|port| (port, r)))
-        .filter(|(port, _)| super::model::is_port(*port))
+        .filter(|(port, _)| layout.is_port(*port))
         .collect()
 }
 
@@ -168,6 +177,10 @@ fn port_rows(html: &str, columns: usize) -> Vec<(u8, Vec<String>)> {
 /// The link state comes back as [`PortStats`] with only `port`,
 /// `link` and the negotiated speed filled in, so the worker has one
 /// shape for "what the link is doing" whichever page it came from.
+///
+/// This is the page the profile is resolved from, so it cannot be read
+/// with the unit's own layout: its port rows are taken with the widest
+/// layout in the table and the worker narrows them on the next pass.
 pub fn info(html: &str) -> Result<(SwitchInfo, Vec<PortLink>), ParseError> {
     const PAGE: &str = "info.cgi";
     usable(html, PAGE)?;
@@ -203,7 +216,7 @@ pub fn info(html: &str) -> Result<(SwitchInfo, Vec<PortLink>), ParseError> {
     }
 
     let mut links: Vec<PortLink> = Vec::new();
-    for (port, row) in port_rows(html, 5) {
+    for (port, row) in port_rows(Layout::widest(), html, 5) {
         let link = link_cell(&row[1])
             .ok_or_else(|| ParseError::unrecognised(PAGE, format!("link cell \"{}\"", row[1])))?;
         links.push(PortLink {
@@ -275,14 +288,14 @@ fn label_value_pairs(html: &str) -> Vec<(String, String)> {
 // ---------------------------------------------------------------------
 
 /// `port.cgi`: the per-port admin configuration.
-pub fn port_config(html: &str) -> Result<Vec<PortCfg>, ParseError> {
+pub fn port_config(layout: &Layout, html: &str) -> Result<Vec<PortCfg>, ParseError> {
     const PAGE: &str = "port.cgi";
     usable(html, PAGE)?;
     if !scan::has_field(html, "port0") || !html.contains("flowctrl") {
         return Err(ParseError::unrecognised(PAGE, "no port configuration form"));
     }
     let mut out: Vec<PortCfg> = Vec::new();
-    for (port, row) in port_rows(html, 8) {
+    for (port, row) in port_rows(layout, html, 8) {
         let enabled = enable_cell(&row[1])
             .ok_or_else(|| ParseError::unrecognised(PAGE, format!("state \"{}\"", row[1])))?;
         let duplex = Duplex::parse(&row[2])
@@ -311,14 +324,14 @@ pub fn port_config(html: &str) -> Result<Vec<PortCfg>, ParseError> {
 ///
 /// Each counter is printed as two u32 halves joined by `-`
 /// (`hi-lo`), which is how the switch reports a 64-bit number.
-pub fn stats(html: &str) -> Result<Vec<PortStats>, ParseError> {
+pub fn stats(layout: &Layout, html: &str) -> Result<Vec<PortStats>, ParseError> {
     const PAGE: &str = "port.cgi?page=stats";
     usable(html, PAGE)?;
     if !html.contains("txgood") {
         return Err(ParseError::unrecognised(PAGE, "no counter columns"));
     }
     let mut out: Vec<PortStats> = Vec::new();
-    for (port, row) in port_rows(html, 7) {
+    for (port, row) in port_rows(layout, html, 7) {
         let enabled = enable_cell(&row[1])
             .ok_or_else(|| ParseError::unrecognised(PAGE, format!("state \"{}\"", row[1])))?;
         let link = link_cell(&row[2])
@@ -389,7 +402,7 @@ pub fn vlans(html: &str) -> Result<VlanTable, ParseError> {
 }
 
 /// `vlan.cgi?page=port_based`: per-port VLAN membership.
-pub fn port_vlans(html: &str) -> Result<Vec<PortVlan>, ParseError> {
+pub fn port_vlans(layout: &Layout, html: &str) -> Result<Vec<PortVlan>, ParseError> {
     const PAGE: &str = "vlan.cgi?page=port_based";
     usable(html, PAGE)?;
     if !html.contains("vlan_type") || !html.contains("showdiv") {
@@ -397,7 +410,7 @@ pub fn port_vlans(html: &str) -> Result<Vec<PortVlan>, ParseError> {
     }
     let table = scan::after(html, "showdiv");
     let mut out: Vec<PortVlan> = Vec::new();
-    for (port, row) in port_rows(table, 5) {
+    for (port, row) in port_rows(layout, table, 5) {
         let mode = VlanMode::parse(&row[1])
             .ok_or_else(|| ParseError::unrecognised(PAGE, format!("vlan type \"{}\"", row[1])))?;
         let access = row[2].trim().parse::<u16>().ok();
@@ -449,14 +462,14 @@ pub fn jumbo(html: &str) -> Result<Jumbo, ParseError> {
 }
 
 /// `fwd.cgi?page=storm_ctrl`.
-pub fn storm(html: &str) -> Result<Vec<StormPort>, ParseError> {
+pub fn storm(layout: &Layout, html: &str) -> Result<Vec<StormPort>, ParseError> {
     const PAGE: &str = "fwd.cgi?page=storm_ctrl";
     usable(html, PAGE)?;
     if !scan::has_field(html, "bc_rate") {
         return Err(ParseError::unrecognised(PAGE, "no storm control form"));
     }
     let mut out: Vec<StormPort> = Vec::new();
-    for (port, row) in port_rows(html, 5) {
+    for (port, row) in port_rows(layout, html, 5) {
         let mut rates = [None; 4];
         for (slot, cell) in rates.iter_mut().zip(row[1..5].iter()) {
             *slot = rate_cell(cell)
@@ -477,14 +490,14 @@ pub fn storm(html: &str) -> Result<Vec<StormPort>, ParseError> {
 }
 
 /// `port.cgi?page=bw_ctrl`: the ingress and egress rate limits.
-pub fn rate_limits(html: &str) -> Result<Vec<RatePort>, ParseError> {
+pub fn rate_limits(layout: &Layout, html: &str) -> Result<Vec<RatePort>, ParseError> {
     const PAGE: &str = "port.cgi?page=bw_ctrl";
     usable(html, PAGE)?;
     if !scan::has_field(html, "in_rate") {
         return Err(ParseError::unrecognised(PAGE, "no rate limit form"));
     }
     let mut out: Vec<RatePort> = Vec::new();
-    for (port, row) in port_rows(html, 3) {
+    for (port, row) in port_rows(layout, html, 3) {
         let ingress = rate_cell(&row[1])
             .ok_or_else(|| ParseError::unrecognised(PAGE, format!("ingress \"{}\"", row[1])))?;
         let egress = rate_cell(&row[2])
@@ -565,7 +578,7 @@ pub fn ip(html: &str) -> Result<IpCfg, ParseError> {
 // ---------------------------------------------------------------------
 
 /// `mac.cgi?page=fwd_tbl`: one page of the forwarding table.
-pub fn mac_page(html: &str) -> Result<MacPage, ParseError> {
+pub fn mac_page(layout: &Layout, html: &str) -> Result<MacPage, ParseError> {
     const PAGE: &str = "mac.cgi?page=fwd_tbl";
     usable(html, PAGE)?;
     if !html.contains("totalpage") {
@@ -582,7 +595,7 @@ pub fn mac_page(html: &str) -> Result<MacPage, ParseError> {
         let port = match row[2].trim() {
             "CPU" => None,
             n => match n.parse::<u8>() {
-                Ok(p) if super::model::is_port(p) => Some(p),
+                Ok(p) if layout.is_port(p) => Some(p),
                 _ => continue,
             },
         };
@@ -646,8 +659,9 @@ mod tests {
     #[test]
     fn a_login_redirect_is_rejected_by_every_parser() {
         let page = "<script>window.top.location.replace(\"/login.cgi\");</script>";
+        let layout = Layout::widest();
         assert_eq!(info(page).unwrap_err(), ParseError::LoginRedirect);
-        assert_eq!(stats(page).unwrap_err(), ParseError::LoginRedirect);
+        assert_eq!(stats(layout, page).unwrap_err(), ParseError::LoginRedirect);
         assert_eq!(vlans(page).unwrap_err(), ParseError::LoginRedirect);
         assert_eq!(ip(page).unwrap_err(), ParseError::LoginRedirect);
     }
@@ -660,7 +674,7 @@ mod tests {
             Err(ParseError::Unrecognised { .. })
         ));
         assert!(matches!(
-            port_config(other),
+            port_config(Layout::widest(), other),
             Err(ParseError::Unrecognised { .. })
         ));
         assert!(matches!(

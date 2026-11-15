@@ -583,9 +583,13 @@ Commands: `switch_port` (`{"port":N}` or `{"node":N}` plus
 `switch_fw_unknown`, `switch_saved`. `state.switch` carries the
 summary; the counters have their own topic.
 
-Parsers are written against firmware V200.1.8 and tested against pages
-captured from a real unit
-(`granite-core/tests/fixtures/sodola-v200.1.8/`). Another version is
+Which switches the image knows is a static profile table
+(`granite-core/src/switch/profile.rs`, ADR 0006 component 24): one row
+per (model, firmware) pair, carrying the port layout, the page dialect
+and whether writes are allowed. One row today, SL902-SWTGW218AS on
+V200.1.8, tested against pages captured from a real unit
+(`granite-core/tests/fixtures/sl902-swtgw218as-v200.1.8/`, the row's own
+`<model>-<firmware>` in lower case). Another model or version is
 monitored while its pages still parse, and never written
 (`switch_fw_unknown`); a switch whose MAC is not `switch.mac` is not
 talked to beyond `info.cgi` (`switch_mismatch`). Both set Modbus fault

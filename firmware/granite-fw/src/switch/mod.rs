@@ -29,6 +29,17 @@
 //! not verify, reboots the switch. Nothing in here calls
 //! [`client::SwitchClient::save`] on any other path.
 //!
+//! ### Which switch it is talking to
+//!
+//! Every `info.cgi` resolves the (model, firmware) pair against the
+//! profile table (ADR 0006 component 24). A `verified` row is what
+//! allows writes; no row at all, or a `read_only` row, is polled and
+//! published while its pages parse and never written
+//! (`switch_fw_unknown`, Modbus fault bit 9). The row's layout is what
+//! the parsers, the planner and the published summary use from then on;
+//! before the first `info.cgi`, and for a switch without a row, that is
+//! the widest layout in the table.
+//!
 //! ### Read-only by default
 //!
 //! With `switch.manage` false the worker polls and publishes and writes
@@ -48,9 +59,10 @@ use granite_core::dispatch::SwitchRequest;
 use granite_core::modbus_map::fault_bits;
 use granite_core::msg::{Event, switch_event};
 use granite_core::observed::Observed;
-use granite_core::switch::model::{PortStats, SwitchDesired, SwitchState, firmware_known, same_mac};
+use granite_core::switch::model::{PortStats, SwitchDesired, SwitchState, same_mac};
 use granite_core::switch::obs::SwitchObs;
 use granite_core::switch::plan::{self, Protected};
+use granite_core::switch::profile::{self, Layout, Profile};
 use granite_core::switch::{counters, plan::Op};
 
 use client::{ClientError, SwitchClient};
@@ -212,6 +224,15 @@ struct Worker {
     last_reconcile_ms: u64,
     mismatch: bool,
     fw_unknown: bool,
+    /// The profile row the switch resolved to, `None` while `info.cgi`
+    /// has not been read or the unit has no row (ADR 0006 component
+    /// 24).
+    profile: Option<&'static Profile>,
+    /// The layout everything is read and planned with: the row's, or
+    /// the widest in the table while no row is resolved.
+    layout: &'static Layout,
+    /// The uplink port the layout has not got, once it was logged.
+    uplink_warned: Option<u8>,
     /// Deadlines, in monotonic milliseconds.
     next_stats_ms: u64,
     next_info_ms: u64,
@@ -242,6 +263,9 @@ impl Worker {
             last_reconcile_ms: 0,
             mismatch: false,
             fw_unknown: false,
+            profile: None,
+            layout: Layout::widest(),
+            uplink_warned: None,
             next_stats_ms: 0,
             next_info_ms: 0,
             next_mac_ms: 0,
@@ -305,6 +329,11 @@ impl Worker {
             self.state = SwitchState::default();
             self.last_stats = None;
             self.own_port = None;
+            // Another switch is another profile: nothing is known about
+            // it until its info.cgi has been read.
+            self.profile = None;
+            self.layout = Layout::widest();
+            self.uplink_warned = None;
             self.fails = 0;
             self.next_stats_ms = 0;
             self.next_info_ms = 0;
@@ -315,6 +344,10 @@ impl Worker {
             // pass rather than applied here: applying is the staged
             // path's job (ADR 0006 component 18).
             self.next_drift_ms = 0;
+            // A changed uplink is worth saying again if the switch has
+            // not got it either.
+            self.uplink_warned = None;
+            self.check_uplink();
         }
     }
 
@@ -434,6 +467,84 @@ impl Worker {
         }
     }
 
+    /// Resolve the (model, firmware) pair against the profile table and
+    /// take the row's layout (ADR 0006 component 24).
+    ///
+    /// Writes need a `verified` row. No row at all and a `read_only`
+    /// row both keep `switch_fw_unknown` and the `switch_unsupported`
+    /// fault bit; the log line says which of the two it is.
+    fn resolve_profile(&mut self, model: &str, firmware: &str) {
+        let found = profile::lookup(model, firmware);
+        let layout: &'static Layout = found.map_or_else(Layout::widest, |p| &p.layout);
+        if !core::ptr::eq(layout, self.layout) {
+            log::info!("switch: reading it as a {} port unit", layout.ports);
+            self.uplink_warned = None;
+        }
+        self.layout = layout;
+        self.profile = found;
+        if let Some(client) = self.client.as_mut() {
+            client.set_layout(layout);
+        }
+
+        let unknown = !found.is_some_and(Profile::may_write);
+        if unknown == self.fw_unknown {
+            self.check_uplink();
+            return;
+        }
+        self.fw_unknown = unknown;
+        if unknown {
+            match found {
+                Some(row) => log::warn!(
+                    "switch: {model} {firmware} is a {} profile in this image; monitoring \
+                     continues, writes are refused",
+                    row.tier.as_str()
+                ),
+                None => log::warn!(
+                    "switch: {model} {firmware} is not a switch this image was tested against; \
+                     monitoring continues, writes are refused"
+                ),
+            }
+            self.event(
+                "switch_fw_unknown",
+                None,
+                Some(format!("{model} {firmware}")),
+            );
+            self.ctx
+                .faults
+                .fetch_or(fault_bits::SWITCH_UNSUPPORTED, Ordering::Relaxed);
+        } else {
+            log::info!("switch: {model} {firmware} is a verified profile; writes are allowed");
+            if !self.mismatch {
+                self.ctx
+                    .faults
+                    .fetch_and(!fault_bits::SWITCH_UNSUPPORTED, Ordering::Relaxed);
+            }
+        }
+        self.check_uplink();
+    }
+
+    /// Say once when `switch.uplink_port` names a port this unit has
+    /// not got: it then counts as "no uplink declared" and protects
+    /// nothing (ADR 0006 component 24).
+    fn check_uplink(&mut self) {
+        let Some(port) = self.cfg.uplink() else {
+            return;
+        };
+        if self.layout.is_port(port) {
+            self.uplink_warned = None;
+            return;
+        }
+        if self.uplink_warned == Some(port) {
+            return;
+        }
+        self.uplink_warned = Some(port);
+        log::warn!(
+            "switch: switch.uplink_port is {port} but this switch has {} port(s), so no uplink \
+             is declared and only the controller's own port is protected",
+            self.layout.ports
+        );
+    }
+
     /// `info.cgi`: the pairing check, the firmware check and the
     /// reboot check.
     fn read_health(&mut self) -> Result<(), ClientError> {
@@ -470,29 +581,10 @@ impl Worker {
             }
         }
 
-        let unknown = !firmware_known(&info.firmware);
-        if unknown != self.fw_unknown {
-            self.fw_unknown = unknown;
-            if unknown {
-                log::warn!(
-                    "switch: firmware {} is not one this image was tested against; monitoring \
-                     continues, writes are refused",
-                    info.firmware
-                );
-                self.event(
-                    "switch_fw_unknown",
-                    None,
-                    Some(info.firmware.clone()),
-                );
-                self.ctx
-                    .faults
-                    .fetch_or(fault_bits::SWITCH_UNSUPPORTED, Ordering::Relaxed);
-            } else if !self.mismatch {
-                self.ctx
-                    .faults
-                    .fetch_and(!fault_bits::SWITCH_UNSUPPORTED, Ordering::Relaxed);
-            }
-        }
+        // The profile (ADR 0006 component 24): the (model, firmware)
+        // pair decides the layout the pages are read with and whether
+        // anything may be written at all.
+        self.resolve_profile(&info.model, &info.firmware);
 
         // An uptime that went down is a reboot, and a reboot drops
         // everything that was applied but not saved.
@@ -656,7 +748,7 @@ impl Worker {
             self.drift.clear();
             return;
         }
-        let drift = plan::drift(&self.state, &self.cfg.desired);
+        let drift = plan::drift(self.layout, &self.state, &self.cfg.desired);
         if drift == self.drift {
             return;
         }
@@ -737,8 +829,13 @@ impl Worker {
             return false;
         }
         if self.fw_unknown {
+            let what = match self.profile {
+                Some(row) => format!("is a {} profile in this image", row.tier.as_str()),
+                None => String::from("is not a switch this image was tested against"),
+            };
             self.refuse(format!(
-                "the switch runs firmware {}, which this image was not tested against",
+                "{} {} {what}, so nothing is written to it",
+                self.state.model(),
                 self.state.firmware()
             ));
             return false;
@@ -763,7 +860,7 @@ impl Worker {
         // duplex and flow control the port already has.
         if self.step(|w| w.read_port_page()) {
             let protected = self.protected(force);
-            match plan::port_enable_op(&self.state, port, enabled, &protected) {
+            match plan::port_enable_op(self.layout, &self.state, port, enabled, &protected) {
                 Ok(op) => self.apply_ops(&[op], "switch_port"),
                 Err(e) => self.refuse(e),
             }
@@ -784,7 +881,9 @@ impl Worker {
         if force {
             Protected::none()
         } else {
-            Protected::new(self.cfg.uplink(), self.own_port)
+            // An uplink this unit has not got is dropped here; the log
+            // line for it comes from `check_uplink`.
+            Protected::new(self.layout, self.cfg.uplink(), self.own_port)
         }
     }
 
@@ -819,7 +918,7 @@ impl Worker {
     fn apply_desired(&mut self, staged: bool) -> Option<usize> {
         let desired = self.cfg.desired.clone();
         let protected = self.protected(false);
-        let made = plan::plan(&self.state, &desired, &protected);
+        let made = plan::plan(self.layout, &self.state, &desired, &protected);
         for refusal in &made.refusals {
             self.refuse(format!(
                 "{}: {}",
@@ -887,7 +986,7 @@ impl Worker {
             self.drift = if self.cfg.desired.is_empty() {
                 Vec::new()
             } else {
-                plan::drift(&self.state, &self.cfg.desired)
+                plan::drift(self.layout, &self.state, &self.cfg.desired)
             };
             if !self.drift.is_empty() {
                 log::warn!(
@@ -930,15 +1029,16 @@ impl Worker {
         };
         let applied = self.applied.clone().unwrap_or_default();
         if self.reachable && self.step(|w| w.read_config_pages()) {
-            let back = plan::undo(&self.state, &snapshot, &applied);
+            let back = plan::undo(self.layout, &self.state, &snapshot, &applied);
             if !back.ops.is_empty() {
                 log::warn!("switch: undoing {} op(s)", back.ops.len());
                 self.apply_ops(&back.ops, "switch_reverting");
             }
             // Did it land? The read-back has to match the snapshot.
             let left = plan::plan(
+                self.layout,
                 &self.state,
-                &plan::undo_desired(&snapshot, &applied),
+                &plan::undo_desired(self.layout, &snapshot, &applied),
                 &Protected::none(),
             );
             if left.ops.is_empty() {
@@ -1029,7 +1129,7 @@ impl Worker {
             return;
         }
         let mut obs = if self.reachable {
-            SwitchObs::of_state(&self.state, &self.cfg.desired)
+            SwitchObs::of_state(self.layout, &self.state, &self.cfg.desired)
         } else {
             SwitchObs::unreachable(observed.switch.as_ref())
         };

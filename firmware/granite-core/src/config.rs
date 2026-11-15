@@ -268,6 +268,13 @@ impl Default for SwitchPollCfg {
     }
 }
 
+/// The uplink port a fresh configuration names: the SFP+ cage of the
+/// block switch this controller ships with (ADR 0006). A plain default,
+/// not a fact about the unit: a switch whose layout has no such port
+/// counts as "no uplink declared" and the worker logs it (component
+/// 24).
+pub const DEFAULT_UPLINK_PORT: u8 = 9;
+
 /// The `switch` section: the block switch (ADR 0006).
 ///
 /// Reading is the default. `manage` is what lets the controller write
@@ -309,7 +316,7 @@ impl Default for SwitchCfg {
             host: String::new(),
             mac: String::new(),
             user: String::from("admin"),
-            uplink_port: crate::switch::SFP_PORT,
+            uplink_port: DEFAULT_UPLINK_PORT,
             enforce: false,
             poll: SwitchPollCfg::default(),
             desired: crate::switch::SwitchDesired::default(),
@@ -318,9 +325,16 @@ impl Default for SwitchCfg {
 }
 
 impl SwitchCfg {
-    /// The uplink port, if one is configured.
+    /// The uplink port, if one is configured and could be a port at all.
+    ///
+    /// Checked against the widest layout in the profile table, because
+    /// this is read without a switch to ask. Whether the unit in front
+    /// of the controller really has that port is the planner's check
+    /// (ADR 0006 component 24).
     pub fn uplink(&self) -> Option<u8> {
-        crate::switch::is_port(self.uplink_port).then_some(self.uplink_port)
+        crate::switch::Layout::widest()
+            .is_port(self.uplink_port)
+            .then_some(self.uplink_port)
     }
 
     /// True when the worker should poll at all.
@@ -898,11 +912,14 @@ impl Config {
                 "switch.host is required when the switch is enabled",
             ));
         }
-        if self.switch.uplink_port != 0 && !crate::switch::is_port(self.switch.uplink_port) {
+        // The widest layout in the profile table: at configuration time
+        // there is no switch to ask which ports it has (ADR 0006
+        // component 24, "Config is checked twice").
+        let widest = crate::switch::Layout::widest();
+        if self.switch.uplink_port != 0 && !widest.is_port(self.switch.uplink_port) {
             errs.push(format!(
                 "switch.uplink_port ({}) is not a port (1..={}) or 0 for none",
-                self.switch.uplink_port,
-                crate::switch::PORT_COUNT
+                self.switch.uplink_port, widest.ports
             ));
         }
         errs.extend(self.switch.desired.validate());

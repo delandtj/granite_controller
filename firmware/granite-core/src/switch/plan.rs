@@ -21,6 +21,11 @@
 //! the controller has not found its own MAC in the table, every port
 //! counts as protected for VLAN and admin-state changes (ADR 0006,
 //! "What an Expert Would Ask").
+//!
+//! Every entry point takes the [`Layout`] of the resolved profile (ADR
+//! 0006 component 24). A port the unit does not have is refused with a
+//! reason, which is the second of the two checks a port number gets:
+//! the first is against the widest layout at configuration time.
 
 use alloc::format;
 use alloc::string::{String, ToString};
@@ -31,6 +36,7 @@ use super::model::{
     DesiredIpMode, DesiredPort, DesiredStorm, Duplex, LoopMode, Speed, SwitchDesired, SwitchState,
     VlanMode, netmask_of_prefix, parse_cidr, parse_port_list,
 };
+use super::profile::Layout;
 
 /// What an op is about, which is also what fixes its order.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -164,10 +170,14 @@ impl Protected {
     ///
     /// `own` is `None` when the MAC table has not been walked or the
     /// controller's MAC is not in it, which is what turns `all` on.
-    pub fn new(uplink: Option<u8>, own: Option<u8>) -> Self {
+    ///
+    /// An uplink the unit does not have is dropped here, which is what
+    /// makes it count as "no uplink declared" (ADR 0006 component 24);
+    /// the worker logs it.
+    pub fn new(layout: &Layout, uplink: Option<u8>, own: Option<u8>) -> Self {
         let mut ports: Vec<u8> = Vec::new();
         for port in [uplink, own].into_iter().flatten() {
-            if super::model::is_port(port) && !ports.contains(&port) {
+            if layout.is_port(port) && !ports.contains(&port) {
                 ports.push(port);
             }
         }
@@ -233,17 +243,33 @@ impl Plan {
 /// Keys the desired document does not name are left alone. A key whose
 /// page was not read lands in [`Plan::unread`] instead of being guessed
 /// at, so the worker can read it and plan again.
-pub fn plan(actual: &SwitchState, desired: &SwitchDesired, protected: &Protected) -> Plan {
+pub fn plan(
+    layout: &Layout,
+    actual: &SwitchState,
+    desired: &SwitchDesired,
+    protected: &Protected,
+) -> Plan {
     let mut out = Plan::default();
     plan_vlans(actual, desired, &mut out);
-    plan_port_vlans(actual, desired, protected, &mut out);
-    plan_port_config(actual, desired, protected, &mut out);
+    plan_port_vlans(layout, actual, desired, protected, &mut out);
+    plan_port_config(layout, actual, desired, protected, &mut out);
     plan_jumbo(actual, desired, &mut out);
-    plan_storm(actual, desired, &mut out);
+    plan_storm(layout, actual, desired, &mut out);
     plan_loop(actual, desired, &mut out);
     plan_ip(actual, desired, &mut out);
     out.ops.sort_by_key(|op| op.kind.rank());
     out
+}
+
+/// Why an op on `port` cannot be planned for this unit, if it cannot:
+/// a port number the layout does not have.
+fn not_a_port(layout: &Layout, port: u8) -> Option<String> {
+    (!layout.is_port(port)).then(|| {
+        format!(
+            "this switch has no port {port}: it has {} port(s)",
+            layout.ports
+        )
+    })
 }
 
 /// The desired state that puts the switch back as `snapshot` had it,
@@ -252,7 +278,11 @@ pub fn plan(actual: &SwitchState, desired: &SwitchDesired, protected: &Protected
 /// A revert is the same planner run from the current state towards the
 /// snapshot (ADR 0006 component 18, "revert by undo"), so nothing new
 /// has to be written to undo a change.
-pub fn undo_desired(snapshot: &SwitchState, desired: &SwitchDesired) -> SwitchDesired {
+pub fn undo_desired(
+    layout: &Layout,
+    snapshot: &SwitchState,
+    desired: &SwitchDesired,
+) -> SwitchDesired {
     let mut back = SwitchDesired::default();
     if desired.vlans.is_some()
         && let Some(table) = &snapshot.vlans
@@ -298,7 +328,7 @@ pub fn undo_desired(snapshot: &SwitchState, desired: &SwitchDesired) -> SwitchDe
         back.jumbo = Some(if was.enabled { was.size } else { 0 });
     }
     if let Some(storm) = &desired.storm
-        && let Some(ports) = parse_port_list(&storm.ports)
+        && let Some(ports) = parse_port_list(layout, &storm.ports)
     {
         // The previous values differ per port, so the undo is one
         // single-port document per port that was touched.
@@ -342,18 +372,28 @@ pub fn undo_desired(snapshot: &SwitchState, desired: &SwitchDesired) -> SwitchDe
 }
 
 /// The plan that undoes `desired` on a switch that now reads `current`.
-pub fn undo(current: &SwitchState, snapshot: &SwitchState, desired: &SwitchDesired) -> Plan {
+pub fn undo(
+    layout: &Layout,
+    current: &SwitchState,
+    snapshot: &SwitchState,
+    desired: &SwitchDesired,
+) -> Plan {
     // An undo may have to touch the very ports the change touched,
     // including a protected one: the snapshot is where the switch was
     // when the controller could still reach it.
-    plan(current, &undo_desired(snapshot, desired), &Protected::none())
+    plan(
+        layout,
+        current,
+        &undo_desired(layout, snapshot, desired),
+        &Protected::none(),
+    )
 }
 
 /// Every difference between the desired state and what was read, as
 /// text: the `switch_drift` event's payload. Protection does not come
 /// into it, because nothing is written.
-pub fn drift(actual: &SwitchState, desired: &SwitchDesired) -> Vec<String> {
-    plan(actual, desired, &Protected::none()).summary()
+pub fn drift(layout: &Layout, actual: &SwitchState, desired: &SwitchDesired) -> Vec<String> {
+    plan(layout, actual, desired, &Protected::none()).summary()
 }
 
 /// Ports that share one set of storm values, folded back into one
@@ -426,6 +466,7 @@ fn plan_vlans(actual: &SwitchState, desired: &SwitchDesired, out: &mut Plan) {
 }
 
 fn plan_port_vlans(
+    layout: &Layout,
     actual: &SwitchState,
     desired: &SwitchDesired,
     protected: &Protected,
@@ -445,6 +486,13 @@ fn plan_port_vlans(
     }
     for want in wanted {
         let Some(mode) = want.mode else { continue };
+        if let Some(reason) = not_a_port(layout, want.port) {
+            out.refusals.push(Refusal {
+                kind: OpKind::PortVlan,
+                reason,
+            });
+            continue;
+        }
         let Some(have) = actual.port_vlan(want.port) else {
             out.refusals.push(Refusal {
                 kind: OpKind::PortVlan,
@@ -541,6 +589,7 @@ fn missing_vlan(actual: &SwitchState, desired: &SwitchDesired, vids: &[u16]) -> 
 }
 
 fn plan_port_config(
+    layout: &Layout,
     actual: &SwitchState,
     desired: &SwitchDesired,
     protected: &Protected,
@@ -559,6 +608,13 @@ fn plan_port_config(
         return;
     }
     for want in wanted {
+        if let Some(reason) = not_a_port(layout, want.port) {
+            out.refusals.push(Refusal {
+                kind: OpKind::PortConfig,
+                reason,
+            });
+            continue;
+        }
         let Some(have) = actual.port(want.port) else {
             out.refusals.push(Refusal {
                 kind: OpKind::PortConfig,
@@ -568,7 +624,7 @@ fn plan_port_config(
         };
         let enabled = want.enabled.unwrap_or(have.enabled);
         let speed = want.speed.unwrap_or(have.speed);
-        if speed.impossible_on(want.port) {
+        if speed.impossible_on(layout, want.port) {
             out.refusals.push(Refusal {
                 kind: OpKind::PortConfig,
                 reason: format!("port {} has no {speed}", want.port),
@@ -650,14 +706,17 @@ fn plan_jumbo(actual: &SwitchState, desired: &SwitchDesired, out: &mut Plan) {
     }
 }
 
-fn plan_storm(actual: &SwitchState, desired: &SwitchDesired, out: &mut Plan) {
+fn plan_storm(layout: &Layout, actual: &SwitchState, desired: &SwitchDesired, out: &mut Plan) {
     let Some(want) = &desired.storm else {
         return;
     };
-    let Some(ports) = parse_port_list(&want.ports) else {
+    let Some(ports) = parse_port_list(layout, &want.ports) else {
         out.refusals.push(Refusal {
             kind: OpKind::Storm,
-            reason: format!("\"{}\" is not a port list", want.ports),
+            reason: format!(
+                "\"{}\" is not a port list of a switch with {} port(s)",
+                want.ports, layout.ports
+            ),
         });
         return;
     };
@@ -674,7 +733,7 @@ fn plan_storm(actual: &SwitchState, desired: &SwitchDesired, out: &mut Plan) {
                 // 0 is how a document says "unlimited", which is an
                 // empty field on the wire.
                 Some(0) => None,
-                Some(rate) => Some(rate.clamp(forms::RATE_MIN, forms::rate_max(port))),
+                Some(rate) => Some(rate.clamp(forms::RATE_MIN, forms::rate_max(layout, port))),
                 None => current,
             }
         };
@@ -790,11 +849,15 @@ fn plan_ip(actual: &SwitchState, desired: &SwitchDesired, out: &mut Plan) {
 /// for it: the same form the planner builds, with the port's current
 /// speed, duplex and flow control kept (ADR 0006 component 21).
 pub fn port_enable_op(
+    layout: &Layout,
     actual: &SwitchState,
     port: u8,
     enabled: bool,
     protected: &Protected,
 ) -> Result<Op, String> {
+    if let Some(reason) = not_a_port(layout, port) {
+        return Err(reason);
+    }
     let have = actual
         .port(port)
         .ok_or_else(|| format!("port {port} has not been read yet"))?;
@@ -827,6 +890,18 @@ mod tests {
         VlanTable,
     };
     use super::*;
+
+    /// The layout every test plans against: the bench unit's.
+    fn lay() -> &'static Layout {
+        Layout::widest()
+    }
+
+    /// A unit with fewer ports than the table's widest: what a profile
+    /// row for a smaller sibling would carry.
+    const NARROW: Layout = Layout {
+        ports: 5,
+        sfp: &[5],
+    };
 
     fn state() -> SwitchState {
         SwitchState {
@@ -918,7 +993,7 @@ mod tests {
 
     #[test]
     fn the_plan_creates_vlans_before_it_moves_ports_and_sets_the_address_last() {
-        let made = plan(&state(), &desired(), &Protected::new(Some(9), Some(9)));
+        let made = plan(lay(), &state(), &desired(), &Protected::new(lay(), Some(9), Some(9)));
         let kinds: Vec<OpKind> = made.ops.iter().map(|op| op.kind).collect();
         assert_eq!(
             kinds,
@@ -951,7 +1026,7 @@ mod tests {
             id: 300,
             name: String::from("storage"),
         }]);
-        let made = plan(&state(), &want, &Protected::new(Some(9), Some(9)));
+        let made = plan(lay(), &state(), &want, &Protected::new(lay(), Some(9), Some(9)));
         let order: Vec<&str> = made.ops.iter().map(|op| op.kind.as_str()).collect();
         let create = order.iter().position(|k| *k == "vlan_create").expect("create");
         let moved = order.iter().position(|k| *k == "port_vlan").expect("port");
@@ -982,7 +1057,7 @@ mod tests {
             },
         ];
         // Port 9 is the uplink, the controller's MAC is on port 9 too.
-        let made = plan(&state(), &want, &Protected::new(Some(9), Some(9)));
+        let made = plan(lay(), &state(), &want, &Protected::new(lay(), Some(9), Some(9)));
         assert_eq!(made.refusals.len(), 1, "{:?}", made.refusals);
         assert_eq!(made.refusals[0].kind, OpKind::PortVlan);
         assert!(made.refusals[0].reason.contains("force"));
@@ -992,13 +1067,13 @@ mod tests {
         );
 
         // With force, the uplink moves.
-        let forced = plan(&state(), &want, &Protected::none());
+        let forced = plan(lay(), &state(), &want, &Protected::none());
         assert!(forced.refusals.is_empty(), "{:?}", forced.refusals);
         assert!(forced.ops.iter().any(|op| op.ports == alloc::vec![9]));
 
         // Without the controller's own port known, everything is
         // protected.
-        let blind = plan(&state(), &want, &Protected::new(Some(9), None));
+        let blind = plan(lay(), &state(), &want, &Protected::new(lay(), Some(9), None));
         assert_eq!(blind.refusals.len(), 2, "{:?}", blind.refusals);
         assert!(blind.refusals[1].reason.contains("own MAC"));
     }
@@ -1013,7 +1088,7 @@ mod tests {
             }],
             ..SwitchDesired::default()
         };
-        let made = plan(&state(), &want, &Protected::new(Some(9), Some(9)));
+        let made = plan(lay(), &state(), &want, &Protected::new(lay(), Some(9), Some(9)));
         assert_eq!(made.ops.len(), 1);
         let op = &made.ops[0];
         assert_eq!(op.settle_ms, PORT_SETTLE_MS);
@@ -1025,7 +1100,7 @@ mod tests {
 
         // 10G on a copper port is refused, not attempted.
         want.ports[0].speed = Some(Speed::G10);
-        let refused = plan(&state(), &want, &Protected::none());
+        let refused = plan(lay(), &state(), &want, &Protected::none());
         assert!(refused.ops.is_empty());
         assert_eq!(refused.refusals.len(), 1);
     }
@@ -1033,7 +1108,7 @@ mod tests {
     #[test]
     fn nothing_is_planned_for_a_page_that_was_not_read() {
         let empty = SwitchState::default();
-        let made = plan(&empty, &desired(), &Protected::none());
+        let made = plan(lay(), &empty, &desired(), &Protected::none());
         assert!(made.ops.is_empty());
         assert!(made.unread.contains(&"vlan.cgi?page=static"));
         assert!(made.unread.contains(&"fwd.cgi?page=jumboframe"));
@@ -1081,9 +1156,9 @@ mod tests {
             netmask: String::from("255.255.255.0"),
             gateway: String::from("10.0.202.1"),
         });
-        let made = plan(&have, &desired(), &Protected::new(Some(9), Some(9)));
+        let made = plan(lay(), &have, &desired(), &Protected::new(lay(), Some(9), Some(9)));
         assert!(made.is_empty(), "{:?}", made.summary());
-        assert!(drift(&have, &desired()).is_empty());
+        assert!(drift(lay(), &have, &desired()).is_empty());
     }
 
     #[test]
@@ -1126,7 +1201,7 @@ mod tests {
             gateway: String::from("10.0.202.1"),
         });
 
-        let back = undo(&after, &snapshot, &want);
+        let back = undo(lay(), &after, &snapshot, &want);
         let summary = back.summary();
         assert!(back.refusals.is_empty(), "{:?}", back.refusals);
         // Port 7 goes back to the trunk it was, VLAN 300 goes away
@@ -1161,8 +1236,8 @@ mod tests {
         // And after the undo the switch matches the snapshot again:
         // planning the undone state against the snapshot's own
         // description is empty.
-        let undone = undo_desired(&snapshot, &want);
-        let plan_again = plan(&snapshot, &undone, &Protected::none());
+        let undone = undo_desired(lay(), &snapshot, &want);
+        let plan_again = plan(lay(), &snapshot, &undone, &Protected::none());
         assert!(plan_again.is_empty(), "{:?}", plan_again.summary());
     }
 
@@ -1184,7 +1259,7 @@ mod tests {
             }),
             ..SwitchDesired::default()
         };
-        let made = plan(&have, &want, &Protected::none());
+        let made = plan(lay(), &have, &want, &Protected::none());
         assert_eq!(made.ops.len(), 1);
         assert_eq!(
             forms::encode(&made.ops[0].form),
@@ -1194,9 +1269,89 @@ mod tests {
     }
 
     #[test]
+    fn a_port_the_unit_does_not_have_is_refused_with_a_reason() {
+        let want = SwitchDesired {
+            ports: alloc::vec![
+                DesiredPort {
+                    port: 9,
+                    mode: Some(VlanMode::Access),
+                    vlan: Some(100),
+                    enabled: Some(false),
+                    ..DesiredPort::default()
+                },
+                DesiredPort {
+                    port: 3,
+                    enabled: Some(false),
+                    ..DesiredPort::default()
+                },
+            ],
+            storm: Some(DesiredStorm {
+                ports: String::from("1-9"),
+                bcast_kbps: Some(10_000),
+                ..DesiredStorm::default()
+            }),
+            ..SwitchDesired::default()
+        };
+        let made = plan(&NARROW, &state(), &want, &Protected::none());
+        // Port 9: once for its VLAN, once for its admin state. The
+        // storm block names ports this unit has not got, so the list
+        // itself is refused.
+        assert_eq!(made.refusals.len(), 3, "{:?}", made.refusals);
+        assert!(
+            made.refusals
+                .iter()
+                .filter(|r| r.reason.contains("has no port 9"))
+                .count()
+                == 2,
+            "{:?}",
+            made.refusals
+        );
+        assert!(
+            made.refusals.iter().any(|r| r.kind == OpKind::Storm),
+            "{:?}",
+            made.refusals
+        );
+        // Port 3 is a port of this unit, so its op is planned.
+        assert!(made.ops.iter().all(|op| op.ports == alloc::vec![3]));
+
+        // The same ports on the full layout plan without a refusal.
+        let wide = plan(lay(), &state(), &want, &Protected::none());
+        assert!(wide.refusals.is_empty(), "{:?}", wide.refusals);
+
+        // An imperative port command is refused the same way.
+        assert!(
+            port_enable_op(&NARROW, &state(), 9, false, &Protected::none())
+                .expect_err("no port 9")
+                .contains("has no port 9")
+        );
+        // And an uplink the unit has not got protects nothing, which is
+        // what "no uplink declared" means.
+        assert_eq!(Protected::new(&NARROW, Some(9), Some(2)).ports, alloc::vec![2]);
+    }
+
+    #[test]
+    fn a_narrow_unit_has_no_10g_port_where_the_wide_one_has() {
+        let want = SwitchDesired {
+            ports: alloc::vec![DesiredPort {
+                port: 5,
+                speed: Some(Speed::G10),
+                ..DesiredPort::default()
+            }],
+            ..SwitchDesired::default()
+        };
+        // Port 5 is the SFP+ of the narrow unit, so 10G is fine there
+        // and refused on the wide one, where port 5 is copper.
+        let narrow = plan(&NARROW, &state(), &want, &Protected::none());
+        assert!(narrow.refusals.is_empty(), "{:?}", narrow.refusals);
+        let wide = plan(lay(), &state(), &want, &Protected::none());
+        assert_eq!(wide.refusals.len(), 1, "{:?}", wide.refusals);
+        assert!(wide.refusals[0].reason.contains("no 10G"));
+    }
+
+    #[test]
     fn an_imperative_port_disable_keeps_the_rest_of_the_port() {
         let have = state();
-        let op = port_enable_op(&have, 3, false, &Protected::new(Some(9), Some(9)))
+        let op = port_enable_op(lay(), &have, 3, false, &Protected::new(lay(), Some(9), Some(9)))
             .expect("port 3 is not protected");
         assert_eq!(
             forms::encode(&op.form),
@@ -1204,9 +1359,9 @@ mod tests {
         );
         assert_eq!(op.settle_ms, PORT_SETTLE_MS);
         assert!(
-            port_enable_op(&have, 9, false, &Protected::new(Some(9), Some(9))).is_err(),
+            port_enable_op(lay(), &have, 9, false, &Protected::new(lay(), Some(9), Some(9))).is_err(),
             "the uplink needs force"
         );
-        assert!(port_enable_op(&have, 9, false, &Protected::none()).is_ok());
+        assert!(port_enable_op(lay(), &have, 9, false, &Protected::none()).is_ok());
     }
 }

@@ -427,7 +427,11 @@ fn the_switch_section_is_off_and_read_only_by_default() {
     assert!(!c.switch.manage, "reading is the default (ADR 0006)");
     assert!(!c.switch.enforce, "drift is reported, not fixed");
     assert_eq!(c.switch.user, "admin");
-    assert_eq!(c.switch.uplink_port, granite_core::switch::SFP_PORT);
+    assert_eq!(
+        c.switch.uplink_port,
+        granite_core::config::DEFAULT_UPLINK_PORT
+    );
+    assert_eq!(c.switch.uplink(), Some(9), "the SFP+ of the bench unit");
     assert!(c.switch.desired.is_empty(), "nothing is managed");
     assert!(!c.switch.should_poll() && !c.switch.may_write());
     assert_eq!(c.switch.poll.stats_s, 5);

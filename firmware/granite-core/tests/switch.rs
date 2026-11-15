@@ -2,31 +2,50 @@
 //! component 15, "tested on the host against HTML captured from the
 //! real switch").
 //!
-//! The fixtures in `tests/fixtures/sodola-v200.1.8/` were captured with
-//! read-only GETs from an SL902-SWTGW218AS on firmware V200.1.8
-//! (`tools/sodola.py --host ... get '<page>'`), 2026-11-12. Its state at
-//! the time: VLANs 1, 100 "data" and 200 "backend"; all nine ports
-//! trunk, native 1, allowed 1; jumbo on at 12000; loop prevention,
-//! storm control and rate limits off; only port 9 (SFP+) has link, at
-//! 10G; the management address static on 192.168.64.241/24.
+//! The fixtures in `tests/fixtures/sl902-swtgw218as-v200.1.8/` were
+//! captured with read-only GETs from an SL902-SWTGW218AS on firmware
+//! V200.1.8 (`tools/sodola.py --host ... get '<page>'`), 2026-11-12.
+//! Its state at the time: VLANs 1, 100 "data" and 200 "backend"; all
+//! nine ports trunk, native 1, allowed 1; jumbo on at 12000; loop
+//! prevention, storm control and rate limits off; only port 9 (SFP+)
+//! has link, at 10G; the management address static on
+//! 192.168.64.241/24.
+//!
+//! The directory name is the profile row's own (ADR 0006 component
+//! 24): `<model>-<firmware>`, lower case.
 
 use granite_core::switch::model::{
     DesiredIp, DesiredIpMode, DesiredPort, DesiredVlan, Duplex, LoopMode, Speed, SwitchDesired,
-    SwitchState, VlanMode, firmware_known, same_mac,
+    SwitchState, VlanMode, same_mac,
 };
 use granite_core::switch::parse::{self, ParseError};
 use granite_core::switch::plan::{self, OpKind, Protected};
+use granite_core::switch::profile::{self, Layout, Tier};
 use granite_core::switch::{counters, forms};
 
 /// The unit the fixtures came from.
 const SWITCH_MAC: &str = "1C:2A:A3:24:26:7E";
 
-fn fixture(name: &str) -> String {
+/// The row the fixtures in this file belong to.
+fn bench() -> &'static profile::Profile {
+    profile::lookup("SL902-SWTGW218AS", "V200.1.8").expect("the bench unit has a row")
+}
+
+/// The layout the pages of this file are read with.
+fn lay() -> &'static Layout {
+    &bench().layout
+}
+
+fn fixture_in(dir: &str, name: &str) -> String {
     let path = format!(
-        "{}/tests/fixtures/sodola-v200.1.8/{name}.html",
+        "{}/tests/fixtures/{dir}/{name}.html",
         env!("CARGO_MANIFEST_DIR")
     );
     std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{path}: {e}"))
+}
+
+fn fixture(name: &str) -> String {
+    fixture_in(&bench().fixture_dir(), name)
 }
 
 /// Everything the poll loop reads, parsed into one state.
@@ -34,16 +53,17 @@ fn read_everything() -> SwitchState {
     let (info, links) = parse::info(&fixture("info")).expect("info.cgi");
     let mut state = SwitchState {
         info: Some(info),
-        ports: parse::port_config(&fixture("port")).expect("port.cgi"),
+        ports: parse::port_config(lay(), &fixture("port")).expect("port.cgi"),
         vlans: Some(parse::vlans(&fixture("vlan-static")).expect("vlan static")),
-        port_vlans: parse::port_vlans(&fixture("vlan-port-based")).expect("vlan port_based"),
+        port_vlans: parse::port_vlans(lay(), &fixture("vlan-port-based"))
+            .expect("vlan port_based"),
         jumbo: Some(parse::jumbo(&fixture("jumbo")).expect("jumbo")),
-        storm: parse::storm(&fixture("storm")).expect("storm"),
-        rate: parse::rate_limits(&fixture("bw-ctrl")).expect("bw_ctrl"),
+        storm: parse::storm(lay(), &fixture("storm")).expect("storm"),
+        rate: parse::rate_limits(lay(), &fixture("bw-ctrl")).expect("bw_ctrl"),
         loop_cfg: Some(parse::loop_cfg(&fixture("loop")).expect("loop")),
         ip: Some(parse::ip(&fixture("ip")).expect("ip")),
-        stats: parse::stats(&fixture("stats")).expect("stats"),
-        macs: parse::mac_page(&fixture("mac-fwd-tbl"))
+        stats: parse::stats(lay(), &fixture("stats")).expect("stats"),
+        macs: parse::mac_page(lay(), &fixture("mac-fwd-tbl"))
             .expect("mac table")
             .entries,
     };
@@ -67,7 +87,8 @@ fn info_cgi_gives_the_device_facts_and_the_link_state() {
     assert_eq!(info.name, "SL902-SWTGW218AS");
     assert_eq!(info.model, "SL902-SWTGW218AS");
     assert_eq!(info.firmware, "V200.1.8");
-    assert!(firmware_known(&info.firmware), "the tested firmware");
+    let found = profile::lookup(&info.model, &info.firmware).expect("a row for this unit");
+    assert_eq!(found.tier, Tier::Verified, "the bench unit may be written");
     assert_eq!(info.mac, SWITCH_MAC);
     assert!(same_mac(&info.mac, "1c:2a:a3:24:26:7e"));
     assert_eq!(info.ip, "192.168.64.241");
@@ -86,7 +107,7 @@ fn info_cgi_gives_the_device_facts_and_the_link_state() {
 
 #[test]
 fn port_cgi_gives_the_admin_configuration_of_every_port() {
-    let ports = parse::port_config(&fixture("port")).expect("port.cgi parses");
+    let ports = parse::port_config(lay(), &fixture("port")).expect("port.cgi parses");
     assert_eq!(ports.len(), 9);
     assert!(ports.iter().all(|p| p.enabled), "nothing is disabled");
     assert!(
@@ -101,7 +122,7 @@ fn port_cgi_gives_the_admin_configuration_of_every_port() {
 
 #[test]
 fn the_stats_page_gives_link_and_the_64_bit_counters() {
-    let stats = parse::stats(&fixture("stats")).expect("stats parses");
+    let stats = parse::stats(lay(), &fixture("stats")).expect("stats parses");
     assert_eq!(stats.len(), 9);
     let quiet = stats.iter().find(|s| s.port == 1).expect("port 1");
     assert!(!quiet.link);
@@ -116,7 +137,7 @@ fn the_stats_page_gives_link_and_the_64_bit_counters() {
 
 #[test]
 fn counters_become_rates_between_two_reads() {
-    let first = parse::stats(&fixture("stats")).expect("stats");
+    let first = parse::stats(lay(), &fixture("stats")).expect("stats");
     let mut second = first.clone();
     for port in second.iter_mut().filter(|p| p.port == 9) {
         port.tx_packets += 600;
@@ -176,7 +197,8 @@ fn the_vlan_pages_give_the_table_and_the_per_port_membership() {
     assert!(table.vlans[0].name.is_empty(), "VLAN 1 has no name");
     assert!(table.has(200) && !table.has(300));
 
-    let ports = parse::port_vlans(&fixture("vlan-port-based")).expect("port_based parses");
+    let ports =
+        parse::port_vlans(lay(), &fixture("vlan-port-based")).expect("port_based parses");
     assert_eq!(ports.len(), 9);
     for port in &ports {
         assert_eq!(port.mode, VlanMode::Trunk, "port {}", port.port);
@@ -203,7 +225,7 @@ fn the_remaining_pages_parse() {
     assert_eq!(ip.netmask, "255.255.255.0");
     assert_eq!(ip.gateway, "192.168.64.254");
 
-    let storm = parse::storm(&fixture("storm")).expect("storm parses");
+    let storm = parse::storm(lay(), &fixture("storm")).expect("storm parses");
     assert_eq!(storm.len(), 9);
     assert!(
         storm
@@ -212,7 +234,7 @@ fn the_remaining_pages_parse() {
         "storm control is off everywhere"
     );
 
-    let rate = parse::rate_limits(&fixture("bw-ctrl")).expect("bw_ctrl parses");
+    let rate = parse::rate_limits(lay(), &fixture("bw-ctrl")).expect("bw_ctrl parses");
     assert_eq!(rate.len(), 9);
     assert!(
         rate.iter().all(|r| r.ingress.is_none() && r.egress.is_none()),
@@ -222,7 +244,7 @@ fn the_remaining_pages_parse() {
 
 #[test]
 fn the_mac_table_page_gives_the_rows_and_the_paging() {
-    let page = parse::mac_page(&fixture("mac-fwd-tbl")).expect("mac table parses");
+    let page = parse::mac_page(lay(), &fixture("mac-fwd-tbl")).expect("mac table parses");
     assert_eq!(page.total, 36, "\"Total 36 Items\"");
     assert_eq!(page.pages, 4, "ten rows to a page by default");
     assert_eq!(page.entries.len(), 10);
@@ -239,6 +261,77 @@ fn the_mac_table_page_gives_the_rows_and_the_paging() {
         "everything else is learned on the uplink"
     );
     assert!(page.entries.iter().all(|e| !e.is_static));
+}
+
+#[test]
+fn every_profile_row_has_its_fixtures_and_resolves_back_to_itself() {
+    // The walk of ADR 0006 component 24: a row without its pages, or
+    // whose pages say they are another unit, is a row nobody tested.
+    for row in profile::PROFILES {
+        let dir = row.fixture_dir();
+        let layout = &row.layout;
+
+        let (info, links) = parse::info(&fixture_in(&dir, "info"))
+            .unwrap_or_else(|e| panic!("{dir}/info.html: {e}"));
+        assert_eq!(info.model, row.model, "{dir}/info.html model");
+        assert_eq!(info.firmware, row.firmware, "{dir}/info.html firmware");
+        assert_eq!(
+            profile::lookup(&info.model, &info.firmware),
+            Some(row),
+            "{dir}/info.html resolves back to its own row"
+        );
+        assert_eq!(
+            links.len(),
+            usize::from(layout.ports),
+            "{dir}/info.html reports as many ports as the row's layout"
+        );
+        assert!(
+            layout.sfp.iter().all(|p| layout.is_port(*p)),
+            "{dir}: an SFP+ port the layout does not have"
+        );
+
+        // Every page of the row parses with the row's own layout, and
+        // every per-port page gives exactly the row's ports.
+        let ports = parse::port_config(layout, &fixture_in(&dir, "port"))
+            .unwrap_or_else(|e| panic!("{dir}/port.html: {e}"));
+        let stats = parse::stats(layout, &fixture_in(&dir, "stats"))
+            .unwrap_or_else(|e| panic!("{dir}/stats.html: {e}"));
+        let port_vlans = parse::port_vlans(layout, &fixture_in(&dir, "vlan-port-based"))
+            .unwrap_or_else(|e| panic!("{dir}/vlan-port-based.html: {e}"));
+        let storm = parse::storm(layout, &fixture_in(&dir, "storm"))
+            .unwrap_or_else(|e| panic!("{dir}/storm.html: {e}"));
+        let rate = parse::rate_limits(layout, &fixture_in(&dir, "bw-ctrl"))
+            .unwrap_or_else(|e| panic!("{dir}/bw-ctrl.html: {e}"));
+        for (page, count) in [
+            ("port", ports.len()),
+            ("stats", stats.len()),
+            ("vlan-port-based", port_vlans.len()),
+            ("storm", storm.len()),
+            ("bw-ctrl", rate.len()),
+        ] {
+            assert_eq!(
+                count,
+                usize::from(layout.ports),
+                "{dir}/{page}.html rows against the row's layout"
+            );
+        }
+        parse::vlans(&fixture_in(&dir, "vlan-static"))
+            .unwrap_or_else(|e| panic!("{dir}/vlan-static.html: {e}"));
+        parse::jumbo(&fixture_in(&dir, "jumbo"))
+            .unwrap_or_else(|e| panic!("{dir}/jumbo.html: {e}"));
+        parse::loop_cfg(&fixture_in(&dir, "loop"))
+            .unwrap_or_else(|e| panic!("{dir}/loop.html: {e}"));
+        parse::ip(&fixture_in(&dir, "ip")).unwrap_or_else(|e| panic!("{dir}/ip.html: {e}"));
+        parse::mac_page(layout, &fixture_in(&dir, "mac-fwd-tbl"))
+            .unwrap_or_else(|e| panic!("{dir}/mac-fwd-tbl.html: {e}"));
+        // The login redirect is captured per row too: it is the one
+        // "page" the client has to tell apart from a real one.
+        assert_eq!(
+            parse::info(&fixture_in(&dir, "login-redirect")).unwrap_err(),
+            ParseError::LoginRedirect,
+            "{dir}/login-redirect.html"
+        );
+    }
 }
 
 #[test]
@@ -264,15 +357,15 @@ fn a_page_from_the_wrong_url_is_refused_instead_of_guessed_at() {
     type Parser = (&'static str, fn(&str) -> bool);
     let parsers: [Parser; 10] = [
         ("info", |h| parse::info(h).is_ok()),
-        ("port", |h| parse::port_config(h).is_ok()),
-        ("stats", |h| parse::stats(h).is_ok()),
+        ("port", |h| parse::port_config(lay(), h).is_ok()),
+        ("stats", |h| parse::stats(lay(), h).is_ok()),
         ("vlan-static", |h| parse::vlans(h).is_ok()),
-        ("vlan-port-based", |h| parse::port_vlans(h).is_ok()),
+        ("vlan-port-based", |h| parse::port_vlans(lay(), h).is_ok()),
         ("jumbo", |h| parse::jumbo(h).is_ok()),
         ("loop", |h| parse::loop_cfg(h).is_ok()),
         ("ip", |h| parse::ip(h).is_ok()),
-        ("storm", |h| parse::storm(h).is_ok()),
-        ("bw-ctrl", |h| parse::rate_limits(h).is_ok()),
+        ("storm", |h| parse::storm(lay(), h).is_ok()),
+        ("bw-ctrl", |h| parse::rate_limits(lay(), h).is_ok()),
     ];
     for (name, parser) in parsers {
         for page in pages {
@@ -291,9 +384,12 @@ fn a_page_from_the_wrong_url_is_refused_instead_of_guessed_at() {
 fn the_login_redirect_is_told_apart_from_a_page() {
     let html = fixture("login-redirect");
     assert_eq!(parse::info(&html).unwrap_err(), ParseError::LoginRedirect);
-    assert_eq!(parse::stats(&html).unwrap_err(), ParseError::LoginRedirect);
     assert_eq!(
-        parse::mac_page(&html).unwrap_err(),
+        parse::stats(lay(), &html).unwrap_err(),
+        ParseError::LoginRedirect
+    );
+    assert_eq!(
+        parse::mac_page(lay(), &html).unwrap_err(),
         ParseError::LoginRedirect
     );
     // An empty body is what the CGI answers without a Referer header.
@@ -351,7 +447,7 @@ fn the_adr_example_plans_in_the_right_order_against_the_real_state() {
     // The controller's own MAC is not on this switch (the fixtures come
     // from a bench unit), so protection falls back to "everything",
     // which is exactly what the ADR asks for.
-    let blind = plan::plan(&state, &desired, &Protected::new(Some(9), None));
+    let blind = plan::plan(lay(), &state, &desired, &Protected::new(lay(), Some(9), None));
     assert!(
         blind.refusals.iter().any(|r| r.reason.contains("own MAC")),
         "{:?}",
@@ -364,8 +460,8 @@ fn the_adr_example_plans_in_the_right_order_against_the_real_state() {
     );
 
     // With the controller found on the uplink, port 7 is free to move.
-    let found = Protected::new(Some(9), Some(9));
-    let made = plan::plan(&state, &desired, &found);
+    let found = Protected::new(lay(), Some(9), Some(9));
+    let made = plan::plan(lay(), &state, &desired, &found);
     assert!(made.refusals.is_empty(), "{:?}", made.refusals);
     assert!(made.unread.is_empty());
     assert_eq!(
@@ -402,7 +498,7 @@ fn the_adr_example_plans_in_the_right_order_against_the_real_state() {
         pv.native = None;
         pv.allowed = Vec::new();
     }
-    let back = plan::undo(&after, &state, &desired);
+    let back = plan::undo(lay(), &after, &state, &desired);
     assert_eq!(
         back.summary(),
         vec![
@@ -454,7 +550,12 @@ fn a_full_desired_document_plans_against_the_real_state() {
     };
     assert!(desired.validate().is_empty(), "{:?}", desired.validate());
 
-    let made = plan::plan(&state, &desired, &Protected::new(Some(9), Some(9)));
+    let made = plan::plan(
+        lay(),
+        &state,
+        &desired,
+        &Protected::new(lay(), Some(9), Some(9)),
+    );
     assert!(made.refusals.is_empty(), "{:?}", made.refusals);
     let kinds: Vec<OpKind> = made.ops.iter().map(|op| op.kind).collect();
     // Port VLAN first, then the middle band, the address last.

@@ -14,6 +14,9 @@ the controller reads the switch by default, writes become optional)
 pairing check of 22 are in the firmware; desired state is in scope with
 `manage` gating every write. See "Implementation" for what was built
 differently and what is not built yet)
+**Updated**: 2026-11-15 (switch profiles: the write gate is keyed on
+(model, firmware) instead of the firmware string alone, and the port
+layout is profile data instead of constants. New component 24)
 
 Related: firmware/docs/adr/0001-firmware-architecture.md (components 6
 Network, 7 MQTT, 8 HTTP API, 10 Configuration; commit-confirm),
@@ -174,8 +177,10 @@ Numbered after ADR 0001's list.
       ops: create VLANs, then port VLAN changes, then delete VLANs, then
       jumbo / storm / rate / isolation, then IP last. Ops that touch a
       protected port without `force` are refused with a reason.
-    - Fixtures: `granite-core/tests/fixtures/sodola-v200.1.8/*.html`,
-      captured from the unit with `tools/sodola.py get`.
+    - Fixtures:
+      `granite-core/tests/fixtures/sl902-swtgw218as-v200.1.8/*.html`,
+      captured from the unit with `tools/sodola.py get`. One directory
+      per profile row (component 24).
 
 16. **Switch client** (`granite-fw/src/switch/client.rs`)
     - esp-idf-svc `EspHttpConnection` (already used by OTA), plain HTTP,
@@ -186,10 +191,10 @@ Numbered after ADR 0001's list.
       writes that can flap the uplink (STP, IP).
     - Buffers one page at a time (pages are 2-10 KB); no page outlives
       its parse.
-    - Fingerprint check at first contact: the firmware string from
-      `info.cgi` must be in a known list (`V200.1.8` today). Unknown
-      firmware: monitoring continues if the parsers accept the pages,
-      writes are refused (`switch_fw_unknown` fault).
+    - Fingerprint check at first contact: the (model, firmware) pair
+      from `info.cgi` must resolve to a `verified` profile (component
+      24). Anything else: monitoring continues if the parsers accept
+      the pages, writes are refused (`switch_fw_unknown` fault).
 
 17. **Switch worker** (`granite-fw/src/switch/mod.rs`)
     - Own thread, low priority, never touches the actuator, CAN link or
@@ -340,6 +345,64 @@ Numbered after ADR 0001's list.
     - MQTT stays the controller's telemetry path to whoever listens;
       my_metal does not need it. Nothing in commissioning depends on
       MQTT delivery, because the provider's plan is the durable record.
+
+24. **Switch profiles** (`granite-core/src/switch/profile.rs`)
+    - A static table, one row per switch the image knows. A row is:
+
+      | Field | Meaning |
+      |-------|---------|
+      | `model` | `Device Model` of `info.cgi`, exact (`SL902-SWTGW218AS`) |
+      | `firmware` | `Firmware Version` of `info.cgi`, exact (`V200.1.8`) |
+      | `layout` | port count and which ports are SFP+ |
+      | `dialect` | which parser and form set speaks to it |
+      | `tier` | `verified` (writes allowed) or `read_only` |
+
+    - Lookup is on both strings, trimmed, exact. No prefix, range or
+      "newer than" match: the pages are scraped, so a version nobody
+      captured is a version nobody tested. The model is part of the key
+      because a sibling model can report the same firmware string with
+      another port count.
+    - Write gate: writes need a row with tier `verified`. No row, or a
+      `read_only` row, is monitored while its pages parse and never
+      written; both raise `switch_fw_unknown` (the event name is kept,
+      its detail is now `model firmware`).
+    - Port layout is data. Nothing outside the profile knows that the
+      switch has 9 ports or that port 9 is the SFP+: the parsers, the
+      form builders, the planner, the speed rules and the observed
+      snapshot take the layout of the resolved profile. A switch
+      without a row is read with the widest layout in the table.
+    - Config is checked twice. At config time, without a switch to
+      ask, a port number is only checked against the widest layout in
+      the table. Once the switch is fingerprinted the planner refuses
+      any op on a port the unit does not have, with a reason, and an
+      `uplink_port` the unit does not have counts as "no uplink
+      declared" and is logged.
+    - Dialect is an enum, not a trait object. One variant today
+      (`SodolaV200`); `parse.rs` and `forms.rs` are that variant. A
+      firmware that changes some pages gets a variant that overrides
+      those page functions and falls through for the rest; the
+      dispatch is added with the second variant, not before.
+    - The table lives in the image, not in the config: "tested against
+      these pages" is a property of the build. Enabling a version is a
+      controller OTA. There is no config override that forces writes.
+    - Fixtures: one directory per row under
+      `granite-core/tests/fixtures/`, named `<model>-<firmware>` in
+      lower case (`sl902-swtgw218as-v200.1.8`). A test walks the table:
+      every row must have its directory, its `info.html` must parse to
+      the row's own (model, firmware) and resolve back to that row,
+      and every page must parse with the row's layout.
+    - Adding a switch or a version: capture the pages with
+      `tools/sodola.py get`, add the directory and a `read_only` row,
+      fix or fork the page functions until the tests pass, do one
+      write-and-revert on a live unit, promote the row to `verified`.
+    - Out of scope: a switch with another management protocol (SNMP, a
+      real API). That needs a driver seam in granite-fw above the page
+      layer, producing `SwitchState` and applying `Op`; it is designed
+      when such a switch is on the bench.
+    - Fleet side: the infra provisioning script already touches every
+      switch before it goes into a block. It should record model and
+      firmware and refuse a unit without a `verified` row, which keeps
+      the table short. The controller never updates switch firmware.
 
 ### Config section `switch`
 
@@ -615,8 +678,10 @@ monitored if the pages parse and otherwise reported as unsupported.
   request at a time and never polls faster than the soak did.
 - **Restore upload.** Default: backup only. Pivot signal: a tested
   restore on the unit -> add `switch_restore` (admin HTTP only).
-- **Newer firmware.** Default: V200.1.8 only. Pivot signal: a unit
-  arrives with another version -> new fixtures before enabling writes.
+- **Newer firmware, other models.** Default: SL902-SWTGW218AS on
+  V200.1.8 only. Pivot signal: a unit arrives with another model or
+  version -> a new profile row with its own fixtures before enabling
+  writes (component 24).
 - **Adoption of a factory-fresh switch** (192.168.2.1, needs a
   192.168.2.0/24 address). Default: switches are pre-provisioned with
   `tools/sodola.py` (IP, password) before they go into a block. Pivot
@@ -666,8 +731,8 @@ rather than left in the code only.
 - **Component 15** in `granite-core/src/switch/`: `scan.rs` (the
   hand-written scanner), `model.rs`, `parse.rs`, `forms.rs`, `plan.rs`,
   `counters.rs`, `obs.rs`, `md5.rs`. Fixtures for every page used are
-  in `granite-core/tests/fixtures/sodola-v200.1.8/`, captured read-only
-  from the bench unit; `granite-core/tests/switch.rs` parses all of
+  in `granite-core/tests/fixtures/sl902-swtgw218as-v200.1.8/`, captured
+  read-only from the bench unit; `granite-core/tests/switch.rs` parses all of
   them, checks that each parser **rejects** the other fourteen pages,
   and plans this ADR's own example plus its revert.
 - **Component 16** in `granite-fw/src/switch/client.rs`: one
@@ -774,6 +839,58 @@ rather than left in the code only.
   request and logs that it is not simulated; it has no HTTP server
   serving the fixtures, because the worker that would drive it lives in
   `granite-fw` and does not build on the host.
+
+### Implementation (2026-11-15): switch profiles
+
+Component 24 is built. `granite-core/src/switch/profile.rs` holds
+`Layout` (port count plus which ports are SFP+, `is_port`, `is_sfp`,
+`widest`), `Dialect::SodolaV200`, `Tier::{Verified, ReadOnly}`,
+`Profile` with `fixture_dir()`, the `PROFILES` table with its one row
+(SL902-SWTGW218AS / V200.1.8 / 9 ports, SFP+ 9 / `SodolaV200` /
+`Verified`) and `lookup(model, firmware)`, trimmed and exact on both.
+
+`PORT_COUNT`, `SFP_PORT`, `KNOWN_FIRMWARE`, `is_port` and
+`firmware_known` are gone. A `&Layout` is threaded through instead: the
+per-port page parsers, `forms::rate_max`, `Speed::impossible_on`,
+`parse_port_list`, every `plan.rs` entry point (`plan`, `drift`, `undo`,
+`undo_desired`, `port_enable_op`, `Protected::new`) and
+`SwitchObs::of_state`. Config-time checks (`Config::validate`,
+`SwitchCfg::uplink`, the `switch_port` dispatcher,
+`SwitchDesired::validate`) use `Layout::widest()`, the unit's own layout
+being unknown there. `switch.uplink_port` keeps its default of 9 as a
+documented plain default (`config::DEFAULT_UPLINK_PORT`), not as a fact
+about the unit.
+
+The worker resolves the profile at every `info.cgi`
+(`Worker::resolve_profile`) and hands the layout to the client, which
+carries it for its page parses. Writes need a `Verified` row; no row and
+a `ReadOnly` row behave as before (monitor, refuse writes,
+`switch_fw_unknown`, `SWITCH_UNSUPPORTED` fault), the event detail is
+now `model firmware` and the log line says which of the two cases it
+is. The planner refuses an op on a port the resolved layout has not got
+("this switch has no port N: it has M port(s)"), and an `uplink_port`
+outside the layout protects nothing and is logged once. Wire formats are
+unchanged: MQTT `state.switch`, the obs field names (`fw_unknown` kept),
+the event names and the Modbus map all stay as they were.
+
+Fixtures moved to `tests/fixtures/sl902-swtgw218as-v200.1.8/` and
+`tests/switch.rs` now walks the table: every row must have its
+directory, its `info.html` must parse to the row's own (model,
+firmware) and resolve back to that row, and every page must parse with
+the row's layout, with as many per-port rows as the layout has ports.
+
+Differences from component 24 as written:
+
+- **`parse::info` takes no layout.** It is the page the profile is
+  resolved from, so there is nothing to pass yet; it reads its port
+  rows with `Layout::widest()` and the narrower layout applies from the
+  next page on. Everything else takes the layout explicitly.
+- **The layout travels in the client**, as a field set by the worker
+  (`SwitchClient::set_layout`), rather than as an argument to every
+  `read_*` call. One owner of the current layout per connection, and no
+  call site can pass the wrong one.
+- **No `Dialect` dispatch**, as the component asks: the field exists and
+  is read nowhere. `parse.rs` and `forms.rs` are `SodolaV200`.
 
 ## Open Questions
 

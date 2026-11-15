@@ -22,6 +22,7 @@ use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 
 use super::model::{Duplex, LoopMode, Speed, VlanMode, jumbo_form_value, normalise_mac};
+use super::profile::Layout;
 
 /// One form: ordered key/value pairs, because keys repeat.
 pub type Form = Vec<(String, String)>;
@@ -244,9 +245,10 @@ pub fn rate_limit(port: u8, ingress: Option<u32>, egress: Option<u32>) -> Form {
     form
 }
 
-/// The highest storm or rate limit a port accepts \[Kbit/s\].
-pub const fn rate_max(port: u8) -> u32 {
-    if port == super::model::SFP_PORT {
+/// The highest storm or rate limit a port accepts \[Kbit/s\]: the port's
+/// own line rate, which is what the layout of the unit says.
+pub fn rate_max(layout: &Layout, port: u8) -> u32 {
+    if layout.is_sfp(port) {
         10_000_000
     } else {
         2_500_000
@@ -383,8 +385,8 @@ mod tests {
             encode(&rate_limit(9, None, None)),
             "port8=on&in_rate=&out_rate=&cmd=bandwidthcontrol"
         );
-        assert_eq!(rate_max(9), 10_000_000);
-        assert_eq!(rate_max(1), 2_500_000);
+        assert_eq!(rate_max(Layout::widest(), 9), 10_000_000);
+        assert_eq!(rate_max(Layout::widest(), 1), 2_500_000);
     }
 
     #[test]

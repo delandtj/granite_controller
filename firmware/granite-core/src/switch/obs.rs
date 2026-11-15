@@ -12,6 +12,7 @@ use alloc::vec::Vec;
 use serde::{Deserialize, Serialize};
 
 use super::model::{Speed, SwitchDesired, SwitchState, VlanMode};
+use super::profile::Layout;
 
 fn is_false(b: &bool) -> bool {
     !*b
@@ -84,12 +85,16 @@ fn is_zero(n: &u64) -> bool {
 impl SwitchObs {
     /// The summary of what was read.
     ///
+    /// `layout` is the resolved profile's, or the widest in the table
+    /// while no profile matched (ADR 0006 component 24): it decides
+    /// which port numbers are walked at all.
+    ///
     /// `desired` only supplies the `node` labels, which are the
     /// operator's statement about cabling; nothing here is written.
-    pub fn of_state(state: &SwitchState, desired: &SwitchDesired) -> Self {
+    pub fn of_state(layout: &Layout, state: &SwitchState, desired: &SwitchDesired) -> Self {
         let info = state.info.clone().unwrap_or_default();
         let mut ports: Vec<SwitchPortObs> = Vec::new();
-        for port in 1..=super::model::PORT_COUNT {
+        for port in 1..=layout.ports {
             let cfg = state.port(port);
             let stats = state.stats_port(port);
             let vlan = state.port_vlan(port);
@@ -202,7 +207,7 @@ mod tests {
             }],
             ..SwitchDesired::default()
         };
-        let obs = SwitchObs::of_state(&state, &desired);
+        let obs = SwitchObs::of_state(Layout::widest(), &state, &desired);
         assert_eq!(obs.ports.len(), 1, "only the port that was read");
         let port = obs.port(9).expect("port 9");
         assert!(port.link && port.enabled);
