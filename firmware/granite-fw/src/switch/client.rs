@@ -47,8 +47,21 @@ use granite_core::switch::{md5, plan::Op};
 pub const MIN_GAP_MS: u32 = 100;
 
 /// Request timeout. The slowest page measured was 460 ms; a reply that
-/// is 10 s late means the web server is in trouble.
-pub const TIMEOUT: Duration = Duration::from_secs(10);
+/// is 5 s late means the web server is in trouble.
+///
+/// It must stay well under `CONFIG_ESP_TASK_WDT_TIMEOUT_S` (10 s): the
+/// worker is under the task watchdog and [`SwitchClient::request`]
+/// feeds it once per request, so a request may never block for a whole
+/// watchdog period. At 10 s it did, and a switch that stalled on one
+/// page reset the controller (coredump of 2026-11-15: the worker in
+/// `esp_http_client_read` under `read_ports`).
+pub const TIMEOUT: Duration = Duration::from_secs(5);
+
+/// Longest one request may take from its first byte out to its last
+/// byte in. [`TIMEOUT`] bounds each step (connect, headers, every read
+/// of the body) and the watchdog is fed between the steps, so without
+/// this a reply that dribbles in would hold the worker for good.
+pub const REQUEST_BUDGET: Duration = Duration::from_secs(15);
 
 /// Longest page the client will buffer. The biggest page used is about
 /// 10 KB; anything much larger is not a page this firmware knows.
@@ -262,6 +275,12 @@ impl SwitchClient {
         body: Option<&[u8]>,
     ) -> Result<String, ClientError> {
         self.space();
+        // Fed per step of a request, not per pass of the worker loop: a
+        // pass reads several pages in a row, and every step of each
+        // (connect, headers, a read of the body) may take up to
+        // `TIMEOUT`.
+        crate::platform::feed_task_watchdog();
+        let started = crate::platform::now_ms();
         let url = format!("{}{}", self.base, path.trim_start_matches('/'));
         let cookie = format!("admin={}", self.token);
         let length = body.map(|b| b.len().to_string());
@@ -291,6 +310,7 @@ impl SwitchClient {
             conn.write_all(body)
                 .map_err(|e| ClientError::Transport(format!("body of {path}: {e}")))?;
         }
+        crate::platform::feed_task_watchdog();
         conn.initiate_response()
             .map_err(|e| ClientError::Transport(format!("response of {path}: {e}")))?;
         self.requests = self.requests.saturating_add(1);
@@ -302,6 +322,13 @@ impl SwitchClient {
         let mut page = String::new();
         let mut buf = [0u8; CHUNK];
         loop {
+            crate::platform::feed_task_watchdog();
+            if crate::platform::now_ms() - started > REQUEST_BUDGET.as_millis() as u64 {
+                return Err(ClientError::Transport(format!(
+                    "read of {path}: not finished after {} s",
+                    REQUEST_BUDGET.as_secs()
+                )));
+            }
             match conn.read(&mut buf) {
                 Ok(0) => break,
                 Ok(n) => {

@@ -190,7 +190,7 @@ Numbered after ADR 0001's list.
       one request at a time. Adds `Cookie` and `Referer`; on a redirect
       to `login.cgi` performs the login POST once and retries.
     - Minimum spacing between requests (default 100 ms); 2 s settle
-      after a port-config write; timeouts 10 s, read-back retries after
+      after a port-config write; timeouts 5 s, read-back retries after
       writes that can flap the uplink (STP, IP).
     - Buffers one page at a time (pages are 2-10 KB); no page outlives
       its parse.
@@ -777,7 +777,7 @@ rather than left in the code only.
   and plans this ADR's own example plus its revert.
 - **Component 16** in `granite-fw/src/switch/client.rs`: one
   `EspHttpConnection` per request, cookie and `Referer`, one re-login
-  on the login redirect, 100 ms minimum spacing, 10 s timeout, the 2 s
+  on the login redirect, 100 ms minimum spacing, 5 s timeout, the 2 s
   settle after a port write, and "a timeout is the expected answer" for
   the STP and address writes. Pages are capped at 48 KB and dropped
   after their parse. The firmware fingerprint is checked at every
