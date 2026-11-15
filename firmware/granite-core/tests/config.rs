@@ -10,6 +10,7 @@ use granite_core::config::{
 use granite_core::node::{BootPolicy, DEFAULT_SOFT_OFF_S, Escalation, NodeSettings};
 use granite_core::plane::UpdatePolicy;
 use granite_core::rules::MAX_RULES;
+use granite_core::switch::model::{DesiredPort, VlanMode};
 
 #[test]
 fn the_default_config_is_full_valid_and_safe() {
@@ -161,6 +162,46 @@ fn an_invalid_section_also_falls_back_alone() {
     assert_eq!(fallbacks[0].section, Section::Sec);
     assert!(matches!(fallbacks[0].error, ConfigError::Invalid(_)));
     assert!(!cfg.sec.modbus.enabled);
+    cfg.validate().unwrap();
+}
+
+#[test]
+fn a_node_port_in_vlan_1_costs_the_switch_section_and_nothing_else() {
+    // What a controller boots into when the stored switch section breaks
+    // a rule the image learned later (here the management VLAN
+    // invariant, ADR 0006 component 25): the section parses, does not
+    // validate, and falls back on its own. Boot carries on.
+    let mut stored = Config::default();
+    stored.sys.device_id = "granite-aabbcc".into();
+    stored.mqtt.enabled = true;
+    stored.mqtt.host = "broker.example".into();
+    stored.switch.enabled = true;
+    stored.switch.host = "192.168.64.241".into();
+    stored.switch.desired.ports = vec![DesiredPort {
+        port: 1,
+        mode: Some(VlanMode::Access),
+        vlan: Some(1),
+        node: Some(1),
+        ..DesiredPort::default()
+    }];
+
+    let mut store: BTreeMap<Section, String> = BTreeMap::new();
+    for section in [Section::Mqtt, Section::Switch, Section::Sys] {
+        store.insert(section, stored.section_json(section).unwrap());
+    }
+    let (cfg, fallbacks) = Config::from_sections(|s| store.get(&s).cloned());
+    assert_eq!(fallbacks.len(), 1);
+    assert_eq!(fallbacks[0].section, Section::Switch);
+    assert!(matches!(fallbacks[0].error, ConfigError::Invalid(_)));
+
+    // The whole switch section is gone, not just the offending port: no
+    // switch is polled until the section is written again.
+    assert!(!cfg.switch.enabled);
+    assert!(cfg.switch.host.is_empty());
+    assert!(cfg.switch.desired.is_empty());
+    // Everything else loaded.
+    assert!(cfg.mqtt.enabled);
+    assert_eq!(cfg.sys.device_id, "granite-aabbcc");
     cfg.validate().unwrap();
 }
 
