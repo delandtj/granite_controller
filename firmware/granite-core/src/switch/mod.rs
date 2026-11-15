@@ -6,6 +6,10 @@
 //! crate owns what a page means and what a write looks like, so a
 //! firmware change cannot quietly alter either.
 //!
+//! VLAN 1 is the management VLAN of a block, and who may be in it is
+//! [`mgmt`]: a config check on the node ports and a report-only list of
+//! the ports that carry it and should not (ADR 0006 component 25).
+//!
 //! Which units the image knows is [`profile`]: one row per (model,
 //! firmware) pair whose pages were captured, carrying the port layout,
 //! the page dialect and whether writes are allowed (ADR 0006 component
@@ -22,6 +26,7 @@
 pub mod counters;
 pub mod forms;
 pub mod md5;
+pub mod mgmt;
 pub mod model;
 pub mod obs;
 pub mod parse;
@@ -33,6 +38,7 @@ pub use counters::{PortCounters, PortRates};
 pub use obs::{SwitchObs, SwitchPortObs};
 pub use forms::Form;
 pub use md5::session_token;
+pub use mgmt::{MGMT_VLAN, exposed};
 pub use model::{
     DesiredIp, DesiredIpMode, DesiredPort, DesiredStorm, DesiredVlan, Duplex, IpCfg, Jumbo,
     LoopCfg, LoopMode, MacEntry, MacPage, PortCfg, PortStats, PortVlan, RatePort, Speed,

@@ -60,6 +60,12 @@ pub struct SwitchObs {
     /// What differs from the desired state, empty when nothing does.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub drift: Vec<String>,
+    /// The ports that carry VLAN 1, the switch's management VLAN, and
+    /// are neither the uplink nor the controller's own port (ADR 0006
+    /// component 25). Ascending, empty when none does and while the
+    /// controller has not found its own port.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub mgmt_exposed: Vec<u8>,
     /// Monotonic milliseconds of the last reconcile that applied
     /// something; 0 when none has.
     #[serde(skip_serializing_if = "is_zero")]
@@ -130,6 +136,7 @@ impl SwitchObs {
             mac: info.mac,
             ports,
             drift: Vec::new(),
+            mgmt_exposed: Vec::new(),
             last_reconcile: 0,
             mismatch: false,
             fw_unknown: false,

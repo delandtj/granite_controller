@@ -580,8 +580,18 @@ Commands: `switch_port` (`{"port":N}` or `{"node":N}` plus
 `switch_port`, `switch_reachable`, `switch_unreachable`,
 `switch_reboot`, `switch_drift`, `switch_reconciled`,
 `switch_reverted`, `switch_refused`, `switch_mismatch`,
-`switch_fw_unknown`, `switch_saved`. `state.switch` carries the
-summary; the counters have their own topic.
+`switch_fw_unknown`, `switch_saved`, `switch_mgmt_exposed` and
+`switch_mgmt_closed`. `state.switch` carries the summary; the counters
+have their own topic.
+
+VLAN 1 is the management VLAN of a block: the switch's CPU answers in
+it and has no setting for it, so only the uplink and the controller's
+own port may carry it (ADR 0006 component 25). A `desired.ports` entry
+that names a `node` and puts that port in VLAN 1 is rejected at config
+time; at run time every other port that carries it is listed in
+`state.switch.mgmt_exposed` and raises `switch_mgmt_exposed`. Report
+only: nothing is written for it, as a revert must be able to put VLAN 1
+back on every port.
 
 Which switches the image knows is a static profile table
 (`granite-core/src/switch/profile.rs`, ADR 0006 component 24): one row

@@ -17,6 +17,9 @@ differently and what is not built yet)
 **Updated**: 2026-11-15 (switch profiles: the write gate is keyed on
 (model, firmware) instead of the firmware string alone, and the port
 layout is profile data instead of constants. New component 24)
+**Updated**: 2026-11-15 (VLAN 1 invariant: node ports never carry the
+management VLAN; a config check and a report-only exposure list. New
+component 25)
 
 Related: firmware/docs/adr/0001-firmware-architecture.md (components 6
 Network, 7 MQTT, 8 HTTP API, 10 Configuration; commit-confirm),
@@ -403,6 +406,43 @@ Numbered after ADR 0001's list.
       switch before it goes into a block. It should record model and
       firmware and refuse a unit without a `verified` row, which keeps
       the table short. The controller never updates switch firmware.
+
+25. **VLAN 1 invariant** (`granite-core/src/switch/mgmt.rs`, the
+    config check in `model.rs`, the report in the worker)
+    - The switch has no management VLAN setting; its CPU (the web UI)
+      answers in VLAN 1. So VLAN 1 is the management VLAN of a block,
+      and the rule is: only the uplink and the controller's own port
+      carry VLAN 1. A node port never does. The ToR maps the untagged
+      traffic of the uplink into its own management VLAN with the
+      port's PVID; that is the ToR's business, not the controller's.
+    - "Carries VLAN 1" means any of: access VLAN 1, trunk with native
+      1, trunk with 1 in its allowed list.
+    - Config check, at config time: a `switch.desired.ports` entry that
+      names a `node` and carries VLAN 1 is rejected. The node label is
+      the operator's own statement that the port is a node port. The
+      controller's own port is only known from the MAC table, so an
+      entry without `node` cannot be judged here.
+    - Exposure report, at run time: once the controller has found its
+      own port, every port of the unit that carries VLAN 1 and is
+      neither the configured uplink nor the controller's own port is
+      listed in `state.switch.mgmt_exposed` (ascending, left out when
+      empty). A change of the list raises `switch_mgmt_exposed` with
+      the port list as detail, and `switch_mgmt_closed` when it
+      becomes empty. While the own port is not known nothing is
+      reported: there is no telling which port to exempt.
+    - Report only, like drift: the controller never moves a port out
+      of VLAN 1 by itself. The fix is a desired state that makes the
+      node ports access ports in a data VLAN, applied through the
+      normal reconcile and commit-confirm path.
+    - Not enforced in the planner: the revert path plans back to a
+      snapshot that may itself have VLAN 1 on node ports (a fresh or
+      factory-reset unit has it on every port), and a revert must
+      never be refused.
+    - No fault bit and no Modbus change: the field and the two events
+      are additive.
+    - Unconfirmed: that the CPU answers in VLAN 1 only. Test once on
+      the bench: an access port in a data VLAN must not reach the web
+      UI. Recorded in Granite/infra `docs/sodola.md` as a TODO.
 
 ### Config section `switch`
 
@@ -891,6 +931,55 @@ Differences from component 24 as written:
   call site can pass the wrong one.
 - **No `Dialect` dispatch**, as the component asks: the field exists and
   is read nowhere. `parse.rs` and `forms.rs` are `SodolaV200`.
+
+### Implementation (2026-11-15): VLAN 1 invariant
+
+Component 25 is built. `granite-core/src/switch/mgmt.rs` holds the pure
+logic: `MGMT_VLAN` (1), `port_carries_mgmt(&PortVlan)` and
+`desired_carries_mgmt(&DesiredPort)`, `exposed(layout, state, uplink,
+own) -> Option<Vec<u8>>` and `port_list(&[u8])` for the event detail.
+`exposed` is `None` while the controller's own port is unknown or
+`vlan.cgi?page=port_based` has not been read, and otherwise the
+ascending ports that carry VLAN 1 minus the exempt pair; the pair is
+`plan::Protected::new`'s, so "the uplink and the controller's own port"
+has one definition in the image and an uplink outside the layout
+exempts nothing.
+
+The config check is in `SwitchDesired::validate`: an entry with a
+`node` that carries VLAN 1 is an error ("a node port may not carry VLAN
+1, the switch's management VLAN"). The worker
+(`granite-fw/src/switch/mod.rs`) keeps `mgmt_exposed: Vec<u8>` and
+recomputes it in `check_mgmt_exposure` after the MAC walk, after the
+drift read, after a reconcile's read-back and on a config change that
+moves the uplink; on a change it publishes
+`state.switch.mgmt_exposed` (left out when empty) and raises
+`switch_mgmt_exposed` with the port list as detail, or
+`switch_mgmt_closed` when the list empties, with one `warn` line on
+exposure. No write, no fault bit, no Modbus change, nothing in the
+planner, and it does not depend on `manage`: the configuration pages
+are read either way.
+
+Differences from component 25 as written:
+
+- **A desired trunk is judged on what it names, and that leaves a
+  hole.** The check is literal: a `node` port with `mode: "trunk"`,
+  `native: 100`, `allowed: [200]` names no VLAN 1 and passes. But
+  `forms::port_trunk` always submits VLAN 1 (the web UI checks it
+  itself), so the port does end up carrying it and the run-time report
+  lists it. A node port that must not see the management VLAN has to be
+  an access port; `docs/switch.md` says so at the trunk recipe. A
+  stricter check - "a `node` port may not be a trunk at all" - was not
+  written, because that is a new rule and not this component's.
+- **The event detail is a plain comma list** (`"2,3,4"`), not the range
+  form `desired.storm.ports` uses: it is read by a human and parsed by
+  nothing.
+- **`None` keeps the last report** rather than clearing it: the list is
+  only reset when the worker starts talking to another switch. A
+  cleared list would mean "closed", which is not what "no telling"
+  means.
+- **The bench check of the unconfirmed assumption is still open**: that
+  the CPU answers in VLAN 1 only (an access port in a data VLAN must
+  not reach the web UI) was not tested here, no hardware was touched.
 
 ## Open Questions
 

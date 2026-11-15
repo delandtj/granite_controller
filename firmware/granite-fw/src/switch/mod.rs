@@ -59,6 +59,7 @@ use granite_core::dispatch::SwitchRequest;
 use granite_core::modbus_map::fault_bits;
 use granite_core::msg::{Event, switch_event};
 use granite_core::observed::Observed;
+use granite_core::switch::mgmt;
 use granite_core::switch::model::{PortStats, SwitchDesired, SwitchState, same_mac};
 use granite_core::switch::obs::SwitchObs;
 use granite_core::switch::plan::{self, Protected};
@@ -216,6 +217,9 @@ struct Worker {
     own_port: Option<u8>,
     /// What differs from the desired state.
     drift: Vec<String>,
+    /// The ports that carry VLAN 1 and are neither the uplink nor the
+    /// controller's own port (ADR 0006 component 25). Report only.
+    mgmt_exposed: Vec<u8>,
     /// The state as it was before the last apply: what a revert goes
     /// back to (ADR 0006 component 18).
     snapshot: Option<SwitchState>,
@@ -258,6 +262,7 @@ impl Worker {
             reachable: false,
             own_port: None,
             drift: Vec::new(),
+            mgmt_exposed: Vec::new(),
             snapshot: None,
             applied: None,
             last_reconcile_ms: 0,
@@ -329,6 +334,8 @@ impl Worker {
             self.state = SwitchState::default();
             self.last_stats = None;
             self.own_port = None;
+            // Another switch's exposure says nothing about this one.
+            self.mgmt_exposed = Vec::new();
             // Another switch is another profile: nothing is known about
             // it until its info.cgi has been read.
             self.profile = None;
@@ -348,6 +355,9 @@ impl Worker {
             // not got it either.
             self.uplink_warned = None;
             self.check_uplink();
+            // A changed uplink changes which port is exempt from the
+            // management VLAN report.
+            self.check_mgmt_exposure();
         }
     }
 
@@ -383,6 +393,9 @@ impl Worker {
             if !self.step(|w| w.read_macs()) {
                 return;
             }
+            // The walk is where the controller's own port comes from,
+            // and that is the port the report exempts.
+            self.check_mgmt_exposure();
         }
         if now >= self.next_drift_ms {
             self.next_drift_ms = now + secs(self.cfg.poll.drift_s);
@@ -390,6 +403,7 @@ impl Worker {
                 return;
             }
             self.check_drift();
+            self.check_mgmt_exposure();
         }
         if now >= self.next_counters_ms {
             self.next_counters_ms = now + secs(self.cfg.poll.counters_s);
@@ -773,6 +787,44 @@ impl Worker {
         }
     }
 
+    /// Report which ports carry VLAN 1, the switch's management VLAN,
+    /// and should not (ADR 0006 component 25).
+    ///
+    /// Report only, like drift, and whatever `manage` says: nothing is
+    /// written, no fault bit is set and the planner knows nothing about
+    /// this. The fix is a desired state that makes the node ports
+    /// access ports in a data VLAN.
+    ///
+    /// Called whenever the port VLAN page, the controller's own port or
+    /// the uplink can have changed, so at the latest on the drift tick.
+    fn check_mgmt_exposure(&mut self) {
+        let Some(exposed) =
+            mgmt::exposed(self.layout, &self.state, self.cfg.uplink(), self.own_port)
+        else {
+            // No own port yet, or the page was not read: there is no
+            // telling which port to exempt, so nothing is reported and
+            // the last report stands.
+            return;
+        };
+        if exposed == self.mgmt_exposed {
+            return;
+        }
+        self.mgmt_exposed = exposed;
+        if self.mgmt_exposed.is_empty() {
+            log::info!(
+                "switch: only the uplink and the controller's own port carry VLAN 1 again"
+            );
+            self.event("switch_mgmt_closed", None, None);
+            return;
+        }
+        let list = mgmt::port_list(&self.mgmt_exposed);
+        log::warn!(
+            "switch: port(s) {list} carry VLAN 1, the switch's management VLAN: whatever hangs \
+             there can reach the switch's web UI"
+        );
+        self.event("switch_mgmt_exposed", None, Some(list));
+    }
+
     // -----------------------------------------------------------------
     // Requests
     // -----------------------------------------------------------------
@@ -994,6 +1046,9 @@ impl Worker {
                     self.drift
                 );
             }
+            // A port VLAN op can have opened or closed the management
+            // VLAN on a port.
+            self.check_mgmt_exposure();
         }
         self.event(what, None, Some(done.join("; ")));
         self.publish_obs(None);
@@ -1134,6 +1189,7 @@ impl Worker {
             SwitchObs::unreachable(observed.switch.as_ref())
         };
         obs.drift = self.drift.clone();
+        obs.mgmt_exposed = self.mgmt_exposed.clone();
         obs.last_reconcile = self.last_reconcile_ms;
         obs.mismatch = self.mismatch;
         obs.fw_unknown = self.fw_unknown;

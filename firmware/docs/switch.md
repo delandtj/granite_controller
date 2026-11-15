@@ -173,6 +173,53 @@ yet, every port counts as protected for those changes.
 `desired` cannot override this. A one-off command can: `switch_port`
 with `"force": true`.
 
+### The management VLAN (VLAN 1)
+
+The switch has no management VLAN setting: its CPU, and with it the web
+UI the controller talks to, answers in VLAN 1. So VLAN 1 is the
+management VLAN of a block, and the same two ports are the only ones
+allowed in it: the uplink and the controller's own port. A node port
+never carries VLAN 1 - a node that reaches the web UI can reconfigure
+the block it lives in. What the ToR does with the uplink's untagged
+traffic (mapping it into its own management VLAN with the port's PVID)
+is the ToR's business.
+
+"Carries VLAN 1" is any of: access VLAN 1, trunk with native 1, trunk
+with 1 in its allowed list.
+
+Two things act on it:
+
+- **At config time**: a `desired.ports` entry that names a `node` and
+  puts that port in VLAN 1 is rejected (`config_set` is refused with
+  `switch.desired.ports[N]: a node port may not carry VLAN 1 ...`). The
+  `node` label is your own statement that the port is a node port; an
+  entry without it could be the uplink or the controller's own port, so
+  it is not judged.
+- **At run time**: every port that carries VLAN 1 and is neither the
+  uplink nor the controller's own port is listed in
+  `state.switch.mgmt_exposed`, with a `switch_mgmt_exposed` event on
+  change and `switch_mgmt_closed` when the list becomes empty. Nothing
+  is reported while the controller has not found its own port: there is
+  no telling which port to exempt. A fresh or factory-reset unit has
+  VLAN 1 on every port, so expect the full list there.
+
+Report only, like drift: the controller never moves a port out of VLAN
+1 by itself, and a revert may put VLAN 1 back on every port. The fix is
+a desired state that makes the node ports access ports in a data VLAN:
+
+```json
+"vlans":[{"id":1},{"id":100,"name":"data"}],
+"ports":[{"port":1,"mode":"access","vlan":100,"node":1},
+         {"port":2,"mode":"access","vlan":100,"node":2},
+         {"port":9,"mode":"trunk","native":1,"allowed":[1,100]}]
+```
+
+A node on a *trunk* cannot be closed this way: the switch's web UI
+checks VLAN 1 itself on every trunk, so the controller's trunk writes
+always include it (`forms::port_trunk`) and the port stays in
+`mgmt_exposed`. A node port that must not see the management VLAN is an
+access port.
+
 ## 7. Recipes
 
 All recipes show only `desired`; wrap it in the full section (rule 1).
@@ -216,6 +263,10 @@ it in the same change. The VLAN is deleted after the ports moved:
 ```json
 "ports":[{"port":3,"mode":"trunk","native":100,"allowed":[200,300],"node":3}]
 ```
+
+The switch's UI puts VLAN 1 on every trunk, so this port shows up in
+`state.switch.mgmt_exposed` (section 6, "The management VLAN"). Use an
+access port for a node that must not reach the switch itself.
 
 **Disable a port** (persistent, through config):
 
@@ -269,10 +320,13 @@ mosquitto_pub -h 127.0.0.1 -t granite/bench/granite-cb374b/cmd \
 
 ```json
 {"reachable":true,"fw":"V200.1.8","uptime_s":5369,"mac":"1C:2A:A3:24:26:7E",
- "managed":true,"last_reconcile":343212,
+ "managed":true,"last_reconcile":343212,"mgmt_exposed":[3,4],
  "ports":[{"port":7,"enabled":true,"link":false,"speed":"auto",
            "vlan_mode":"access","vlan":300,"node":7,"macs":["..."]}]}
 ```
+
+`drift` (what differs from `desired`) and `mgmt_exposed` (the ports in
+VLAN 1 that should not be, section 6) are left out when empty.
 
 `.../switch/counters` (not retained, every `poll.counters_s`): per port
 `tx_packets`, `rx_packets`, `tx_bytes`, `rx_bytes` (totals since the
@@ -291,6 +345,8 @@ Events (`.../event`, `kind:"switch"`, the name in `what`):
 | `switch_saved` | Written to the switch's flash. |
 | `switch_reverting` / `switch_reverted` | An undo is applied / done (`undo` or `reboot`). |
 | `switch_drift` | The switch no longer matches `desired` (someone used its web UI?). |
+| `switch_mgmt_exposed` | Ports outside the uplink and the controller's own port carry VLAN 1; `detail` lists them (`"3,4"`). |
+| `switch_mgmt_closed` | None does any more. |
 | `switch_refused` | An op or command was refused; `detail` says why. |
 | `switch_mismatch` | The switch's MAC is not `switch.mac`. |
 | `switch_fw_unknown` | The switch's model and firmware (the `detail` says which) have no verified profile in this image: monitored while its pages parse, never written. |
@@ -311,6 +367,8 @@ set Modbus fault bits (`docs/modbus_map.md`).
 | `switch_fw_unknown` | This controller image has no verified profile for that model and firmware. Monitoring still works; writes are refused. A profile is part of the image, so enabling the unit is a controller update, not a setting (ADR 0006 component 24). |
 | `switch_refused` `"... has no port N"` | The port exists in `desired` but not on the switch this image fingerprinted. Fix `desired`, or the unit is not the one you think. |
 | `state.switch.reachable` false | Wrong `host`, switch off, or not on a subnet the controller can reach; the switch has no management VLAN setting. |
+| `switch_mgmt_exposed`, or `mgmt_exposed` in the state | Those ports carry VLAN 1, the switch's management VLAN: whatever hangs there can reach its web UI. Nothing is written for it; make them access ports in a data VLAN (section 6, "The management VLAN"). A fresh unit has VLAN 1 everywhere. |
+| `config_set` refused with `a node port may not carry VLAN 1` | A `desired.ports` entry with a `node` puts that port in VLAN 1. Give it a data VLAN, or drop the `node` label if that port really is the uplink or the controller's. |
 | Someone used the switch web UI | Expect `switch_drift`; with `enforce: false` nothing is put back. Avoid the web UI on a managed switch: it shares paging state with the controller's MAC walk. |
 
 ## 11. Not built yet

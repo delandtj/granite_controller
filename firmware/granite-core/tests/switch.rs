@@ -18,6 +18,7 @@ use granite_core::switch::model::{
     DesiredIp, DesiredIpMode, DesiredPort, DesiredVlan, Duplex, LoopMode, Speed, SwitchDesired,
     SwitchState, VlanMode, same_mac,
 };
+use granite_core::switch::mgmt;
 use granite_core::switch::parse::{self, ParseError};
 use granite_core::switch::plan::{self, OpKind, Protected};
 use granite_core::switch::profile::{self, Layout, Tier};
@@ -408,6 +409,37 @@ fn the_state_read_from_the_fixtures_is_the_switch_the_notes_describe() {
     assert_eq!(state.port(9).map(|p| p.enabled), Some(true));
     assert_eq!(state.stats_port(9).map(|s| s.link), Some(true));
     assert_eq!(state.port_vlan(3).map(|p| p.mode), Some(VlanMode::Trunk));
+}
+
+#[test]
+fn the_fixture_switch_has_the_management_vlan_on_every_port_but_the_uplink() {
+    // The bench capture is a nearly fresh unit: all nine ports trunk,
+    // native 1. That is exactly the state ADR 0006 component 25 is
+    // about, and the report lists every port that is not exempt.
+    let state = read_everything();
+    assert_eq!(
+        mgmt::exposed(lay(), &state, Some(9), None),
+        None,
+        "without its own port the controller has nothing to exempt"
+    );
+    // The bench controller sits behind the uplink, so its own MAC is
+    // learned on port 9 like everything else on this capture.
+    let own = state
+        .macs_on(9)
+        .first()
+        .and_then(|mac| state.port_of_mac(mac))
+        .expect("the uplink has learned MACs");
+    assert_eq!(own, 9);
+    let exposed = mgmt::exposed(lay(), &state, Some(9), Some(own))
+        .expect("the page was read and the own port is known");
+    assert_eq!(exposed, vec![1, 2, 3, 4, 5, 6, 7, 8]);
+    assert_eq!(mgmt::port_list(&exposed), "1,2,3,4,5,6,7,8");
+
+    // Nothing was read of a switch nobody polled yet.
+    assert_eq!(
+        mgmt::exposed(lay(), &SwitchState::default(), Some(9), Some(9)),
+        None
+    );
 }
 
 #[test]

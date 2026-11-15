@@ -583,7 +583,10 @@ pub enum EventKind {
     /// changed), `switch_reboot`, `switch_unreachable`,
     /// `switch_reachable`, `switch_drift`, `switch_reconciled`,
     /// `switch_reverted`, `switch_refused`, `switch_mismatch`,
-    /// `switch_fw_unknown`, `switch_saved`.
+    /// `switch_fw_unknown`, `switch_saved`, `switch_mgmt_exposed`
+    /// (ports outside the uplink and the controller's own port carry
+    /// VLAN 1, the `detail` lists them) and `switch_mgmt_closed` (none
+    /// does any more).
     Switch {
         /// Which kind.
         what: String,

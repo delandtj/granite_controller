@@ -765,6 +765,19 @@ impl SwitchDesired {
                     p.port
                 ));
             }
+            // The management VLAN invariant (ADR 0006 component 25): a
+            // port the operator calls a node port may not be in VLAN 1,
+            // which is where the switch's own web UI answers. The
+            // controller's own port is only known from the MAC table,
+            // so an entry without `node` cannot be judged here.
+            if p.node.is_some() && super::mgmt::desired_carries_mgmt(p) {
+                errs.push(format!(
+                    "switch.desired.ports[{}]: a node port may not carry VLAN {}, the switch's \
+                     management VLAN",
+                    p.port,
+                    super::mgmt::MGMT_VLAN
+                ));
+            }
         }
         if let Some(size) = self.jumbo
             && size != 0
@@ -970,5 +983,61 @@ mod tests {
         assert!(d.validate().is_empty(), "{:?}", d.validate());
         assert!(!d.is_empty());
         assert!(SwitchDesired::default().is_empty());
+    }
+
+    #[test]
+    fn a_node_port_may_not_be_in_the_management_vlan() {
+        // The node label is the operator saying "a node hangs here", so
+        // VLAN 1 on it is a configuration error (ADR 0006 component 25).
+        let bad = SwitchDesired {
+            ports: alloc::vec![
+                DesiredPort {
+                    port: 1,
+                    mode: Some(VlanMode::Access),
+                    vlan: Some(1),
+                    node: Some(1),
+                    ..DesiredPort::default()
+                },
+                DesiredPort {
+                    port: 2,
+                    mode: Some(VlanMode::Trunk),
+                    native: Some(100),
+                    allowed: alloc::vec![1, 100],
+                    node: Some(2),
+                    ..DesiredPort::default()
+                },
+            ],
+            ..SwitchDesired::default()
+        };
+        let errs = bad.validate();
+        assert_eq!(errs.len(), 2, "{errs:?}");
+        assert!(errs.iter().all(|e| e.contains("may not carry VLAN 1")));
+
+        // The same VLAN on a port with no node label is the uplink or
+        // the controller's own port as far as this check can tell.
+        let fine = SwitchDesired {
+            ports: alloc::vec![
+                DesiredPort {
+                    port: 1,
+                    mode: Some(VlanMode::Access),
+                    vlan: Some(100),
+                    node: Some(1),
+                    ..DesiredPort::default()
+                },
+                DesiredPort {
+                    port: 9,
+                    mode: Some(VlanMode::Trunk),
+                    native: Some(1),
+                    allowed: alloc::vec![1, 100],
+                    ..DesiredPort::default()
+                },
+            ],
+            vlans: Some(alloc::vec![DesiredVlan {
+                id: 100,
+                name: String::from("data"),
+            }]),
+            ..SwitchDesired::default()
+        };
+        assert!(fine.validate().is_empty(), "{:?}", fine.validate());
     }
 }
