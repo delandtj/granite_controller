@@ -182,12 +182,16 @@ pub mod fault_bits {
     pub const MQTT_DOWN: u16 = 1 << 6;
     /// No plane answers at all.
     pub const NO_PLANE: u16 = 1 << 7;
-    /// The block switch is configured but not answering (ADR 0006
+    /// A block switch is configured but not answering (ADR 0006
     /// component 17: three failed polls in a row).
+    ///
+    /// Shared by the two switches, like the bit below: raised while
+    /// either has the condition and cleared when neither has; the event
+    /// says which one (ADR 0006 component 26).
     pub const SWITCH_UNREACHABLE: u16 = 1 << 8;
-    /// The block switch runs a firmware these parsers were not written
+    /// A block switch runs a firmware these parsers were not written
     /// against, so it is monitored but never written (ADR 0006
-    /// component 16), or its MAC is not the one `switch.mac` names.
+    /// component 16), or its MAC is not the one its section names.
     pub const SWITCH_UNSUPPORTED: u16 = 1 << 9;
 }
 

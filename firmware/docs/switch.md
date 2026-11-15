@@ -73,6 +73,9 @@ The switch password is not in this section; it is a controller secret
 
 ## 4. The `switch` section, every key
 
+A controller that serves two blocks has a second switch in a section of
+its own, `switch2`, with exactly these keys: section 12.
+
 | Key | Default | Meaning |
 |---|---|---|
 | `enabled` | `false` | Talk to the switch at all. |
@@ -296,6 +299,9 @@ it has; the controller just stops looking at it.
 On `.../cmd`. All need `enabled` and `manage`; the ack is `accepted`,
 the outcome comes as events.
 
+With two switches, every command below takes an optional
+`"switch": 1` or `"switch": 2` to say which one it means (section 12).
+
 | Action | Args | Does |
 |---|---|---|
 | `switch_port` | `{"port":N}` or `{"node":N}`, `"enabled":bool`, optional `"force":true` | Enable or disable one port now. Not saved: lost on a switch reboot unless followed by `switch_save`. `node` needs `"node"` on that port in `desired`. |
@@ -325,9 +331,12 @@ mosquitto_pub -h 127.0.0.1 -t granite/bench/granite-cb374b/cmd \
 ```
 
 `drift` (what differs from `desired`) and `mgmt_exposed` (the ports in
-VLAN 1 that should not be, section 6) are left out when empty.
+VLAN 1 that should not be, section 6) are left out when empty. A second
+switch is `switch2` next to it, same shape, left out while the
+`switch2` section is off (section 12).
 
-`.../switch/counters` (not retained, every `poll.counters_s`): per port
+`.../switch/counters` (the second switch: `.../switch2/counters`; not
+retained, every `poll.counters_s`): per port
 `tx_packets`, `rx_packets`, `tx_bytes`, `rx_bytes` (totals since the
 switch's last clear) and `tx_pps`, `rx_pps`, `tx_bps`, `rx_bps` over the
 interval. The switch counts good frames only; there are no error or
@@ -351,7 +360,9 @@ Events (`.../event`, `kind:"switch"`, the name in `what`):
 | `switch_fw_unknown` | The switch's model and firmware (the `detail` says which) have no verified profile in this image: monitored while its pages parse, never written. |
 
 `switch_unreachable` and `switch_mismatch` / `switch_fw_unknown` also
-set Modbus fault bits (`docs/modbus_map.md`).
+set Modbus fault bits (`docs/modbus_map.md`). With two switches a bit
+stands while either switch has the condition and clears when neither
+has; the event says which one (section 12).
 
 ## 10. Troubleshooting
 
@@ -376,3 +387,76 @@ Password rotation and config backup (ADR 0006 components 19, 20), the
 node-to-port binding from power actions (22), the my_metal endpoints
 (23), and rate limits, port isolation, LAG, mirroring and IGMP as
 `desired` keys. For those, use infra `tools/sodola.py` directly.
+
+A third switch: two is the limit, which is what 16 nodes on one
+controller needs (ADR 0006 component 26).
+
+## 12. A second switch (`switch2`)
+
+A controller serves up to 64 nodes and a switch has 8 node ports, so a
+controller that serves two blocks (nodes 1-8 and 9-16) has two block
+switches. The second one is the section `switch2`, disabled by default.
+A controller with one switch needs nothing from this section: leave it
+alone and everything above is what you get.
+
+`switch2` has the same keys as `switch` (section 4), its own password
+slot, and is staged and confirmed the same way (section 5) - one
+section per switch, so a change to one never re-applies or reverts the
+other. Everything else is per switch too: profile, pairing, uplink and
+protection, drift, snapshot and revert, VLAN 1 exposure, reachability
+and backoff. The address and MAC come from provisioning like the first
+switch's; nothing is discovered.
+
+```sh
+mosquitto_pub -h 127.0.0.1 -t granite/bench/granite-cb374b/cmd -m '
+{"v":1,"id":"sw2","action":"config_set","args":{"section":"switch2","config":{
+  "enabled":true,"manage":true,
+  "host":"192.168.64.242","mac":"1c:2a:a3:24:26:7f","uplink_port":9,
+  "desired":{"vlans":[{"id":1},{"id":100,"name":"data"}],
+             "ports":[{"port":1,"mode":"access","vlan":100,"node":9},
+                      {"port":2,"mode":"access","vlan":100,"node":10},
+                      {"port":9,"mode":"trunk","native":1,"allowed":[1,100]}]}}}}'
+```
+
+then `{"v":1,"id":"sw2-ok","action":"config_confirm"}`.
+
+**Node labels are the whole map.** They are controller node numbers
+(1-64), so the second block's ports are labelled 9-16 when it is plane
+1. Nothing ties a switch to a plane.
+
+**Refused at config time** while both sections are enabled: the same
+`host`, the same non-empty `mac`, or the same `node` in both
+`desired.ports` lists. Whichever section you were writing is refused as
+a whole, and nothing is staged.
+
+**Commands** take an optional `"switch": 1` or `"switch": 2`:
+
+```sh
+mosquitto_pub -h 127.0.0.1 -t granite/bench/granite-cb374b/cmd \
+  -m '{"v":1,"id":"sv2","action":"switch_save","args":{"switch":2}}'
+```
+
+Without it, a command that names a `node` goes to the switch whose
+`desired.ports` labels that node, and any other command goes to switch
+1. `"switch":2` while `switch2` is disabled is refused, as is a node
+neither switch labels (name a port with `args.port` instead).
+
+**Reports**: `state.switch2` beside `state.switch`, same shape, left
+out while the section is off; counters on `.../switch2/counters`; and
+events from the second switch carry `"switch":2`:
+
+```json
+{"v":1,"ts":812340,"kind":"switch","what":"switch_port","switch":2,
+ "port":1,"node":9,"detail":"link up at 2.5G, admin enabled"}
+```
+
+An event from the first switch has no `switch` field, so nothing that
+reads the first switch today has to change. The Modbus fault bits are
+shared between the two: raised while either switch has the condition,
+cleared when neither has.
+
+**One thread serves both**, in turn, so a switch that does not answer
+delays the other by one request timeout per attempt (the backoff
+spaces those out). Two managed switches is twice the polling on one
+slow web server; the poll periods are per section if you want the
+second one slower.

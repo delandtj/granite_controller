@@ -1039,6 +1039,86 @@ Differences from component 25 as written:
   the CPU answers in VLAN 1 only (an access port in a data VLAN must
   not reach the web UI) was not tested here, no hardware was touched.
 
+### Implementation (2026-11-15): second switch
+
+Component 26 is built. A controller with one switch is configured,
+reports and behaves as before; everything below is additive.
+
+**Configuration.** `Section::Switch2` (key `switch2`, eighth section,
+stored after `switch`) and `Config::switch2: SwitchCfg`, disabled by
+default and `affects_reachability`, so it is staged and confirmed like
+`switch`. `config.rs` grew `SwitchId` (`One`/`Two` with `num`, `index`,
+`key`, `section`, `of_section`, `ALL`), `Config::switch_cfg(which)` /
+`switch_cfg_mut`, and `switch_of_node(node)`. Normalisation and
+per-section validation are the free functions `normalise_switch` and
+`validate_switch(cfg, name)`, both called once per section;
+`SwitchDesired::validate_in(section)` names the section in every
+message (`validate()` is `validate_in("switch")`), so a `switch2`
+error reads `switch2.desired.ports[1]: ...`. A stored config without
+`switch2` loads unchanged: the field is `#[serde(default)]` like the
+rest. `Secrets` gained `switch2_password` with `switch2_password()` and
+`switch_password_of(which)`; the factory `admin` fallback is the same.
+
+**Cross checks** are `Config::switch_cross_checks`, called from
+`validate`, so they run whichever section is set and only while both
+are enabled: the same `host` (case-insensitive, trimmed), the same
+non-empty `mac` (both already normalised), and a `node` labelled in
+both `desired.ports` lists.
+
+**Worker.** One thread still. `granite-fw/src/switch/mod.rs` now holds
+`Worker { units: [Unit; 2] }`, where `Unit` is the old `Worker` struct
+plus `which: SwitchId` and an `Arc<SwitchCtx>`; the loop feeds the
+watchdog once, refreshes both sections, drains the request channel into
+`units[request.which.index()]`, then polls unit 1 and unit 2 in turn.
+`SwitchCtx::password` takes a `SwitchId`, and its closures are
+`Send + Sync` because the two units share the context through an `Arc`.
+`REACHABLE`, `CONFIGURED` and `COUNTERS` are two-element arrays, and
+`reachable(which)` / `configured(which)` / `take_counters(which)` take
+the switch. Log lines carry the section name (`switch2: ...`).
+
+**Faults are shared** through `FAULT_SHADOW: [AtomicU16; 2]`: a unit
+raises or lowers its own bits and the Modbus word gets the union, so
+`switch_unreachable` and `switch_unsupported` stand while either switch
+has the condition and clear when neither has. No new fault bit.
+
+**Requests.** `SwitchRequest` is now a struct `{ which: SwitchId, verb:
+SwitchVerb }`; the old enum is `SwitchVerb` and `SwitchRequest::one`
+builds a switch-1 request. Routing is `dispatch::switch_target(cmd,
+config)`, host-tested: `args.switch` says it outright (2 while
+`switch2` is off is refused, a number that is not 1 or 2 is refused),
+otherwise a command naming a node goes to the switch whose
+`desired.ports` labels that node, and anything else to switch 1. A node
+neither labels lands on switch 1 and is refused there for the reason it
+always was.
+
+**Report.** `Observed::switch2` and `State::switch2` in the same shape,
+left out of the payload while the section is off
+(`skip_serializing_if`), with `Observed::switch_of` / `switch_slot` for
+the worker and `same_content` zeroing both uptimes. Counters of switch
+2 go to `Topics::switch_counters_of(Two)` =
+`<base>/switch2/counters`; `switch_counters()` is still switch 1's.
+
+Differences from component 26 as written:
+
+- **`"switch"` in a command is the existing `args.switch` field, now a
+  small untagged enum** (`msg::SwitchArg::Side` for `press`'s `"pwr"` /
+  `"rst"`, `msg::SwitchArg::Index` for `1` / `2`). `args` is one flat
+  object and the ADR asks for `"switch": 1|2`; `press` and `switch_*`
+  share nothing else, so each verb reads its own form
+  (`Args::press_switch`, `Args::switch_index`) and `press` is byte for
+  byte what it was.
+- **An event says which switch in a new optional `switch` field** of
+  `EventKind::Switch`, skipped when it is switch 1. So switch 1's
+  events are unchanged and switch 2's carry `"switch": 2` next to
+  `what`; the event names are the same for both, as the component asks.
+  `msg::switch_event` takes the `SwitchId` as its second argument.
+- **`SwitchId::One` is the default** for a request built without one,
+  which is what keeps the single-switch call sites honest.
+- **Nothing was run against hardware.** The second switch has not been
+  on the bench: there is one unit, so the two-unit turn-taking, the
+  shared faults and `switch2/counters` are covered by host tests and
+  the firmware build only.
+
 ## Open Questions
 
 **Architecture-changers**

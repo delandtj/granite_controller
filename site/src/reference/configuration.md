@@ -1,26 +1,35 @@
 # Configuration
 
 The configuration is one JSON document with a `schema_version` (1) and
-six sections. `GET /api/v1/config` returns it, `PUT /api/v1/config` or
+eight sections. `GET /api/v1/config` returns it, `PUT /api/v1/config` or
 `POST /api/v1/config/import` loads it, and each section is also
 addressable on its own at `/api/v1/config/<section>`. Secrets (admin
 password hash, API tokens, MQTT password and client key, device key,
-recovery token) are stored separately and never exported.
+recovery token, block switch passwords) are stored separately and never
+exported.
+
+The six sections below are the controller itself. The other two,
+`switch` and `switch2`, are the block switch of a block and, on a
+controller that serves two blocks, of the second one; both are off by
+default and their keys are in the firmware guide
+`firmware/docs/switch.md` (sections 4 and 12).
 
 Fields missing from a document or a section take their defaults. A
 section that fails to parse at boot falls back to its defaults alone
 and logs a `config`/`fallback` event; the other sections are
 unaffected.
 
-Sections `net`, `mqtt` and `sec` can cut you off, so writing them
-**stages** the change until `POST /api/v1/config/confirm`. All three are
-applied live during the confirm window: `net` on the interface,
-`mqtt` by rebuilding the broker session, `sec.modbus` by rebinding the
-listener. Without a confirm, `net` reverts with a reboot while `mqtt`
-and `sec` revert in place, within about 5 s of the window passing. The
-one change that does need a reboot is a new device certificate, which
-the HTTPS server can only pick up at start-up. Sections `nodes`,
-`rules` and `sys` are saved directly.
+Sections `net`, `mqtt`, `sec`, `switch` and `switch2` can cut you off,
+so writing them **stages** the change until
+`POST /api/v1/config/confirm`. They are all applied live during the
+confirm window: `net` on the interface, `mqtt` by rebuilding the broker
+session, `sec.modbus` by rebinding the listener, and a switch section on
+the switch itself without saving it to the switch's flash. Without a
+confirm, `net` reverts with a reboot, `mqtt` and `sec` revert in place
+within about 5 s of the window passing, and a switch change is undone
+on the switch. The one change that does need a reboot is a new device
+certificate, which the HTTPS server can only pick up at start-up.
+Sections `nodes`, `rules` and `sys` are saved directly.
 
 ## `net`
 

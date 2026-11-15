@@ -39,7 +39,7 @@ a plane. Payloads marked "captured" come from the simulator.
 4. **`config_set` without `args.section` replaces the entire
    configuration.** Every section you do not include is reset to its
    defaults, MQTT included. See section 7.
-5. **`net`, `mqtt`, `sec` and `switch` are staged.** A change to them
+5. **`net`, `mqtt`, `sec`, `switch` and `switch2` are staged.** A change to them
    is undone after `net.t_confirm_s` (default 300 s) unless you send
    `config_confirm`. `nodes`, `rules` and `sys` are saved at once and
    have no undo.
@@ -70,6 +70,7 @@ All under `<topic_root>/<site>/<device id>` (defaults `granite`,
 | `.../cmd` | in | - | you publish | a command (section 4) |
 | `.../ack/<id>` | out | no | when the command is finished (section 4.3) | the reply |
 | `.../switch/counters` | out | no | every `switch.poll.counters_s` | see `docs/switch.md` section 9 |
+| `.../switch2/counters` | out | no | every `switch2.poll.counters_s` | the second switch, only when one is configured (`docs/switch.md` section 12) |
 
 Everything is published at `mqtt.qos` (default 1), and `.../cmd` is
 subscribed at the same QoS.
@@ -358,13 +359,15 @@ broker**: it comes back on DHCP with the setup page in first-setup mode.
 | `config_confirm` | - | Promote every staged section. Ack `confirmed`, `data` = the sections, e.g. `["net"]`. `nothing is staged` when nothing is. |
 | `config_revert` | - | Put every staged section back now. Ack `reverted`, `data` = the sections. With `net` among them the controller reboots into its stored network configuration. |
 
-Section names: `net`, `mqtt`, `switch`, `nodes`, `rules`, `sec`,
-`sys`. A wrong name is a `bad command: unknown variant ...`.
+Section names: `net`, `mqtt`, `switch`, `switch2`, `nodes`, `rules`,
+`sec`, `sys`. A wrong name is a `bad command: unknown variant ...`.
 
 ### 6.7 Switch verbs
 
 `switch_port`, `switch_save`, `switch_reconcile`, `switch_reboot`,
-`switch_factory_reset`: see `docs/switch.md` section 8.
+`switch_factory_reset`: see `docs/switch.md` section 8. On a controller
+with two block switches each of them takes an optional `"switch": 1` or
+`"switch": 2` (`docs/switch.md` section 12).
 
 ## 7. Changing the configuration
 
@@ -408,7 +411,7 @@ Lists whose absence deletes:
 | Section | On `config_set` | Undo |
 |---|---|---|
 | `nodes`, `rules`, `sys` | saved to flash at once, ack `saved`, event `config` `set` | none: send the old section back |
-| `net`, `mqtt`, `sec`, `switch` | applied live and staged, ack `staged`, event `config` `staged` | automatic unless confirmed |
+| `net`, `mqtt`, `sec`, `switch`, `switch2` | applied live and staged, ack `staged`, event `config` `staged` | automatic unless confirmed |
 
 The staged cycle:
 
@@ -610,10 +613,12 @@ value (so `missing` decides).
 | `coredump_report` | `true` | Not used by the firmware yet. |
 | `timezone` | `"UTC"` | Not used by the firmware yet; wire timestamps are monotonic ms. |
 
-### 8.7 `switch` (staged)
+### 8.7 `switch` and `switch2` (staged)
 
 Every key, `desired` and the confirm cycle on the switch:
-`docs/switch.md` sections 4 and 5.
+`docs/switch.md` sections 4 and 5. `switch2` is the second block switch
+of a controller that serves two blocks, the same keys and off by
+default: `docs/switch.md` section 12.
 
 ## 9. What the controller publishes
 
@@ -674,6 +679,7 @@ the first. The simulator's HTTP route prints `a` as
 | `vin_v` | Controller input voltage, `null` if not read. |
 | `dry_in` | Four dry contacts, index 0 = input 1; `null` when never read (the rev D firmware does not read them yet: the pins are not assigned). |
 | `switch` | Present only when a block switch is configured: `docs/switch.md` section 9. |
+| `switch2` | The same for the second block switch, present only when `switch2` is configured: `docs/switch.md` section 12. |
 | `link_up` | Ethernet link. |
 | `mqtt_connected` | Broker session (true in anything you receive over MQTT). |
 
@@ -690,7 +696,7 @@ shown as `null` are present with a null value; fields marked
 | `action_done` | `id`, `node` (null for a group, unit or plane), `action`, `result` | That job (or the last of a group) finished as asked. |
 | `action_failed` | `id`, `node`, `action`, `error` | It did not; also a rule that could not act. |
 | `plane` | `what`; optional `address`, `node`, `unit`, `detail` | The plane client learned something (below). |
-| `switch` | `what`; optional `port`, `node`, `detail` | `docs/switch.md` section 9. |
+| `switch` | `what`; optional `switch` (`2`, left out for the first switch), `port`, `node`, `detail` | `docs/switch.md` sections 9 and 12. |
 | `rule_fired` | `rule`, `name`, `action` (`"event"` or the verb), `target`, `value` (null when it tripped on a missing value), `needs_ack` | A rule fired. |
 | `ota` | `phase`, `progress` (percent or null), `detail` | Section 6.3. |
 | `config` | `section` (null for "every staged section"), `change`, `detail` | `set`, `staged`, `confirmed`, `reverted` (detail `reverted on request` / `not confirmed in time`), `fallback` (a stored section was unreadable at boot and fell back to defaults; detail says why), `imported` (HTTPS import). |
