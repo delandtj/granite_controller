@@ -130,35 +130,6 @@ impl core::fmt::Display for OtaState {
 
 static STATE: AtomicU8 = AtomicU8::new(4); // Unknown
 
-/// How many updates are being received right now: a pull from its TLS
-/// handshake on, or a writer with its slot open.
-static RECEIVING: AtomicU8 = AtomicU8::new(0);
-
-/// True while an image is being received. A pull holds a TLS session
-/// and its buffers on top of the broker's, which leaves too little
-/// heap for anything else that buffers: the switch worker stands still
-/// meanwhile (coredump of 2026-11-16: the worker ran out of memory
-/// reading a page while a pull was at 40 %).
-pub fn receiving() -> bool {
-    RECEIVING.load(Ordering::Relaxed) > 0
-}
-
-/// Counts one update in [`RECEIVING`] for as long as it lives.
-struct Receiving;
-
-impl Receiving {
-    fn new() -> Self {
-        RECEIVING.fetch_add(1, Ordering::Relaxed);
-        Receiving
-    }
-}
-
-impl Drop for Receiving {
-    fn drop(&mut self) {
-        RECEIVING.fetch_sub(1, Ordering::Relaxed);
-    }
-}
-
 /// The OTA state of the running image, for `status`, `/id` and the LED.
 pub fn ota_state() -> OtaState {
     OtaState::from_code(STATE.load(Ordering::Relaxed))
@@ -219,10 +190,12 @@ pub fn mark_link() {
 }
 
 /// Step 2a: the configured broker connected. Also the moment a rollback
-/// found at boot can be reported: see [`report_rollback`].
+/// found at boot can be reported: see [`report_rollback`], and the same
+/// for a coredump (ADR 0001 component 27).
 pub fn mark_broker() {
     ready::BROKER.store(true, Ordering::Relaxed);
     report_rollback();
+    super::coredump::report();
 }
 
 /// Step 2b: an authenticated HTTPS request was served.
@@ -775,6 +748,10 @@ pub enum OtaError {
     /// The image is built for the other plane link, or does not say
     /// which one it drives (ADR 0006, architecture component 7).
     LinkKind(TagError),
+    /// Another heavy user holds the memory gate (ADR 0001 component
+    /// 27): an update needs tens of kilobytes for minutes, so it is
+    /// refused rather than started on a heap that cannot carry it.
+    Busy(&'static str),
 }
 
 impl core::fmt::Display for OtaError {
@@ -787,6 +764,11 @@ impl core::fmt::Display for OtaError {
             OtaError::Transfer(m) => write!(f, "transfer failed: {m}"),
             OtaError::Empty => f.write_str("no image data"),
             OtaError::LinkKind(e) => write!(f, "wrong image: {e}"),
+            OtaError::Busy(who) => write!(
+                f,
+                "busy: {} is using the memory the update needs",
+                if who.is_empty() { "another task" } else { who }
+            ),
         }
     }
 }
@@ -858,8 +840,11 @@ pub struct Written {
 pub struct OtaWriter {
     partition: *const esp_partition_t,
     handle: Option<esp_ota_handle_t>,
-    /// Held while the slot is open.
-    receiving: Option<Receiving>,
+    /// The memory gate, held while the slot is open (ADR 0001
+    /// component 27). A pull hands in its own guard
+    /// ([`OtaWriter::hold_heavy`]) because it took the token before the
+    /// TLS handshake and the gate is not re-entrant.
+    heavy: Option<super::mem::Heavy>,
     sha: Option<Sha256Stream>,
     written: u64,
     expected_sha256: Option<String>,
@@ -893,7 +878,7 @@ impl OtaWriter {
         OtaWriter {
             partition: core::ptr::null(),
             handle: None,
-            receiving: None,
+            heavy: None,
             sha: None,
             written: 0,
             expected_sha256: None,
@@ -922,13 +907,36 @@ impl OtaWriter {
         self.written
     }
 
+    /// Take over the memory gate the caller is already holding, so
+    /// [`OtaWriter::begin`] does not ask for a second one (ADR 0001
+    /// component 27: the token is not re-entrant). The writer holds it
+    /// until `finish` or `abort`.
+    pub fn hold_heavy(&mut self, guard: super::mem::Heavy) {
+        self.heavy = Some(guard);
+    }
+
     /// Open the inactive slot. `total_len` erases only what is needed.
+    ///
+    /// Takes the memory gate for as long as the slot is open, unless
+    /// the caller already handed one in: an image coming in needs the
+    /// heap that a switch page read or a second transfer would take,
+    /// and an update that cannot have the token is refused as busy
+    /// rather than started (ADR 0001 component 27).
     pub fn begin(&mut self, total_len: Option<u64>) -> Result<(), OtaError> {
         if self.handle.is_some() {
             return Err(OtaError::Transfer(String::from(
                 "an update is already in progress",
             )));
         }
+        // Held in a local until the slot is really open: every failure
+        // below drops it, so a refused begin does not leave the gate
+        // shut (the HTTP upload sink is long-lived and is not aborted
+        // when `begin` fails).
+        let heavy = match self.heavy.take() {
+            Some(guard) => guard,
+            None => super::mem::heavy("firmware upload", super::mem::UPLOAD_WAIT)
+                .ok_or_else(|| OtaError::Busy(super::mem::heavy_holder()))?,
+        };
         let partition = unsafe { esp_ota_get_next_update_partition(core::ptr::null()) };
         if partition.is_null() {
             return Err(OtaError::Transfer(String::from(
@@ -946,7 +954,7 @@ impl OtaWriter {
         esp!(unsafe { esp_ota_begin(partition, size, &mut handle) })?;
         self.partition = partition;
         self.handle = Some(handle);
-        self.receiving = Some(Receiving::new());
+        self.heavy = Some(heavy);
         self.sha = Some(Sha256Stream::new());
         self.written = 0;
         self.total = total_len.filter(|n| *n > 0);
@@ -1006,7 +1014,7 @@ impl OtaWriter {
     /// Verify the hash, close the update, and point the bootloader at the
     /// new slot. The caller reboots.
     pub fn finish(&mut self) -> Result<Written, OtaError> {
-        self.receiving = None;
+        self.heavy = None;
         let Some(handle) = self.handle.take() else {
             return Err(OtaError::Transfer(String::from("no update in progress")));
         };
@@ -1062,7 +1070,7 @@ impl OtaWriter {
 
     /// Give up on the image in progress. `otadata` is left untouched.
     pub fn abort(&mut self) {
-        self.receiving = None;
+        self.heavy = None;
         if let Some(handle) = self.handle.take() {
             let _ = unsafe { esp_ota_abort(handle) };
             log::warn!("ota: update aborted after {} bytes", self.written);
@@ -1116,16 +1124,35 @@ fn partition_label(partition: *const esp_partition_t) -> String {
     String::from_utf8_lossy(&label[..end]).into_owned()
 }
 
-/// Pull an image over HTTPS and install it.
+/// Pull an image over HTTPS (or plain HTTP with a hash) and install it.
 ///
-/// `ca_pem` is the trust anchor; empty means "use the ESP-IDF global CA
-/// store", which is nothing unless the build attached a bundle, so a
-/// configured CA is effectively required.
+/// `ca_pem` is the trust anchor for an `https://` URL; empty means "use
+/// the ESP-IDF global CA store", which is nothing unless the build
+/// attached a bundle, so a configured CA is effectively required.
+///
+/// An `http://` URL is accepted when `sha256` is there, which the
+/// command path already requires (ADR 0001 component 27): the hash
+/// arrives over the authenticated command channel and decides whether
+/// the image is taken, so the transport adds nothing to integrity and
+/// the second TLS session - tens of kilobytes on top of the broker's -
+/// is saved. The image signature, when the build requires one, still
+/// applies.
+///
+/// The whole call holds the memory gate, TLS handshake included, and
+/// hands it on to the writer it opens. A pull that cannot have the
+/// token within [`super::mem::PULL_WAIT`] fails as busy.
 pub fn pull(url: &str, sha256: &str, ca_pem: &str) -> Result<Written, OtaError> {
-    let _receiving = Receiving::new();
+    let plain = url.trim().starts_with("http://");
+    if plain && sha256.trim().len() != 64 {
+        return Err(OtaError::Transfer(String::from(
+            "a plain http:// pull needs a sha256",
+        )));
+    }
+    let heavy = super::mem::heavy("ota pull", super::mem::PULL_WAIT)
+        .ok_or_else(|| OtaError::Busy(super::mem::heavy_holder()))?;
     // esp-idf-svc wants a 'static X509, and the connection lives only for
     // this call; leak one copy per pull rather than keep a global.
-    let ca: Option<X509<'static>> = if ca_pem.trim().is_empty() {
+    let ca: Option<X509<'static>> = if plain || ca_pem.trim().is_empty() {
         None
     } else {
         let mut bytes = ca_pem.trim().as_bytes().to_vec();
@@ -1153,9 +1180,19 @@ pub fn pull(url: &str, sha256: &str, ca_pem: &str) -> Result<Written, OtaError> 
     let len: Option<u64> = conn
         .header("Content-Length")
         .and_then(|v| v.trim().parse().ok());
-    log::warn!("ota: pulling {url}");
+    log::warn!(
+        "ota: pulling {url}{}",
+        if plain {
+            " (plain http, the sha256 of the command is what authenticates it)"
+        } else {
+            ""
+        }
+    );
 
     let mut writer = OtaWriter::new();
+    // The gate is not re-entrant, so the writer gets this call's guard
+    // instead of asking for one of its own.
+    writer.hold_heavy(heavy);
     writer.expect_sha256(sha256);
     writer.begin(len)?;
 

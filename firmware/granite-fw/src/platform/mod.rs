@@ -1,6 +1,8 @@
-//! Platform layer (ADR 0001 components 6, 10, 11, 12, 13): NVS store,
+//! Platform layer (ADR 0001 components 6, 10, 11, 12, 13, 27): NVS store,
 //! identity and recovery, network with commit-confirm, SNTP, console on USB
-//! Serial/JTAG, OTA with probation, log ring, named tasks.
+//! Serial/JTAG, OTA with probation, log ring, named tasks, the memory
+//! budget ([`mem`]: the heap figures and the one gate the heavy users
+//! take turns on).
 //!
 //! [`Platform`] is what `main.rs` builds once and hands around. Everything
 //! in it is either `Send + Sync` on its own or behind a `Mutex`, so the
@@ -12,9 +14,11 @@
 
 pub mod api_impl;
 pub mod console;
+pub mod coredump;
 pub mod identity;
 pub mod link_kind;
 pub mod logring;
+pub mod mem;
 pub mod net;
 pub mod ota;
 pub mod store;
@@ -654,6 +658,15 @@ pub fn init(
             },
         ));
     }
+
+    // A dump of the boot before this one, if this boot follows a panic
+    // or a watchdog (ADR 0001 component 27). Read here, published on
+    // the first broker session.
+    coredump::init(
+        boot_reason(),
+        config.sys.coredump_report,
+        Some(events.sender()),
+    );
 
     // OTA before the network: if this image is on probation the ladder has
     // to be watching before the link comes up and sets its flag.

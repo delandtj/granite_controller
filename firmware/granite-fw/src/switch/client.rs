@@ -20,8 +20,18 @@
 //! - writes that can cut the answer off (STP, the management address)
 //!   are allowed to time out and are verified by reading back.
 //!
-//! One page is buffered at a time and dropped after its parse; nothing
-//! here keeps a page or a form around.
+//! One page is buffered at a time and parsed in place; nothing here
+//! keeps a page or a form around. The buffer is not the client's: the
+//! worker owns one [`PageBuf`] of [`PAGE_BUF`] bytes, allocated when it
+//! starts and reused for every page of both switches, and hands it to
+//! every call (ADR 0001 component 27, "Switch page buffer"). Nothing
+//! grows: a page longer than the buffer is [`ClientError::TooLarge`].
+//!
+//! Every request also takes the memory gate ([`crate::platform::mem`])
+//! from the connect to the end of its parse, so a page read and a
+//! firmware image never want the heap at the same time. A request that
+//! cannot have the token within [`REQUEST_BUDGET`] is
+//! [`ClientError::Busy`].
 //!
 //! The client also carries the [`Layout`] the pages are read with (ADR
 //! 0006 component 24). It starts as the widest in the profile table,
@@ -63,9 +73,13 @@ pub const TIMEOUT: Duration = Duration::from_secs(5);
 /// this a reply that dribbles in would hold the worker for good.
 pub const REQUEST_BUDGET: Duration = Duration::from_secs(15);
 
-/// Longest page the client will buffer. The biggest page used is about
-/// 10 KB; anything much larger is not a page this firmware knows.
-const MAX_PAGE: usize = 48 * 1024;
+/// The one page buffer, in bytes (ADR 0001 component 27).
+///
+/// The largest page of the verified profile is 10.3 KB, so this is that
+/// plus half again. It is allocated once, when the worker starts, and
+/// every page of both switches is read into it; a longer page is
+/// refused as [`ClientError::TooLarge`] and nothing grows.
+pub const PAGE_BUF: usize = 16 * 1024;
 
 /// Read buffer. Pages are a few KB, read in these steps.
 const CHUNK: usize = 1024;
@@ -85,8 +99,12 @@ pub enum ClientError {
     /// The switch keeps redirecting to `login.cgi`: the credentials are
     /// wrong.
     Auth,
-    /// The page was longer than [`MAX_PAGE`].
+    /// The page did not fit in the worker's [`PAGE_BUF`] byte buffer.
     TooLarge,
+    /// Another heavy user holds the memory gate (ADR 0001 component
+    /// 27), so this request was not made at all. Not the switch's
+    /// fault and not counted as one: the caller tries again later.
+    Busy(&'static str),
 }
 
 impl core::fmt::Display for ClientError {
@@ -97,6 +115,11 @@ impl core::fmt::Display for ClientError {
             ClientError::Page(e) => write!(f, "{e}"),
             ClientError::Auth => f.write_str("the switch refused the credentials"),
             ClientError::TooLarge => f.write_str("the page is too large to be one we know"),
+            ClientError::Busy(who) => write!(
+                f,
+                "busy: {} is using the memory a page needs",
+                if who.is_empty() { "another task" } else { who }
+            ),
         }
     }
 }
@@ -113,6 +136,119 @@ impl ClientError {
     pub fn is_unreachable(&self) -> bool {
         matches!(self, ClientError::Transport(_))
     }
+}
+
+/// The one page buffer the worker owns (ADR 0001 component 27).
+///
+/// Fixed capacity, allocated once in [`PageBuf::new`] and never grown.
+/// A request fills it, the parser reads it as a `&str`, and the next
+/// request overwrites it; no page outlives its parse.
+pub struct PageBuf {
+    /// The bytes, with [`PAGE_BUF`] of capacity from the start.
+    buf: Vec<u8>,
+    /// The lossy copy of a page that is not valid UTF-8. Normally
+    /// `None`: every page of a switch this firmware knows is ASCII.
+    lossy: Option<String>,
+}
+
+impl Default for PageBuf {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl PageBuf {
+    /// Allocate the buffer. The one allocation of the page path.
+    pub fn new() -> Self {
+        PageBuf {
+            buf: Vec::with_capacity(PAGE_BUF),
+            lossy: None,
+        }
+    }
+
+    /// The page, as the parsers want it.
+    pub fn as_str(&self) -> &str {
+        match self.lossy.as_deref() {
+            Some(lossy) => lossy,
+            // Checked in `finish`, which every request calls before it
+            // returns; an unchecked buffer would be empty anyway.
+            None => core::str::from_utf8(&self.buf).unwrap_or(""),
+        }
+    }
+
+    /// Bytes in the buffer.
+    pub fn len(&self) -> usize {
+        self.buf.len()
+    }
+
+    /// True while nothing has been read into it.
+    pub fn is_empty(&self) -> bool {
+        self.buf.is_empty()
+    }
+
+    /// Start a new page.
+    fn reset(&mut self) {
+        self.buf.clear();
+        self.lossy = None;
+    }
+
+    /// Append what a read returned. [`ClientError::TooLarge`] rather
+    /// than a bigger buffer: the capacity is the contract.
+    fn push(&mut self, bytes: &[u8]) -> Result<(), ClientError> {
+        if self.buf.len() + bytes.len() > PAGE_BUF {
+            return Err(ClientError::TooLarge);
+        }
+        self.buf.extend_from_slice(bytes);
+        Ok(())
+    }
+
+    /// Validate the page as UTF-8 in place.
+    ///
+    /// A page that is valid - every real page - is parsed straight out
+    /// of the buffer. One that is not gets a lossy copy, sized exactly
+    /// and reserved with `try_reserve_exact`, so a page of rubbish is
+    /// an error of this request instead of an allocation failure that
+    /// aborts the firmware.
+    fn finish(&mut self) -> Result<(), ClientError> {
+        self.lossy = None;
+        if core::str::from_utf8(&self.buf).is_ok() {
+            return Ok(());
+        }
+        let mut need = 0usize;
+        for chunk in self.buf.utf8_chunks() {
+            need += chunk.valid().len();
+            if !chunk.invalid().is_empty() {
+                // One replacement character per invalid sequence, the
+                // way `String::from_utf8_lossy` counts them.
+                need += '\u{FFFD}'.len_utf8();
+            }
+        }
+        let mut lossy = String::new();
+        if lossy.try_reserve_exact(need).is_err() {
+            return Err(ClientError::Transport(format!(
+                "the page is not utf-8 and there is no memory for a copy of {need} bytes"
+            )));
+        }
+        for chunk in self.buf.utf8_chunks() {
+            lossy.push_str(chunk.valid());
+            if !chunk.invalid().is_empty() {
+                lossy.push('\u{FFFD}');
+            }
+        }
+        log::warn!(
+            "switch: a page of {} bytes is not valid utf-8; parsing a lossy copy",
+            self.buf.len()
+        );
+        self.lossy = Some(lossy);
+        Ok(())
+    }
+}
+
+/// Take the memory gate for one request and its parse (ADR 0001
+/// component 27). Dropped by the caller when the parse is done.
+fn heavy() -> Result<crate::platform::mem::Heavy, ClientError> {
+    crate::platform::mem::heavy("switch request", REQUEST_BUDGET)
+        .ok_or_else(|| ClientError::Busy(crate::platform::mem::heavy_holder()))
 }
 
 /// A serial, spaced, re-logging-in HTTP client for one switch.
@@ -194,33 +330,34 @@ impl SwitchClient {
     // The transport
     // -----------------------------------------------------------------
 
-    /// GET one page.
-    pub fn get(&mut self, path: &str) -> Result<String, ClientError> {
-        self.authed(Method::Get, path, None)
+    /// GET one page into `page`.
+    pub fn get(&mut self, path: &str, page: &mut PageBuf) -> Result<(), ClientError> {
+        self.authed(Method::Get, path, None, page)
     }
 
-    /// POST one form and return the page that comes back.
-    pub fn post(&mut self, path: &str, form: &Form) -> Result<String, ClientError> {
+    /// POST one form; the page that comes back lands in `page`.
+    pub fn post(&mut self, path: &str, form: &Form, page: &mut PageBuf) -> Result<(), ClientError> {
         let body = forms::encode(form);
-        self.authed(Method::Post, path, Some(body.as_bytes()))
+        self.authed(Method::Post, path, Some(body.as_bytes()), page)
     }
 
     /// POST one form, accepting a timeout as "it applied and the answer
     /// was cut off" (`docs/sodola.md`: an STP or IP change does that).
-    /// `Ok(None)` is that case; the caller verifies by reading back.
+    /// `Ok(false)` is that case; the caller verifies by reading back.
     pub fn post_may_timeout(
         &mut self,
         path: &str,
         form: &Form,
-    ) -> Result<Option<String>, ClientError> {
-        match self.post(path, form) {
-            Ok(page) => Ok(Some(page)),
+        page: &mut PageBuf,
+    ) -> Result<bool, ClientError> {
+        match self.post(path, form, page) {
+            Ok(()) => Ok(true),
             Err(ClientError::Transport(e)) => {
                 log::warn!(
                     "switch: no reply to the POST of {path} ({e}); the change usually applied, \
                      verifying by reading back"
                 );
-                Ok(None)
+                Ok(false)
             }
             Err(other) => Err(other),
         }
@@ -232,10 +369,11 @@ impl SwitchClient {
         method: Method,
         path: &str,
         body: Option<&[u8]>,
-    ) -> Result<String, ClientError> {
-        let page = self.request(method, path, body)?;
-        if !granite_core::switch::scan::is_login_redirect(&page) {
-            return Ok(page);
+        page: &mut PageBuf,
+    ) -> Result<(), ClientError> {
+        self.request(method, path, body, page)?;
+        if !granite_core::switch::scan::is_login_redirect(page.as_str()) {
+            return Ok(());
         }
         if self.logged_in {
             // We logged in during this very attempt and still get the
@@ -243,23 +381,25 @@ impl SwitchClient {
             self.logged_in = false;
             return Err(ClientError::Auth);
         }
-        self.login()?;
-        let page = self.request(method, path, body)?;
-        if granite_core::switch::scan::is_login_redirect(&page) {
+        self.login(page)?;
+        self.request(method, path, body, page)?;
+        if granite_core::switch::scan::is_login_redirect(page.as_str()) {
             self.logged_in = false;
             return Err(ClientError::Auth);
         }
-        Ok(page)
+        Ok(())
     }
 
-    /// The login POST that makes the switch accept the cookie.
-    fn login(&mut self) -> Result<(), ClientError> {
+    /// The login POST that makes the switch accept the cookie. Uses the
+    /// same buffer: its answer is read, checked and thrown away.
+    fn login(&mut self, page: &mut PageBuf) -> Result<(), ClientError> {
         let form = forms::login(&self.user, &self.password, &self.token);
         let body = forms::encode(&form);
-        let page = self.request(Method::Post, "login.cgi", Some(body.as_bytes()))?;
+        self.request(Method::Post, "login.cgi", Some(body.as_bytes()), page)?;
         // The CGI answers the successful login with a page whose script
         // replaces the location with "/".
-        if !page.contains("replace(\"/\")") && !page.contains("replace('/')") {
+        let answer = page.as_str();
+        if !answer.contains("replace(\"/\")") && !answer.contains("replace('/')") {
             return Err(ClientError::Auth);
         }
         self.logged_in = true;
@@ -273,7 +413,8 @@ impl SwitchClient {
         method: Method,
         path: &str,
         body: Option<&[u8]>,
-    ) -> Result<String, ClientError> {
+        page: &mut PageBuf,
+    ) -> Result<(), ClientError> {
         self.space();
         // Fed per step of a request, not per pass of the worker loop: a
         // pass reads several pages in a row, and every step of each
@@ -319,7 +460,7 @@ impl SwitchClient {
             return Err(ClientError::Status(status));
         }
 
-        let mut page = String::new();
+        page.reset();
         let mut buf = [0u8; CHUNK];
         loop {
             crate::platform::feed_task_watchdog();
@@ -331,27 +472,16 @@ impl SwitchClient {
             }
             match conn.read(&mut buf) {
                 Ok(0) => break,
-                Ok(n) => {
-                    if page.len() + n > MAX_PAGE {
-                        return Err(ClientError::TooLarge);
-                    }
-                    // Out of memory is an error of this request, not
-                    // an abort of the firmware. A lossy conversion is
-                    // at most three bytes per byte read.
-                    if page.try_reserve(3 * n).is_err() {
-                        return Err(ClientError::Transport(format!(
-                            "read of {path}: out of memory at {} bytes",
-                            page.len()
-                        )));
-                    }
-                    page.push_str(&String::from_utf8_lossy(&buf[..n]));
-                }
+                // Into the worker's fixed buffer: nothing here
+                // allocates, and a page that does not fit is not one
+                // this firmware knows (ADR 0001 component 27).
+                Ok(n) => page.push(&buf[..n])?,
                 Err(e) => {
                     return Err(ClientError::Transport(format!("read of {path}: {e}")));
                 }
             }
         }
-        Ok(page)
+        page.finish()
     }
 
     /// Hold the minimum gap between two requests.
@@ -376,64 +506,82 @@ impl SwitchClient {
     // The pages, as the worker wants them
     // -----------------------------------------------------------------
 
+    // Every one of these holds the memory gate for the request and the
+    // parse, and gives it back when it returns (ADR 0001 component
+    // 27). The parse reads the page out of the worker's buffer, so no
+    // page outlives it.
+
     /// `info.cgi`: the device facts and the link state.
-    pub fn read_info(&mut self) -> Result<(SwitchInfo, Vec<PortLink>), ClientError> {
-        let page = self.get("info.cgi")?;
-        Ok(parse::info(&page)?)
+    pub fn read_info(
+        &mut self,
+        page: &mut PageBuf,
+    ) -> Result<(SwitchInfo, Vec<PortLink>), ClientError> {
+        let _heavy = heavy()?;
+        self.get("info.cgi", page)?;
+        Ok(parse::info(page.as_str())?)
     }
 
     /// `port.cgi`: the per-port configuration.
-    pub fn read_ports(&mut self) -> Result<Vec<PortCfg>, ClientError> {
-        let page = self.get("port.cgi")?;
-        Ok(parse::port_config(self.layout, &page)?)
+    pub fn read_ports(&mut self, page: &mut PageBuf) -> Result<Vec<PortCfg>, ClientError> {
+        let _heavy = heavy()?;
+        self.get("port.cgi", page)?;
+        Ok(parse::port_config(self.layout, page.as_str())?)
     }
 
     /// `port.cgi?page=stats`: link state and the counters.
-    pub fn read_stats(&mut self) -> Result<Vec<PortStats>, ClientError> {
-        let page = self.get("port.cgi?page=stats")?;
-        Ok(parse::stats(self.layout, &page)?)
+    pub fn read_stats(&mut self, page: &mut PageBuf) -> Result<Vec<PortStats>, ClientError> {
+        let _heavy = heavy()?;
+        self.get("port.cgi?page=stats", page)?;
+        Ok(parse::stats(self.layout, page.as_str())?)
     }
 
     /// `vlan.cgi?page=static`.
-    pub fn read_vlans(&mut self) -> Result<VlanTable, ClientError> {
-        let page = self.get("vlan.cgi?page=static")?;
-        Ok(parse::vlans(&page)?)
+    pub fn read_vlans(&mut self, page: &mut PageBuf) -> Result<VlanTable, ClientError> {
+        let _heavy = heavy()?;
+        self.get("vlan.cgi?page=static", page)?;
+        Ok(parse::vlans(page.as_str())?)
     }
 
     /// `vlan.cgi?page=port_based`.
-    pub fn read_port_vlans(&mut self) -> Result<Vec<PortVlan>, ClientError> {
-        let page = self.get("vlan.cgi?page=port_based")?;
-        Ok(parse::port_vlans(self.layout, &page)?)
+    pub fn read_port_vlans(&mut self, page: &mut PageBuf) -> Result<Vec<PortVlan>, ClientError> {
+        let _heavy = heavy()?;
+        self.get("vlan.cgi?page=port_based", page)?;
+        Ok(parse::port_vlans(self.layout, page.as_str())?)
     }
 
     /// `fwd.cgi?page=jumboframe`.
-    pub fn read_jumbo(&mut self) -> Result<Jumbo, ClientError> {
-        let page = self.get("fwd.cgi?page=jumboframe")?;
-        Ok(parse::jumbo(&page)?)
+    pub fn read_jumbo(&mut self, page: &mut PageBuf) -> Result<Jumbo, ClientError> {
+        let _heavy = heavy()?;
+        self.get("fwd.cgi?page=jumboframe", page)?;
+        Ok(parse::jumbo(page.as_str())?)
     }
 
     /// `fwd.cgi?page=storm_ctrl`.
-    pub fn read_storm(&mut self) -> Result<Vec<StormPort>, ClientError> {
-        let page = self.get("fwd.cgi?page=storm_ctrl")?;
-        Ok(parse::storm(self.layout, &page)?)
+    pub fn read_storm(&mut self, page: &mut PageBuf) -> Result<Vec<StormPort>, ClientError> {
+        let _heavy = heavy()?;
+        self.get("fwd.cgi?page=storm_ctrl", page)?;
+        Ok(parse::storm(self.layout, page.as_str())?)
     }
 
     /// `port.cgi?page=bw_ctrl`.
-    pub fn read_rate_limits(&mut self) -> Result<Vec<RatePort>, ClientError> {
-        let page = self.get("port.cgi?page=bw_ctrl")?;
-        Ok(parse::rate_limits(self.layout, &page)?)
+    pub fn read_rate_limits(&mut self, page: &mut PageBuf) -> Result<Vec<RatePort>, ClientError> {
+        let _heavy = heavy()?;
+        self.get("port.cgi?page=bw_ctrl", page)?;
+        Ok(parse::rate_limits(self.layout, page.as_str())?)
     }
 
     /// `loop.cgi`.
-    pub fn read_loop(&mut self) -> Result<LoopCfg, ClientError> {
-        let page = self.get("loop.cgi")?;
-        Ok(parse::loop_cfg(&page)?)
+    pub fn read_loop(&mut self, page: &mut PageBuf) -> Result<LoopCfg, ClientError> {
+        let _heavy = heavy()?;
+        self.get("loop.cgi", page)?;
+        Ok(parse::loop_cfg(page.as_str())?)
     }
 
     /// `ip.cgi`.
-    pub fn read_ip(&mut self) -> Result<IpCfg, ClientError> {
-        let page = self.get("ip.cgi")?;
-        Ok(parse::ip(&page)?)
+    pub fn read_ip(&mut self, page: &mut PageBuf) -> Result<IpCfg, ClientError> {
+        let _heavy = heavy()?;
+        self.get("ip.cgi", page)?;
+        Ok(parse::ip(page.as_str())?)
     }
 
     /// The whole MAC table, 30 rows at a time.
@@ -443,16 +591,26 @@ impl SwitchClient {
     /// (which drops a stuck filter) and then pages through it. Those
     /// POSTs change the table's view and no configuration, which is why
     /// they are allowed without `switch.manage`.
-    pub fn walk_macs(&mut self, max_pages: u32) -> Result<Vec<MacEntry>, ClientError> {
+    /// The gate is taken per page of the walk, not for the whole walk:
+    /// ten pages are four seconds, and an update waiting for the token
+    /// should not wait that long.
+    pub fn walk_macs(
+        &mut self,
+        max_pages: u32,
+        page: &mut PageBuf,
+    ) -> Result<Vec<MacEntry>, ClientError> {
         const PATH: &str = "mac.cgi?page=fwd_tbl";
-        self.get(PATH)?;
-        let first = self.post(PATH, &forms::mac_perpage())?;
-        let page = parse::mac_page(self.layout, &first)?;
-        let mut entries = page.entries;
-        let pages = page.pages.min(max_pages);
+        let (mut entries, pages) = {
+            let _heavy = heavy()?;
+            self.get(PATH, page)?;
+            self.post(PATH, &forms::mac_perpage(), page)?;
+            let first = parse::mac_page(self.layout, page.as_str())?;
+            (first.entries, first.pages.min(max_pages))
+        };
         for index in 2..=pages {
-            let body = self.post(PATH, &forms::mac_goto(index))?;
-            let more = parse::mac_page(self.layout, &body)?;
+            let _heavy = heavy()?;
+            self.post(PATH, &forms::mac_goto(index), page)?;
+            let more = parse::mac_page(self.layout, page.as_str())?;
             entries.extend(more.entries);
         }
         entries.sort_by_key(|e| (e.port, e.vlan, e.mac.clone()));
@@ -466,12 +624,13 @@ impl SwitchClient {
 
     /// Carry out one planned op, honouring its settle time and whether
     /// it is allowed to go unanswered.
-    pub fn apply(&mut self, op: &Op) -> Result<(), ClientError> {
+    pub fn apply(&mut self, op: &Op, page: &mut PageBuf) -> Result<(), ClientError> {
+        let _heavy = heavy()?;
         log::warn!("switch: applying {}", op.detail);
         if op.may_timeout {
-            self.post_may_timeout(&op.path, &op.form)?;
+            self.post_may_timeout(&op.path, &op.form, page)?;
         } else {
-            self.post(&op.path, &op.form)?;
+            self.post(&op.path, &op.form, page)?;
         }
         self.settle(op.settle_ms);
         Ok(())
@@ -479,16 +638,18 @@ impl SwitchClient {
 
     /// `save.cgi`: the running configuration to flash. The one write
     /// that must never happen before a confirm (ADR 0006 component 18).
-    pub fn save(&mut self) -> Result<(), ClientError> {
-        self.post("save.cgi", &forms::save())?;
+    pub fn save(&mut self, page: &mut PageBuf) -> Result<(), ClientError> {
+        let _heavy = heavy()?;
+        self.post("save.cgi", &forms::save(), page)?;
         log::warn!("switch: running configuration saved to flash");
         Ok(())
     }
 
     /// `reboot.cgi`: restart the switch, dropping everything unsaved.
     /// The reply is usually cut off by the reboot itself.
-    pub fn reboot(&mut self) -> Result<(), ClientError> {
-        self.post_may_timeout("reboot.cgi", &forms::reboot())?;
+    pub fn reboot(&mut self, page: &mut PageBuf) -> Result<(), ClientError> {
+        let _heavy = heavy()?;
+        self.post_may_timeout("reboot.cgi", &forms::reboot(), page)?;
         // A rebooted switch has forgotten every login.
         self.logged_in = false;
         log::warn!(
@@ -500,8 +661,9 @@ impl SwitchClient {
 
     /// `reset.cgi`: factory default. The switch comes back on
     /// 192.168.2.1 with admin/admin and is then unreachable.
-    pub fn factory_reset(&mut self) -> Result<(), ClientError> {
-        self.post_may_timeout("reset.cgi", &forms::factory_reset())?;
+    pub fn factory_reset(&mut self, page: &mut PageBuf) -> Result<(), ClientError> {
+        let _heavy = heavy()?;
+        self.post_may_timeout("reset.cgi", &forms::factory_reset(), page)?;
         self.logged_in = false;
         log::warn!(
             "switch: factory reset sent to {}; it comes back on 192.168.2.1 with admin/admin",

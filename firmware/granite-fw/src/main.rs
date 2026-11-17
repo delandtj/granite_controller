@@ -522,20 +522,14 @@ fn main() -> anyhow::Result<()> {
 
     // Everything is up, so this is the heap number that matters: it is
     // measured once, after the servers have allocated their buffers and
-    // before any traffic.
-    log::info!(
-        "boot complete: free heap {} bytes, minimum free since boot {} bytes, largest free block \
-         {} bytes",
-        unsafe { esp_idf_svc::sys::esp_get_free_heap_size() },
-        unsafe { esp_idf_svc::sys::esp_get_minimum_free_heap_size() },
-        unsafe {
-            esp_idf_svc::sys::heap_caps_get_largest_free_block(
-                esp_idf_svc::sys::MALLOC_CAP_DEFAULT,
-            )
-        }
-    );
+    // before any traffic (ADR 0001 component 27).
+    log::info!("boot complete: heap {}", platform::mem::summary());
 
     let mut ticks: u64 = 0;
+    // The low-heap watch (ADR 0001 component 27): sampled on the
+    // heartbeat the firmware already has, and one `sys` event per
+    // crossing. Report only.
+    let mut heap_watch = granite_core::heap::HeapWatch::new();
     loop {
         if ticks == STACK_CENSUS_TICK {
             for line in platform::tasks::lines() {
@@ -543,14 +537,31 @@ fn main() -> anyhow::Result<()> {
             }
         }
         let net = platform.net.status();
+        let (free, low, largest) = platform::mem::figures();
         log::info!(
-            "heartbeat {ticks} ({} s uptime), {}, link {}, ip {}, ota {}",
+            "heartbeat {ticks} ({} s uptime), {}, link {}, ip {}, ota {}, heap {free}/{low} \
+             bytes, largest block {largest}",
             ticks * HEARTBEAT.as_secs(),
             platform.device_id(),
             if net.link { "up" } else { "down" },
             if net.ip.is_empty() { "-" } else { &net.ip },
             platform::ota::ota_state()
         );
+        if let Some(edge) = heap_watch.sample(free, largest) {
+            match edge {
+                granite_core::heap::HeapEdge::Low { .. } => {
+                    log::error!("heap is low: {}", edge.detail())
+                }
+                granite_core::heap::HeapEdge::Ok { .. } => {
+                    log::warn!("heap is back: {}", edge.detail())
+                }
+            }
+            platform.publish(granite_core::msg::sys_event(
+                platform::now_ms(),
+                edge.what(),
+                Some(edge.detail()),
+            ));
+        }
         ticks += 1;
         thread::sleep(HEARTBEAT);
     }

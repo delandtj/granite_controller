@@ -1020,9 +1020,11 @@ fn note_connected(observed: &Arc<RwLock<Observed>>, up: bool) {
 }
 
 /// The retained `status` payload: the ADR's shape plus the OTA state of
-/// the running image.
+/// the running image and the heap figures (ADR 0001 component 27).
 fn status_json(host: &HostStatus, fw: &str) -> Vec<u8> {
-    let status = Status::online(fw, &host.ip, host.uptime_s, host.boot_reason);
+    let (free, low, largest) = crate::platform::mem::figures();
+    let status = Status::online(fw, &host.ip, host.uptime_s, host.boot_reason)
+        .with_heap(free, low, largest);
     match serde_json::to_value(&status) {
         Ok(Value::Object(mut map)) => {
             map.insert("ota".into(), Value::String(host.ota_state.clone()));

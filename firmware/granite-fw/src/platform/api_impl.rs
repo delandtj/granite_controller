@@ -62,7 +62,7 @@ impl ApiPlatform for PlatformApi {
     }
 
     fn free_heap(&self) -> u32 {
-        unsafe { esp_idf_svc::sys::esp_get_free_heap_size() }
+        super::mem::free()
     }
 
     fn net(&self) -> ApiNetStatus {

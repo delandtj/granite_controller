@@ -395,7 +395,13 @@ pub fn start(ctx: HttpCtx) -> anyhow::Result<HttpHandle> {
         uri_match_wildcard: true,
         max_uri_handlers: 8,
         stack_size: 12288,
-        max_open_sockets: 4,
+        // Each TLS session costs tens of kilobytes of heap, so two
+        // (ADR 0001 component 27, "Web server"): one for the operator
+        // and one for whatever else is talking. The least recently
+        // used connection is closed to make room for a new one rather
+        // than the new one being refused.
+        max_open_sockets: 2,
+        lru_purge_enable: true,
         ..Default::default()
     };
     https_conf.server_certificate = Some(cert);
@@ -415,7 +421,11 @@ pub fn start(ctx: HttpCtx) -> anyhow::Result<HttpHandle> {
         // `/id` runs the same core handler as on 443; at 6144 it overflowed
         // in identity_response -> new_nonce (rev C, 2026-10-16).
         stack_size: 10240,
-        max_open_sockets: 2,
+        // One: this server serves `/id` and a redirect, and the heap it
+        // would hold is heap the HTTPS side needs (ADR 0001 component
+        // 27).
+        max_open_sockets: 1,
+        lru_purge_enable: true,
         ..Default::default()
     };
     let mut http = EspHttpServer::new(&http_conf)?;
@@ -539,6 +549,20 @@ fn serve(ctx: &HttpCtx, mut request: Request<&mut EspHttpConnection>) -> Result<
     let is_upload = api_request.method == Method::Post
         && api::route_of(&api_request.path) == Some(api::Route::FirmwareUpload);
 
+    // The coredump download (ADR 0001 component 27): 64 KB of flash,
+    // so it is streamed rather than built into a response body. The
+    // route table owns the path and its access level; this only serves
+    // it, and only to an authenticated request.
+    if matches!(api_request.method, Method::Get | Method::Head)
+        && api::route_of(&api_request.path) == Some(api::Route::Coredump)
+    {
+        if !authenticated(ctx, &api_request, now) {
+            let response = handle(ctx, api_request, now);
+            return write_response(request, response);
+        }
+        return stream_coredump(request);
+    }
+
     if is_upload {
         if !authenticated(ctx, &api_request, now) {
             // Do not touch the OTA partition for an unauthenticated
@@ -619,6 +643,55 @@ fn read_body(
         }
     }
     Ok(body)
+}
+
+/// Stream the `coredump` partition out of flash (ADR 0001 component
+/// 27, `GET /api/v1/coredump`).
+///
+/// The caller has already checked the credential. One [`CHUNK`] of
+/// stack at a time: the dump is up to 64 KB and must not be assembled
+/// in the heap it is there to explain. 404 when there is no valid dump.
+fn stream_coredump(request: Request<&mut EspHttpConnection>) -> Result<(), EspIOError> {
+    let Some(image) = crate::platform::coredump::image() else {
+        return write_response(
+            request,
+            ApiResponse::error(404, "no coredump in flash"),
+        );
+    };
+    let length = image.len().to_string();
+    let head_only = request.method() == HttpMethod::Head;
+    let headers: Vec<(&str, &str)> = vec![
+        ("Content-Type", "application/octet-stream"),
+        ("Content-Length", length.as_str()),
+        (
+            "Content-Disposition",
+            "attachment; filename=\"coredump.elf\"",
+        ),
+        ("X-Content-Type-Options", "nosniff"),
+    ];
+    log::warn!("http: serving the {} byte coredump", image.len());
+    let mut out = request.into_response(200, None, &headers)?;
+    if !head_only {
+        let mut buf = [0u8; CHUNK];
+        let mut offset = 0usize;
+        while offset < image.len() {
+            match image.read(offset, &mut buf) {
+                Ok(0) => break,
+                Ok(n) => {
+                    out.write_all(&buf[..n])?;
+                    offset += n;
+                }
+                Err(e) => {
+                    // The headers are gone, so the only way to report
+                    // this is a short body and a log line.
+                    log::error!("http: the coredump read failed at {offset}: {e}");
+                    break;
+                }
+            }
+        }
+    }
+    out.flush()?;
+    Ok(())
 }
 
 /// Push the request body straight into the OTA partition.

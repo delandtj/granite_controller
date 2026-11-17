@@ -13,7 +13,8 @@
 //! A controller that serves two blocks has two block switches, the
 //! `switch` and `switch2` sections (ADR 0006 component 26). The thread
 //! holds one [`Unit`] per switch and serves them in turn, so requests to
-//! the two never overlap and at most one page is in memory. A switch
+//! the two never overlap and one 16 KB page buffer, allocated once when
+//! the thread starts, serves both (ADR 0001 component 27). A switch
 //! that does not answer delays the other by one request timeout per
 //! attempt; the backoff spaces the attempts. Everything per switch is
 //! per switch: client, profile, pairing, own port, drift, snapshot,
@@ -78,7 +79,7 @@ use granite_core::switch::plan::{self, Protected};
 use granite_core::switch::profile::{self, Layout, Profile};
 use granite_core::switch::{counters, plan::Op};
 
-use client::{ClientError, SwitchClient};
+use client::{ClientError, PageBuf, SwitchClient};
 
 /// Worker loop period: short enough that a request on the channel is
 /// picked up quickly, long enough to be invisible next to a 400 ms page.
@@ -231,6 +232,10 @@ pub fn start(ctx: SwitchCtx) -> anyhow::Result<SwitchHandle> {
 /// The thread: one unit per switch, served in turn.
 struct Worker {
     units: [Unit; 2],
+    /// The one page buffer, allocated here when the worker starts and
+    /// handed to every request of both switches (ADR 0001 component
+    /// 27). They are served in turn, so one buffer is all it takes.
+    page: PageBuf,
 }
 
 impl Worker {
@@ -240,6 +245,7 @@ impl Worker {
                 Unit::new(Arc::clone(&ctx), SwitchId::One),
                 Unit::new(ctx, SwitchId::Two),
             ],
+            page: PageBuf::new(),
         }
     }
 
@@ -259,7 +265,7 @@ impl Worker {
             loop {
                 match rx.try_recv() {
                     Ok(request) => {
-                        self.units[request.which.index()].handle(request.verb);
+                        self.units[request.which.index()].handle(request.verb, &mut self.page);
                     }
                     Err(TryRecvError::Empty) => break,
                     Err(TryRecvError::Disconnected) => return,
@@ -268,14 +274,15 @@ impl Worker {
             // In turn: the second switch's pass starts when the first
             // one's is done, so two slow web servers never overlap.
             //
-            // Not while a firmware image is coming in: the update needs
-            // the heap a page read would take (ADR 0006 component 17).
-            // The deadlines are simply late when it is over.
-            if !crate::platform::ota::receiving() {
-                for unit in self.units.iter_mut() {
-                    if unit.cfg.should_poll() {
-                        unit.poll();
-                    }
+            // Nothing special about a firmware image coming in any
+            // more: every request takes the memory gate first and
+            // simply does not get it while an update holds it (ADR
+            // 0001 component 27, which replaces the special case of
+            // ADR 0006 component 17). The deadlines are late when it
+            // is over.
+            for unit in self.units.iter_mut() {
+                if unit.cfg.should_poll() {
+                    unit.poll(&mut self.page);
                 }
             }
             thread::sleep(TICK);
@@ -438,7 +445,7 @@ impl Unit {
     // Polling
     // -----------------------------------------------------------------
 
-    fn poll(&mut self) {
+    fn poll(&mut self, page: &mut PageBuf) {
         let now = crate::platform::now_ms();
         if now < self.retry_at_ms {
             return;
@@ -447,7 +454,7 @@ impl Unit {
         // checks gate everything else (ADR 0006 components 16 and 22).
         if self.state.info.is_none() || now >= self.next_info_ms {
             self.next_info_ms = now + secs(self.cfg.poll.info_s);
-            if !self.step(|w| w.read_health()) {
+            if !self.step(page, |w, p| w.read_health(p)) {
                 return;
             }
         }
@@ -457,13 +464,13 @@ impl Unit {
         }
         if now >= self.next_stats_ms {
             self.next_stats_ms = now + secs(self.cfg.poll.stats_s);
-            if !self.step(|w| w.read_stats()) {
+            if !self.step(page, |w, p| w.read_stats(p)) {
                 return;
             }
         }
         if now >= self.next_mac_ms {
             self.next_mac_ms = now + secs(self.cfg.poll.mac_s);
-            if !self.step(|w| w.read_macs()) {
+            if !self.step(page, |w, p| w.read_macs(p)) {
                 return;
             }
             // The walk is where the controller's own port comes from,
@@ -472,10 +479,10 @@ impl Unit {
         }
         if now >= self.next_drift_ms {
             self.next_drift_ms = now + secs(self.cfg.poll.drift_s);
-            if !self.step(|w| w.read_config_pages()) {
+            if !self.step(page, |w, p| w.read_config_pages(p)) {
                 return;
             }
-            self.check_drift();
+            self.check_drift(page);
             self.check_mgmt_exposure();
         }
         if now >= self.next_counters_ms {
@@ -487,11 +494,23 @@ impl Unit {
 
     /// Run one poll step, counting the failure if it fails. False when
     /// the step failed, so the caller stops this pass.
-    fn step(&mut self, step: impl FnOnce(&mut Self) -> Result<(), ClientError>) -> bool {
-        match step(self) {
+    fn step(
+        &mut self,
+        page: &mut PageBuf,
+        step: impl FnOnce(&mut Self, &mut PageBuf) -> Result<(), ClientError>,
+    ) -> bool {
+        match step(self, page) {
             Ok(()) => {
                 self.note_success();
                 true
+            }
+            // The memory gate said no, so the request never left the
+            // board (ADR 0001 component 27). That says nothing about
+            // the switch: this pass stops and the next one tries
+            // again, and nothing is counted or reported.
+            Err(ClientError::Busy(who)) => {
+                log::debug!("{}: this pass waits, {who} has the memory gate", self.tag());
+                false
             }
             Err(e) => {
                 self.note_failure(&e);
@@ -648,12 +667,12 @@ impl Unit {
 
     /// `info.cgi`: the pairing check, the firmware check and the
     /// reboot check.
-    fn read_health(&mut self) -> Result<(), ClientError> {
+    fn read_health(&mut self, page: &mut PageBuf) -> Result<(), ClientError> {
         let tag = self.tag();
         let Some(client) = self.client.as_mut() else {
             return Ok(());
         };
-        let (info, links) = client.read_info()?;
+        let (info, links) = client.read_info(page)?;
 
         // Pairing (ADR 0006 component 22, the part that is in scope):
         // a switch whose MAC is not the configured one is not ours.
@@ -726,12 +745,12 @@ impl Unit {
 
     /// `port.cgi?page=stats`: link state and the counters, plus the
     /// `switch_port` events a change produces.
-    fn read_stats(&mut self) -> Result<(), ClientError> {
+    fn read_stats(&mut self, page: &mut PageBuf) -> Result<(), ClientError> {
         let tag = self.tag();
         let Some(client) = self.client.as_mut() else {
             return Ok(());
         };
-        let stats = client.read_stats()?;
+        let stats = client.read_stats(page)?;
         let now = crate::platform::now_ms();
 
         // A counter that went down with a stable uptime is a Clear on
@@ -760,7 +779,7 @@ impl Unit {
             // The negotiated speed of a port that just came up only
             // shows on the port page (ADR 0006 component 17).
             if let Some(client) = self.client.as_mut() {
-                match client.read_ports() {
+                match client.read_ports(page) {
                     Ok(ports) => self.state.ports = ports,
                     Err(e) => log::warn!("{tag}: the port page did not read back: {e}"),
                 }
@@ -796,12 +815,12 @@ impl Unit {
 
     /// The MAC table walk, which is also how the controller finds its
     /// own port and therefore what is protected.
-    fn read_macs(&mut self) -> Result<(), ClientError> {
+    fn read_macs(&mut self, page: &mut PageBuf) -> Result<(), ClientError> {
         let tag = self.tag();
         let Some(client) = self.client.as_mut() else {
             return Ok(());
         };
-        self.state.macs = client.walk_macs(MAC_PAGES)?;
+        self.state.macs = client.walk_macs(MAC_PAGES, page)?;
         let own_mac = self.ctx.own_mac.clone();
         let found = self.state.port_of_mac(&own_mac);
         if found != self.own_port {
@@ -822,28 +841,28 @@ impl Unit {
 
     /// The configuration pages the desired state needs, read in one go
     /// for the drift check and before a reconcile.
-    fn read_config_pages(&mut self) -> Result<(), ClientError> {
+    fn read_config_pages(&mut self, page: &mut PageBuf) -> Result<(), ClientError> {
         let Some(client) = self.client.as_mut() else {
             return Ok(());
         };
-        self.state.vlans = Some(client.read_vlans()?);
-        self.state.port_vlans = client.read_port_vlans()?;
-        self.state.ports = client.read_ports()?;
-        self.state.jumbo = Some(client.read_jumbo()?);
-        self.state.loop_cfg = Some(client.read_loop()?);
-        self.state.ip = Some(client.read_ip()?);
+        self.state.vlans = Some(client.read_vlans(page)?);
+        self.state.port_vlans = client.read_port_vlans(page)?;
+        self.state.ports = client.read_ports(page)?;
+        self.state.jumbo = Some(client.read_jumbo(page)?);
+        self.state.loop_cfg = Some(client.read_loop(page)?);
+        self.state.ip = Some(client.read_ip(page)?);
         // Storm control and the rate limits are only read when the
         // desired state mentions them: two more 400 ms pages otherwise
         // buy nothing.
         if self.cfg.desired.storm.is_some() {
-            self.state.storm = client.read_storm()?;
+            self.state.storm = client.read_storm(page)?;
         }
         Ok(())
     }
 
     /// Report what differs from the desired state, and put it back when
     /// `enforce` says so.
-    fn check_drift(&mut self) {
+    fn check_drift(&mut self, page: &mut PageBuf) {
         let tag = self.tag();
         if !self.cfg.manage || self.cfg.desired.is_empty() {
             self.drift.clear();
@@ -864,8 +883,8 @@ impl Unit {
             // it back is applied and saved at once, with no new confirm
             // window (ADR 0006, "Who wins").
             log::warn!("{tag}: enforce is on, putting the desired state back");
-            if self.apply_desired(false).is_some() {
-                self.save_now();
+            if self.apply_desired(false, page).is_some() {
+                self.save_now(page);
             }
         }
     }
@@ -911,7 +930,7 @@ impl Unit {
     // Requests
     // -----------------------------------------------------------------
 
-    fn handle(&mut self, verb: SwitchVerb) {
+    fn handle(&mut self, verb: SwitchVerb, page: &mut PageBuf) {
         if !self.cfg.should_poll() {
             log::warn!(
                 "{}: {verb:?} ignored, no switch is configured",
@@ -927,12 +946,12 @@ impl Unit {
                 port,
                 enabled,
                 force,
-            } => self.port_command(port, enabled, force),
-            SwitchVerb::Save => self.save_now(),
-            SwitchVerb::Reboot => self.reboot_switch(),
+            } => self.port_command(port, enabled, force, page),
+            SwitchVerb::Save => self.save_now(page),
+            SwitchVerb::Reboot => self.reboot_switch(page),
             SwitchVerb::FactoryReset => {
                 if let Some(client) = self.client.as_mut() {
-                    match client.factory_reset() {
+                    match client.factory_reset(page) {
                         Ok(()) => self.event("switch_factory_reset", None, None),
                         Err(e) => self.refuse(format!("factory reset: {e}")),
                     }
@@ -943,10 +962,10 @@ impl Unit {
             }
             SwitchVerb::Reconcile | SwitchVerb::Staged => {
                 let staged = matches!(verb, SwitchVerb::Staged);
-                self.reconcile(staged);
+                self.reconcile(staged, page);
             }
-            SwitchVerb::Confirmed => self.confirm(),
-            SwitchVerb::Revert => self.revert(),
+            SwitchVerb::Confirmed => self.confirm(page),
+            SwitchVerb::Revert => self.revert(page),
         }
     }
 
@@ -995,23 +1014,23 @@ impl Unit {
     }
 
     /// `switch_port`: enable or disable one port now.
-    fn port_command(&mut self, port: u8, enabled: bool, force: bool) {
+    fn port_command(&mut self, port: u8, enabled: bool, force: bool, page: &mut PageBuf) {
         // The port page has to be current: the form resends the speed,
         // duplex and flow control the port already has.
-        if self.step(|w| w.read_port_page()) {
+        if self.step(page, |w, p| w.read_port_page(p)) {
             let protected = self.protected(force);
             match plan::port_enable_op(self.layout, &self.state, port, enabled, &protected) {
-                Ok(op) => self.apply_ops(&[op], "switch_port"),
+                Ok(op) => self.apply_ops(&[op], "switch_port", page),
                 Err(e) => self.refuse(e),
             }
         }
     }
 
-    fn read_port_page(&mut self) -> Result<(), ClientError> {
+    fn read_port_page(&mut self, page: &mut PageBuf) -> Result<(), ClientError> {
         let Some(client) = self.client.as_mut() else {
             return Ok(());
         };
-        self.state.ports = client.read_ports()?;
+        self.state.ports = client.read_ports(page)?;
         Ok(())
     }
 
@@ -1030,7 +1049,7 @@ impl Unit {
     /// Read, plan, apply. `staged` means this switch's section is in
     /// its confirm window: the snapshot is kept so a revert can undo
     /// it, and nothing is saved.
-    fn reconcile(&mut self, staged: bool) {
+    fn reconcile(&mut self, staged: bool, page: &mut PageBuf) {
         let tag = self.tag();
         if self.cfg.desired.is_empty() {
             self.refuse(format!(
@@ -1038,13 +1057,13 @@ impl Unit {
             ));
             return;
         }
-        if !self.step(|w| w.read_config_pages()) {
+        if !self.step(page, |w, p| w.read_config_pages(p)) {
             self.refuse(String::from(
                 "the switch could not be read, so nothing was applied",
             ));
             return;
         }
-        match self.apply_desired(staged) {
+        match self.apply_desired(staged, page) {
             Some(applied) => {
                 if staged {
                     log::warn!(
@@ -1060,7 +1079,7 @@ impl Unit {
     /// Plan the desired state and apply it. Returns how many ops were
     /// applied, or `None` when there was nothing to do or nothing could
     /// be done.
-    fn apply_desired(&mut self, staged: bool) -> Option<usize> {
+    fn apply_desired(&mut self, staged: bool, page: &mut PageBuf) -> Option<usize> {
         let desired = self.cfg.desired.clone();
         let protected = self.protected(false);
         let made = plan::plan(self.layout, &self.state, &desired, &protected);
@@ -1085,12 +1104,12 @@ impl Unit {
             self.applied = Some(desired);
         }
         let count = made.ops.len();
-        self.apply_ops(&made.ops, "switch_reconciled");
+        self.apply_ops(&made.ops, "switch_reconciled", page);
         Some(count)
     }
 
     /// Carry out a list of ops, read back and report.
-    fn apply_ops(&mut self, ops: &[Op], what: &str) {
+    fn apply_ops(&mut self, ops: &[Op], what: &str, page: &mut PageBuf) {
         let tag = self.tag();
         let mut done: Vec<String> = Vec::new();
         for op in ops {
@@ -1103,7 +1122,7 @@ impl Unit {
             let follow = (op.kind == plan::OpKind::Ip)
                 .then(|| self.cfg.desired.ip.as_ref().map(|ip| ip.addr.clone()))
                 .flatten();
-            match client.apply(op) {
+            match client.apply(op, page) {
                 Ok(()) => done.push(op.detail.clone()),
                 Err(e) => {
                     self.refuse(format!("{} failed: {e}", op.detail));
@@ -1124,7 +1143,7 @@ impl Unit {
         self.last_reconcile_ms = crate::platform::now_ms();
         // Read back: what the switch says now is what the next plan and
         // the next drift check work from.
-        if self.step(|w| w.read_config_pages()) {
+        if self.step(page, |w, p| w.read_config_pages(p)) {
             self.drift = if self.cfg.desired.is_empty() {
                 Vec::new()
             } else {
@@ -1145,7 +1164,7 @@ impl Unit {
     }
 
     /// A confirm: the one place that saves (ADR 0006's invariant).
-    fn confirm(&mut self) {
+    fn confirm(&mut self, page: &mut PageBuf) {
         if self.applied.is_none() {
             log::info!(
                 "{}: a confirm with nothing applied; saving anyway is not done",
@@ -1153,16 +1172,16 @@ impl Unit {
             );
             return;
         }
-        self.save_now();
+        self.save_now(page);
         self.snapshot = None;
         self.applied = None;
     }
 
-    fn save_now(&mut self) {
+    fn save_now(&mut self, page: &mut PageBuf) {
         let Some(client) = self.client.as_mut() else {
             return;
         };
-        match client.save() {
+        match client.save(page) {
             Ok(()) => self.event("switch_saved", None, None),
             Err(e) => self.refuse(format!("save: {e}")),
         }
@@ -1170,18 +1189,18 @@ impl Unit {
 
     /// A revert: undo while the switch is reachable, reboot it
     /// otherwise, and say which it was (ADR 0006 component 18).
-    fn revert(&mut self) {
+    fn revert(&mut self, page: &mut PageBuf) {
         let tag = self.tag();
         let Some(snapshot) = self.snapshot.clone() else {
             log::info!("{tag}: a revert with nothing applied; nothing to undo");
             return;
         };
         let applied = self.applied.clone().unwrap_or_default();
-        if self.reachable && self.step(|w| w.read_config_pages()) {
+        if self.reachable && self.step(page, |w, p| w.read_config_pages(p)) {
             let back = plan::undo(self.layout, &self.state, &snapshot, &applied);
             if !back.ops.is_empty() {
                 log::warn!("{tag}: undoing {} op(s)", back.ops.len());
-                self.apply_ops(&back.ops, "switch_reverting");
+                self.apply_ops(&back.ops, "switch_reverting", page);
             }
             // Did it land? The read-back has to match the snapshot.
             let left = plan::plan(
@@ -1204,18 +1223,18 @@ impl Unit {
         // Either the switch is gone or the undo did not verify. A
         // reboot drops everything unsaved, and the flash still holds
         // the last confirmed configuration.
-        self.reboot_switch();
+        self.reboot_switch(page);
         self.event("switch_reverted", None, Some(String::from("reboot")));
         self.snapshot = None;
         self.applied = None;
     }
 
     /// Reboot the switch and wait for it to come back.
-    fn reboot_switch(&mut self) {
+    fn reboot_switch(&mut self, page: &mut PageBuf) {
         let Some(client) = self.client.as_mut() else {
             return;
         };
-        if let Err(e) = client.reboot() {
+        if let Err(e) = client.reboot(page) {
             self.refuse(format!("reboot: {e}"));
             return;
         }

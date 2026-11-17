@@ -25,12 +25,21 @@ CONFIG_ESP_CONSOLE_UART_DEFAULT=n
 CONFIG_ESP_CONSOLE_SECONDARY_NONE=y
 
 # --- radios off ----------------------------------------------------------
-# The board is submerged; Wi-Fi and BT are useless and only cost flash.
-# CONFIG_ESP_WIFI_ENABLED is a hidden symbol in ESP-IDF v5.5 (it follows
-# SOC_WIFI_SUPPORTED), so it cannot be turned off here. The radio is simply
-# never initialised by the firmware; dropping the esp_wifi component from
-# the build is a later flash-size optimisation.
+# The board is Ethernet only (W5500 over SPI) and submerged, so no radio
+# is of any use (ADR 0001 component 27, "No radio").
+#
+# CONFIG_ESP_WIFI_ENABLED is a hidden symbol in ESP-IDF v5.5 (no prompt,
+# `default y if SOC_WIFI_SUPPORTED`), so an assignment here is ignored by
+# kconfgen and the component stays in the build. The radio is simply never
+# initialised: `esp_wifi_init` is not called, so it allocates nothing, and
+# what is left is flash the image does not execute. Dropping the component
+# would take an ESP-IDF build-system escape hatch esp-idf-sys does not
+# expose; the `wifi-dev` feature (bench only) still needs it.
+#
+# 802.15.4 *is* a visible symbol, and with it off its receive buffers and
+# its task are not built at all.
 CONFIG_BT_ENABLED=n
+CONFIG_IEEE802154_ENABLED=n
 
 # --- Ethernet (W5500 over SPI) -------------------------------------------
 CONFIG_ETH_USE_SPI_ETHERNET=y
@@ -80,6 +89,11 @@ CONFIG_ESP_TASK_WDT_TIMEOUT_S=10
 CONFIG_ESP_TASK_WDT_PANIC=y
 CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH=y
 CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF=y
+# The summary API (`esp_core_dump_get_summary`, used by
+# src/platform/coredump.rs for the `sys`/`coredump` event of ADR 0001
+# component 27) copies the crashing image's ELF SHA-256 as a string of
+# this many hex digits. The default is 9; the ADR reports 16.
+CONFIG_APP_RETRIEVE_LEN_ELF_SHA=16
 
 # --- HTTP server ---------------------------------------------------------
 # The setup page and the JSON API are HTTPS only (ADR 0001 component 8);
