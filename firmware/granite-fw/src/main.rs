@@ -1251,8 +1251,21 @@ fn start_sense(
             // Walk the bus again: on request, or now and then while the
             // list comes from the bus. A configured list is left alone;
             // the scan is still logged so an operator can read ROM ids.
-            let asked = PROBE_SCAN.swap(false, Ordering::Relaxed);
-            if asked || (!configured && now.saturating_sub(last_scan_ms) >= PROBE_RESCAN_MS) {
+            //
+            // Neither a scan nor a read while a firmware image is being
+            // written: the flash writes delay the interrupts the 1-wire
+            // timing hangs on, a read then fails its CRC (seen at the
+            // start of four pulls out of five, 2026-11-17) and a
+            // configured probe would raise the "probe missing" fault
+            // for nothing. The last values stand; the read is made as
+            // soon as the image is in.
+            let flashing = platform::mem::image_coming_in();
+            let asked = !flashing && PROBE_SCAN.swap(false, Ordering::Relaxed);
+            if asked
+                || (!flashing
+                    && !configured
+                    && now.saturating_sub(last_scan_ms) >= PROBE_RESCAN_MS)
+            {
                 last_scan_ms = now;
                 platform::feed_task_watchdog();
                 match probes.scan() {
@@ -1280,7 +1293,8 @@ fn start_sense(
             let temp = board_temp.read_centi_c().ok();
             let mv = vin.read_mv().ok();
 
-            let read_probes = now.saturating_sub(last_probe_ms) >= probe_period_ms;
+            let read_probes =
+                !flashing && now.saturating_sub(last_probe_ms) >= probe_period_ms;
             let probe_obs: Option<Vec<ProbeObs>> = if read_probes {
                 last_probe_ms = now;
                 Some(

@@ -199,3 +199,17 @@ pub fn heavy(who: &'static str, wait: Duration) -> Option<Heavy> {
 pub fn heavy_holder() -> &'static str {
     lock().as_ref().map_or("", |h| h.who)
 }
+
+/// The holder name of an OTA pull.
+pub const WHO_PULL: &str = "ota pull";
+/// The holder name of a firmware upload.
+pub const WHO_UPLOAD: &str = "firmware upload";
+
+/// True while a firmware image is being written to flash, by a pull or
+/// an upload. A flash write holds interrupts off for moments at a
+/// time, which is long enough to spoil anything timed by them: the
+/// 1-wire probes skip their reads meanwhile.
+pub fn image_coming_in() -> bool {
+    let who = heavy_holder();
+    who == WHO_PULL || who == WHO_UPLOAD
+}

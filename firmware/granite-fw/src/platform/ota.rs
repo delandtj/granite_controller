@@ -934,7 +934,7 @@ impl OtaWriter {
         // when `begin` fails).
         let heavy = match self.heavy.take() {
             Some(guard) => guard,
-            None => super::mem::heavy("firmware upload", super::mem::UPLOAD_WAIT)
+            None => super::mem::heavy(super::mem::WHO_UPLOAD, super::mem::UPLOAD_WAIT)
                 .ok_or_else(|| OtaError::Busy(super::mem::heavy_holder()))?,
         };
         let partition = unsafe { esp_ota_get_next_update_partition(core::ptr::null()) };
@@ -1148,7 +1148,7 @@ pub fn pull(url: &str, sha256: &str, ca_pem: &str) -> Result<Written, OtaError> 
             "a plain http:// pull needs a sha256",
         )));
     }
-    let heavy = super::mem::heavy("ota pull", super::mem::PULL_WAIT)
+    let heavy = super::mem::heavy(super::mem::WHO_PULL, super::mem::PULL_WAIT)
         .ok_or_else(|| OtaError::Busy(super::mem::heavy_holder()))?;
     // esp-idf-svc wants a 'static X509, and the connection lives only for
     // this call; leak one copy per pull rather than keep a global.
