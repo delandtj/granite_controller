@@ -335,6 +335,15 @@ impl SwitchClient {
                     if page.len() + n > MAX_PAGE {
                         return Err(ClientError::TooLarge);
                     }
+                    // Out of memory is an error of this request, not
+                    // an abort of the firmware. A lossy conversion is
+                    // at most three bytes per byte read.
+                    if page.try_reserve(3 * n).is_err() {
+                        return Err(ClientError::Transport(format!(
+                            "read of {path}: out of memory at {} bytes",
+                            page.len()
+                        )));
+                    }
                     page.push_str(&String::from_utf8_lossy(&buf[..n]));
                 }
                 Err(e) => {

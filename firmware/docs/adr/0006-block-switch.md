@@ -221,6 +221,11 @@ Numbered after ADR 0001's list.
     - Reachability: 3 consecutive failed polls -> `switch_unreachable`
       event and `state.switch.reachable = false`; first success after ->
       `switch_reachable`.
+    - No polling while a firmware image is being received (pull or
+      upload): the update's TLS session leaves too little heap for a
+      page read (found 2026-11-16, the worker ran out of memory during
+      a pull and the board reset). Commands are still taken. A page
+      read that cannot get memory fails as a transport error.
 
 18. **Switch reconcile** (in the worker; logic in `plan.rs`)
     - Triggered by a staged or confirmed change to the `switch` config

@@ -130,6 +130,35 @@ impl core::fmt::Display for OtaState {
 
 static STATE: AtomicU8 = AtomicU8::new(4); // Unknown
 
+/// How many updates are being received right now: a pull from its TLS
+/// handshake on, or a writer with its slot open.
+static RECEIVING: AtomicU8 = AtomicU8::new(0);
+
+/// True while an image is being received. A pull holds a TLS session
+/// and its buffers on top of the broker's, which leaves too little
+/// heap for anything else that buffers: the switch worker stands still
+/// meanwhile (coredump of 2026-11-16: the worker ran out of memory
+/// reading a page while a pull was at 40 %).
+pub fn receiving() -> bool {
+    RECEIVING.load(Ordering::Relaxed) > 0
+}
+
+/// Counts one update in [`RECEIVING`] for as long as it lives.
+struct Receiving;
+
+impl Receiving {
+    fn new() -> Self {
+        RECEIVING.fetch_add(1, Ordering::Relaxed);
+        Receiving
+    }
+}
+
+impl Drop for Receiving {
+    fn drop(&mut self) {
+        RECEIVING.fetch_sub(1, Ordering::Relaxed);
+    }
+}
+
 /// The OTA state of the running image, for `status`, `/id` and the LED.
 pub fn ota_state() -> OtaState {
     OtaState::from_code(STATE.load(Ordering::Relaxed))
@@ -829,6 +858,8 @@ pub struct Written {
 pub struct OtaWriter {
     partition: *const esp_partition_t,
     handle: Option<esp_ota_handle_t>,
+    /// Held while the slot is open.
+    receiving: Option<Receiving>,
     sha: Option<Sha256Stream>,
     written: u64,
     expected_sha256: Option<String>,
@@ -862,6 +893,7 @@ impl OtaWriter {
         OtaWriter {
             partition: core::ptr::null(),
             handle: None,
+            receiving: None,
             sha: None,
             written: 0,
             expected_sha256: None,
@@ -914,6 +946,7 @@ impl OtaWriter {
         esp!(unsafe { esp_ota_begin(partition, size, &mut handle) })?;
         self.partition = partition;
         self.handle = Some(handle);
+        self.receiving = Some(Receiving::new());
         self.sha = Some(Sha256Stream::new());
         self.written = 0;
         self.total = total_len.filter(|n| *n > 0);
@@ -973,6 +1006,7 @@ impl OtaWriter {
     /// Verify the hash, close the update, and point the bootloader at the
     /// new slot. The caller reboots.
     pub fn finish(&mut self) -> Result<Written, OtaError> {
+        self.receiving = None;
         let Some(handle) = self.handle.take() else {
             return Err(OtaError::Transfer(String::from("no update in progress")));
         };
@@ -1028,6 +1062,7 @@ impl OtaWriter {
 
     /// Give up on the image in progress. `otadata` is left untouched.
     pub fn abort(&mut self) {
+        self.receiving = None;
         if let Some(handle) = self.handle.take() {
             let _ = unsafe { esp_ota_abort(handle) };
             log::warn!("ota: update aborted after {} bytes", self.written);
@@ -1087,6 +1122,7 @@ fn partition_label(partition: *const esp_partition_t) -> String {
 /// store", which is nothing unless the build attached a bundle, so a
 /// configured CA is effectively required.
 pub fn pull(url: &str, sha256: &str, ca_pem: &str) -> Result<Written, OtaError> {
+    let _receiving = Receiving::new();
     // esp-idf-svc wants a 'static X509, and the connection lives only for
     // this call; leak one copy per pull rather than keep a global.
     let ca: Option<X509<'static>> = if ca_pem.trim().is_empty() {

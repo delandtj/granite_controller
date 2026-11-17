@@ -267,9 +267,15 @@ impl Worker {
             }
             // In turn: the second switch's pass starts when the first
             // one's is done, so two slow web servers never overlap.
-            for unit in self.units.iter_mut() {
-                if unit.cfg.should_poll() {
-                    unit.poll();
+            //
+            // Not while a firmware image is coming in: the update needs
+            // the heap a page read would take (ADR 0006 component 17).
+            // The deadlines are simply late when it is over.
+            if !crate::platform::ota::receiving() {
+                for unit in self.units.iter_mut() {
+                    if unit.cfg.should_poll() {
+                        unit.poll();
+                    }
                 }
             }
             thread::sleep(TICK);
