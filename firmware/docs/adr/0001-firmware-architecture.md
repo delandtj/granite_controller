@@ -471,7 +471,7 @@ firmware/
       replaces the special case of ADR 0006 component 17 (no polling
       while an image comes in): the worker simply does not get the
       token.
-    - Switch page buffer: the worker owns one buffer of 16 KB,
+    - Switch page buffer: the worker owns one buffer of 12 KB,
       allocated when the worker starts and reused for every page of
       both switches (they are served in turn). The largest page of
       the verified profile is 10.3 KB. A longer page is refused as
@@ -1064,7 +1064,7 @@ page loop) is gone; what replaces it:
     the writer take a second one, and why `begin` keeps the guard in a
     local until the slot is really open: the HTTP upload sink is
     long-lived and is not aborted when `begin` fails.
-- **The switch page buffer**: `client::PageBuf`, 16 KB, allocated once
+- **The switch page buffer**: `client::PageBuf`, 12 KB, allocated once
   when the worker starts and handed to every request of both switches
   (they are served in turn). A longer page is `ClientError::TooLarge`;
   nothing grows and nothing is converted. The client no longer returns

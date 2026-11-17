@@ -75,11 +75,13 @@ pub const REQUEST_BUDGET: Duration = Duration::from_secs(15);
 
 /// The one page buffer, in bytes (ADR 0001 component 27).
 ///
-/// The largest page of the verified profile is 10.3 KB, so this is that
-/// plus half again. It is allocated once, when the worker starts, and
+/// The largest page of the verified profile is 10.3 KB, so this leaves
+/// about 1.7 KB over; a profile with a longer page raises it. The
+/// buffer is permanent, so every KB here is a KB the rest of the
+/// firmware never sees again. It is allocated once, when the worker starts, and
 /// every page of both switches is read into it; a longer page is
 /// refused as [`ClientError::TooLarge`] and nothing grows.
-pub const PAGE_BUF: usize = 16 * 1024;
+pub const PAGE_BUF: usize = 12 * 1024;
 
 /// Read buffer. Pages are a few KB, read in these steps.
 const CHUNK: usize = 1024;

@@ -13,7 +13,7 @@
 //! A controller that serves two blocks has two block switches, the
 //! `switch` and `switch2` sections (ADR 0006 component 26). The thread
 //! holds one [`Unit`] per switch and serves them in turn, so requests to
-//! the two never overlap and one 16 KB page buffer, allocated once when
+//! the two never overlap and one 12 KB page buffer, allocated once when
 //! the thread starts, serves both (ADR 0001 component 27). A switch
 //! that does not answer delays the other by one request timeout per
 //! attempt; the backoff spaces the attempts. Everything per switch is
