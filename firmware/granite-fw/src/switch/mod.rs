@@ -95,9 +95,11 @@ const BACKOFF_MAX_S: u64 = 60;
 /// 300 entries, well past the 8 nodes plus the uplink of a block.
 const MAC_PAGES: u32 = 10;
 
-/// Thread name and stack. It parses pages and serialises JSON.
+/// Thread name and stack. It parses pages and serialises JSON. 10 KB
+/// was 83 % used after two minutes and overflowed in the MAC table
+/// walk on 2026-11-17; 16 KB leaves room for the deepest path.
 const THREAD: &core::ffi::CStr = c"switch";
-const STACK: usize = 10_240;
+const STACK: usize = 16_384;
 
 /// True while a switch answers, per switch, for anything that only
 /// wants the bit.

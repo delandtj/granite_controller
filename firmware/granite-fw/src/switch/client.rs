@@ -613,7 +613,13 @@ impl SwitchClient {
             let more = parse::mac_page(self.layout, page.as_str())?;
             entries.extend(more.entries);
         }
-        entries.sort_by_key(|e| (e.port, e.vlan, e.mac.clone()));
+        // Unstable and by reference: the stable sort keeps its scratch
+        // space on the stack and clones a key per comparison, which
+        // overflowed the worker's stack (2026-11-17). Equal entries
+        // are identical, so the order between them does not matter.
+        entries.sort_unstable_by(|a, b| {
+            (a.port, a.vlan, &a.mac).cmp(&(b.port, b.vlan, &b.mac))
+        });
         entries.dedup();
         Ok(entries)
     }
