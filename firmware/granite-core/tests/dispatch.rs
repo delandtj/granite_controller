@@ -1044,3 +1044,67 @@ fn the_second_switch_section_is_staged_like_the_first() {
     );
     assert!(effects.is_empty());
 }
+
+/// ADR 0001 component 27: a pull over plain HTTP is allowed because the
+/// hash comes over the authenticated command channel, and nothing is
+/// pulled without that hash.
+#[test]
+fn an_ota_pull_needs_a_hash_and_a_known_scheme() {
+    const SHA: &str = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    let mut h = Harness::new();
+
+    let ota = |url: &str, sha: Option<&str>| {
+        Command::new("c-1", CommandKind::Ota).with_args(Args {
+            url: Some(String::from(url)),
+            sha256: sha.map(String::from),
+            ..Args::default()
+        })
+    };
+
+    // https with a hash: what it always was.
+    let (reply, effects) = h.run(&ota("https://host/granite.bin", Some(SHA)));
+    assert!(reply.ok, "{reply:?}");
+    assert_eq!(
+        effects,
+        vec![SideEffect::Ota {
+            url: String::from("https://host/granite.bin"),
+            sha256: String::from(SHA),
+        }]
+    );
+
+    // http with a hash: accepted now, and it saves the second TLS
+    // session.
+    let (reply, effects) = h.run(&ota("http://host/granite.bin", Some(SHA)));
+    assert!(reply.ok, "{reply:?}");
+    assert_eq!(
+        effects,
+        vec![SideEffect::Ota {
+            url: String::from("http://host/granite.bin"),
+            sha256: String::from(SHA),
+        }]
+    );
+
+    // No hash at all: refused, whatever the scheme.
+    for url in ["http://host/granite.bin", "https://host/granite.bin"] {
+        let (reply, effects) = h.run(&ota(url, None));
+        assert!(!reply.ok, "{url} without a hash");
+        assert!(effects.is_empty());
+    }
+
+    // A hash that is not 64 hex digits, and a scheme that is not HTTP.
+    let (reply, _) = h.run(&ota("https://host/granite.bin", Some("beef")));
+    assert!(!reply.ok);
+    let (reply, _) = h.run(&ota("https://host/granite.bin", Some(&SHA.replace('0', "z"))));
+    assert!(!reply.ok, "non-hex digits");
+    let (reply, _) = h.run(&ota("ftp://host/granite.bin", Some(SHA)));
+    assert!(
+        reply
+            .error
+            .as_deref()
+            .expect("an error")
+            .contains("http:// or https://"),
+        "{reply:?}"
+    );
+    let (reply, _) = h.run(&ota("", Some(SHA)));
+    assert!(!reply.ok);
+}

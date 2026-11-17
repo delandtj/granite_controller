@@ -685,6 +685,22 @@ pub enum EventKind {
         /// Peer address, when the transport knows it.
         peer: Option<String>,
     },
+    /// Something about the system itself the controller wants on the
+    /// record (ADR 0001 component 27, "Memory budget").
+    ///
+    /// `what` is one of `heap_low` (free heap or the largest free block
+    /// went under the threshold), `heap_ok` (it came back, with the
+    /// hysteresis) and `coredump` (a dump of the previous boot is in
+    /// flash; the `detail` carries the task, the program counter, the
+    /// return address, the exception cause and the image's ELF
+    /// SHA-256).
+    Sys {
+        /// Which kind.
+        what: String,
+        /// Free text.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        detail: Option<String>,
+    },
     /// Configuration changed, or a section fell back to defaults.
     Config {
         /// Which section, when it is about one.
@@ -847,6 +863,31 @@ pub fn event_from_rule(f: &Fired, ts: u64) -> Event {
     )
 }
 
+/// One `sys` event (ADR 0001 component 27).
+pub fn sys_event(ts: u64, what: &str, detail: Option<String>) -> Event {
+    Event::new(
+        ts,
+        EventKind::Sys {
+            what: String::from(what),
+            detail,
+        },
+    )
+}
+
+/// The heap figures `status` carries (ADR 0001 component 27).
+///
+/// All three in bytes: free now, the least free since boot, and the
+/// largest block a single allocation could still get.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct HeapStatus {
+    /// Free heap right now.
+    pub free: u32,
+    /// Least free heap since boot.
+    pub low: u32,
+    /// Largest free block.
+    pub largest: u32,
+}
+
 /// The retained `.../status` payload.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Status {
@@ -863,6 +904,11 @@ pub struct Status {
     pub uptime_s: u32,
     /// Why this boot happened.
     pub boot_reason: String,
+    /// The heap figures, when the platform reported them (ADR 0001
+    /// component 27). Left out of the payload when it did not, so a
+    /// consumer written before this field still sees what it knew.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub heap: Option<HeapStatus>,
 }
 
 impl Status {
@@ -875,7 +921,18 @@ impl Status {
             ip: String::from(ip),
             uptime_s,
             boot_reason: String::from(boot_reason.as_str()),
+            heap: None,
         }
+    }
+
+    /// Builder: attach the heap figures.
+    pub fn with_heap(mut self, free: u32, low: u32, largest: u32) -> Self {
+        self.heap = Some(HeapStatus {
+            free,
+            low,
+            largest,
+        });
+        self
     }
 
     /// Serialise to JSON.

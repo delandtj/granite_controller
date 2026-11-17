@@ -7,7 +7,7 @@ use granite_core::hal::{BootReason, Switch};
 use granite_core::jobs::{JobLog, SubmittedJob};
 use granite_core::msg::{
     Args, Command, CommandKind, Event, EventKind, LWT_PAYLOAD, PROTOCOL_VERSION, Reply, State,
-    Status, Topics, event_from_client, event_from_rule, switch_event,
+    Status, Topics, event_from_client, event_from_rule, switch_event, sys_event,
 };
 use granite_core::node::NodeSettings;
 use granite_core::observed::{NodeObs, Observed, PlaneObs, ProbeObs, Stamped, UnitObs};
@@ -503,6 +503,52 @@ fn status_and_lwt_fixtures() {
     assert_eq!(
         serde_json::from_str::<Value>(LWT_PAYLOAD).unwrap(),
         json!({"v":1,"online":false})
+    );
+}
+
+#[test]
+fn status_carries_the_heap_figures() {
+    // ADR 0001 component 27: additive, so a payload without them is
+    // what it always was (the fixture above), and one with them adds a
+    // `heap` object of three byte counts.
+    let s = Status::online("0.1.0", "192.168.1.5", 4_242, BootReason::PowerOn)
+        .with_heap(138_240, 61_440, 73_728);
+    assert_eq!(
+        serde_json::from_str::<Value>(&s.to_json().unwrap()).unwrap(),
+        json!({"v":1,"online":true,"fw":"0.1.0","ip":"192.168.1.5",
+               "uptime_s":4242,"boot_reason":"power_on",
+               "heap":{"free":138240,"low":61440,"largest":73728}})
+    );
+    // And a consumer's payload without the field still parses.
+    let old = json!({"v":1,"online":true,"fw":"0.1.0","ip":"","uptime_s":1,
+                     "boot_reason":"power_on"});
+    let parsed: Status = serde_json::from_value(old).unwrap();
+    assert_eq!(parsed.heap, None);
+}
+
+#[test]
+fn sys_event_fixtures() {
+    // ADR 0001 component 27: the low-heap pair and the coredump report.
+    roundtrip_event(
+        &sys_event(1_000, "heap_low", Some(String::from("free 30000 bytes"))),
+        json!({"v":1,"ts":1000,"kind":"sys","what":"heap_low",
+               "detail":"free 30000 bytes"}),
+    );
+    roundtrip_event(
+        &sys_event(2_000, "heap_ok", None),
+        json!({"v":1,"ts":2000,"kind":"sys","what":"heap_ok"}),
+    );
+    roundtrip_event(
+        &sys_event(
+            3_000,
+            "coredump",
+            Some(String::from(
+                "task switch, pc 0x42009a1c, ra 0x42009a04, cause 7, image 1a2b3c4d5e6f7a8b",
+            )),
+        ),
+        json!({"v":1,"ts":3000,"kind":"sys","what":"coredump",
+               "detail":"task switch, pc 0x42009a1c, ra 0x42009a04, cause 7, \
+                         image 1a2b3c4d5e6f7a8b"}),
     );
 }
 

@@ -49,6 +49,7 @@ pub mod boot;
 pub mod config;
 pub mod dispatch;
 pub mod hal;
+pub mod heap;
 pub mod jobs;
 pub mod link_kind;
 pub mod modbus_map;

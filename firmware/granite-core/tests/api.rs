@@ -501,6 +501,14 @@ fn routes_match_the_table() {
         Some(Route::Token(String::from("deploy")))
     );
     assert_eq!(api::route_of("/api/v1/log/tail"), Some(Route::LogTail));
+    // The coredump download (ADR 0001 component 27): a known route, and
+    // one no unauthenticated request may have.
+    assert_eq!(api::route_of("/api/v1/coredump"), Some(Route::Coredump));
+    assert_eq!(
+        api::access_of(&Route::Coredump),
+        api::Access::Authed,
+        "the raw dump is admin-only"
+    );
     assert_eq!(
         api::route_of("/api/v1/security/mqtt-credentials"),
         Some(Route::MqttCredentials)

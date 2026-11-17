@@ -254,18 +254,13 @@ pub fn dispatch(cmd: &Command, ctx: &mut DispatchCtx<'_>) -> Dispatched {
                     .with_data(Value::Array(sections))
             }
         }
-        CommandKind::Ota => match (&cmd.args.url, &cmd.args.sha256) {
-            (Some(url), Some(sha256)) if !url.is_empty() && sha256.len() == 64 => {
-                effects.push(SideEffect::Ota {
-                    url: url.clone(),
-                    sha256: sha256.to_ascii_lowercase(),
-                });
+        CommandKind::Ota => match check_ota_args(cmd.args.url.as_deref(), cmd.args.sha256.as_deref())
+        {
+            Ok((url, sha256)) => {
+                effects.push(SideEffect::Ota { url, sha256 });
                 Reply::accepted(&cmd.id)
             }
-            _ => Reply::err(
-                &cmd.id,
-                "args.url and a 64 hex digit args.sha256 are required",
-            ),
+            Err(e) => Reply::err(&cmd.id, e),
         },
         CommandKind::Reboot => {
             effects.push(SideEffect::Reboot);
@@ -290,6 +285,36 @@ pub fn dispatch(cmd: &Command, ctx: &mut DispatchCtx<'_>) -> Dispatched {
     };
 
     done(reply, effects)
+}
+
+/// What an `ota` command's `url` and `sha256` have to be (ADR 0001
+/// component 27, "OTA pull over plain HTTP").
+///
+/// A SHA-256 is required either way: the hash arrives over the
+/// authenticated command channel and is what decides whether the image
+/// is taken, so the transport adds nothing to integrity and `http://`
+/// is accepted with one. `http://` without a hash is refused, and so is
+/// any other scheme.
+///
+/// Returns the URL and the hash in lowercase, ready for the side
+/// effect.
+pub fn check_ota_args(
+    url: Option<&str>,
+    sha256: Option<&str>,
+) -> Result<(String, String), String> {
+    let url = url.unwrap_or("").trim();
+    let sha256 = sha256.unwrap_or("").trim();
+    let hashed = sha256.len() == 64 && sha256.chars().all(|c| c.is_ascii_hexdigit());
+    if url.is_empty() || !hashed {
+        return Err(String::from(
+            "args.url and a 64 hex digit args.sha256 are required",
+        ));
+    }
+    let scheme_ok = url.starts_with("https://") || url.starts_with("http://");
+    if !scheme_ok {
+        return Err(String::from("args.url must be an http:// or https:// URL"));
+    }
+    Ok((String::from(url), sha256.to_ascii_lowercase()))
 }
 
 /// Which switch a `switch_*` command is for (ADR 0006 component 26).

@@ -1102,6 +1102,10 @@ pub enum Route {
     MqttCredentials,
     /// `GET /api/v1/log/tail`.
     LogTail,
+    /// `GET /api/v1/coredump`: the raw `coredump` partition (ADR 0001
+    /// component 27). Served by the firmware, which streams it out of
+    /// flash; the core only owns the route and its access level.
+    Coredump,
     /// Anything else: a static asset by canonical path.
     Asset(String),
 }
@@ -1195,6 +1199,7 @@ pub fn route_of(path: &str) -> Option<Route> {
         ["security", "modbus-allowlist"] => Route::ModbusAllowlist,
         ["security", "mqtt-credentials"] => Route::MqttCredentials,
         ["log", "tail"] => Route::LogTail,
+        ["coredump"] => Route::Coredump,
         _ => return None,
     };
     Some(route)
@@ -1354,6 +1359,13 @@ fn dispatch_route(route: Route, req: &ApiRequest, ctx: &mut ApiCtx<'_>) -> ApiRe
         (Route::ModbusAllowlist, Put | Post) => set_modbus_allowlist(req, ctx),
         (Route::MqttCredentials, Put | Post) => set_mqtt_credentials(req, ctx),
         (Route::LogTail, Get | Head) => log_tail(req, ctx),
+        // The firmware intercepts this route before the table is
+        // reached and streams the partition out of flash (ADR 0001
+        // component 27); a build without flash behind it says so
+        // rather than pretending there is a dump.
+        (Route::Coredump, Get | Head) => {
+            ApiResponse::error(503, "no coredump partition on this build")
+        }
         (Route::Asset(path), Get | Head) => asset(path),
         _ => method_not_allowed(),
     }
@@ -1901,7 +1913,7 @@ fn firmware_upload(req: &ApiRequest, ctx: &mut ApiCtx<'_>) -> ApiResponse {
                 progress: None,
                 detail: Some(err.clone()),
             });
-            return ApiResponse::error(500, err.clone());
+            return ApiResponse::error(ota_error_status(err), err.clone());
         }
         return finish_ota(ctx);
     }
@@ -1909,13 +1921,21 @@ fn firmware_upload(req: &ApiRequest, ctx: &mut ApiCtx<'_>) -> ApiResponse {
         return ApiResponse::error(400, "empty image");
     }
     if let Err(e) = ctx.ota.begin(Some(req.body.len() as u64)) {
-        return ApiResponse::error(500, e);
+        return ApiResponse::error(ota_error_status(&e), e);
     }
     if let Err(e) = ctx.ota.write(&req.body) {
         ctx.ota.abort();
         return ApiResponse::error(500, e);
     }
     finish_ota(ctx)
+}
+
+/// An upload that could not start because another heavy user holds the
+/// controller's memory gate is a 503 and not a 500: nothing is wrong,
+/// trying again later is the right move (ADR 0001 component 27). The
+/// platform says which case it is by starting the message with `busy`.
+fn ota_error_status(message: &str) -> u16 {
+    if message.starts_with("busy") { 503 } else { 500 }
 }
 
 fn finish_ota(ctx: &mut ApiCtx<'_>) -> ApiResponse {
