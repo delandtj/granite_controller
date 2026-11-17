@@ -313,14 +313,25 @@ mosquitto_pub -h 127.0.0.1 -t "$T/cmd" -m '{"v":1,"id":"ota1","action":"ota","ar
  "sha256":"<64 hex digits>"}}'
 ```
 
-The controller downloads the image itself (HTTPS, redirects followed),
-checks the SHA-256 and the image's link-kind marker, writes it to the
-other slot and reboots into it. The server certificate must chain to
-`mqtt.ca_pem`, the only CA the pull uses; with an empty `ca_pem` the
-pull effectively cannot verify any server.
+The controller downloads the image itself (redirects followed), checks
+the SHA-256 and the image's link-kind marker, writes it to the other
+slot and reboots into it. For an `https://` URL the server certificate
+must chain to `mqtt.ca_pem`, the only CA the pull uses; with an empty
+`ca_pem` the pull effectively cannot verify any server.
 
-- Refused at once unless `url` is non-empty and `sha256` is 64
-  characters (the hex is not checked further before the download).
+A `http://` URL works as well and is the better choice on a controller
+whose heap is tight (ADR 0001 component 27): the second TLS session
+costs tens of kilobytes on top of the broker's, and the `sha256` -
+which arrives here, over the authenticated command channel - is what
+decides whether the image is installed. The image signature, when the
+build requires one, still applies.
+
+- Refused at once unless `url` is a non-empty `http://` or `https://`
+  URL and `sha256` is 64 hex digits.
+- One heavy user at a time (ADR 0001 component 27): the pull holds the
+  memory gate for its whole duration, so a second update and any block
+  switch page read are refused as `busy` until it is done. A pull that
+  cannot get the gate within 20 s fails as `busy` itself.
 - Progress events (`kind:"ota"`): `started`, `downloading` (every 10 %
   or 256 KiB), `verified` or `failed`; after the reboot
   `pending_verify`, then `valid`, or `rolled_back` / `failed`.
@@ -625,13 +636,19 @@ default: `docs/switch.md` section 12.
 ### 9.1 `status`
 
 ```json
-{"v":1,"online":true,"fw":"0.1.0","ip":"192.168.64.50","uptime_s":5321,"boot_reason":"software","ota":"valid"}
+{"v":1,"online":true,"fw":"0.1.0","ip":"192.168.64.50","uptime_s":5321,"boot_reason":"software","ota":"valid",
+ "heap":{"free":138240,"low":61440,"largest":73728}}
 ```
 
 - `boot_reason`: `power_on`, `software`, `task_watchdog`,
   `int_watchdog`, `brown_out`, `panic`, `unknown`.
 - `ota`: the running image: `valid`, `pending` (on probation),
   `invalid`, `factory`, `unknown`.
+- `heap` (ADR 0001 component 27): bytes. `free` now, `low` the least
+  free since boot, `largest` the biggest block one allocation can get.
+  The last is what actually fails a request on a fragmented heap. Under
+  32 KB free, or 16 KB in the largest block, the controller publishes a
+  `sys` / `heap_low` event.
 
 ### 9.2 `state`
 
@@ -701,6 +718,7 @@ shown as `null` are present with a null value; fields marked
 | `ota` | `phase`, `progress` (percent or null), `detail` | Section 6.3. |
 | `config` | `section` (null for "every staged section"), `change`, `detail` | `set`, `staged`, `confirmed`, `reverted` (detail `reverted on request` / `not confirmed in time`), `fallback` (a stored section was unreadable at boot and fell back to defaults; detail says why), `imported` (HTTPS import). |
 | `security` | `what`, `detail`, `peer` | HTTPS logins, failed logins, lockouts, password / token / key changes. Not caused by MQTT. |
+| `sys` | `what`; optional `detail` | The controller itself (ADR 0001 component 27): `heap_low` and `heap_ok` on a threshold crossing (32 KB free, 16 KB largest block, hysteresis a quarter of that, sampled every 10 s), and `coredump` once on the first session after a panic or watchdog boot. |
 | `fault` | `fault`, `node`, `id` | Defined in the vocabulary; the current firmware does not emit it. |
 
 `plane` event `what` values: from the controller `plane_found` (detail
@@ -727,6 +745,8 @@ Examples (from the payload tests in `granite-core/tests/msg_json.rs`):
 {"v":1,"ts":2000,"kind":"rule_fired","rule":2,"name":"leak float closed","action":"force_off","target":"all","value":1,"needs_ack":true}
 {"v":1,"ts":1700,"kind":"ota","phase":"downloading","progress":42,"detail":null}
 {"v":1,"ts":1800,"kind":"config","section":"nodes","change":"fallback","detail":"parse error"}
+{"v":1,"ts":1900,"kind":"sys","what":"heap_low","detail":"free heap is low: free 30112 bytes, largest free block 24576 bytes"}
+{"v":1,"ts":2100,"kind":"sys","what":"coredump","detail":"task switch, pc 0x42009a1c, ra 0x42009a04, cause 7, mtval 0x00000000, image 1a2b3c4d5e6f7a8b"}
 ```
 
 ## 10. Recipes

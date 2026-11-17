@@ -136,7 +136,7 @@ enabling them).
 | `device_id` | string | `""` | Empty = `granite-<mac6>`. |
 | `log_level` | `error`, `warn`, `info`, `debug`, `trace` | `warn` | Level published on the `log` topic. |
 | `t_validate_s` | seconds | 600 | OTA probation window. |
-| `coredump_report` | bool | `true` | Reserved for a core-dump summary event; not emitted by the current firmware. |
+| `coredump_report` | bool | `true` | Publish one `sys`/`coredump` event on the first broker session after a panic or watchdog boot: the task, `pc`, `ra`, the cause and the crashed image's ELF hash. With it `false` nothing is published and the dump is still at `GET /api/v1/coredump`. |
 | `timezone` | string | `UTC` | Display only; wire timestamps are UTC. |
 
 ## Validation

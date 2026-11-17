@@ -221,11 +221,18 @@ Numbered after ADR 0001's list.
     - Reachability: 3 consecutive failed polls -> `switch_unreachable`
       event and `state.switch.reachable = false`; first success after ->
       `switch_reachable`.
-    - No polling while a firmware image is being received (pull or
-      upload): the update's TLS session leaves too little heap for a
-      page read (found 2026-11-16, the worker ran out of memory during
-      a pull and the board reset). Commands are still taken. A page
-      read that cannot get memory fails as a transport error.
+    - No page read while a firmware image is being received (pull or
+      upload): the update's TLS session leaves too little heap for one
+      (found 2026-11-16, the worker ran out of memory during a pull and
+      the board reset). Since 2026-11-17 this is not a special case in
+      the worker but the memory gate of ADR 0001 component 27: every
+      request takes `platform::mem::heavy()` from the connect to the
+      end of its parse, an update holds the same token for its whole
+      duration, and the worker simply does not get it. A request that
+      cannot have the token fails as `busy`, which counts neither
+      against the switch's reachability nor as a parse fault, and the
+      poll deadlines are late until the update is over. Commands are
+      still taken; one that needs the switch answers `busy`.
 
 18. **Switch reconcile** (in the worker; logic in `plan.rs`)
     - Triggered by a staged or confirmed change to the `switch` config

@@ -119,6 +119,32 @@ fleet key set, recovery accepted or rejected) goes to the log ring,
 to the MQTT `event` topic when connected, and to the `log` topic at
 or above the configured level.
 
+## After a crash: reading the coredump
+
+A panic or a watchdog reset writes a coredump into the `coredump`
+partition before the board restarts. The image that comes up reports it
+without being asked: on its first broker session it publishes one
+`sys`/`coredump` event with the task that crashed, its program counter
+and return address, the cause, and the first 16 hex digits of the
+SHA-256 of the image that crashed (`sys.coredump_report`, on by
+default). That is usually enough to say what died.
+
+For a backtrace, fetch the dump itself - no USB, no lifting the
+controller out:
+
+```sh
+curl -sk -H "Authorization: Bearer $T" \
+  https://granite-37adc7.local/api/v1/coredump -o coredump.elf
+espcoredump.py info_corefile --core coredump.elf --core-format elf \
+  firmware/granite-fw/target/riscv32imac-esp-espidf/release/granite-fw
+```
+
+The image hash in the event is what tells you which build to point
+`espcoredump.py` at; it is the `key_id` of `GET /api/v1/firmware` of
+that image. The dump stays in flash until the next crash overwrites it,
+so it can be fetched long after the reboot, and `GET /api/v1/coredump`
+answers 404 when there is none.
+
 ## A plane that does not answer
 
 The controller asks every plane for its status once a second. A plane

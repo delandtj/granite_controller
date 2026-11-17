@@ -54,7 +54,7 @@ request bodies are limited to 64 KiB except the firmware upload.
 | POST | `/api/v1/rules/<id>/ack` | yes | Acknowledge a manual rule |
 | POST | `/api/v1/probes/scan` | yes | Request a 1-wire re-scan (accepted; not yet wired to the bus) |
 | GET | `/api/v1/firmware` | yes | `{running, state, pending_verify, validate_left_s, slots[{label,state,version,size}], key_id, rollback_available}` |
-| POST | `/api/v1/firmware/upload` | yes | Raw `.bin` body -> `{ok, slot, bytes, reboot_required}` |
+| POST | `/api/v1/firmware/upload` | yes | Raw `.bin` body -> `{ok, slot, bytes, reboot_required}`; 503 while another update or a switch page read holds the controller's memory |
 | POST | `/api/v1/firmware/rollback` | yes | Mark the running image invalid and reboot into the other slot |
 | POST | `/api/v1/firmware/mark-valid` | yes | End probation early |
 | POST | `/api/v1/reboot` | yes | Planned reboot; node power untouched |
@@ -69,6 +69,7 @@ request bodies are limited to 64 KiB except the firmware upload.
 | PUT | `/api/v1/security/modbus-allowlist` | yes | Same object; staged as part of `sec` |
 | PUT | `/api/v1/security/mqtt-credentials` | yes | Any of `username`, `password`, `client_cert_pem`, `client_key_pem`; an empty string clears; 204 |
 | GET | `/api/v1/log/tail?lines=N` | yes | text/plain, 1..500 lines, default 100 |
+| GET | `/api/v1/coredump` | yes | The raw coredump partition as `application/octet-stream` (`coredump.elf`), streamed from flash; 404 when there is no valid dump |
 | GET | anything else | none | Static asset of the setup page |
 
 An unknown path under `/api` returns 404; a wrong method on a known

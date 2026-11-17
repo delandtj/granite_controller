@@ -1036,3 +1036,86 @@ gap fixes, items 1, 3, 6 and 9 of `firmware/docs/gaps-2026-10.md`
   next tick, so none of the four needs a reboot. A `nodes` section with
   an empty probe list falls back to the ROM ids found by the boot scan;
   a re-scan is still boot-only (item "probe_scan").
+
+### Implementation (2026-11-17): memory budget
+
+Component 27, built after the switch worker hit Rust's out-of-memory
+abort reading a page while an OTA pull was at 40 % (2026-11-16). The
+stopgap of commit 1d52036 (`ota::receiving()`, a `try_reserve` in the
+page loop) is gone; what replaces it:
+
+- **The gate** (`granite-fw/src/platform/mem.rs`): one token, a
+  `Mutex<Option<Holder>>`, taken with a timeout and released by a guard
+  on drop. Holders: an OTA pull for its whole call
+  (`ota::pull`, 20 s wait, TLS handshake included), a firmware upload
+  while its slot is open (`OtaWriter::begin` to `finish`/`abort`, 5 s
+  wait, refused as `busy` after it), and one switch request from the
+  connect to the end of its parse (every `SwitchClient::read_*` /
+  write, the request budget of 15 s). A waiting taker feeds the task
+  watchdog. The switch worker's "not while an image is coming in"
+  special case (ADR 0006 component 17) is gone: it simply does not get
+  the token, and that pass of the worker stops without counting a
+  failure against the switch (new `ClientError::Busy`, which is neither
+  `unreachable` nor a parse fault).
+  - *Beyond the ADR*: the token remembers the holding thread, so a
+    re-entrant take is refused with an error in the log instead of
+    waiting for itself. That is also why `pull` hands its guard to the
+    `OtaWriter` it opens (`OtaWriter::hold_heavy`) rather than letting
+    the writer take a second one, and why `begin` keeps the guard in a
+    local until the slot is really open: the HTTP upload sink is
+    long-lived and is not aborted when `begin` fails.
+- **The switch page buffer**: `client::PageBuf`, 16 KB, allocated once
+  when the worker starts and handed to every request of both switches
+  (they are served in turn). A longer page is `ClientError::TooLarge`;
+  nothing grows and nothing is converted. The client no longer returns
+  pages: the `read_*` methods fill the buffer, parse out of it and
+  return the parsed value, so no page outlives its parse. A page that
+  is not valid UTF-8 (no real page is) gets a lossy copy whose exact
+  size is reserved with `try_reserve_exact`, so rubbish is an error of
+  that request and not an abort.
+- **`status.heap`**: `{free, low, largest}` in bytes, from
+  `mem::figures()`, published by the MQTT worker. Additive and left out
+  entirely when a platform reports nothing (`granite-core`
+  `msg::HeapStatus`, fixture test in `tests/msg_json.rs`).
+- **The low-heap event**: `granite_core::heap::HeapWatch` is the pure
+  edge detector (thresholds 32 KB free and 16 KB largest block,
+  hysteresis a quarter of the threshold, one edge per crossing, six
+  tests); `main.rs` samples it on the heartbeat (10 s) and publishes
+  `sys` / `heap_low` and `sys` / `heap_ok`. New `EventKind::Sys { what,
+  detail }`, one kind with a `what` the way `Plane` and `Switch` are.
+- **The coredump report**
+  (`granite-fw/src/platform/coredump.rs`): at boot, when the reset
+  reason is a panic or a watchdog and `sys.coredump_report` is true,
+  `esp_core_dump_image_check` + `esp_core_dump_get_summary` (the RISC-V
+  summary struct) are read and the line is parked; the MQTT worker's
+  connect hook publishes one `sys` / `coredump` event with the task,
+  `pc`, `ra`, `mcause`, `mtval` and the image's ELF SHA-256, next to
+  the rollback report that already worked that way. `mtval` is beyond
+  the ADR's list and costs nothing. Both API calls were already in the
+  bindings (the sdkconfig has `CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH` and
+  the ELF format), but the summary's SHA field is
+  `CONFIG_APP_RETRIEVE_LEN_ELF_SHA` long and that default is 9 hex
+  digits, so the sdkconfig now sets it to 16 - the number the ADR asks
+  for. Reported once per crash: a dump is only read when *this* boot
+  follows the crash, so rebooting the board does not repeat the report.
+  `GET /api/v1/coredump` (admin session or API token, like every other
+  authenticated route) streams the partition out of flash in 2 KB
+  chunks; the route lives in the core table (`api::Route::Coredump`)
+  and the firmware intercepts it before the table, the way the firmware
+  upload is intercepted.
+- **OTA over plain HTTP**: `dispatch::check_ota_args` is the validation
+  (a 64 hex digit `sha256` either way, `http://` or `https://` and
+  nothing else, test in `tests/dispatch.rs`), and `ota::pull` skips the
+  CA for an `http://` URL and says in the log that the command's hash
+  is what authenticates the image.
+- **Web server limits**: 2 open sockets on HTTPS, 1 on the plain
+  server, `lru_purge_enable` on both (esp-idf-svc 0.53 exposes it and
+  already defaulted it to true; it is explicit now).
+- **No radio**: `CONFIG_IEEE802154_ENABLED=n` is in
+  `sdkconfig.defaults`. Wi-Fi could **not** be turned off:
+  `CONFIG_ESP_WIFI_ENABLED` is a hidden symbol in ESP-IDF v5.5 (no
+  prompt, `default y if SOC_WIFI_SUPPORTED`), so kconfgen ignores an
+  assignment to it, and dropping the `esp_wifi` component would need a
+  build-system escape hatch esp-idf-sys does not expose. The radio is
+  never initialised, so it allocates nothing; what is left is flash.
+  The `wifi-dev` bench feature still needs the component.

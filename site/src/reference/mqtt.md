@@ -10,7 +10,7 @@ model.
 
 | Topic | Direction | Retained | Payload |
 |---|---|---|---|
-| `<base>/status` | out | yes | `{"v":1,"online":true,"fw":"0.1.0","ip":"..","uptime_s":N,"boot_reason":"..","ota":"<slot state>"}`; the last will writes `{"v":1,"online":false}` |
+| `<base>/status` | out | yes | `{"v":1,"online":true,"fw":"0.1.0","ip":"..","uptime_s":N,"boot_reason":"..","ota":"<slot state>","heap":{"free":N,"low":N,"largest":N}}`; the last will writes `{"v":1,"online":false}` |
 | `<base>/state` | out | yes | Full snapshot, on change (coalesced 200 ms) and every `t_state_s` |
 | `<base>/event` | out | no | One event object per message |
 | `<base>/log` | out | no | One JSON line per log record at or above `sys.log_level` |
@@ -19,6 +19,13 @@ model.
 
 `boot_reason` is one of `power_on`, `software`, `task_watchdog`,
 `int_watchdog`, `brown_out`, `panic`, `unknown`.
+
+`heap` is in bytes: `free` now, `low` the least free since boot, and
+`largest` the biggest block a single allocation could still get. The
+last one is the one that fails a request on a fragmented heap. A
+healthy controller with one block switch and no planes sits around
+135 KB free; under 32 KB free, or under 16 KB in the largest block, it
+publishes a `sys`/`heap_low` event.
 
 ## State payload
 
@@ -107,7 +114,7 @@ targets outside those forms, are rejected.
 | `probe_scan` | `all` | | Accepted; the re-scan is not yet wired to the bus |
 | `config_get` | `all` | `section` (optional) | Reply carries the JSON in `data` |
 | `config_set` | `all` | `section` (optional), `config` | Same staging rules as HTTP; `result` is `staged` or `saved` |
-| `ota` | `all` | `url`, `sha256` (64 hex) | Pull update over HTTPS |
+| `ota` | `all` | `url`, `sha256` (64 hex) | Pull an update over `https://` or, saving a TLS session, `http://`; the `sha256` is required either way |
 | `reboot` | `all` | | |
 | `factory_reset` | `all` | `confirm` = the device id | |
 
@@ -184,7 +191,19 @@ Common fields `v`, `ts` (milliseconds since boot), `kind`.
 | `ota` | `phase` (`started`, `downloading`, `verified`, `failed`, `pending_verify`, `valid`, `rolled_back`), `progress`, `detail` |
 | `security` | `what` (`login`, `login_failed`, `login_lockout`, `password_set`, `password_changed`, `token_created`, `token_deleted`, `fleet_key_set`, `device_cert_set`, `mqtt_credentials_set`, `recover_accepted`, `recover_failed`), `detail`, `peer` |
 | `config` | `section`, `change` (`set`, `fallback`, `imported`, `staged`, `confirmed`, `reverted`, `factory_reset`), `detail` |
+| `sys` | `what` (`heap_low`, `heap_ok`, `coredump`), `detail`; see below |
 | `fault` | `fault`, `node`, `id`; defined, but not emitted by the current firmware |
+
+The `sys` event is about the controller itself:
+
+| `what` | Meaning |
+|---|---|
+| `heap_low` | Free heap went under 32 KB, or the largest free block under 16 KB. Once per crossing; the `detail` says which figure tripped and gives both. Report only: nothing is turned off. |
+| `heap_ok` | Both figures are back over their threshold plus a quarter of it. |
+| `coredump` | This boot follows a panic or a watchdog and a coredump is in flash. The `detail` has the task that crashed, its program counter and return address, the RISC-V `mcause` and `mtval`, and the first 16 hex digits of the SHA-256 of the image that crashed. Published once, on the first broker session after the crash; needs `sys.coredump_report` (the default). The dump stays in flash and is downloadable with `GET /api/v1/coredump`. |
+
+A `heap_low` while an update is running is expected: the image is using
+the margin on purpose. One that stays after the update is not.
 
 The `plane` event carries what the plane client learns and what the
 planes report. `what` is one of:

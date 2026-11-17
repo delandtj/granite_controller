@@ -31,6 +31,25 @@ one message each.
  "args":{"url":"https://fw.site.example/granite-fw-0.2.0.bin","sha256":"<64 hex>"}}
 ```
 
+A `http://` URL works too, and on a controller whose heap is tight it
+is the better choice: the second TLS session costs tens of kilobytes on
+top of the broker's. Nothing is lost by it. The `sha256` is required
+either way, it arrives over the authenticated command channel, and it
+is what decides whether the image is installed; the image signature,
+when the build requires one, still applies. A `http://` URL without a
+`sha256` is refused, and so is any other scheme.
+
+```json
+{"v":1,"id":"ota-2","action":"ota","target":"all",
+ "args":{"url":"http://fw.site.example/granite-fw-0.2.0.bin","sha256":"<64 hex>"}}
+```
+
+One update at a time, and nothing else heavy beside it: a pull or an
+upload holds the controller's memory gate for its whole duration. A
+second update, and a block switch page read, are refused as `busy`
+until it is done (the switch worker picks its polling up again by
+itself).
+
 Progress arrives as `ota` events: `started`, then `downloading` with a
 percentage every 10 % of a known image size (every 256 KiB when the
 server sends no Content-Length), `verified` or `failed` when the image
