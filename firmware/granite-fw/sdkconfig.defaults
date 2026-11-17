@@ -115,6 +115,18 @@ CONFIG_MBEDTLS_HARDWARE_SHA=y
 # is all the certificate writer needs.
 CONFIG_MBEDTLS_PEM_WRITE_C=y
 
+# TLS record buffers on demand (ADR 0001 component 27). Without this
+# every TLS session keeps a 16 KB receive and a 4 KB send buffer for as
+# long as it lives; the broker session is idle most of the time, and it
+# is always there. With it mbedTLS allocates a record buffer when a
+# record is read or written and frees it afterwards. The price is an
+# allocation per record, and a session that cannot get its buffer fails
+# that read or write instead of failing at connect.
+# FREE_CONFIG_DATA stays off: the HTTPS server reuses its certificate and
+# key for every session, so they must outlive a handshake.
+CONFIG_MBEDTLS_DYNAMIC_BUFFER=y
+CONFIG_MBEDTLS_DYNAMIC_FREE_CONFIG_DATA=n
+
 # --- runtime -------------------------------------------------------------
 CONFIG_ESP_MAIN_TASK_STACK_SIZE=12288
 # The default event loop task (`sys_evt`) runs esp_netif's and esp_eth's
