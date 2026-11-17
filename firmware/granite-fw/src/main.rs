@@ -345,24 +345,25 @@ fn main() -> anyhow::Result<()> {
     }
 
     // The HTTPS setup page and /api/v1, on the device certificate the
-    // platform layer generated or loaded. Kept alive for the life of the
-    // firmware: dropping the handle stops the servers.
-    let _http = match http::start(platform::api_impl::http_ctx(&platform)) {
+    // platform layer generated or loaded. The http module keeps the
+    // handle: dropping it stops the servers, which is what a firmware
+    // pull does for as long as it downloads.
+    let http_ctx = platform::api_impl::http_ctx(&platform);
+    match http::start(http_ctx.clone()) {
         Ok(handle) => {
             log::info!(
                 "https on {} with cert sha256 {}",
                 platform::api_impl::HTTPS_PORT,
                 platform.identity.cert_sha256
             );
-            Some(handle)
+            http::keep(handle, http_ctx);
         }
         Err(e) => {
             // A board that cannot serve the page is still reachable over
             // the console and MQTT, and must not reboot-loop.
             log::error!("http server did not start: {e:#}");
-            None
         }
-    };
+    }
 
     // INTEGRATION: the MQTT client (ADR component 7). The worker thread is
     // started whatever the configuration says: it idles on the config when
@@ -530,6 +531,11 @@ fn main() -> anyhow::Result<()> {
     // heartbeat the firmware already has, and one `sys` event per
     // crossing. Report only.
     let mut heap_watch = granite_core::heap::HeapWatch::new();
+    // The low-water mark at the last look. When it moved, the heap was
+    // that low at some point since, however it reads right now: a dip
+    // of a second between two looks counts (soak of 2026-11-17: 29 KB
+    // during a pull and no event).
+    let mut low_seen = u32::MAX;
     loop {
         if ticks == STACK_CENSUS_TICK {
             for line in platform::tasks::lines() {
@@ -547,7 +553,9 @@ fn main() -> anyhow::Result<()> {
             if net.ip.is_empty() { "-" } else { &net.ip },
             platform::ota::ota_state()
         );
-        if let Some(edge) = heap_watch.sample(free, largest) {
+        let least = if low < low_seen { low } else { free };
+        low_seen = low_seen.min(low);
+        if let Some(edge) = heap_watch.sample(least, largest) {
             match edge {
                 granite_core::heap::HeapEdge::Low { .. } => {
                     log::error!("heap is low: {}", edge.detail())
@@ -1067,7 +1075,15 @@ fn apply_effect(
             let platform = Arc::clone(platform);
             let spawned = platform::spawn(c"ota-pull", 10240, move || {
                 let ca = platform.config().mqtt.ca_pem;
-                match platform::ota::pull(&url, &sha256, &ca) {
+                // No web sessions while the image comes in (ADR 0001
+                // component 27). A pull that works reboots; one that
+                // fails starts the servers again below.
+                let paused = http::pause();
+                let pulled = platform::ota::pull(&url, &sha256, &ca);
+                if pulled.is_err() && paused {
+                    http::resume();
+                }
+                match pulled {
                     Ok(written) => {
                         platform.publish(Event::new(
                             platform::now_ms(),

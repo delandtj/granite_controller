@@ -452,7 +452,9 @@ firmware/
       the largest free block goes under a threshold (free 32 KB,
       largest block 16 KB), once per crossing, with hysteresis of a
       quarter of the threshold; `heap_ok` when it is back. Report
-      only.
+      only. The figure that is judged is the least the heap has been
+      since the last look (from the low-water mark when it moved), so
+      a dip between two looks counts.
     - Coredump report: after a boot whose reset reason is a panic or a
       watchdog, with a coredump in flash and `sys.coredump_report`
       true, the controller publishes one event (kind `sys`, what
@@ -485,7 +487,14 @@ firmware/
       before.
     - Web server: 2 connections on the HTTPS server and 1 on the
       plain one, least recently used closed first. Each TLS session
-      costs tens of KB.
+      costs tens of KB, from its handshake on, and the handshake comes
+      before any handler could refuse it. So both servers are stopped
+      for the length of a firmware pull and started again if the pull
+      fails (one that works reboots). They stay up when a request is
+      being served at that moment, because that request may be the
+      one waiting for the pull. Found in the soak of 2026-11-17: a
+      pull with two web sessions and the broker reading at once left
+      29 KB.
     - No radio: the board is Ethernet only, so Wi-Fi and 802.15.4 are
       off in the build configuration.
     - Not done here, kept for later with data: dynamic TLS buffers

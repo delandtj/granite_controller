@@ -38,6 +38,7 @@
 
 use std::ffi::CString;
 use std::sync::mpsc::{Receiver, Sender, channel};
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, Instant};
 
@@ -372,6 +373,90 @@ pub struct HttpHandle {
     pub http: EspHttpServer<'static>,
 }
 
+// The handle is moved between threads only to be dropped (a pull stops
+// the servers from its own thread). ESP-IDF's `httpd_stop` and
+// `httpd_ssl_stop` may be called from any task but a handler's.
+struct Kept {
+    /// Held only to be dropped.
+    _servers: HttpHandle,
+}
+unsafe impl Send for Kept {}
+
+/// The running servers and what it takes to start them again.
+static RUNNING: Mutex<(Option<Kept>, Option<HttpCtx>)> = Mutex::new((None, None));
+
+/// Requests being served right now, on either server.
+static IN_FLIGHT: AtomicU32 = AtomicU32::new(0);
+
+/// Counts one request in [`IN_FLIGHT`] for as long as it lives.
+struct InFlight;
+
+impl InFlight {
+    fn new() -> Self {
+        IN_FLIGHT.fetch_add(1, Ordering::Relaxed);
+        InFlight
+    }
+}
+
+impl Drop for InFlight {
+    fn drop(&mut self) {
+        IN_FLIGHT.fetch_sub(1, Ordering::Relaxed);
+    }
+}
+
+/// Hand the running servers over, so that [`pause`] can stop them.
+pub fn keep(handle: HttpHandle, ctx: HttpCtx) {
+    if let Ok(mut running) = RUNNING.lock() {
+        *running = (Some(Kept { _servers: handle }), Some(ctx));
+    }
+}
+
+/// Stop both servers for the duration of a firmware pull (ADR 0001
+/// component 27, "Web server"). A TLS session costs tens of KB from its
+/// handshake on, and the handshake happens before any handler could
+/// refuse it, so the only way to keep web sessions out of a pull's
+/// memory is to not listen. It also gives back the two server stacks.
+///
+/// Returns false, and leaves the servers alone, when a request is being
+/// served: stopping waits for the handlers, and the handler may be the
+/// one that is waiting for this very pull.
+pub fn pause() -> bool {
+    if IN_FLIGHT.load(Ordering::Relaxed) > 0 {
+        log::warn!("http: a request is being served, the servers stay up during the pull");
+        return false;
+    }
+    let kept = match RUNNING.lock() {
+        Ok(mut running) => running.0.take(),
+        Err(_) => None,
+    };
+    match kept {
+        Some(kept) => {
+            drop(kept);
+            log::warn!("http: servers stopped for the firmware pull");
+            true
+        }
+        None => false,
+    }
+}
+
+/// Start the servers again after a pull that did not end in a reboot.
+pub fn resume() {
+    let ctx = match RUNNING.lock() {
+        Ok(running) => running.1.clone(),
+        Err(_) => None,
+    };
+    let Some(ctx) = ctx else {
+        return;
+    };
+    match start(ctx.clone()) {
+        Ok(handle) => {
+            keep(handle, ctx);
+            log::warn!("http: servers started again");
+        }
+        Err(e) => log::error!("http: the servers did not start again: {e}"),
+    }
+}
+
 // ---------------------------------------------------------------------
 // Start
 // ---------------------------------------------------------------------
@@ -379,8 +464,9 @@ pub struct HttpHandle {
 /// Start both servers.
 ///
 /// The certificate and the key are leaked on purpose: ESP-IDF's HTTPS
-/// server keeps pointers to them for the lifetime of the server, and the
-/// server lives as long as the firmware does.
+/// server keeps pointers to them for the lifetime of the server. A
+/// restart after a failed pull ([`resume`]) leaks one more copy, about
+/// 1.5 KB; a pull that works ends in a reboot.
 pub fn start(ctx: HttpCtx) -> anyhow::Result<HttpHandle> {
     let cert = leak_pem(&ctx.cert_pem).ok_or_else(|| {
         anyhow::anyhow!("the device certificate PEM contains a NUL byte")
@@ -486,6 +572,7 @@ fn register_plain(server: &mut EspHttpServer<'static>, ctx: &HttpCtx) -> Result<
 }
 
 fn redirect(ctx: &HttpCtx, request: Request<&mut EspHttpConnection>) -> Result<(), EspIOError> {
+    let _in_flight = InFlight::new();
     let host = request
         .header("Host")
         .map(|h| h.split(':').next().unwrap_or(h).to_string())
@@ -516,6 +603,7 @@ fn now_ms() -> u64 {
 }
 
 fn serve(ctx: &HttpCtx, mut request: Request<&mut EspHttpConnection>) -> Result<(), EspIOError> {
+    let _in_flight = InFlight::new();
     // An accepted request is proof the board is reachable, which is half
     // of the static-config dead-man (ADR component 6: no gateway answer
     // *and* no accepted connection for t_deadman). Counted before
