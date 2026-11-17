@@ -7,6 +7,10 @@
 `config_revert` commands, so the commit-confirm cycle closes over any
 transport and not only over HTTPS; the MQTT command list also names the
 block switch's verbs of ADR 0006)
+**Updated**: 2026-11-17 (memory budget: heap figures in `status`, a
+low-heap event, the coredump summary over MQTT, one gate for the heavy
+memory users, a fixed switch page buffer, plain-HTTP pull with a
+SHA-256, a smaller web server, no radio in the build. New component 27)
 
 ---
 
@@ -432,6 +436,61 @@ firmware/
       FET_ON = 1, verify, alarm on failure. Fault counting and
       auto-disable after `n_retry` faults in `t_window`. Not in the
       first release; the trait boundary (`PowerChannels`) is.
+
+27. **Memory budget** (`granite-fw/src/platform/mem.rs`, and the
+    users named below)
+    - The ESP32-C6 has no external RAM. Measured on a bench unit
+      (2026-11-17, one switch, no planes): 344 KB free at the start of
+      the app, 187 KB once every task has its stack, 135 KB in steady
+      state with the broker on TLS, 60 KB at the worst point of an OTA
+      pull. A Rust allocation that fails aborts the firmware, so the
+      rule is: the heavy users take turns, the long-lived buffers are
+      allocated once, and the margin is reported.
+    - Report: `status` gains `heap`: `{free, low, largest}` in bytes
+      (free now, least free since boot, largest free block). Additive.
+    - Low-heap event: kind `sys`, what `heap_low`, when free heap or
+      the largest free block goes under a threshold (free 32 KB,
+      largest block 16 KB), once per crossing, with hysteresis of a
+      quarter of the threshold; `heap_ok` when it is back. Report
+      only.
+    - Coredump report: after a boot whose reset reason is a panic or a
+      watchdog, with a coredump in flash and `sys.coredump_report`
+      true, the controller publishes one event (kind `sys`, what
+      `coredump`) on its first broker session: the task that crashed,
+      its program counter and return address, the exception cause, and
+      the first 16 hex digits of the SHA-256 of the image that
+      crashed. The dump stays in flash. An admin session can download
+      the raw partition over HTTPS (`GET /api/v1/coredump`), so a
+      submerged controller needs no USB to be diagnosed.
+    - The gate: one token, `mem::heavy()`, held by whoever is about to
+      use tens of KB for a while. Holders: an OTA pull for its whole
+      duration (TLS handshake included), a firmware upload while its
+      slot is open, one switch request from connect to the end of its
+      parse. A taker waits with a timeout (a switch request: its
+      request budget; an OTA: 20 s) and fails with `busy` after it. It
+      replaces the special case of ADR 0006 component 17 (no polling
+      while an image comes in): the worker simply does not get the
+      token.
+    - Switch page buffer: the worker owns one buffer of 16 KB,
+      allocated when the worker starts and reused for every page of
+      both switches (they are served in turn). The largest page of
+      the verified profile is 10.3 KB. A longer page is refused as
+      too large; nothing grows.
+    - OTA pull over plain HTTP: a `http://` URL is accepted when the
+      command carries a SHA-256. The hash arrives over the
+      authenticated command channel and decides whether the image is
+      taken, so the transport adds nothing to integrity, and the
+      image signature (when the build requires one) still applies. It
+      saves the second TLS session. `https://` keeps working as
+      before.
+    - Web server: 2 connections on the HTTPS server and 1 on the
+      plain one, least recently used closed first. Each TLS session
+      costs tens of KB.
+    - No radio: the board is Ethernet only, so Wi-Fi and 802.15.4 are
+      off in the build configuration.
+    - Not done here, kept for later with data: dynamic TLS buffers
+      (`CONFIG_MBEDTLS_DYNAMIC_BUFFER`), and trimming the task stacks
+      from a census taken after days of running.
 
 ### Tasks and data flow
 
