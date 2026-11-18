@@ -44,3 +44,6 @@ mech/step/
 
 # KiCad Fabrication Toolkit plugin settings
 fabrication-toolkit-options.json
+
+# Tomachie analysis runs (external report, modified/markup zips)
+Tomachie/
