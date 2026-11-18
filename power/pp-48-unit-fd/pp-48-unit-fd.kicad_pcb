@@ -16128,7 +16128,7 @@
 				)
 			)
 		)
-		(property "Value" "10k"
+		(property "Value" "11k"
 			(at 0 1.17 90)
 			(layer "F.Fab")
 			(uuid "7e66baad-f43a-4d90-a263-1b5aa3992cd7")
@@ -16173,7 +16173,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25744"
+		(property "LCSC" "C25749"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -16686,7 +16686,7 @@
 				)
 			)
 		)
-		(property "Description" "UVLO: on 38.3 V, off 35.3 V (21 uA hysteresis)"
+		(property "Description" "UVLO: off 35.0 V (2.5 V x 154k / 11k), on 38.0 V (+ 21 uA x 143k); was 10k: off 38.3 V, on 41.3 V"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -17768,7 +17768,7 @@
 				)
 			)
 		)
-		(property "Value" "10k"
+		(property "Value" "11k"
 			(at 0 1.17 90)
 			(layer "F.Fab")
 			(uuid "7e2acf26-5b83-4e06-8977-6c824a7f51b4")
@@ -17813,7 +17813,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25744"
+		(property "LCSC" "C25749"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -23429,7 +23429,7 @@
 				)
 			)
 		)
-		(property "Description" "UVLO: on 38.3 V, off 35.3 V (21 uA hysteresis)"
+		(property "Description" "UVLO: off 35.0 V (2.5 V x 154k / 11k), on 38.0 V (+ 21 uA x 143k); was 10k: off 38.3 V, on 41.3 V"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -32027,7 +32027,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Value" "10k"
+		(property "Value" "11k"
 			(at 0 -1.17 270)
 			(layer "B.Fab")
 			(uuid "f19f2170-e98e-4ad8-917d-9a7831541693")
@@ -32076,7 +32076,7 @@
 				(justify mirror)
 			)
 		)
-		(property "LCSC" "C25744"
+		(property "LCSC" "C25749"
 			(at 0 0 270)
 			(layer "B.Fab")
 			(hide yes)
@@ -40700,7 +40700,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Description" "UVLO: on 38.3 V, off 35.3 V (21 uA hysteresis)"
+		(property "Description" "UVLO: off 35.0 V (2.5 V x 154k / 11k), on 38.0 V (+ 21 uA x 143k); was 10k: off 38.3 V, on 41.3 V"
 			(at 0 0 270)
 			(layer "B.Fab")
 			(hide yes)

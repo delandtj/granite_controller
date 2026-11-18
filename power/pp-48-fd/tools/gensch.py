@@ -18,7 +18,7 @@ core: sheets Input (XT30, TVS, caps, VIN_SNS), Supplies, MCU (no TILE_*
 pins; SPI1 to the MCP2518FD), Mux, Link (CAN FD), Chain (OUT header, Pk = mux channel k). Root nets
 UNITk_SDA / SCL = mux channel k-1 = chain Pk-1.
 unit: sheets Unit (two slots, TCA6424A; refs as drawn, slot B +50), Input
-(XT60, unit hot-swap, INA238 0x44; refs 2xx), Chain (IN / OUT headers, J301 /
+(XT60, unit hot-swap, INA237 0x44; refs 2xx), Chain (IN / OUT headers, J301 /
 J302; link IN / OUT J303 / J304 and the termination). Root nets SEG_SDA / SEG_SCL (this unit's segment = chain IN P0),
 U_OFF / U_PGD (expander P13 / P27 to the unit hot-swap).
 

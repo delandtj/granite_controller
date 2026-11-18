@@ -100,7 +100,7 @@ instead of a column edge.
    `unit_reset`. Timing, the boot case and the debounce are the
    firmware's: firmware/docs/adr/0002-plane-core-firmware.md
    decision 7a. With no core (or the expander in reset) U_OFF is
-   low and the unit retries forever: hardware default ON (R14). The
+   low and the unit retries forever: hardware default ON (R214). The
    0.5 % duty bounds the average power only; the single 10 ms pulse of
    each retry is what the FET has to survive, and the fitted FETs do
    not (decision 3a; this sentence claimed they did until 2026-11-11).

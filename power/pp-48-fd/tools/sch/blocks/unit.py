@@ -179,8 +179,8 @@ def slot(b, s):
     sym("U1", "Power_Management:LM5069MM-2", "LM5069MM-2", "Package_SO:MSOP-10_3x3mm_P0.5mm",
         {"1": "SENSE", "2": "VBUS", "3": "UVLO", "4": "OVLO", "5": "GND", "6": "TIMER", "7": "PWR", "8": "PGD", "9": "OUT", "10": "GATE"},
         (96, 56), fields={"LCSC": "C111822"}, desc="hot-swap, 55 mV current limit, power limit, auto-retry 0.5 %")
-    R(3, "143k", R0805, {"1": "VBUS", "2": "UVLO"}, (68, 69), desc="UVLO: on 38.3 V, off 35.3 V (21 uA hysteresis)")
-    R(4, "10k", R0402, {"1": "UVLO", "2": "GND"}, (68, 77))
+    R(3, "143k", R0805, {"1": "VBUS", "2": "UVLO"}, (68, 69), desc="UVLO: off 35.0 V (2.5 V x 154k / 11k), on 38.0 V (+ 21 uA x 143k); was 10k: off 38.3 V, on 41.3 V")
+    R(4, "11k", R0402, {"1": "UVLO", "2": "GND"}, (68, 77))
     R(5, "124k", R0805, {"1": "VBUS", "2": "OVLO"}, (76, 55),
       desc="OVLO: off 64.6 V (60.9-68.5 V over 2.4-2.6 V and 1 %), back on ~2.6 V lower (12-30 uA x 124k); module trips at 67.5 V")
     R(6, "4.99k", R0402, {"1": "OVLO", "2": "GND"}, (76, 63))

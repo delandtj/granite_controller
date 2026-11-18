@@ -9614,7 +9614,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "UVLO: on 38.3 V, off 35.3 V (21 uA hysteresis)"
+		(property "Description" "UVLO: off 35.0 V (2.5 V x 154k / 11k), on 38.0 V (+ 21 uA x 143k); was 10k: off 38.3 V, on 41.3 V"
 			(at 86.36 87.63 0)
 			(hide yes)
 			(show_name no)
@@ -9674,7 +9674,7 @@
 				)
 			)
 		)
-		(property "Value" "10k"
+		(property "Value" "11k"
 			(at 90.146 99.06 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -9720,7 +9720,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" "C25744"
+		(property "LCSC" "C25749"
 			(at 86.36 97.79 0)
 			(hide yes)
 			(show_name no)
@@ -15427,7 +15427,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "UVLO: on 38.3 V, off 35.3 V (21 uA hysteresis)"
+		(property "Description" "UVLO: off 35.0 V (2.5 V x 154k / 11k), on 38.0 V (+ 21 uA x 143k); was 10k: off 38.3 V, on 41.3 V"
 			(at 467.36 87.63 0)
 			(hide yes)
 			(show_name no)
@@ -15487,7 +15487,7 @@
 				)
 			)
 		)
-		(property "Value" "10k"
+		(property "Value" "11k"
 			(at 471.146 99.06 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -15533,7 +15533,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" "C25744"
+		(property "LCSC" "C25749"
 			(at 467.36 97.79 0)
 			(hide yes)
 			(show_name no)

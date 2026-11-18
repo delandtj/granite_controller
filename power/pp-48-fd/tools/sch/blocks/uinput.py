@@ -28,7 +28,7 @@ References are the drawing's + 200.
   unit input is in range and holds the unit off by driving U_OFF high over
   the unit's TCA6424A (P13): Q204 pulls UVLO low. unit_reset releases it.
   R214 holds Q204 off while the expander is in reset or unpowered: with no
-  core the unit retries forever (unit ON, R14). U_PGD (P27): open-drain PGD
+  core the unit retries forever (unit ON, R214). U_PGD (P27): open-drain PGD
   with a 3V3 pull-up.
 - U208 INA237 on the shunt, on the unit segment at 0x44 (A1 = VS, A0 =
   GND): IN+ VIN, IN- USENSE, VBUS pin = unit output. ALERT is not wired
@@ -102,8 +102,8 @@ def block():
         {"1": "USENSE", "2": "VIN", "3": "UVLO", "4": "OVLO", "5": "GND", "6": "TIMER", "7": "PWR", "8": "U_PGD", "9": "VBUS", "10": "GATE"},
         (96, 56), fields={"LCSC": "C111822"},
         desc="unit hot-swap, 55 mV current limit, power limit, auto-retry 0.5 % (-2); the latch is the firmware's, over U_OFF")
-    R(233, "143k", R0805, {"1": "VIN", "2": "UVLO"}, (68, 69), desc="UVLO: on 38.3 V, off 35.3 V (21 uA hysteresis)")
-    R(234, "10k", R0402, {"1": "UVLO", "2": "GND"}, (68, 77))
+    R(233, "143k", R0805, {"1": "VIN", "2": "UVLO"}, (68, 69), desc="UVLO: off 35.0 V (2.5 V x 154k / 11k), on 38.0 V (+ 21 uA x 143k); was 10k: off 38.3 V, on 41.3 V")
+    R(234, "11k", R0402, {"1": "UVLO", "2": "GND"}, (68, 77))
     R(235, "124k", R0805, {"1": "VIN", "2": "OVLO"}, (76, 55), desc="OVLO: off 64.6 V, as the slots")
     R(236, "4.99k", R0402, {"1": "OVLO", "2": "GND"}, (76, 63))
     R(237, "20.0k", R0402, {"1": "PWR", "2": "GND"}, (116, 66),

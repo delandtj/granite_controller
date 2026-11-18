@@ -1,6 +1,57 @@
-# Handoff - granite-plane (updated 2026-11-12)
+# Handoff - granite-plane (updated 2026-11-18)
 
 Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
+
+## 2026-11-18: fault-case pass on unit-fd done, UVLO divider changed
+
+Desk pass of plan step 1 (below), against the generator blocks and the
+datasheets (LM5069, INA237, SN74LVC1G74, TCA6424A, MCP65R46). No copper
+change found. Scratch arithmetic was not kept in the repo.
+
+- **UVLO was 3 V higher than documented.** The LM5069's 21 uA sink is on
+  below the threshold, so 2.5 V x (R1 + R2) / R2 is the turn-OFF point
+  and the hysteresis adds to turn-on. With 143k / 10k: off 38.25 V, on
+  41.25 V nominal (on 38.5-44.2 V, off 36.8-39.9 V over tolerance, 1 %
+  resistors assumed). The comments said on 38.3 / off 35.3. Harmless at
+  48 V; a bus trimmed to 42 V might not start every board.
+  - Source now: R4 / R54 / R234 10k -> 11k (C25749, 0402WGF1102TCE; not
+    checked whether JLC lists it as basic): off 35.0 V (33.7-36.5), on
+    38.0 V (35.4-40.9), next to the module's own 38.5 on / 35.2 off.
+    Values, LCSC and descriptions only: unit.py, uinput.py, draw.py
+    BASIC, regenerated sheets, board fields. ERC 0, parity 0, DRC 15 as
+    before. For the second order; FD batch 1 keeps 10k.
+  - **Batch 1 bench: expect about 41.3 V rising, 38.3 V falling.**
+  - power/pp-48 (rev D, not ordered) has the same divider and the same
+    wrong comment; not touched.
+- OVLO (124k / 4.99k): off 64.6 V (60.9-68.6), back on 62.0 V. Left as
+  is: a 1 % divider does not fit between a 56 V bus and the TVS (66.7 V
+  min). D201 is ahead of the hot-swap, so the supply's own OVP has to
+  sit below about 65 V.
+- OV_KILL latch: fails safe with 3V3 present. /PRE low wins over /CLR, a
+  glitch on OVK is a nuisance trip, trip to gate-off about 40-90 us
+  (FET Qg assumed 60-120 nC). An open J3 contact defeats it
+  (pm-interface.md).
+- **To watch at first power-up: false PGOOD-loss trip.** The module's
+  comparators run from VAUX, about 2.3 ms to the MCP65R46's 1.8 V
+  minimum; the slot's PGD is high after 0.3-1 ms. If the module's
+  open-drain PGOOD floats (reads good through R14) before VAUX is up and
+  then drops, U10 has armed and the slot latches off at every start.
+  The output state below 1.8 V is not specified. If seen: firmware holds
+  DISARM during slot start, or clears with LCLR after the first PGOOD.
+- Module output shorted to its input: nothing on the unit overstressed,
+  nothing back onto the bus, node peak estimated 21-25 V before the slot
+  opens. Detection is the module's OV_KILL only. Bench test 6 covers it.
+- Loss of 3V3 with the bus live: no back-powering path (all 48 V-side
+  signals into 3V3 logic are open drain). Slots and unit stay on, the
+  OV latch and the PGOOD-loss trip are unpowered: ADR 0005 decision 5.
+  One shorted 3V3 takes supervision off all four units of that core.
+- Surge: INA237 inputs are 85 V abs max, the TVS clamps at 96.8 V. Add
+  a VIN probe at D201 to bench test 6.
+- Not verified: resistor tolerance, TVS and 2N7002 numbers (repo text),
+  ISO1044 with side 1 unpowered, the node converter's input abs max.
+- Doc slips fixed: gensch.py said INA238 (fitted: INA237), U_OFF
+  pull-down is R214 not R14 (uinput.py, ADR 0005). ADR 0005 still says
+  INA238 in its older decisions (substitution noted at its top).
 
 ## 2026-11-12: unit-fd desk review done, plan up to the second order
 
@@ -58,7 +109,7 @@ is the one with a deadline.
      consignment, about two weeks) or slot-only (Q1 / Q51 new, Q202 /
      Q203 stay BSC040N10NS5: 48 parts, in stock; needs the uinput.py
      value put back for that order).
-   - [ ] Fault-case pass on the unit as routed (UVLO / OVLO with
+   - [x] Fault-case pass on the unit as routed (UVLO / OVLO with
      tolerances, OV_KILL latch, module output shorted to input, loss
      of 3V3 with the bus live). The one desk check that could still
      change copper, so before the order.
