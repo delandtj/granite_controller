@@ -1,6 +1,30 @@
-# Handoff - granite-plane (updated 2026-11-18)
+# Handoff - granite-plane (updated 2026-11-19)
 
 Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
+
+## 2026-11-19: open item - MQTT measurements are not stored
+
+Not addressed yet, noted only.
+
+- The controller publishes to the bench broker (mosquitto, systemd user
+  unit granite-mqtt, temporary) under granite/bench/<device>/. MQTT is
+  transport, not history: the broker runs with `persistence false` and
+  keeps only the last retained `status` and `state` in memory. `event`,
+  `log`, `ack` and `switch/counters` are not retained; with no
+  subscriber they are gone. Today nothing records the measurements.
+- Candidate: vector.dev. It has an `mqtt` source (beta, best-effort
+  delivery, no acks; options host / port / topic / user / password /
+  tls with client cert) and an `mqtt` sink. Wildcard topics and QoS are
+  not documented, `granite/#` is likely fine but untested. Vector only
+  moves data, so it needs a storing sink behind it: mqtt -> remap
+  (parse_json, keep topic) -> optional log_to_metric (vin_v, temps,
+  counters) -> file / InfluxDB / Prometheus remote-write
+  (VictoriaMetrics) / ClickHouse / Loki.
+- Alternatives: Telegraf mqtt_consumer -> InfluxDB, or the Home
+  Assistant recorder (firmware/docs/home-assistant.md). For the bench
+  alone, `mosquitto_sub -v` into a timestamped file would do.
+- Decide where the broker and the recorder live past the bench; the
+  current broker is meant to be removed when bench work is done.
 
 ## 2026-11-18: fault-case pass on unit-fd done, UVLO divider changed
 
