@@ -42,9 +42,9 @@ cables:
     notes: 13.2 A continuous at 250 W, about 8.7 A at 165 W
   W_FP:
     gauge: 28 AWG
-    length: 0.3
-    colors: [WH, GN, YE, BK]
-    notes: PLED is polarised
+    length: 0.6
+    colors: [RD, GY, GY, GY]
+    notes: 4 ways of halogen-free ribbon, stripe = pin 1, round the plane to the header; PLED is polarised
 
 connections:
   - - UNIT_19V: [2, 1]

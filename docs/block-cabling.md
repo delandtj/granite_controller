@@ -55,7 +55,7 @@ Cabled:
 | W8 | 1 | distribution block | pp-48-sw12 J1 | 2 x 0.75 mm2 | XT30U-F | 0.6-0.9 A |
 | W9 | 1 | pp-48-sw12 J2 | switch 12 V inlet | 2 x 0.75 mm2 | Micro-Fit 3.0 2p, barrel plug | up to 2.5 A |
 | W_19V | 8 | unit J1 / J51 | node 19 V input | 2 x 14 AWG | screw terminal, node end open | 8.7 A at 165 W, 13.2 A max |
-| W_FP | 8 | unit J2 / J52 | motherboard front-panel header | 4 x 28 AWG | JST GH 4p, 2.54 mm housing | signal |
+| W_FP | 8 | unit J2 / J52 | motherboard front-panel header | 4 x 28 AWG ribbon, 0.6 m | JST GH 4p, 2.54 mm housing | signal |
 | W_LINK | 1 | controller-fd J15 | core J2 | 6-way IDC ribbon, 1 m at most | 2x3 IDC socket both ends | about 0.2 A at 12 V |
 | P1-P8 | 8 | node RJ45 | switch port 1-8 | Cat6 patch | RJ45 | - |
 | UP | 1 | switch port 9 | top-of-rack SFP+ | SFP+ DAC, or modules and fibre | SFP+ | - |
@@ -63,8 +63,11 @@ Cabled:
 
 Not a cable: two jumper caps on JP301 of unit 4 terminate the link.
 
+What to buy is in `docs/block-bom.md`. The front-panel cable is 0.6 m
+because the motherboard's header is on the other side of the plane.
+
 Lengths in the harness files are placeholders (0.3-0.4 m inside the
-block, 3 m to the outside). They follow from where the plane sits
+block otherwise, 3 m to the outside). They follow from where the plane sits
 relative to its 8 frames, which is not laid out yet.
 
 ## Grounds
