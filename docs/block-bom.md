@@ -31,19 +31,22 @@ one hand-made cable has proven length and pinout.
 | Use | Maker | Part number | Need | Order | Note |
 |-----|-------|-------------|-----:|------:|------|
 | Flat cable | 3M | HF365/06SF | 5.1 m | 1 x 30 m | 6-way, 1.27 mm, 7/36, polyolefin. Not 3365, which is PVC |
-| Link sockets | Wurth | 61200623021 | 2 | 10 | 2x3, key, strain relief |
-| W_FP plane housing | JST | GHR-04V-S | 8 | 15 | |
-| W_FP plane contact | JST | SSHL-002T-P0.2 | 32 | 100 | AWG 30-26, insulation 0.76-1.0 mm |
-| W_FP board housing | Harwin | M20-1060100 | 32 | 50 | 1-way, as the header pinout is unknown |
-| W_FP board contact | Harwin | M20-1180042 | 32 | 100 | gold, AWG 30-22 |
-| Termination | Wurth | 60900213421 | 2 | 10 | JP301 of unit 4: 1-2 and 3-4 |
-| Option: probes | JST | PHR-3 | 4 | 6 | controller J4-J7 |
-| Option: I2C | JST | PHR-4 | 1 | 3 | controller J9 |
-| Option: dry contacts | JST | PHR-5 | 1 | 3 | controller J10 |
-| Option: PH contact | JST | SPH-002T-P0.5S | 21 | 50 | insulation from 0.8 or 0.9 mm (sources differ) |
+| Link sockets | Wurth | 61200623021 | 2 | 12 | 2x3, key, strain relief |
+| W_FP plane housing | JST | GHR-04V-S | 8 | 18 | |
+| W_FP plane contact | JST | SSHL-002T-P0.2 | 32 | 120 | AWG 30-26, insulation 0.76-1.0 mm |
+| W_FP board housing | Harwin | M20-1060100 | 32 | 60 | 1-way, as the header pinout is unknown |
+| W_FP board contact | Harwin | M20-1180042 | 32 | 120 | gold, AWG 30-22 |
+| Termination | Wurth | 60900213421 | 2 | 12 | JP301 of unit 4: 1-2 and 3-4 |
+| Option: probes | JST | PHR-3 | 4 | 8 | controller J4-J7 |
+| Option: I2C | JST | PHR-4 | 1 | 4 | controller J9 |
+| Option: dry contacts | JST | PHR-5 | 1 | 4 | controller J10 |
+| Option: PH contact | JST | SPH-002T-P0.5S | 21 | 60 | insulation from 0.8 or 0.9 mm (sources differ) |
 | Option: sensor | Analog Devices | DS18B20+ | 4 | 5 | TO-92, for home-made probes |
 
-The extra contacts are for practice crimps.
+Order quantities for cables and connectors, here and outside Mouser,
+include 20 % on top of the spares (user, 2026-11-22), rounded up. The
+30 m roll already covers that: 5.1 m needed, 6.2 m with 20 %. The extra
+contacts are for practice crimps.
 
 ## Tools
 
@@ -62,9 +65,9 @@ An IDC plier cannot crimp GH, and a crimp plier cannot press IDC.
 | Module screws | M2 x 5 pan head, A2 | 32 | 50 | head at most 4.4 mm, 0.15 Nm max |
 | Module washers | M2 spring washer DIN 127, A2 | 32 | 50 | |
 | Board mounting | M3 screws, washers | 24 | 30 | hold: length and standoff follow from the bar |
-| Node network | Cat6 patch, non-PVC jacket and cores | 8 | 10 | hold: length; LSZH alone does not prove the cores |
-| Controller network | Cat5e or better, solid, non-PVC, straight | 1 | 1 | 3 m; solid, as stranded wicks oil through the wall |
-| Uplink | SFP+ DAC 10G, generic coding | 1 | 1 | hold: route and jacket material |
+| Node network | Cat6 patch, non-PVC jacket and cores | 8 | 12 | hold: length; LSZH alone does not prove the cores |
+| Controller network | Cat5e or better, solid, non-PVC, straight | 1 | 2 | 3 m; solid, as stranded wicks oil through the wall |
+| Uplink | SFP+ DAC 10G, generic coding | 1 | 2 | hold: route and jacket material |
 | Option: potted probe | Adafruit 642 (PTFE cable) | 4 | 5 | not Adafruit 381 or SparkFun 11050 (PVC) |
 | Splices | PVDF or polyolefin shrink, 1.6 and 2.4 mm | - | 1 m each | no adhesive liner (TE RW-175, HellermannTyton TCN24) |
 | Dressing | PA66 ties 100 x 2.5 mm | - | 100 | HellermannTyton T18R |
