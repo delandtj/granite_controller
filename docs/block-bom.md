@@ -34,7 +34,7 @@ one hand-made cable has proven length and pinout.
 | Link sockets | Wurth | 61200623021 | 2 | 12 | 2x3, key, strain relief |
 | W_FP plane housing | JST | GHR-04V-S | 8 | 18 | |
 | W_FP plane contact | JST | SSHL-002T-P0.2 | 32 | 120 | AWG 30-26, insulation 0.76-1.0 mm |
-| W_FP board housing | Harwin | M20-1060100 | 32 | 60 | 1-way, as the header pinout is unknown |
+| W_FP board housing | Harwin | M20-1060100 | 32 | 60 | 1-way Dupont style, as the header pinout is unknown |
 | W_FP board contact | Harwin | M20-1180042 | 32 | 120 | gold, AWG 30-22 |
 | Termination | Wurth | 60900213421 | 2 | 12 | JP301 of unit 4: 1-2 and 3-4 |
 | Option: probes | JST | PHR-3 | 4 | 8 | controller J4-J7 |
@@ -111,8 +111,10 @@ The motherboard's header is on the other side of the plane (user,
   not found.
 - **Soak test** the ribbon, sockets and housings in the fluid.
   Halogen-free is not the same as oil-proof.
-- **Motherboard header**: pitch (2.54 mm assumed), pinout and LED
-  drive are not confirmed.
+- **Motherboard header**: standard single 2.54 mm Dupont pins by eye
+  (user, 2026-11-22), so the M20 parts fit. Pinout and LED drive are
+  not confirmed: meter them before plugging in. PWR_SW and RST_SW go on
+  the switch pins that are not ground, the header's grounds stay open.
 - **Power on hand**: 4 x XT60H-F and 1 x XT30U-F (female, cable side),
   no PVC or silicone wire in the fluid.
 - **Core and switch-supply leads**: drawn as 0.75 mm2 behind the 63 A
