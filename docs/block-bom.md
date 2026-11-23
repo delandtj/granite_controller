@@ -144,5 +144,3 @@ The motherboard's header is on the other side of the plane (user,
   barrel plug is not measured.
 - **19 V barrel plug**: decided (user, 2026-11-23). Measure the jack,
   then find a plug rated for 8.7 A, or derate: none found above 5 A.
-- **Installer manual**: site/ still lists rev D's PH 5p link and 2p
-  12 V cables. FD uses neither.
