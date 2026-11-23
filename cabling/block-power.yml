@@ -1,7 +1,7 @@
 # 48 V power wiring of one block: 8 nodes, one plane (core + 4 units),
 # one block switch. Sources: docs/adr/0005 (unit XT60, core XT30, no
-# VBUS in the chain, protection options), docs/adr/0008 (switch supply,
-# proposed). Lengths are placeholders until the block is laid out.
+# VBUS in the chain, protection options), docs/adr/0008 (switch supply;
+# the board is replaced by a bought CUI DQD50-48-S12-T, 2026-11). Lengths are placeholders until the block is laid out.
 metadata:
   title: Block 48 V power
   notes: >-
@@ -40,14 +40,15 @@ connectors:
     pinlabels: [GND, VIN]
     notes: keyed, no fuse on the board
   SW12_IN:
-    <<: *xt30
-    subtype: cable plug to pp-48-sw12 J1 (proposed board)
-    notes: 0.56-0.88 A at 48 V
+    type: CUI DQD50-48-S12-T input
+    subtype: screw terminals 1 +Vin, 2 -Vin
+    pinlabels: [+Vin, -Vin]
+    notes: 24-12 AWG, 0.4 Nm max; 3 Ctrl open = on; 0.56-0.88 A at 48 V
   SW12_OUT:
-    type: Micro-Fit 3.0 2 pin
-    subtype: plug to pp-48-sw12 J2 (proposed board)
+    type: CUI DQD50-48-S12-T output
+    subtype: screw terminals 6 +Vout, 5 -Vout
     pinlabels: [+12V, 0V]
-    notes: floating output; pin order not fixed yet
+    notes: isolated output, left floating
   SWITCH:
     type: DC barrel plug
     subtype: to the Sodola SL902 12 V inlet
@@ -114,7 +115,7 @@ connections:
     - CORE: [2, 1]
   - - DIST: [1, 2]
     - W8: [1, 2]
-    - SW12_IN: [2, 1]
+    - SW12_IN: [1, 2]
   - - SW12_OUT: [1, 2]
     - W9: [1, 2]
     - SWITCH: [1, 2]

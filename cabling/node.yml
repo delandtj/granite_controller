@@ -18,10 +18,10 @@ connectors:
     pinlabels: [GND, +19V]
     notes: 12-24 AWG, 15 A
   NODE_DC:
-    type: Node 19 V input
-    subtype: barrel plug, or leads soldered to the DC jack pins
+    type: DC barrel plug
+    subtype: into the AXB35's DC-045D jack, polarity to meter
     pinlabels: [+19V, GND]
-    notes: jack DC-045D on the AXB35; how the cable ends is open
+    notes: size not measured; no plug rated for 8.7 A found yet
   UNIT_FP:
     type: JST GH GHR-04V-S
     subtype: plug to unit J2 (slot A) / J52 (slot B)

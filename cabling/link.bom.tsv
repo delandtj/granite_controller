@@ -1,4 +1,4 @@
 Id	Description	Qty	Unit	Designators
-1	Cable, 6 x 28 AWG	0.3	m	W_LINK
+1	Cable, 6 x 28 AWG	0.35	m	W_LINK
 2	Connector, IDC socket 2x3, 2.54 mm, to controller-fd J15 (keyed box header), 6 pins	1		CTRL
 3	Connector, IDC socket 2x3, 2.54 mm, to core J2 LINK IN (bare plug, not keyed), 6 pins	1		CORE

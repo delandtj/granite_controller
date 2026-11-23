@@ -357,8 +357,8 @@ housing, SSHL-002T-P0.2 contacts.
 | SO3 (S3) | GND, output end |
 | SO4 (S4) | VOUT 19 V (to J1 pin 2) |
 
-M2 x 5 A2 screws with split lock washers; torque 0.25 Nm, to be
-confirmed on a sample. The pattern is polarised: a module turned 180
+M2 x 5 A2 screws with split lock washers; torque 0.15 Nm at
+most (the standoff's limit for M2, docs/pm-interface.md). The pattern is polarised: a module turned 180
 degrees takes no screw.
 
 ### Unit I2C segment

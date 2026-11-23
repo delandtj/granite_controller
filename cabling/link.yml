@@ -4,8 +4,9 @@
 metadata:
   title: Controller link
   notes: >-
-    A ready-made 6-way IDC ribbon (AVR-ISP type), female both ends, pin
-    n to pin n, 1 m at most. The controller end is keyed; the core end
+    A 6-way halogen-free IDC ribbon (3M HF365/06SF), female both ends,
+    pin n to pin n, 0.30-0.35 m (controller on the carrier, core in the
+    infra frame, pod layout 2026-11), 1 m at most. The controller end is keyed; the core end
     is a bare plug and is not, and a reversed cable puts 12 V on CANH /
     CANL (survived by both transceivers, the link stays down). The
     controller terminates its end of the bus. The other end is two
@@ -27,7 +28,7 @@ connectors:
 cables:
   W_LINK:
     gauge: 28 AWG
-    length: 0.3
+    length: 0.35
     wirecount: 6
     color_code: IEC
     notes: flat ribbon, 1.27 mm pitch; about 2 W on AUX_12V

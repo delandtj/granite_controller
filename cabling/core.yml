@@ -1,0 +1,53 @@
+# The core's two ribbons to unit 1. The pod layout (2026-11) moves the
+# core off the row into the infra frame, so the 2x7 chain and the 2x3
+# link no longer plug edge to edge between core and unit 1. Unit to unit
+# stays board to board. Sources: docs/adr/0005 decision 4 (chain joint),
+# docs/adr/0006 decision 3 (link joint, pin n to pin n).
+metadata:
+  title: Core to unit 1
+  notes: >-
+    Both ribbons are pin n to pin n, stripe on pin 1 at both ends. The
+    core's J301 and J3 are sockets, so the cable has a male IDC plug at
+    the core and a female IDC socket at unit 1. The two male plugs sit
+    side by side (7.4 mm between their end pins): try the fit before
+    making a set. Length 0.10-0.15 m, from the pod layout, to measure.
+
+connectors:
+  CORE_CHAIN:
+    type: IDC male plug 2x7, 2.54 mm
+    subtype: into core J301 (right-angle socket A2541HWR-2x7P)
+    pincount: 14
+  UNIT_CHAIN:
+    type: IDC socket 2x7, 2.54 mm
+    subtype: onto unit 1 J301 (right-angle plug A2541WR-2x7P)
+    pincount: 14
+  CORE_LINK:
+    type: IDC male plug 2x3, 2.54 mm
+    subtype: into core J3 LINK OUT (socket)
+    pinlabels: [CANH, CANL, LINK_GND, LINK_GND, AUX_12V, AUX_12V]
+  UNIT_LINK:
+    type: IDC socket 2x3, 2.54 mm
+    subtype: onto unit 1 link plug (J303)
+    pinlabels: [CANH, CANL, LINK_GND, LINK_GND, AUX_12V, AUX_12V]
+
+cables:
+  W_CHAIN:
+    gauge: 28 AWG
+    length: 0.15
+    wirecount: 14
+    color_code: IEC
+    notes: halogen-free flat ribbon, 1.27 mm pitch (3M HF365/14SF)
+  W_CORELINK:
+    gauge: 28 AWG
+    length: 0.15
+    wirecount: 6
+    color_code: IEC
+    notes: halogen-free flat ribbon, 1.27 mm pitch (3M HF365/06SF)
+
+connections:
+  - - CORE_CHAIN: [1-14]
+    - W_CHAIN: [1-14]
+    - UNIT_CHAIN: [1-14]
+  - - CORE_LINK: [1-6]
+    - W_CORELINK: [1-6]
+    - UNIT_LINK: [1-6]

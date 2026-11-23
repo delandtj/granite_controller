@@ -30,8 +30,10 @@ one hand-made cable has proven length and pinout.
 
 | Use | Maker | Part number | Need | Order | Note |
 |-----|-------|-------------|-----:|------:|------|
-| Flat cable | 3M | HF365/06SF | 5.1 m | 1 x 30 m | 6-way, 1.27 mm, 7/36, polyolefin. Not 3365, which is PVC |
-| Link sockets | Wurth | 61200623021 | 2 | 12 | 2x3, key, strain relief |
+| Flat cable | 3M | HF365/06SF | 5.4 m | 1 x 30 m | 6-way, 1.27 mm, 7/36, polyolefin. Not 3365, which is PVC |
+| Flat cable, 14-way | 3M | HF365/14SF | 0.15 m | 1 roll | W_CHAIN. Smallest roll seen is 100 ft; roll sizes not confirmed |
+| Link sockets | Wurth | 61200623021 | 3 | 12 | 2x3, key, strain relief (W_LINK both ends, W_CORELINK unit end) |
+| Chain socket | Wurth | 61201423021 | 1 | 5 | 2x7, key, strain relief, PBT; part number from listings, not the datasheet |
 | W_FP plane housing | JST | GHR-04V-S | 8 | 18 | |
 | W_FP plane contact | JST | SSHL-002T-P0.2 | 32 | 120 | AWG 30-26, insulation 0.76-1.0 mm |
 | W_FP board housing | Harwin | M20-1060100 | 32 | 60 | 1-way Dupont style, as the header pinout is unknown |
@@ -45,8 +47,16 @@ one hand-made cable has proven length and pinout.
 
 Order quantities for cables and connectors, here and outside Mouser,
 include 20 % on top of the spares (user, 2026-11-22), rounded up. The
-30 m roll already covers that: 5.1 m needed, 6.2 m with 20 %. The extra
-contacts are for practice crimps.
+30 m roll already covers that: 5.4 m needed, 6.5 m with 20 %. The extra
+contacts and sockets are for practice.
+
+Not in the CSV yet, no part found:
+
+| Use | Need | Order | Why it is not listed |
+|-----|-----:|------:|----------------------|
+| Male IDC plug 2x7 for 1.27 mm cable, W_CHAIN core end | 1 | 4 | no plug confirmed that takes 1.27 mm cable and fits the core's right-angle socket. Look at Wurth WR-BHD male cable plugs |
+| Male IDC plug 2x3, same family, W_CORELINK core end | 1 | 4 | as above. The two plugs sit 7.4 mm apart: try the fit |
+| 19 V barrel plug for the AXB35's DC-045D jack, W_19V node end | 8 | 10 | jack size not measured (DC-045D is not one standard size). The best solder plugs found (Switchcraft 760 / 761, 5.5 x 2.5 mm) are rated 5 A, under the node's 8.7 A |
 
 ## Tools
 
@@ -71,6 +81,13 @@ An IDC plier cannot crimp GH, and a crimp plier cannot press IDC.
 | Option: potted probe | Adafruit 642 (PTFE cable) | 4 | 5 | not Adafruit 381 or SparkFun 11050 (PVC) |
 | Splices | PVDF or polyolefin shrink, 1.6 and 2.4 mm | - | 1 m each | no adhesive liner (TE RW-175, HellermannTyton TCN24) |
 | Dressing | PA66 ties 100 x 2.5 mm | - | 100 | HellermannTyton T18R |
+
+## Core ribbons: core to unit 1
+
+The pod layout puts the core in the infra frame, so its chain (2x7) and
+link (2x3) reach unit 1 over ribbons, about 0.15 m, pin n to pin n.
+Male IDC plug at the core (J301, J3 are sockets), socket at unit 1.
+Pressing as for W_LINK below. Drawing: `cabling/core.yml`.
 
 ## W_FP: round the plane to the motherboard
 
@@ -116,10 +133,16 @@ The motherboard's header is on the other side of the plane (user,
   not confirmed: meter them before plugging in. PWR_SW and RST_SW go on
   the switch pins that are not ground, the header's grounds stay open.
 - **Power on hand**: 4 x XT60H-F and 1 x XT30U-F (female, cable side),
-  no PVC or silicone wire in the fluid.
+  no PVC wire in the fluid. Silicone is accepted in PAO (user,
+  2026-11-23).
 - **Core and switch-supply leads**: drawn as 0.75 mm2 behind the 63 A
-  block breaker, with no fuse on the core. Give them their own small
-  DC breaker outside the fluid.
-- **Switch 12 V lead**: not listed, its board does not exist yet.
+  block breaker, with no fuse on the core. A short on one of them can
+  overheat the wire without tripping 63 A. Give them their own small
+  DC breaker outside the fluid, or wire sized for the block breaker.
+- **Switch supply**: a bought CUI DQD50-48-S12-T with screw terminals
+  (24-12 AWG, 0.4 Nm max), so no XT30 on its input. The switch-end
+  barrel plug is not measured.
+- **19 V barrel plug**: decided (user, 2026-11-23). Measure the jack,
+  then find a plug rated for 8.7 A, or derate: none found above 5 A.
 - **Installer manual**: site/ still lists rev D's PH 5p link and 2p
   12 V cables. FD uses neither.

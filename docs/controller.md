@@ -35,8 +35,8 @@ later. Choose materials for the harsher case now.
 1. No aluminium electrolytic or aluminium-polymer capacitors with
    rubber end seals. Use MLCC, or molded tantalum-polymer where bulk
    capacitance needs it.
-2. No silicone (potting, LED lenses, thermal pads, cable jackets)
-   unless soak-tested in the target fluid. Epoxy-potted modules are
+2. Silicone (potting, LED lenses, thermal pads, cable jackets) is
+   accepted in PAO (2026-11-23); other fluids: soak-test first. Epoxy-potted modules are
    preferred.
 3. No PVC cable jackets. Connector housings in PA, PBT or LCP.
 4. No conformal coating, no adhesive labels. Silkscreen is cosmetic only;

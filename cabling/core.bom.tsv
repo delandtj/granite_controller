@@ -1,0 +1,7 @@
+Id	Description	Qty	Unit	Designators
+1	Cable, 14 x 28 AWG	0.15	m	W_CHAIN
+2	Cable, 6 x 28 AWG	0.15	m	W_CORELINK
+3	Connector, IDC male plug 2x3, 2.54 mm, into core J3 LINK OUT (socket), 6 pins	1		CORE_LINK
+4	Connector, IDC male plug 2x7, 2.54 mm, into core J301 (right-angle socket A2541HWR-2x7P), 14 pins	1		CORE_CHAIN
+5	Connector, IDC socket 2x3, 2.54 mm, onto unit 1 link plug (J303), 6 pins	1		UNIT_LINK
+6	Connector, IDC socket 2x7, 2.54 mm, onto unit 1 J301 (right-angle plug A2541WR-2x7P), 14 pins	1		UNIT_CHAIN

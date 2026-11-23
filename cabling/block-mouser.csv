@@ -1,6 +1,8 @@
 Manufacturer Part Number,Quantity,Customer Reference
 HF365/06SF,1,W_LINK and W_FP ribbon
-61200623021,12,W_LINK IDC socket
+61200623021,12,W_LINK and W_CORELINK IDC socket
+HF365/14SF,1,W_CHAIN ribbon
+61201423021,5,W_CHAIN IDC socket
 GHR-04V-S,18,W_FP plane end housing
 SSHL-002T-P0.2,120,W_FP plane end contact
 M20-1060100,60,W_FP board end housing

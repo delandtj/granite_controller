@@ -1,11 +1,11 @@
 Id	Description	Qty	Unit	Designators
 1	Connector, 48 V supply bus, outside the fluid, 2 pins	1		PSU
-2	Connector, DC barrel plug, to the Sodola SL902 12 V inlet, 2 pins	1		SWITCH
-3	Connector, DC breaker 63 A, 80 V DC or more, DIN rail, 2 pins	1		Q1
-4	Connector, Distribution block, 2 pole, 6 taps, in the fluid, 2 pins	1		DIST
-5	Connector, Micro-Fit 3.0 2 pin, plug to pp-48-sw12 J2 (proposed board), 2 pins	1		SW12_OUT
-6	Connector, XT30U-F, cable plug to core J1 (XT30PW-M), 2 pins	1		CORE
-7	Connector, XT30U-F, cable plug to pp-48-sw12 J1 (proposed board), 2 pins	1		SW12_IN
+2	Connector, CUI DQD50-48-S12-T input, screw terminals 1 +Vin, 2 -Vin, 2 pins	1		SW12_IN
+3	Connector, CUI DQD50-48-S12-T output, screw terminals 6 +Vout, 5 -Vout, 2 pins	1		SW12_OUT
+4	Connector, DC barrel plug, to the Sodola SL902 12 V inlet, 2 pins	1		SWITCH
+5	Connector, DC breaker 63 A, 80 V DC or more, DIN rail, 2 pins	1		Q1
+6	Connector, Distribution block, 2 pole, 6 taps, in the fluid, 2 pins	1		DIST
+7	Connector, XT30U-F, cable plug to core J1 (XT30PW-M), 2 pins	1		CORE
 8	Connector, XT60H-F, cable plug to unit J201 (XT60PW-M), 2 pins	4		U1, U2, U3, U4
 9	Wire, 0.75 mm², BK	1.1	m	W7, W8, W9
 10	Wire, 0.75 mm², RD	1.1	m	W7, W8, W9

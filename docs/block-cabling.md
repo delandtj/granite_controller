@@ -21,6 +21,7 @@ uvx wireviz -f st *.yml
 | `cabling/block-power.yml` | 48 V from the supply to the units, the core and the switch supply |
 | `cabling/node.yml` | the 19 V and front-panel cables from a unit slot to its node |
 | `cabling/link.yml` | the controller's ribbon to the core (CAN FD and its 12 V) |
+| `cabling/core.yml` | the core's two ribbons to unit 1 (2x7 chain, 2x3 link) |
 | `cabling/network.yml` | node patch cables, the switch uplink, the controller's port |
 
 The level above, the container's three-phase feed and the 48 V bus per
@@ -30,15 +31,19 @@ pod, is in `docs/container-power.md`.
 
 Board to board, no cable (docs/adr/0005, 0006):
 
-- core to unit 1, and unit to unit: the 2x7 chain and the 2x3 link,
-  plugged edge to edge at 4 mm, all boards screwed to one bar;
+- unit to unit: the 2x7 chain and the 2x3 link, plugged edge to edge
+  at 4 mm, all boards screwed to one bar;
 - port module to unit: four M2 screws carry the power, a 2x3 1.27 mm
   header the signals.
 
 Cabled:
 
-- 48 V: one XT60 lead per unit, one XT30 lead for the core, one XT30
-  lead for the switch supply. No 48 V passes between boards.
+- Core to unit 1: the pod layout (2026-11) puts the core in the infra
+  frame, off the row, so its chain and link reach unit 1 over two short
+  ribbons, male IDC plug at the core, socket at the unit.
+- 48 V: one XT60 lead per unit, one XT30 lead for the core, one lead
+  into the switch supply's screw terminals. No 48 V passes between
+  boards.
 - 19 V and front panel: two cables per node.
 - Link: one ribbon from the controller to the core. It is also the
   controller's only supply (12 V from the core, isolated from the bus).
@@ -52,11 +57,13 @@ Cabled:
 | W1-W2 | 1 | supply bus, via a 63 A DC breaker outside the fluid | distribution block in the fluid | 2 x 16 mm2 | lugs | about 44 A |
 | W3-W6 | 4 | distribution block | unit J201 | 2 x 4 mm2 | XT60H-F | 14 A, limit 18.3 A |
 | W7 | 1 | distribution block | core J1 | 2 x 0.75 mm2 | XT30U-F | under 1 A |
-| W8 | 1 | distribution block | pp-48-sw12 J1 | 2 x 0.75 mm2 | XT30U-F | 0.6-0.9 A |
-| W9 | 1 | pp-48-sw12 J2 | switch 12 V inlet | 2 x 0.75 mm2 | Micro-Fit 3.0 2p, barrel plug | up to 2.5 A |
-| W_19V | 8 | unit J1 / J51 | node 19 V input | 2 x 14 AWG | screw terminal, node end open | 8.7 A at 165 W, 13.2 A max |
+| W8 | 1 | distribution block | CUI DQD50-48-S12-T, 1 +Vin, 2 -Vin | 2 x 0.75 mm2 | screw terminal, 0.4 Nm max | 0.6-0.9 A |
+| W9 | 1 | DQD50, 6 +Vout, 5 -Vout | switch 12 V inlet | 2 x 0.75 mm2 | screw terminal, barrel plug | up to 2.5 A |
+| W_19V | 8 | unit J1 / J51 | node DC-045D jack | 2 x 14 AWG | screw terminal, barrel plug | 8.7 A at 165 W, 13.2 A max |
 | W_FP | 8 | unit J2 / J52 | motherboard front-panel header | 4 x 28 AWG ribbon, 0.6 m | JST GH 4p, 2.54 mm housing | signal |
-| W_LINK | 1 | controller-fd J15 | core J2 | 6-way IDC ribbon, 1 m at most | 2x3 IDC socket both ends | about 0.2 A at 12 V |
+| W_LINK | 1 | controller-fd J15 | core J2 | 6-way ribbon, 0.35 m | 2x3 IDC socket both ends | about 0.2 A at 12 V |
+| W_CHAIN | 1 | core J301 | unit 1 J301 | 14-way ribbon, 0.15 m | 2x7 male IDC plug, 2x7 IDC socket | signal |
+| W_CORELINK | 1 | core J3 | unit 1 link plug | 6-way ribbon, 0.15 m | 2x3 male IDC plug, 2x3 IDC socket | about 0.2 A at 12 V |
 | P1-P8 | 8 | node RJ45 | switch port 1-8 | Cat6 patch | RJ45 | - |
 | UP | 1 | switch port 9 | top-of-rack SFP+ | SFP+ DAC, or modules and fibre | SFP+ | - |
 | PC | 1 | controller-fd J1 | management switch | Cat5e patch, straight | RJ45 | - |
@@ -66,9 +73,9 @@ Not a cable: two jumper caps on JP301 of unit 4 terminate the link.
 What to buy is in `docs/block-bom.md`. The front-panel cable is 0.6 m
 because the motherboard's header is on the other side of the plane.
 
-Lengths in the harness files are placeholders (0.3-0.4 m inside the
-block otherwise, 3 m to the outside). They follow from where the plane sits
-relative to its 8 frames, which is not laid out yet.
+Ribbon lengths follow the pod layout (pitch 41.6 mm, 216 mm frame, core
+in the infra frame). The power leads are still placeholders (0.3-0.4 m
+inside the block, 3 m to the outside): measure them on the first block.
 
 ## Grounds
 
@@ -101,9 +108,12 @@ through the 19 V cable.
 
 ## Open
 
-- **How 19 V ends at the node.** The AXB35 has a DC-045D jack. A
-  barrel plug carrying 9-13 A, or leads soldered to the jack pins:
-  not decided. The plug size is not measured.
+- **19 V at the node: barrel plug** (user, 2026-11-23) into the AXB35's
+  DC-045D jack. Measure the jack's pin before ordering, and check the
+  plug's rating against 8.7 A (13.2 A at 250 W); see docs/block-bom.md.
+- **Core ribbon plugs.** The male IDC plugs go into the core's
+  right-angle sockets side by side, 7.4 mm between their end pins: try
+  the fit first. Check the current per chain pin against 28 AWG.
 - **Motherboard front-panel pinout** and how it drives the power LED:
   not confirmed, so the node end of W_FP is not fixed.
 - **Protection outside the fluid.** One breaker per block is the
@@ -113,20 +123,22 @@ through the 19 V cable.
   unit; check that it fits the cup, or use 12 AWG.
 - **Supply and tank entry.** Which supply, and how 48 V and the
   network cables pass the tank wall (docs/handoff.md).
-- **Switch supply.** docs/adr/0008 is proposed; the board does not
-  exist, and whether the switch sits in the fluid is open.
-- **Where the plane sits.** A plane is 398 mm long; 8 frames at the
-  58.7 mm pitch of today are 476 mm, at 36 mm they are 294 mm. At 36 mm
-  the units are 8 mm too wide each and the core has to leave the row.
-  Every length above depends on this.
+- **Switch supply.** A bought CUI DQD50-48-S12-T (ordered) replaces
+  the pp-48-sw12 board of docs/adr/0008. Its input fuse is "TBD by
+  customer" in the datasheet. Whether the switch sits in the fluid is
+  open.
+- **Core and switch-supply leads.** 0.75 mm2 behind the 40-63 A block
+  device: a short on one of them can overheat the wire without tripping
+  it. Each needs its own small breaker outside the fluid, or wire sized
+  for the block device.
 - **Standby controller.** Not cabled here. It would sit at the far
   end of the link and terminate it instead of the jumper caps.
 
 ## Scaling to a pod
 
 Per block, so multiply: 4 unit leads, 1 core lead, 1 switch-supply
-lead and its 12 V lead, 8 node power cables, 8 front-panel cables, 8
-node patch cables, 1 uplink.
+lead and its 12 V lead, 2 core ribbons, 8 node power cables, 8
+front-panel cables, 8 node patch cables, 1 uplink.
 
 Per controller: 1 link ribbon and 1 patch cable to the management
 switch. One controller per block is what is drawn. Up to 8 planes fit

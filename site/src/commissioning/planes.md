@@ -134,8 +134,8 @@ button presses. It carries no 48 V.
   so its 2x3 pin header goes into the aux socket (J3 on slot A, J53 on
   slot B), then fix it with four M2 x 5 stainless screws, each with a
   split lock washer under the head, into the standoffs. The screws
-  carry the module's power; tighten them evenly (0.25 Nm, still to be
-  confirmed on a sample).
+  carry the module's power; tighten them evenly, 0.15 Nm at most (the
+  standoff's limit for M2).
 - The screw pattern is offset: turned the wrong way round the module
   does not take a single screw. Do not force it.
 - A slot without a module is reported as absent. A module whose aux

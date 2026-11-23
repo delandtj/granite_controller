@@ -27,8 +27,8 @@ follow them as well.
 ## Materials
 
 - No PVC cable jackets. Use PE, PTFE, FEP or ETFE insulated wire.
-- No silicone in the tank unless it has been soak-tested in your fluid:
-  not as jacket, potting, thermal pad or LED lens.
+- Silicone (jacket, potting, thermal pad, LED lens) is accepted in PAO
+  (2026-11-23). In any other fluid, soak-test it first.
 - Connector housings in PA, PBT or LCP. JST PH and GH housings are PA;
   their long-term behaviour in the target fluid is one of the open
   soak-test items and should be verified for a production run.
