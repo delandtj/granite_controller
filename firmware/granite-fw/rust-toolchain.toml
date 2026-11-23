@@ -1,5 +1,12 @@
 # RISC-V ESP32 targets (esp32c6) build on upstream nightly with build-std.
 # The Xtensa-only "esp" toolchain is NOT used here.
+#
+# Pinned: later nightlies do not build this crate (firmware/README.md,
+# "Toolchain install"). From nightly-2026-10-17 std pins libc 0.2.191,
+# whose newlib `stat` has st_atim / st_mtim / st_ctim while std's espidf
+# code still reads st_atime / st_mtime / st_ctime; nightly-2026-10-16
+# (libc 0.2.189) panics in rustc on esp-idf-svc 0.53.0's wifi.rs
+# (compare_impl_item). Move the pin only after a full release build.
 [toolchain]
-channel = "nightly"
+channel = "nightly-2026-10-08"
 components = ["rust-src", "clippy"]

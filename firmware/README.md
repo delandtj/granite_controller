@@ -68,7 +68,8 @@ hardware.
 | esp-idf-sys | 0.38.1 |
 | embuild (build dep) | 0.33.5 |
 | ESP-IDF | v5.5.5 (the default of esp-idf-sys 0.38.1, pinned in `granite-fw/.cargo/config.toml`) |
-| Rust | nightly with `build-std` (see `granite-fw/rust-toolchain.toml`) |
+| Rust | nightly-2026-10-08 with `build-std` (pinned in `granite-fw/rust-toolchain.toml`, see "Toolchain install") |
+| libclang (bindgen) | 21 (not 23, see "Toolchain install") |
 | Target | `riscv32imac-esp-espidf` |
 
 The ESP32-C6 is RISC-V, so the build uses upstream **nightly** plus
@@ -81,23 +82,54 @@ driver the DS18B20 code sits on) and `espressif/mdns`.
 ## Toolchain install
 
 ```sh
-# Rust nightly with the standard library sources (build-std).
-rustup toolchain install nightly
-rustup component add rust-src --toolchain nightly
+# The pinned nightly with the standard library sources (build-std).
+# rustup also installs it on the first cargo call in granite-fw/.
+rustup toolchain install nightly-2026-10-08 --profile minimal -c rust-src -c clippy
 
 # Linker wrapper and flash tool.
 cargo install ldproxy espflash     # or use your distribution's packages
+# Arch: pacman -S ldproxy espflash
 
 # Native build tools the ESP-IDF CMake build needs.
 #   cmake, ninja, python3, git
 # Arch: pacman -S cmake ninja python git
+
+# libclang 21 for bindgen, when the system clang is 23 (Arch: clang21).
+export LIBCLANG_PATH=/usr/lib/llvm21/lib
 ```
 
+Two pins, both found on 2026-11-23 on a fresh machine:
+
+- **Nightly is pinned to nightly-2026-10-08.** Later ones do not build:
+  - from nightly-2026-10-17 std pins libc 0.2.191 (rust-lang/rust
+    b728431fc, 2026-10-16). Its newlib `stat` has `st_atim` /
+    `st_mtim` / `st_ctim`, std's espidf code still reads `st_atime` /
+    `st_mtime` / `st_ctime`, so `std` itself fails to compile under
+    build-std (`no field st_mtime on type libc::stat`).
+  - nightly-2026-10-16 (still libc 0.2.189) panics in rustc on
+    esp-idf-svc 0.53.0's `wifi.rs` (`compare_impl_item`, `scan_n`).
+
+  To move the pin, try the new nightly with a full
+  `cargo +nightly-YYYY-MM-DD build --release` first; the std error shows
+  up within seconds, the rustc panic only at esp-idf-svc.
+- **libclang 23 breaks the esp-idf-sys bindings.** With clang 23.1.5 as
+  the system libclang, bindgen emits newlib's `struct _reent` as an
+  opaque `{ _address: u8 }` and esp-idf-sys 0.38.1 fails in `stdio.rs`
+  (`no field _stdin on type _reent`). libclang 21 generates the full
+  struct. bindgen takes the newest `libclang.so` it finds unless
+  `LIBCLANG_PATH` points elsewhere. esp-idf-sys sets `LIBCLANG_PATH` by
+  itself only when `espup` has left its libclang symlink (a machine
+  with the Xtensa toolchain installed); the esp-clang that ESP-IDF
+  downloads into `.embuild/` ships without libclang. After changing
+  `LIBCLANG_PATH`, the bindings regenerate on the next build (bindgen's
+  build script reruns on it, esp-idf-sys follows).
+
 The ESP-IDF checkout and its toolchains are downloaded on the first
-build by `esp-idf-sys` into `~/.espressif` (sources under
-`~/.espressif/esp-idf-<hash>`), with per-crate build state in
-`granite-fw/.embuild/`. Nothing of that lands in the repo; `.embuild/`
-and `target/` are gitignored. The first build takes a while (ESP-IDF
+build by `esp-idf-sys` into `granite-fw/.embuild/espressif/` (sources
+under `.embuild/espressif/esp-idf/v5.5.5`; with
+`ESP_IDF_TOOLS_INSTALL_DIR=global` they go to `~/.espressif` instead).
+Nothing of that lands in the repo; `.embuild/` and `target/` are
+gitignored. The first build takes a while (ESP-IDF
 download plus a full ESP-IDF compile); later builds are quick.
 
 ## Build
