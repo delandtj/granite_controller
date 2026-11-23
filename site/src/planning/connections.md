@@ -6,7 +6,7 @@ to the controller, step by step, is in
 [Assembling and cabling planes](../commissioning/planes.md). Full
 pinouts are in [Connectors and pinouts](../reference/pinouts.md).
 
-## Controller rev D
+## Controller (controller-fd)
 
 Connector names are on the silkscreen; the pin legends below are
 printed next to each wire-to-board connector (pin 1 first).
@@ -14,18 +14,20 @@ printed next to each wire-to-board connector (pin 1 first).
 ```
         top edge: RJ45 opening, J4 J5 J6 J7 (probes), USB-C opening
  +-------------------------------------------------------+
- | [Ethernet]   [probes]            [USB]         J10    |
- |              [power]    [ESP32-C6]           (dry in) |
- |                                                J9     |
- | J11 J12   J14 J13                [antenna]    (I2C)   |
- +-------------------------------------------------------+
-        bottom edge: 12 V IN A / B, PLANE B / A, ESP32 antenna
+ | [Ethernet]   [probes]            [USB]                |
+ |              [power]                           J10    |
+ |                                              (dry in) |
+ |                                [ESP32-C6]      J15   |
+ |      J9 (I2C)                  [antenna]    (link,   |
+ +-------------------------------------------- B side) -+
+        bottom edge: J9 sensor port, ESP32 antenna
 ```
 
 The RJ45 and USB-C openings and the four probe connectors face the top
-edge; the two 12 V inputs and the two plane link connectors sit on the
-bottom edge, beside the ESP32 module's antenna; the dry-contact inputs
-and the I2C sensor port are on the right-hand short edge.
+edge. The dry-contact inputs J10 and the plane link header J15 are on
+the right-hand short edge; J15 sits on the bottom (B) side of the
+board, its shroud past the edge, so the ribbon leaves in the plane of
+the board. The I2C sensor port J9 is on the bottom long edge.
 
 ### Connector summary
 
@@ -36,79 +38,64 @@ and the I2C sensor port are on the right-hand short edge.
 | J4..J7 | 1-WIRE | Temperature probes | JST PH 3p | `3V` `DQ` `G` |
 | J9 | I2C | I2C sensor port | JST PH 4p, Qwiic order | `G` `3V` `DA` `CL` |
 | J10 | DRY IN | Dry-contact inputs | JST PH 5p | `1` `2` `3` `4` `G` |
-| J11 | 12V IN A | 12 V input A | JST PH 2p | `+` `-` |
-| J12 | 12V IN B | 12 V input B | JST PH 2p | `+` `-` |
-| J13 | PLANE A | Plane link A | JST PH 5p | `3V` `G` `CL` `DA` `IN` |
-| J14 | PLANE B | Plane link B | JST PH 5p | `3V` `G` `CL` `DA` `IN` |
+| J15 | J15 | Plane link and 12 V supply | keyed 2x3 2.54 mm right-angle box header | 1 CANH, 2 CANL, 3 / 4 LINK_GND, 5 / 6 AUX_12V |
 
 JST PH is 2.0 mm pitch. Mating housings are PHR-n, crimp contacts
 SPH-002T-P0.5S (24..30 AWG).
 
-### 12 V inputs (J11, J12)
+### Plane link and power (J15)
 
-- Pin 1 `+` is +12 V, pin 2 `-` is the controller's ground. The pinout
-  is the same as the plane core's 12 V aux output J4, so the cable runs
-  pin 1 to pin 1.
-- Feed one input from each of two different planes when the frame has
-  more than one. Each input has its own series Schottky diode (which is
-  also the reverse-polarity protection), so the controller runs on
-  whichever input is higher and survives the loss of one plane. With a
-  single plane, use one input and leave the other empty.
-- There is no fuse on the controller. The plane's isolated aux supply
-  limits its own output current; a short on the controller is that
-  supply's short-circuit case. A 15 V TVS sits after the two diodes;
-  the buck converter behind it accepts up to 36 V.
-- The 12 V comes from the isolated side of each plane. The controller's
-  ground is never the 48 V bus ground (see
-  [Isolation](#isolation-and-grounds) below).
-- The controller measures the OR-ed input (VIN sense) and reports it as
-  `vin_v`. Rules can act on it (`vin` source, in millivolts).
-- Open item: the controller's worst-case draw and the rating of the
-  plane's 12 V aux output (about 100 mA in the current plane design)
-  are still being matched.
-
-### Plane link (J13, J14)
-
-- One I2C bus at 100 kHz plus the shared interrupt line `IN`
-  (EXP_INT), brought out on two identical connectors: `3V` supply for
-  the planes' isolators, `G` ground, `CL` SCL, `DA` SDA, `IN` interrupt.
-  The pinout is the same as the plane core's J2 / J3; cables run pin 1
-  to pin 1.
-- The planes are daisy chained: controller to the first plane's J2,
-  that plane's J3 to the next plane's J2, and so on. The two controller
-  connectors are the same bus; they exist so a box can run two shorter
-  chains (half the cable capacitance each) instead of one long one. Up
-  to eight planes in total, on either chain, each with its own address
-  0x30-0x37.
-- The I2C pull-ups (2.2 kohm) are on the controller only; the planes
-  carry none on the controller side. The value is to be confirmed on
-  the bench with eight planes.
-- The `3V` pin supplies only the controller side of each plane's
-  isolators (a few mA per plane). It goes through a current-limited
-  switch per connector, so a shorted cable on one chain does not take
-  down the controller.
-- Every plane pulls `IN` low through its own open-drain transistor
-  when it has an event to report; the controller then reads that
-  plane's events.
+- One cable: a 6-way 2x3 IDC ribbon (W_LINK), about 0.35 m, 1 m at
+  most, IDC socket at both ends, pin n to pin n, from J15 to the
+  plane core's J2 (LINK IN). Conductor order is pin order, so CANH and
+  CANL are neighbours.
+- It carries the CAN FD link (500 kbit/s arbitration, 2 Mbit/s data
+  phase) and the controller's **only** power input: AUX_12V, about
+  12 V, which every core on the link feeds through its own diode from
+  its isolated 12 V supply. The controller draws about 0.2 A at 12 V.
+  With one plane on the link the controller runs from that plane's
+  core alone; with several, it stays up while any one core runs.
+- J15 is keyed; the core's J2 is a bare 2x3 pin header and is not.
+  A cable turned round at the core puts AUX_12V on CANH / CANL. Both
+  transceivers survive that, but the link stays down and the controller
+  gets no power. Mark pin 1 at the core end of the cable.
+- The controller terminates its end of the bus (split termination,
+  2 x 60.4 ohm). The other end is terminated by two jumper caps on the
+  last board of the row (see
+  [Assembling and cabling planes](../commissioning/planes.md)).
+- Behind J15: reverse-polarity Schottky, a 15 V TVS, then the buck
+  converter (accepts up to 36 V). No fuse: the cores' isolated supplies
+  limit their own output. The controller measures the input (VIN
+  sense) and reports it as `vin_v`. Rules can act on it (`vin`
+  source, in millivolts).
+- Open item: the controller's draw and the rating of a core's isolated
+  12 V supply are still to be checked against each other on the first
+  boards.
 
 ### Isolation and grounds
 
-The controller, its Ethernet, its USB port and its probes share no
-ground with the 48 V bus. On each plane the link (I2C and interrupt)
-crosses an isolator and the 12 V aux comes from an isolated converter,
-so the controller's ground meets only the isolated side of each plane.
-This isolation is functional, not a safety barrier: the bus is SELV
-at or below 60 V. Do not tie the controller's ground, the Ethernet
-shield or the probe ground to the bus ground anywhere.
+The controller's ground is the link ground (LINK_GND). On each plane
+core the link crosses an isolated CAN FD transceiver (ISO1044) and the
+12 V comes from an isolated converter, so the controller's ground
+meets only the isolated side of each core. The units carry the link
+straight through without parts. The controller, its Ethernet, its
+USB port and its probes share no ground with the 48 V bus. This
+isolation is functional, not a safety barrier: the bus is SELV at or
+below 60 V. Do not tie the controller's ground, the Ethernet shield or
+the probe ground to the bus ground anywhere.
 
 ### Ethernet (J1)
 
 - 10/100 Mbit/s over a plain magjack, no PoE. Power the board from
-  J11 / J12 (or USB on the bench), never expect it from the switch.
+  the link ribbon on J15 (or USB on the bench), never expect it from
+  the switch.
 - The W5500 has no auto-MDIX. Every managed or unmanaged switch made in
   the last twenty years does, so a normal patch cable to a switch port
   works. A direct cable to a PC without auto-MDIX would need a crossover
   cable.
+- In a block, the controller goes to a management switch outside the
+  block, not to the block switch: the block switch's eight copper ports
+  are the eight nodes'.
 - Impedance of the on-board pairs is calculated for the fluid, so the
   Ethernet cable may run through the fluid to a gland.
 - LEDs on the jack: green = link, yellow = activity. They are driven by
@@ -181,21 +168,25 @@ shield or the probe ground to the bus ground anywhere.
 | Ref | Function | Connector | Pins (pin 1 first) |
 |---|---|---|---|
 | J1 | 48 V input | Amass XT30PW-M, keyed | 1 `-` bus ground, 2 `+` 48 V |
-| J2 | Controller link in | JST PH 5p | 3V3 (controller side), GND (controller side), SCL, SDA, EXP_INT |
-| J3 | Controller link out (to the next plane) | JST PH 5p | as J2, same bus |
-| J4 | 12 V aux out, isolated | JST PH 2p | 1 +12 V, 2 controller-side ground |
+| J2 | LINK IN, from the controller (or the previous plane) | 2x3 2.54 mm right-angle pin header (CJT A2541WR-2x3P), not keyed | 1 CANH, 2 CANL, 3 / 4 LINK_GND, 5 / 6 AUX_12V |
+| J3 | LINK OUT, to unit 1 | 2x3 2.54 mm right-angle socket (CJT A2541HWR-2x3P) | as J2 |
 | J301 | Chain out, to unit 1 | 2x7 2.54 mm right-angle socket (CJT A2541HWR-2x7P) | see [pinouts](../reference/pinouts.md) |
+| JP1 | Link termination | 2x2 2.54 mm pin header | no caps on a core in a block row; see [pinouts](../reference/pinouts.md) |
 | SW1 | Plane address | 3-way DIP switch | ON = 0, address 0x30 + ADR[2:0] |
 | J6 | SWD, bench programming | ARM Cortex 10-pin, 1.27 mm, keyed shroud | standard ARM 10-pin SWD |
 | J5 | SWD, bench programming | Tag-Connect TC2030-NL pads | standard TC2030 SWD |
 
 Three green LEDs on the core: `3V3` (the core's 3.3 V supply), `RUN`
-(firmware heartbeat) and `12V` (the isolated aux output, on the
+(firmware heartbeat) and `12V` (the isolated 12 V for the link, on the
 controller side of the barrier).
 
-J2 and J3 are the same bus; which one goes to the controller does not
-matter electrically, but keep "in" from the controller and "out" to the
-next plane so the cabling reads the same on every plane.
+J2 and J3 are the same bus, wired straight through; J2 takes the
+controller's ribbon, J3 continues the link to unit 1 over a short
+ribbon. J2 to J3 also carries AUX_12V, onto which this core feeds its
+isolated 12 V through a diode. In a block the core sits off the unit
+row, so its J301 and J3 reach unit 1 over two ribbons (W_CHAIN and
+W_CORELINK, see [Assembling and cabling
+planes](../commissioning/planes.md#5-fit-the-boards-together-and-make-the-core-ribbons)).
 
 ## Plane unit board
 
@@ -204,6 +195,9 @@ next plane so the cabling reads the same on every plane.
 | J201 | 48 V input | Amass XT60PW-M, keyed, cable from the top edge | 1 `-` bus ground, 2 `+` 48 V |
 | J301 | Chain in (from the core side, left edge) | 2x7 2.54 mm right-angle pin header, plug (CJT A2541WR-2x7P) | see [pinouts](../reference/pinouts.md) |
 | J302 | Chain out (to the next unit, right edge) | 2x7 2.54 mm right-angle socket (CJT A2541HWR-2x7P) | see [pinouts](../reference/pinouts.md) |
+| J303 | Link in (left edge, beside J301) | 2x3 2.54 mm right-angle pin header (CJT A2541WR-2x3P) | 1 CANH, 2 CANL, 3 / 4 LINK_GND, 5 / 6 AUX_12V |
+| J304 | Link out (right edge, beside J302) | 2x3 2.54 mm right-angle socket (CJT A2541HWR-2x3P) | as J303 |
+| JP301 | Link termination | 2x2 2.54 mm pin header | jumper caps on 1-2 and 3-4 on the last unit of the row only |
 | J1 / J51 | Node 19 V, slot A / slot B | Degson DG128-5.0-02P screw terminal | 1 GND, 2 +19 V |
 | J2 / J52 | Front panel, slot A / slot B | JST GH 4p, latching | `PWR_SW` `RST_SW` `PLED+` `PLED-` |
 | J3 / J53 | Port module aux, slot A / slot B | 2x3 1.27 mm socket | mated by the module, not cabled |
@@ -216,7 +210,11 @@ the input strip.
 
 - A 2-pole 5.0 mm screw terminal per slot: pin 1 GND, pin 2 +19 V from
   the port module (up to 250 W continuous, 13.2 A). Use a 14 AWG pair to
-  the node motherboard's 19 V DC input.
+  the node's 19 V DC input. For the node drawn (an AXB35 board with a
+  DC-045D jack) that end is a barrel plug, drawing about 8.7 A at
+  165 W. **Open**: the plug is not chosen. The jack's pin is not
+  measured, and no plug rated for 8.7 A has been found (the best found
+  are rated 5 A).
 - The rail is switched, current-limited and metered by the slot, and
   an overvoltage on the module output latches the slot off in
   hardware. Nothing else is needed between the terminal and the node.
@@ -224,7 +222,13 @@ the input strip.
 ### Front panel (J2, J52)
 
 Four wires per node, from the slot to the motherboard's front-panel
-header:
+header. The header is on the other side of the plane, so the cable is
+about 0.6 m: a JST GH 4p housing at the slot, single 2.54 mm
+Dupont-style housings (one per wire) at the motherboard. **Open**: the
+motherboard's front-panel pinout and how it drives its power LED are
+not confirmed; meter the header before plugging in. PWR_SW and RST_SW
+go on the switch pins that are not ground; the header's ground pins
+stay open.
 
 | Pin | Signal | Motherboard side |
 |---|---|---|
@@ -254,8 +258,11 @@ How it works, and what to check on your motherboard:
   actions that depend on it (a clean `off`, `cycle`) lose their
   protection. Wire it, and verify it before sealing.
 - The cable carries only switch and LED currents; 26..28 AWG is
-  plenty. JST GH is 1.25 mm pitch: housing GHR-04V-S, crimp contacts
-  SSHL-002T-P0.2.
+  plenty. The block BOM makes it from 4 ways peeled off the same
+  halogen-free 28 AWG flat cable as the link ribbon, red stripe on
+  pin 1. JST GH is 1.25 mm pitch: housing GHR-04V-S, crimp contacts
+  SSHL-002T-P0.2. Seen from the other side of the plane the order looks
+  mirrored: go by the stripe and a meter, never by position.
 
 ### Port module mount (SO1-SO4, J3)
 

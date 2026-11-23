@@ -5,7 +5,7 @@ version 2). Addresses are zero-based protocol addresses; a client that
 counts from 1 (as `mbpoll` does by default) adds one. Enable the server
 and its allow-list as described in [Modbus TCP](../commissioning/modbus.md).
 
-Version 2 is the map of the rev D controller with power planes. It is
+Version 2 is the map of the controller with power planes. It is
 sparse: the controller registers at the bottom (dry inputs, link, MQTT,
 probes, board temperature, input voltage, uptime, firmware, fault word,
 map version at input register 14) kept their addresses, the per-node

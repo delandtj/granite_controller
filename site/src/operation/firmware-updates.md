@@ -59,6 +59,14 @@ the new image.
 Making the `.bin` from a build is in
 [Building and flashing](../reference/building.md#producing-an-ota-image).
 
+**Only `link-canfd` images.** Every image drives one kind of plane link
+and carries a marker saying which. An upload or pull of an image for
+the other kind (`link-i2c`, for the rev D board), or of an image with
+no marker (any build from before the link split), is refused with
+HTTP 400 and an `ota failed` event, like a hash mismatch. Such a
+controller has to take its first `link-canfd` image over USB; see
+[Flash and first boot](../commissioning/first-boot.md).
+
 ## Controller: what the reboot does to the nodes
 
 Nothing. The planes run their slots on their own and keep every node as
@@ -74,13 +82,16 @@ rule can still act. See
 After the reboot the new image runs as `pending_verify`. It has
 `sys.t_validate_s` (default 600 s) to:
 
-1. get an Ethernet link and an IP address, and
-2. connect to the configured MQTT broker, or serve one authenticated
+1. bring up its own plane link hardware (the MCP2518FD on the
+   controller),
+2. get an Ethernet link and an IP address, and
+3. connect to the configured MQTT broker, or serve one authenticated
    HTTPS request.
 
 Then it marks itself valid. The planes are deliberately not part of
-this: a controller whose planes are unplugged must still be able to
-take an update. If the image fails, panics, trips the task watchdog or
+this: a controller whose planes do not answer must still be able to
+take an update. An image built for the wrong board never sees its link
+hardware and rolls back. If the image fails, panics, trips the task watchdog or
 browns out before that, it is marked invalid and the board reboots,
 and the bootloader starts the previous slot. If that one is also
 invalid there is nothing left to fall back to and the board needs USB
@@ -120,19 +131,17 @@ Back it up before the first signed build goes into a tank.
 ## Plane firmware updates
 
 **Status: not usable in the field yet.** The controller side of the
-update is written and tested against the simulated plane, but three
-pieces around it do not exist:
+update is written and tested against the simulated plane, but pieces
+around it do not exist or have not run:
 
-- the plane core firmware itself (`plane-fw` and its bootloader
-  `plane-boot`); only its hardware-free core, `plane-logic`, is
-  written. Plane cores are flashed over SWD on the bench until then
-  (see [Recovery](recovery.md#bench-recovery-of-a-plane-core));
+- the plane bootloader `plane-boot`. The plane application
+  (`plane-fd`) exists, but without the bootloader it is flashed whole
+  over SWD on the bench (see
+  [Recovery](recovery.md#bench-recovery-of-a-plane-core));
 - a way to hand the controller a plane image: the controller's OTA
   image does not carry one yet, and there is no API route or command
   that uploads a plane image or starts a plane update;
-- the board driver for the plane link (the current controller image
-  finds no planes at all, see
-  [Flash and first boot](../commissioning/first-boot.md#2-watch-the-first-boot)).
+- the CAN FD link on hardware: neither end has run on a board yet.
 
 What follows is how the update is built, so that it behaves this way
 once those pieces arrive.
@@ -161,8 +170,9 @@ update capability.
 1. **Begin**: size, CRC-32 and version go to the plane, which erases
    its update slot.
 2. **Data**: 128-byte records, paced by the offset the plane asks for
-   next. A plane image is around 55 KB, about 10 s at the link's
-   100 kHz. The transfer gives up after 5 minutes.
+   next. A plane image is around 50 KB; firmware images go over the
+   link as the lowest-priority (BULK) traffic. The transfer time over
+   CAN FD is not measured yet. The transfer gives up after 5 minutes.
 3. **Commit**: the plane checks the CRC-32 over the slot and marks the
    swap (30 s allowed).
 4. **Reboot**: the plane's bootloader swaps the images. The unit

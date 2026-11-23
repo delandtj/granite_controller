@@ -13,11 +13,12 @@ follow them as well.
   cannot be replaced in the tank. Overcurrent inside the tank is
   handled by electronic limiters (one hot-swap per unit, one per slot,
   the port module's own current limit). The only fuse or breaker is
-  **outside the fluid, per box or per branch** of the 48 V bus.
+  **outside the fluid, per block or per branch** of the 48 V bus.
 - The bus is SELV: 48-60 V nominal, and every plane part on it is rated
   100 V. Bus transients are clamped by a TVS at every board input.
-- The controller side (controller, Ethernet, USB, probes, the link and
-  12 V aux cables) is isolated from the bus on each plane. This is
+- The controller side (controller, Ethernet, USB, probes, the link
+  ribbons and the 12 V they carry) is isolated from the bus on each
+  plane core. This is
   functional isolation, not a safety barrier; keep it intact by never
   connecting the controller's ground to the bus ground.
 - Reverse polarity on the bus is prevented only by the keyed XT30 /
@@ -32,6 +33,9 @@ follow them as well.
 - Connector housings in PA, PBT or LCP. JST PH and GH housings are PA;
   their long-term behaviour in the target fluid is one of the open
   soak-test items and should be verified for a production run.
+- Ribbon cable: halogen-free polyolefin flat cable (3M HF365 series),
+  not the common grey PVC ribbon (3M 3365). Halogen-free is not the
+  same as oil-proof: soak-test the ribbon and its IDC sockets.
 - No adhesive labels on the boards: they come off and foul the pump.
   Record MACs, plane addresses and serials elsewhere; the silkscreen is
   cosmetic.
@@ -40,12 +44,15 @@ follow them as well.
 
 ## Connectors in the fluid
 
-- Every plane joint is a 2x7 2.54 mm pin header plugged into a socket,
-  gold-plated contacts, no latch. The boards are held by the mounting
+- Every joint between units is a 2x7 and a 2x3 2.54 mm pin header
+  plugged into a socket, gold-plated contacts, no latch. The boards are held by the mounting
   bar they are screwed down to, not by the connector; keep every board
   screwed down so a joint cannot work loose. A joint that comes apart
   leaves the units behind it on their hardware defaults (slots on, no
   control).
+- The ribbons (controller to core, core to unit 1) end in IDC sockets
+  or plugs held by friction only. Dress them so they do not pull on
+  the connector, with the strain reliefs fitted.
 - The port module's power runs through its four M2 screws; use the
   split lock washers so the clamping holds through thermal cycles.
 
@@ -65,8 +72,9 @@ follow them as well.
 - The controller's USB console. After sealing, the only paths into the
   controller are the network and, in the last resort, lifting the board
   out.
-- The plane cores' SWD connectors and their address DIP switches. A
-  plane's address cannot be changed once it is in the fluid.
+- The plane cores' SWD connectors, their address DIP switches and the
+  termination jumper caps. A plane's address cannot be changed once it
+  is in the fluid.
 - Pressing BOOT or EN on the controller: there are no buttons, only
   test pads.
 - The status LEDs, the plane core LEDs and the RJ45 LEDs as a reliable
@@ -76,7 +84,8 @@ follow them as well.
 The commissioning chapters are written around these losses: every
 network-affecting change is commit-confirmed, controller firmware
 updates validate themselves and roll back, plane firmware is to be
-updated from the controller over the link, and every controller has a recovery
+updated from the controller over the link (not possible yet: the plane
+bootloader is not written), and every controller has a recovery
 token and optionally a fleet key so it can be reset to factory state
 from the network. Record the MAC and token of every controller and the
 address of every plane **before** they go into the fluid.
@@ -87,8 +96,10 @@ The OCP immersion component compatibility guideline asks for at least
 500 hours at about 1.2 times the operating temperature for any part of
 uncertain material. Open items at the time of writing: on the
 controller the HanRun magjack (LED lenses and potting), the JST
-housings and the ESP32 module's shield can; on the planes the JST PH
-and GH housings and contacts, the 2x7 chain pin header and socket, the XT30 / XT60 connectors, the screw
+housings, the J15 box header and the ESP32 module's shield can; on the
+planes the JST GH housings and contacts, the 2x7 and 2x3 pin headers
+and sockets, the jumper caps, the XT30 / XT60 connectors, the screw
 terminals, the DIP switch, the photoMOS and isolator packages, and the
-port module's aux header and socket. Add your probes, floats and cable
+port module's aux header and socket; in the cabling the halogen-free
+ribbon, its IDC sockets and plugs, and the front-panel housings. Add your probes, floats and cable
 to that list for your fluid.

@@ -1,8 +1,8 @@
 # First setup over the network
 
 With the firmware flashed, connect Ethernet and power, and finish
-setup from a browser. In the frame the controller runs on 12 V from the
-planes' isolated aux output (one or both PH 2p inputs, see
+setup from a browser. In the frame the controller runs on the 12 V that
+the plane cores put on the link ribbon (J15, see
 [Connections](../planning/connections.md)); on the bench USB-C power is
 enough.
 
@@ -121,10 +121,9 @@ curl -sk -b jar $B/api/v1/status          # everything at once
 
 Two limits of the current firmware:
 
-- The board driver for the plane link is a placeholder that answers
-  every address with NAK (see [Flash and first
-  boot](first-boot.md#2-watch-the-first-boot)), so `planes` and `nodes`
-  stay empty on a rev D controller until that driver exists. The
+- The CAN FD link driver has not run on hardware yet, so what the
+  first controller-fd and plane boards show here is still to be found
+  out on the bench. The
   simulator (`cargo run -p granite-sim -- serve --scenario granite-sim/scenarios/two-planes.toml` in `firmware/`)
   shows what a populated answer looks like.
 - The setup page (Status, Nodes) still has the rev C layout and does

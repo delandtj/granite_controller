@@ -9,7 +9,7 @@ done over the network.
 
 | Step | Where | Chapter |
 |---|---|---|
-| 1. Assemble the planes, set their addresses, connect power, nodes and the controller cables | frame, bus off | [Assembling and cabling planes](planes.md) |
+| 1. Assemble the planes, set their addresses, make and fit the ribbons, terminate the link, connect power and nodes | frame, bus off | [Assembling and cabling planes](planes.md) |
 | 2. Flash the controller firmware, record MAC and recovery token | bench, USB | [Flash and first boot](first-boot.md) |
 | 3. Connect Ethernet and power, find the controller, set the admin password | bench or frame, network | [First setup](first-setup.md) |
 | 4. Fix the network configuration (DHCP reservation or static) | network | [Network configuration](network.md) |
@@ -28,7 +28,7 @@ addresses live on the planes' DIP switches and nowhere else.
 
 - **Every slot defaults ON in hardware.** A plane core that is
   unpowered, in reset or crashed, a missing controller, a pulled link
-  cable or a separated chain joint never cuts a node. The overvoltage cut,
+  ribbon or a separated chain joint never cuts a node. The overvoltage cut,
   the slot and unit current limits and the module's own limit all work
   without any firmware.
 - **Nothing moves a node on its own.** A controller reboot, a crash or
@@ -51,8 +51,9 @@ addresses live on the planes' DIP switches and nowhere else.
   to get an IP and reach you (broker connected or an authenticated
   HTTPS request). If it cannot, the bootloader returns to the previous
   image - the update never overwrote it, so it is still the last image
-  that proved itself. A controller whose planes are unplugged can still
-  take an update.
+  that proved itself. A controller whose planes do not answer can still
+  take an update, as long as it has power (from a core on the link, or
+  USB on the bench).
 - **Factory reset works without the password.** The per-device recovery
   token, or a fleet key you hold, resets a controller over the network.
   Both only work if you recorded the token or installed the key before
@@ -67,9 +68,13 @@ addresses live on the planes' DIP switches and nowhere else.
 - `espflash` and a serial terminal (`picocom`, `screen`, or
   `espflash monitor`) on the bench.
 - An SWD probe with an ARM Cortex 10-pin 1.27 mm cable for the plane
-  cores' first firmware.
-- A multimeter, crimp tools for JST PH (2.0 mm) and GH (1.25 mm), and
-  a screwdriver for the M2 module screws and the node terminals.
+  cores' firmware.
+- A multimeter, an IDC press plier for the ribbons (a parallel press,
+  for example Duratool D03028), a crimp plier for JST GH (1.25 mm) and,
+  for the probe, dry-contact and sensor cables, JST PH (2.0 mm) (for
+  example Engineer PA-09), and a screwdriver for the M2 module screws
+  and the node terminals. An IDC plier cannot crimp, and a crimp plier
+  cannot press IDC.
 - `granite-sim` from the firmware tree: the fleet key generator, the
   recovery tool and a full simulator of the controller with simulated
   planes, for trying the page and the API without hardware.

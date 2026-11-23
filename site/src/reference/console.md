@@ -19,6 +19,7 @@ commands:
   ota-mark-valid        confirm the running image
   reboot                restart through the planned-reboot path
   log [n]               last n lines of the log ring (default 40)
+  link                  plane link: kind, frames, errors, bus state
   help                  this list
 ```
 
@@ -34,6 +35,7 @@ commands:
 | `ota-mark-valid` | Ends probation of the running image |
 | `reboot` | Planned reboot of the controller; the planes keep their nodes as they are, and no boot policy runs - those belong to a plane boot (see [Nodes and boot policy](../commissioning/nodes.md)) |
 | `log [n]` | Last `n` lines of the 16 KB log ring, then `-- N lines kept` |
+| `link` | The image's plane link kind (`canfd` on controller-fd) and whether its marker is sound; on a CAN FD image the transport's counters: frames in and out, blocked sends, timeouts, EVENTs, reassembly drops by reason, TEC / REC error counters and the bus-off count |
 
 `?` is an alias for `help`. Lines are limited to 512 characters;
 backspace and Ctrl-C work.

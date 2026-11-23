@@ -2,7 +2,7 @@
 
 # Granite controller
 
-<p class="board-legend"><span>Rev D</span><span>105 x 50 mm</span><span>4 layers</span><span>ESP32-C6 + W5500</span><span>runs submerged</span></p>
+<p class="board-legend"><span>FD</span><span>105 x 50 mm</span><span>4 layers</span><span>ESP32-C6 + W5500</span><span>runs submerged</span></p>
 
 </div>
 
@@ -13,17 +13,21 @@ Granite is the electronics of an immersion-cooled frame of motherboards
   one switched, protected and metered 19 V rail per node, through a port
   module (PM-19V-250W) screwed onto each slot. The same plane presses
   each node's power and reset buttons and reads its power LED. A plane
-  is one **core board** (microcontroller, isolated link, isolated 12 V
-  aux output) and one to four identical **unit boards** of two slots
-  each, plugged into each other in a row: 2, 4, 6 or 8 nodes per plane.
+  is one **core board** (microcontroller, isolated CAN FD link,
+  isolated 12 V for the link) and one to four identical **unit boards**
+  of two slots each: 2, 4, 6 or 8 nodes per plane. The units plug into
+  each other in a row; the core reaches unit 1 over two short ribbon
+  cables.
 - **The controller.** One controller serves up to eight planes over an
-  isolated I2C link. It measures fluid temperatures with DS18B20 probes,
-  watches up to four dry contacts (leak float, lid switch), and reports
-  all of it, nodes included, over Ethernet. It is powered from the
-  planes' isolated 12 V aux outputs, never from the 48 V bus.
+  isolated CAN FD link. It measures fluid temperatures with DS18B20
+  probes, watches up to four dry contacts (leak float, lid switch), and
+  reports all of it, nodes included, over Ethernet. Its one cable to the
+  planes, a 6-way ribbon, carries the link and its supply: 12 V from
+  the isolated side of the plane cores, never from the 48 V bus.
 
-From the outside the frame needs the 48 V bus (with its breaker outside
-the fluid) and one Ethernet cable. Northbound the controller offers
+From the outside a block needs the 48 V bus (with its breaker outside
+the fluid), an uplink for its node switch and one Ethernet cable for
+the controller. Northbound the controller offers
 three interfaces, all served by the same command core so they behave
 identically:
 
@@ -38,10 +42,14 @@ can rely on, so everything about commissioning is organised around one
 rule: **configure, verify and record before you seal**, and keep the
 network path recoverable afterwards.
 
-This manual describes controller rev D with power planes. The rev C
-controller (relays and LED sense on the controller, eight node
-connectors, 19 V input) is kept as demoware; its manual is in the
-repository at tag `rev-c-demo`.
+This manual describes the CAN FD generation: controller-fd, the core-fd
+and unit-fd plane boards and the PM-19V-250W port modules, the first
+batch being built. A frame is built of blocks: one block is 8 nodes,
+one plane (a core and four units), one block network switch and one
+controller. The rev C controller (relays and LED sense on the
+controller, eight node connectors, 19 V input) is kept as demoware; its
+manual is in the repository at tag `rev-c-demo`. Rev D (an isolated I2C
+link over JST PH cables) was never built and is not covered here.
 
 ## Who this site is for
 
@@ -59,12 +67,12 @@ repository at tag `rev-c-demo`.
 
 ## Hardware at a glance
 
-| Item | Controller rev D |
+| Item | Controller (controller-fd) |
 |---|---|
 | MCU | ESP32-C6-WROOM-1 (RISC-V), radio off |
 | Network | 10/100 Ethernet, WIZnet W5500, RJ45 magjack |
-| Power | 12 V from up to two planes' isolated aux outputs (2 x JST PH 2p, diode OR-ed) |
-| Plane link | 2 x JST PH 5p, one isolated I2C bus plus a shared interrupt line, up to 8 planes (addresses 0x30-0x37) |
+| Power | 12 V over the plane link ribbon, from the isolated side of every plane core on the link (diode OR-ed on the cores) |
+| Plane link | J15, keyed 2x3 2.54 mm box header, CAN FD (500 kbit/s, 2 Mbit/s data phase), isolated on each plane core, up to 8 planes (addresses 0x30-0x37) |
 | Probes | 4 x JST PH 3p DS18B20 connectors on one 1-wire bus |
 | Inputs | 4 dry contacts (JST PH 5p), 12 V input sense, board temperature |
 | Sensor port | J9, JST PH 4p in Qwiic order (I2C) |
@@ -74,27 +82,28 @@ repository at tag `rev-c-demo`.
 | Item | Power plane |
 |---|---|
 | Bus | 48-60 V DC nominal (SELV), slots on above about 38 V, off above about 65 V |
-| Boards | 1 core board + 1-4 unit boards, 2 slots per unit, plugged into each other in a row (2x7 2.54 mm pin header into socket, no cable) |
-| Core | STM32G070 MCU, I2C mux, isolated link to the controller, isolated 12 V aux out, XT30 48 V input, 3-way DIP switch for the plane address |
+| Boards | 1 core board + 1-4 unit boards, 2 slots per unit. Units plug into each other in a row (2x7 chain and 2x3 link, 2.54 mm pin header into socket, no cable); the core reaches unit 1 over two ribbons |
+| Core | STM32G070 MCU with an MCP2518FD CAN FD controller, ISO1044 isolated transceiver, I2C mux for the units, isolated 12 V onto the link, XT30 48 V input, 3-way DIP switch for the plane address |
 | Unit | XT60 48 V input with its own hot-swap (auto-retry, about 18 A; the plane core latches a faulted unit off), two slots |
 | Slot | hot-swap front end with overvoltage latch and V / I / P monitor, port module PM-19V-250W (19 V, 250 W), node power screw terminal, front-panel JST GH 4p (PWR, RST, power LED) |
 | Default | every slot ON in hardware: a dead or missing core or controller never cuts a node |
 
 ## Status of the hardware, the firmware and this site
 
-At the time of writing (October 2026) no rev D controller and no plane
-board has been built. The controller rev D board is routed; the plane
-core board is routed and the unit board is still being laid out. Board
-sizes and some part choices may still change; where a page depends on
-something still open, it says so.
+At the time of writing (November 2026) the first batch of the CAN FD
+generation (controller-fd, core-fd, unit-fd, port modules) is on order.
+No board of it has arrived and nothing has been measured. The block
+cabling (ribbons, node cables) is drawn but not yet built; where a page
+depends on something still open, it says so.
 
-The controller firmware has been moved to the rev D node model (nodes
-on planes) and is tested against simulated planes on the host. The
-plane core firmware is specified (it runs on the STM32G070 and owns the
-node sequencing) and its hardware-independent logic exists as a tested
-library, but the firmware image for the core is **not written yet**.
-Until it is, a plane runs on its hardware defaults: every slot on, no
-presses, nothing reported to the controller.
+The controller firmware runs the node model (nodes on planes) and has a
+CAN FD link driver. It is tested against simulated planes on the host;
+the CAN FD link itself has not run on hardware. The plane core firmware
+(`plane-fd`, STM32G070 with the MCP2518FD) builds and is flashed over
+SWD; it has not run on a board either, and its bootloader, needed for
+updates over the link, is **not written yet**. A core without firmware
+leaves its plane on its hardware defaults: every slot on, no presses,
+nothing reported to the controller.
 
 Should a page describe behaviour the firmware stores but does not act
 on yet, it says so in a **Current firmware** note; treat such notes as
@@ -108,8 +117,8 @@ along the chain:
 
     node = 8 x (plane address - 0x30) + slot + 1
 
-Slots are numbered 0 to 7 from the core outwards: unit 1 (the one next
-to the core) holds slots 0 and 1, unit 4 holds slots 6 and 7, and on
+Slots are numbered 0 to 7 from the core outwards: unit 1 (the one on the
+core's ribbons) holds slots 0 and 1, unit 4 holds slots 6 and 7, and on
 every unit slot A (the core side) comes before slot B. So the plane at
 0x30 carries nodes 1 to 8, the plane at 0x31 nodes 9 to 16, up to 57
 to 64 at 0x37. Node numbers are the same everywhere a human reads them:

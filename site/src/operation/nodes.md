@@ -228,7 +228,7 @@ drops because the bus itself sagged or spiked is not a fault: nothing
 is held and the unit comes back with the bus. See
 [Recovery](recovery.md).
 
-**The controller goes away** (unplugged, link cable cut). The planes
+**The controller goes away** (unplugged, link ribbon cut). The planes
 do nothing: every node stays as it is. The controller cannot act on a
 node without its plane.
 

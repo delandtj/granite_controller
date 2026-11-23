@@ -38,10 +38,10 @@ defines three patterns for it:
 | Pattern | Meaning |
 |---|---|
 | 1 Hz blink | The plane is running. |
-| Fast blink | A firmware update is being received. |
-| Double blink | The running image is unconfirmed (on probation after an update). |
+| Fast blink, 5 Hz | A firmware update is being received. |
+| Double blink, once a second | The running image is unconfirmed (on probation after an update). |
 
-The plane core firmware that drives the pin is not written yet (see
-[Recovery](recovery.md#bench-recovery-of-a-plane-core)), so the exact
-rates of the fast and double blink are not fixed, and a core flashed
+The plane core firmware (`plane-fd`) drives these patterns; it has not
+run on a board yet (see
+[Recovery](recovery.md#bench-recovery-of-a-plane-core)). A core flashed
 with nothing shows nothing.

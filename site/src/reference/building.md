@@ -20,10 +20,11 @@ crate with its own target, linker and `.cargo/config.toml`.
 | `firmware/web` | The setup page (plain HTML/CSS/JS), gzipped into the image by `build.sh`. |
 | `firmware/docs` | The architecture decision records and the generated Modbus map. |
 
-The plane core firmware for the STM32G070 (`plane-fw`, and its
-bootloader `plane-boot`) does not exist yet; `plane-logic` is the part
-of it that is written. Until then there is no plane image to build or
-flash.
+The plane core application for the STM32G070 is `firmware/plane-fd`,
+board glue over `plane-logic`. Like `granite-fw` it is excluded from
+the workspace and built on its own (target `thumbv6m-none-eabi`). Its
+bootloader `plane-boot` is not written yet, so a plane image is flashed
+whole over SWD and cannot yet be updated over the link.
 
 ## Toolchain
 
@@ -51,9 +52,13 @@ espflash converts it while flashing). Features `wifi-dev`, `rgb-led`,
 `*-test` features are bench fault injections; none of them may be in
 an image that goes on a controller.
 
-The current image runs the rev D node model with a placeholder plane
-link driver that answers every address with NAK, so it finds no
-planes; the real driver comes with the rev D board.
+Each image drives exactly one plane link, chosen by a cargo feature:
+`link-canfd` (the default) for controller-fd, `link-i2c` for the rev D
+board, which was never built. **Flash `link-canfd`.** The image
+carries its link kind, and an over-the-air upload of an image of the
+other kind, or with no marker, is refused (HTTP 400 and an `ota failed`
+event), so the first `link-canfd` image goes onto a board over USB.
+The CAN FD link driver has not run on hardware yet.
 
 Optional at build time:
 
@@ -139,6 +144,22 @@ esptool/espsecure 5.3.1 on a default release build.
 **Unverified:** that a board built with `sdkconfig.defaults.signing`
 accepts such an image over OTA. No image has been pushed to a board
 yet; try the first one on a bench board.
+
+## Plane core firmware
+
+```sh
+cd firmware/plane-fd
+rustup target add thumbv6m-none-eabi     # once
+cargo build --release                    # link-mcp: STM32G070 + MCP2518FD
+cargo run --release                      # flash over SWD and watch (probe-rs)
+```
+
+`link-mcp` (the default) is the first batch's build: STM32G070CB with
+the MCP2518FD on SPI1. `link-fdcan` is for a core fitted with the
+STM32G0B1CC instead (same board, FDCAN1), flashed with
+`probe-rs run --chip STM32G0B1CCTx`; no such core is in the first
+batch. Logs come over RTT (defmt). The firmware README in
+`firmware/plane-fd` has the details.
 
 ## Host tests and the simulator
 

@@ -101,13 +101,15 @@ corruption.
 ## Replacing a controller
 
 1. Export the old controller's configuration if it is still reachable.
-2. Flash and commission the new one on the bench (MAC, token,
-   password, fleet key).
+2. Flash and commission the new one on the bench with the
+   `link-canfd` image (MAC, token, password, fleet key).
 3. Import the export; the device id and topic base change with the
    MAC unless you override `sys.device_id`, so update the broker ACLs,
    the Home Assistant topics and the Modbus master.
-4. Move the 12 V, plane link, probe and Ethernet cables, check that
-   every plane is found again, seal.
+4. Move the link ribbon (J15), the probe and dry-contact cables and
+   the Ethernet cable, check that every plane is found again, seal.
+   The new controller is powered from the link as soon as the ribbon
+   is on.
 
 The node ids come from the plane address straps and the slot, not from
 the controller, so they do not change with the controller.
@@ -165,14 +167,16 @@ went away.
 
 The controller looks for the address again every 10 s. When the plane
 answers, `plane_found` follows and its nodes come back. Things to
-check in between: the plane link cable (PH 5p), the plane's own power,
-and the address switch on the core. When the controller reports
+check in between: the link ribbons (controller to core J2, core J3 to
+unit 1) and the unit-to-unit joints, the termination caps on the last
+unit, the plane's own power, and the address switch on the core. The
+`link` console command shows the CAN error counters and bus-off count;
+a link that goes bus-off recovers by itself and is counted. When the controller reports
 `address_collision`, two planes are set to the same address; only
 fixing the switches helps.
 
-**Current firmware:** the controller's board driver for the plane link
-is still a placeholder that reports every address absent, so a rev D
-controller today shows no planes at all; see
+**Current firmware:** the controller's CAN FD link driver has not run
+on hardware yet; see
 [Flash and first boot](../commissioning/first-boot.md#2-watch-the-first-boot).
 
 ## A plane that rebooted
@@ -275,11 +279,11 @@ until the core runs again.
 
 ## Bench recovery of a plane core
 
-**Status:** the plane core firmware (`plane-fw`, with its bootloader
-`plane-boot`) is not written yet; only its hardware-free core,
-`plane-logic`, exists in the repository. There are no plane images to
-flash today, and the procedure below is the one ADR 0002 lays down for
-when there are.
+**Status:** the plane core application (`plane-fd`) exists and is
+flashed whole over SWD; it has not run on a board yet. Its bootloader
+`plane-boot` is not written, so today SWD writes the application alone
+and the A/B image swap below is the one ADR 0002 lays down for when
+the bootloader exists.
 
 A plane core is recovered out of the fluid, on the bench, over SWD.
 The core board has two SWD connectors on the same lines (SWDIO,
@@ -292,13 +296,14 @@ SWCLK, NRST, 3V3 reference, GND):
 
 Power the core board itself; do not count on the probe to power it.
 SWD writes both images: `plane-boot`, which is only ever written over
-SWD and never in the field, and `plane-fw`. The plane's address comes
-from the switch on the core, not from the image, so a reflashed core
-keeps its address.
+SWD and never in the field, and `plane-fd`. Flash the `link-mcp` build
+of `plane-fd` (the default; the first batch has the STM32G070 with an
+MCP2518FD), with `probe-rs` or the `cargo run --release` runner in
+`firmware/plane-fd`. The plane's address comes from the switch on the
+core, not from the image, so a reflashed core keeps its address.
 
-The STM32's own ROM bootloader is a fallback for the bench only, never
-on a link with other planes: every STM32G070 in its ROM bootloader
-answers the same fixed I2C address, so two of them collide and one
-stuck there blocks the others, and it has no rollback. Take the plane
-off the link before using it. How to enter it on the core board is not
-documented yet; prefer SWD.
+The STM32's own ROM bootloader is no way in over the link: the
+STM32G070 has no CAN controller of its own, and the ROM bootloader
+does not drive the MCP2518FD. It is a bench fallback at most, has no
+rollback, and how to enter it on the core board is not documented;
+use SWD.

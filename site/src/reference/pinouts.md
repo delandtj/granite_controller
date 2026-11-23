@@ -1,11 +1,12 @@
 # Connectors and pinouts
 
-Hardware reference for controller rev D and the chained power plane
-(one core board, 1-4 unit boards). Pin 1 is first in every table and is
-marked on the silkscreen. The plane boards are not final at the time of
-writing; the pinouts below are those of the current schematics.
+Hardware reference for controller-fd and the chained CAN FD power
+plane (one core-fd board, 1-4 unit-fd boards), as in the first batch.
+Pin 1 is first in every table and is marked on the silkscreen. No board
+of the batch has been measured yet; the pinouts below are those of the
+schematics the boards were ordered from.
 
-## Controller rev D
+## Controller (controller-fd)
 
 ### Connector list
 
@@ -16,42 +17,38 @@ writing; the pinouts below are those of the current schematics.
 | J4, J5, J6, J7 | DS18B20 probes | JST B3B-PH-K-S | PHR-3 housing |
 | J9 | I2C sensor port | JST B4B-PH-K-S | PHR-4 housing |
 | J10 | Dry-contact inputs | JST B5B-PH-K-S | PHR-5 housing |
-| J11 | 12 V input A | JST B2B-PH-K-S | PHR-2 housing |
-| J12 | 12 V input B | JST B2B-PH-K-S | PHR-2 housing |
-| J13 | Plane link A | JST B5B-PH-K-S | PHR-5 housing |
-| J14 | Plane link B | JST B5B-PH-K-S | PHR-5 housing |
+| J15 | Plane link and 12 V supply | BOOMELE 2.54-2*3P bent header, keyed 2x3 2.54 mm box header, right angle, B side (LCSC C34945) | 2x3 IDC socket on 6-way 1.27 mm flat cable |
 
-Crimp contact for all PH housings: SPH-002T-P0.5S (AWG 24..30). Rev C's
-J3 (19 V input), J8 (expansion header) and J11..J18 (node connectors)
-do not exist on rev D; J11 and later are new functions.
+Crimp contact for the PH housings: SPH-002T-P0.5S (AWG 24..30). There
+is no J3, J8 or J11..J14 on controller-fd.
 
-### J11, J12 - 12 V inputs
+### J15 - plane link and power
 
-| Pin | Legend | Signal |
-|---|---|---|
-| 1 | `+` | +12 V from a plane core's J4 (CTRL_12V) |
-| 2 | `-` | GND (the plane's isolated CTRL_GND) |
+| Pin | Signal |
+|---|---|
+| 1 | CANH |
+| 2 | CANL |
+| 3 | LINK_GND (the controller's ground) |
+| 4 | LINK_GND |
+| 5 | AUX_12V, about 12 V from the plane cores |
+| 6 | AUX_12V |
 
-Each input: SS34 series Schottky (OR-ing and reverse polarity). After
-the OR: SMAJ15A TVS (15 V standoff, 24.4 V clamp), then the LMR51430
-buck (4.5-36 V in). No fuse or PTC. The OR-ed input is measured
-through a 68k / 10k divider on GPIO5 (ADC).
+The same pinout as the core's J2 / J3 and the units' J303 / J304; a
+straight ribbon maps pin n to pin n. J15 is keyed, the plane-side
+plugs are not.
 
-### J13, J14 - plane link
+CAN side: MCP2518FD CAN FD controller (40 MHz crystal) on the W5500's
+SPI bus, TCAN1044V transceiver (5 V supply, 3.3 V logic), not
+isolated: the controller's ground is LINK_GND. Fixed split termination
+(2 x 60.4 ohm with a capacitor to LINK_GND) at this end of the bus.
+PESD2CANFD24V ESD protection on CANH / CANL at J15. 500 kbit/s
+arbitration, 2 Mbit/s data phase.
 
-| Pin | Legend | Signal |
-|---|---|---|
-| 1 | `3V` | 3.3 V to the planes' isolators (cable side), through a current-limited switch per connector |
-| 2 | `G` | GND |
-| 3 | `CL` | SCL, 33 ohm series, ESD |
-| 4 | `DA` | SDA, 33 ohm series, ESD |
-| 5 | `IN` | EXP_INT, 10 kohm pull-up, ESD; planes pull low (wired OR) |
-
-J13 and J14 are the same bus (HP I2C on GPIO2 SDA / GPIO3 SCL, 100
-kHz, 2.2 kohm pull-ups on the controller only) and the same EXP_INT
-(GPIO0). The current-limited switches are TPS2553 parts in the
-schematic; the pull-up value is to be confirmed on the bench with eight
-planes. Same pinout as the plane core's J2 / J3, cable pin 1 to pin 1.
+Power side: AUX_12V -> SS34 Schottky (reverse polarity) -> SMAJ15A TVS
+(15 V standoff, 24.4 V clamp) -> LMR51430 buck (4.5-36 V in) -> 5 V,
+then the 3.3 V buck. No fuse or PTC. The input is measured through a
+68 kohm / 10 kohm divider on GPIO5 (ADC). USB VBUS is OR-ed into the
+5 V rail through a second Schottky for the bench.
 
 ### J4 .. J7 - temperature probes
 
@@ -103,10 +100,11 @@ rail through a Schottky diode so the board runs from USB on the bench.
 |---|---|
 | USB D- / D+ | 12 / 13 |
 | BOOT strap (test pad) | 9 |
-| W5500 SCLK / MOSI / MISO / SCSn | 19 / 20 / 21 / 18 |
-| W5500 INTn / RSTn | 22 / 23 |
-| Plane link (HP I2C) SDA / SCL | 2 / 3 |
-| Plane EXP_INT (input, 10k pull-up) | 0 |
+| SPI SCLK / MOSI / MISO (W5500 and MCP2518FD) | 19 / 20 / 21 |
+| W5500 SCSn / INTn / RSTn | 18 / 22 / 23 |
+| MCP2518FD nCS (10k pull-up) | 2 |
+| MCP2518FD nINT (10k pull-up) | 3 |
+| TCAN1044V STB (low = normal mode) | 0 |
 | Local I2C (TMP1075, J9) SDA / SCL | 6 / 7 |
 | 1-wire (J4..J7) | 16 / 17 |
 | Dry inputs 1-4 | 10 / 11 / 4 / 15 |
@@ -114,37 +112,41 @@ rail through a Schottky diode so the board runs from USB on the bench.
 | Status LED | 1 |
 | Spare | 8 (strapping pin, 10k pull-up) |
 
-### I2C buses
+### I2C bus
 
 | Bus | Devices | Addresses | Speed |
 |---|---|---|---|
-| Plane link (J13, J14), isolated on each plane | plane cores | 0x30..0x37 | 100 kHz |
 | Local (on-board and J9) | U5 TMP1075, sensors on J9 | 0x48, sensors | 100 kHz |
 
-The two buses share no pins. A fault on J9 cannot block the plane link.
+This is the controller's only I2C bus. The plane link is CAN FD on its
+own SPI device, so a fault on J9 cannot block the plane link.
 
 ### Mechanical
 
 - Outline 105 x 50 mm, 1.6 mm 4-layer FR-4.
 - Four M3 holes 4 mm in from each corner.
-- RJ45, USB-C and the probe connectors on the top long edge; 12 V
-  inputs and plane link connectors on the bottom long edge, beside the
-  ESP32 module's antenna; J10 and J9 on the right-hand short edge.
+- RJ45, USB-C and the probe connectors on the top long edge; J10 and
+  J15 on the right-hand short edge, J15 on the B side with its shroud
+  past the edge; J9 on the bottom long edge. The ESP32 module's antenna
+  is on the bottom long edge.
 - Test pads: EN, BOOT (GPIO9), 3V3, GND; no buttons.
-- Mounting position relative to the planes (in the fluid or above it)
-  is still open.
+- In a block the controller sits within 0.35 m of the plane core (the
+  link ribbon's length, 1 m at most).
 
-## Plane core board
+## Plane core board (core-fd)
+
+68.0 x 72.0 mm. In a block it sits off the unit row and reaches unit 1
+over two ribbons (see [Core ribbons](#core-ribbons)).
 
 ### Connector list
 
 | Ref | Function | Part | LCSC |
 |---|---|---|---|
 | J1 | 48 V input | Amass XT30PW-M | C431092 |
-| J2 | Controller link in | JST B5B-PH-K-S | C157993 |
-| J3 | Controller link out | JST B5B-PH-K-S | C157993 |
-| J4 | 12 V aux out, isolated | JST B2B-PH-K-S | C131337 |
+| J2 | LINK IN (from the controller) | CJT A2541WR-2x3P, 2x3 2.54 mm right-angle pin header (plug), not keyed | C239334 |
+| J3 | LINK OUT (to unit 1) | CJT A2541HWR-2x3P, 2x3 2.54 mm right-angle socket | C5333425 |
 | J301 | Chain out (to unit 1) | CJT A2541HWR-2x7P, 2x7 2.54 mm right-angle socket, gold, B side | C19100281 |
+| JP1 | Link termination | 2x2 2.54 mm pin header (PZ254V-12-4P) | C492419 |
 | SW1 | Plane address | KingTek DSHP03TSGET, 3-way DIP | C50844 |
 | J6 | SWD | Samtec FTSH-105-01-L-DV-K, ARM Cortex 10-pin 1.27 mm | C5155080 |
 | J5 | SWD | Tag-Connect TC2030-NL pads (no part) | - |
@@ -158,38 +160,54 @@ The two buses share no pins. A fault on J9 cannot block the plane link.
 
 Keyed (the only reverse-polarity protection). SMDJ60A bus TVS, input
 capacitors, no fuse. Feeds the core's 3.3 V buck and the isolated
-12 V aux, nothing else.
+12 V for the link, nothing else.
 
-### J2, J3 - controller link
-
-| Pin | Signal |
-|---|---|
-| 1 | CTRL_3V3 (from the controller, supplies the isolators' cable side) |
-| 2 | CTRL_GND |
-| 3 | SCL (controller side) |
-| 4 | SDA (controller side) |
-| 5 | EXP_INT (open drain, pulled low by this plane) |
-
-J2 and J3 are wired straight through (daisy chain). Behind them: an
-ISO1640 I2C isolator and an ISO7721 for EXP_INT. The controller-side
-pull-ups R28 / R29 are not fitted; the controller carries them.
-
-### J4 - 12 V aux out
+### J2, J3 - plane link
 
 | Pin | Signal |
 |---|---|
-| 1 | CTRL_12V, about 12 V, isolated |
-| 2 | CTRL_GND |
+| 1 | CANH |
+| 2 | CANL |
+| 3 | LINK_GND (isolated from the bus) |
+| 4 | LINK_GND |
+| 5 | AUX_12V |
+| 6 | AUX_12V |
 
-LM5018 Fly-Buck from VIN with a 1:1 coupled inductor, about 100 mA
-(about 1.2 W). Starts at about 30 V bus. A 13 V TVS caps the output
-when no controller is connected; the green `12V` LED is the preload.
+J2 and J3 are wired straight through; pin n mates pin n on every link
+connector of every board. Behind them: an ISO1044 isolated CAN FD
+transceiver (side 2 on the link, supplied by a 5 V regulator from this
+core's isolated 12 V), an NUP2105L ESD diode pair on CANH / CANL at
+each connector, and the core's feed onto AUX_12V.
+
+The 12 V: an LM5018 Fly-Buck from VIN with a 1:1 coupled inductor
+makes an isolated 12 V, which goes onto AUX_12V through a B5819W
+Schottky diode. Every core on a link does the same, so the controller
+runs while any one core runs. A 13 V TVS caps the isolated output when
+nothing loads it; the green `12V` LED shows it. The controller draws
+about 0.2 A at 12 V (about 2 W); that this stays within one core's
+supply is to be confirmed on the first boards.
+
+The CAN FD controller is an MCP2518FD on the MCU's SPI1 (G070 build,
+the first batch); a G0B1 build would use the MCU's own FDCAN on the
+same board. Data rates: 500 kbit/s arbitration, 2 Mbit/s data phase.
+
+### JP1 - link termination
+
+| Pin | Signal | Pin | Signal |
+|---|---|---|---|
+| 1 | CANH | 2 | TERM_H |
+| 3 | CANL | 4 | TERM_L |
+
+A split termination (60.4 ohm per leg and a capacitor to LINK_GND),
+switched by two jumper caps on 1-2 and 3-4. Caps go only on the last
+board of the row, which in a block is unit 4 (JP301), never on a core
+that has units after it.
 
 ### J301 - chain out (to unit 1)
 
 2x7 socket, pins listed top to bottom as odd / even pin. The pinout is
 the same for the plug and the socket (plug pin n mates socket pin n),
-see [Chain joint](#chain-joint).
+see [Chain and link joints](#chain-and-link-joints-unit-to-unit).
 
 | Pins | Signal (odd) | Signal (even) |
 |---|---|---|
@@ -209,9 +227,10 @@ see [Chain joint](#chain-joint).
 | 2 | ADR1 | PD1 |
 | 3 | ADR2 | PA8 |
 
-Each strap has a 100 kohm pull-up; the switch closes it to GND. ON = 0,
-OFF = 1. Plane I2C address = 0x30 + ADR[2:0]: all ON = 0x30, all OFF =
-0x37.
+Each strap has a pull-up; the switch closes it to GND. ON = 0, OFF =
+1. Plane address = 0x30 + ADR[2:0]: all ON = 0x30, all OFF = 0x37. On
+the CAN FD link the plane's node id is ADR[2:0] (0-7); the controller
+is node 14.
 
 ### J6 - SWD, ARM Cortex 10-pin
 
@@ -240,16 +259,19 @@ OFF = 1. Plane I2C address = 0x30 + ADR[2:0]: all ON = 0x30, all OFF =
 |---|---|---|
 | D3 | `3V3` | core 3.3 V present (also feeds the units' logic) |
 | D4 | `RUN` | firmware heartbeat |
-| D5 | `12V` | isolated 12 V aux present (controller side) |
+| D5 | `12V` | isolated 12 V for the link present (controller side) |
 
 ### Core I2C
 
 | Bus | Devices | Addresses |
 |---|---|---|
-| Link (I2C1, slave, through the ISO1640) | this plane | 0x30 + ADR[2:0] |
 | Plane (I2C2, master) | TCA9548A mux, then one unit segment per channel | 0x70 |
 
-## Plane unit board
+The link to the controller is CAN FD (above), not I2C.
+
+## Plane unit board (unit-fd)
+
+78.6 x 72.1 mm.
 
 ### Connector list
 
@@ -258,6 +280,9 @@ OFF = 1. Plane I2C address = 0x30 + ADR[2:0]: all ON = 0x30, all OFF =
 | J201 | 48 V input | Amass XT60PW-M | C98732 |
 | J301 | Chain in (left edge) | CJT A2541WR-2x7P, 2x7 2.54 mm right-angle pin header (plug), gold, B side | C5136987 |
 | J302 | Chain out (right edge) | CJT A2541HWR-2x7P, 2x7 2.54 mm right-angle socket, gold, B side | C19100281 |
+| J303 | Link in (left edge, beside J301) | CJT A2541WR-2x3P, 2x3 2.54 mm right-angle pin header (plug) | C239334 |
+| J304 | Link out (right edge, beside J302) | CJT A2541HWR-2x3P, 2x3 2.54 mm right-angle socket | C5333425 |
+| JP301 | Link termination | 2x2 2.54 mm pin header (PZ254V-12-4P) | C492419 |
 | J1, J51 | Node 19 V, slot A, B | Degson DG128-5.0-02P | C711349 |
 | J2, J52 | Front panel, slot A, B | JST SM04B-GHS-TB (GH, 1.25 mm) | C189895 |
 | J3, J53 | Module aux, slot A, B | hanxia HX PM1.27-2x3P socket | C41397112 |
@@ -285,7 +310,8 @@ core's, over the expander's U_OFF line, and `unit_reset` releases it
 ### J301 - chain in (from the core side)
 
 2x7 plug, same pinout as the socket (odd = row farther from the edge,
-even = row nearer the edge). IN P0 is this unit's own segment.
+even = row nearer the edge). IN P0 is this unit's own segment. On
+unit 1 it takes the W_CHAIN ribbon from the core.
 
 | Pins | Signal (odd) | Signal (even) |
 |---|---|---|
@@ -315,6 +341,33 @@ segment on P0 without any setting.
 | 11, 12 | P0 SDA (= IN P1) | P0 SCL (= IN P1) |
 | 13, 14 | +3V3 | GND |
 
+### J303, J304 - plane link in / out
+
+The same pinout as the core's J2 / J3 and the controller's J15:
+
+| Pin | Signal |
+|---|---|
+| 1 | CANH |
+| 2 | CANL |
+| 3 | LINK_GND |
+| 4 | LINK_GND |
+| 5 | AUX_12V |
+| 6 | AUX_12V |
+
+Straight through, no parts on the unit except the switched termination
+on JP301. On unit 1, J303 takes the W_CORELINK ribbon from the core.
+On the last unit of the row J304 stays empty.
+
+### JP301 - link termination
+
+| Pin | Signal | Pin | Signal |
+|---|---|---|---|
+| 1 | CANH | 2 | TERM_H |
+| 3 | CANL | 4 | TERM_L |
+
+Jumper caps on 1-2 and 3-4 on the last unit of the row only (unit 4 in
+a block); see [Termination](#termination).
+
 ### J1, J51 - node 19 V
 
 | Pin | Signal |
@@ -322,7 +375,9 @@ segment on P0 without any setting.
 | 1 | GND |
 | 2 | +19 V from the port module (250 W continuous, 13.2 A) |
 
-5.0 mm pitch screw terminal, 14 AWG.
+5.0 mm pitch screw terminal, 14 AWG. The node end is a barrel plug
+into the node's DC jack (DC-045D on the AXB35 drawn); the plug is not
+chosen yet and the jack's polarity is to be metered.
 
 ### J2, J52 - front panel (JST GH 4p)
 
@@ -335,7 +390,8 @@ segment on P0 without any setting.
 
 The photoMOS LEDs are driven by the unit's TCA6424A (0x22) and return
 through a FET gated by PRESS_EN: no PRESS_EN, no press. Mate: GHR-04V-S
-housing, SSHL-002T-P0.2 contacts.
+housing, SSHL-002T-P0.2 contacts. The motherboard end of the cable and
+the motherboard's front-panel pinout are not confirmed.
 
 ### J3, J53 - module aux socket (2x3, 1.27 mm)
 
@@ -373,45 +429,80 @@ degrees takes no screw.
 Every unit carries the same addresses; the core's mux puts each unit on
 its own channel.
 
-## Chain joint
+## Chain and link joints (unit to unit)
 
-There is no chain cable. Neighbouring boards plug into each other, in
-the plane of the boards. A unit's J301 (left edge) is a right-angle 2x7
-2.54 mm pin header, CJT A2541WR-2x7P (C5136987, gold), on the B side
-with its body flush with the board's left edge and the pins 6 mm past
-it. The core's J301 and a unit's J302 (right edge) are the matching
-right-angle 2x7 socket, CJT A2541HWR-2x7P (C19100281, gold), on the B
-side with its entry face 4 mm past the board's right edge.
+There is no cable between units. Neighbouring units plug into each
+other, in the plane of the boards, through two joints side by side:
+the 2x7 chain and the 2x3 link.
 
-Plug pin n mates socket pin n, so the pinout above is the same on both
-sides. The pins sit at 42.5 to 57.74 mm from the board's top edge on
-every board, so the plug and socket line up.
+A unit's J301 (left edge) is a right-angle 2x7 2.54 mm pin header,
+CJT A2541WR-2x7P (C5136987, gold), on the B side with its body flush
+with the board's left edge and the pins 6 mm past it. A unit's J302
+(right edge) and the core's J301 are the matching right-angle 2x7
+socket, CJT A2541HWR-2x7P (C19100281, gold), on the B side with its
+entry face 4 mm past the board's right edge. The link joint beside it
+is the same family in 2x3: plug J303 (A2541WR-2x3P) on the left,
+socket J304 (A2541HWR-2x3P) on the right, same height and face rules,
+so one push mates both joints.
 
-Fully mated the boards stand 4 mm apart; the joint works from 4 to 6
+Plug pin n mates socket pin n, so the pinouts above are the same on
+both sides. The chain pins sit at 42.5 to 57.74 mm from the board's
+top edge, the link's pin 1 at 30.0 mm, on every board, so plug and
+socket line up.
+
+Fully mated the boards stand 4 mm apart; the joints work from 4 to 6
 mm gap (6 to 4 mm of the pins inside the socket). The boards sit on a
 common mounting bar and are screwed down to it. The bar holds the
-boards: the connector carries no load and has no latch. To remove a
+boards: the connectors carry no load and have no latch. To remove a
 middle unit, slide the boards after it 6 mm away first.
 
-## Link cable
+## Core ribbons
 
-JST PH 5-pin to 5-pin, pin 1 to pin 1: controller J13 / J14 to a plane
-core's J2, or a plane core's J3 to the next core's J2.
+The core sits off the unit row, so its chain and link reach unit 1
+over two ribbons, both pin n to pin n, red stripe on pin 1 at both
+ends, about 0.15 m (0.10-0.15 m from the pod layout, to measure on the
+first block). The core's J301 and J3 are sockets, so each ribbon has a
+male IDC plug at the core and an IDC socket at unit 1.
+
+| Ribbon | From | To | Cable | Core end | Unit end |
+|---|---|---|---|---|---|
+| W_CHAIN | core J301 | unit 1 J301 | 14-way, 1.27 mm, 28 AWG, halogen-free (3M HF365/14SF) | 2x7 male IDC plug | 2x7 IDC socket, Wurth 61201423021 |
+| W_CORELINK | core J3 LINK OUT | unit 1 J303 | 6-way, same cable (3M HF365/06SF) | 2x3 male IDC plug | 2x3 IDC socket, Wurth 61200623021 |
+
+W_CHAIN carries the chain pinout of [J301](#j301---chain-out-to-unit-1),
+W_CORELINK the link pinout of [J2, J3](#j2-j3---plane-link).
+
+**Open**: the male IDC plugs (2x7 and 2x3, for 1.27 mm flat cable) are
+not found yet. They have to fit the core's right-angle sockets side by
+side, 7.4 mm between their end pins: try the fit first. The current per
+chain pin is still to be checked against 28 AWG.
+
+## Link ribbon (W_LINK)
+
+Controller J15 to the core's J2 (LINK IN): 6-way halogen-free flat
+cable, 1.27 mm pitch, 28 AWG (3M HF365/06SF), about 0.35 m, 1 m at
+most. A 2x3 IDC socket with key and strain relief at both ends (Wurth
+61200623021), stripe on pin 1, pin n to pin n:
 
 | Pin | Signal |
 |---|---|
-| 1 | 3V3 (controller side) |
-| 2 | GND (controller side) |
-| 3 | SCL |
-| 4 | SDA |
-| 5 | EXP_INT |
+| 1 | CANH |
+| 2 | CANL |
+| 3 | LINK_GND |
+| 4 | LINK_GND |
+| 5 | AUX_12V (about 0.2 A) |
+| 6 | AUX_12V |
 
-## 12 V aux cable
+The controller end is keyed (J15 is a box header). The core end is a
+bare plug and is not: mark pin 1 there. A cable turned round at the
+core puts AUX_12V on CANH / CANL; both transceivers survive it (their
+bus pins take +-58 V), but the link stays down and the controller has
+no power.
 
-JST PH 2-pin to 2-pin, pin 1 to pin 1: a plane core's J4 to controller
-J11 or J12.
+## Termination
 
-| Pin | Signal |
-|---|---|
-| 1 | +12 V |
-| 2 | GND (controller side) |
+Two standard 2.54 mm jumper caps (for example Wurth 60900213421) on
+the last board of the row: JP301 of the last unit, pins 1-2 (CANH) and
+3-4 (CANL). In a block that is unit 4. None on any other board, core
+or unit. The controller terminates the other end of the bus on the
+board, with no setting.

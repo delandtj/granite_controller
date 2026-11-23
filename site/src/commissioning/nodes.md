@@ -54,9 +54,9 @@ this check.) For each plane check:
 | What you see | Meaning |
 |---|---|
 | The plane is listed with its number, `type`, `firmware` and `bus_v` | Good. The controller found it at boot or on the 10 s re-scan of the missing addresses. |
-| A plane is missing | Its address straps, the plane link cable, or the plane itself. A plane that answered once and then stopped raises a `plane_lost` event and drops out of `planes` (and of Modbus input register 15). |
+| A plane is missing | Its address straps, the link ribbons and the termination caps on the last unit, or the plane itself. A plane that answered once and then stopped raises a `plane_lost` event and drops out of `planes` (and of Modbus input register 15). |
 | An `address_collision` event | One address keeps answering with corrupt frames, usually because two planes are strapped the same. Re-strap one. |
-| A unit board shows `present: false` | The chain joint to that unit board (plug fully home, board screwed down). Its two slots are not nodes until it answers. |
+| A unit board shows `present: false` | The chain joint to that unit board (plug fully home, board screwed down; for unit 1, the W_CHAIN ribbon from the core). Its two slots are not nodes until it answers. |
 
 Then for each node:
 
@@ -172,7 +172,8 @@ and the table fills.
 
 ## Controller input voltage
 
-The rev D controller is fed 12 V from up to two planes. `vin_trim`
+The controller is fed 12 V over the link ribbon from the plane cores
+on its link. `vin_trim`
 (default 1.0) multiplies the measured input voltage to calibrate out
 resistor tolerance: compare `vin_v` in the state payload with a meter
 and set the ratio.

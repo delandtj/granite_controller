@@ -6,8 +6,14 @@ need a plane: USB-C powers the controller on its own.
 
 ## 1. Flash the image
 
-Build or obtain a release image of `granite-fw` for the board (not a
-devboard build with Wi-Fi or RGB features). Connect USB-C. Then flash
+Build or obtain a release image of `granite-fw` for controller-fd:
+the **`link-canfd`** image, which is the default build (not a
+`link-i2c` image, and not a devboard build with Wi-Fi or RGB
+features). Each image drives exactly one kind of plane link and
+carries a marker saying which; an over-the-air upload of an image for
+the other link kind, or of an image with no marker, is refused. The
+first `link-canfd` image on a board is therefore flashed over USB, as
+here; every later one can go over the network. Connect USB-C. Then flash
 the bootloader, the partition table and the application to `ota_0` in
 one go:
 
@@ -73,15 +79,19 @@ Expect log lines about the probes, the board temperature sensor and the
 plane link. A sensor that does not answer is logged, not fatal; the
 console and the network stay up.
 
-**Plane link, current firmware.** The board driver for the plane link
-is not written yet. The image carries a placeholder that answers every
-plane address with NAK and logs once at boot
-`plane link: stub driver - no plane transaction is performed, ...`.
-Such a controller finds no planes and no nodes, and refuses node
-commands as absent, even with planes cabled. Everything else in this
-chapter and the next ones (console, network, security, OTA) works as
-described. The four dry-contact inputs are likewise not mapped to pins
-yet and report "never read".
+**Plane link.** At boot the image logs its link kind
+(`plane link: canfd (marker ok)`) and, when it finds the MCP2518FD on
+the SPI bus, a `can: MCP2518FD ... up on SPI` line. The `link` console
+command prints the link kind and the CAN counters (frames in and out,
+timeouts, error counters, bus-off count). A line that says the marker
+is wrong or malformed means the build is wrong: flash the right one.
+
+**Current firmware.** The CAN FD link driver has not run on hardware
+yet; the first controller-fd and plane boards are where it is first
+tried. An image that cannot bring up its link hardware (no MCP2518FD
+answering) does not confirm itself after an over-the-air update and is
+rolled back. The four dry-contact inputs are not mapped to pins in the
+firmware yet and report "never read".
 
 ## 3. Console checks
 

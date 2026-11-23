@@ -14,7 +14,8 @@ that is much cheaper to find now.
 - [ ] HTTPS certificate fingerprint, if you pin it in scripts.
 - [ ] Which frame, which pod, which switch port the controller is on.
 - [ ] Per plane: its address (SW1), its position in the frame, how
-      many units it has, and which link chain (J13 or J14) it is on.
+      many units it has, which controller's link it is on, and which
+      unit carries the termination caps.
 - [ ] Per node: its number and the motherboard it powers.
 - [ ] A configuration export (Maintenance page or
       `GET /api/v1/config/export`). It contains no secrets; keep the
@@ -22,14 +23,19 @@ that is much cheaper to find now.
 
 ## Hardware verified
 
-- [ ] Controller powers from J11 alone and from J12 alone (pull the
-      other 12 V cable), with USB unplugged.
+- [ ] Controller runs from the link ribbon alone, with USB unplugged.
+      With more than one plane on the link: it stays up with any one
+      core's 48 V lead pulled.
 - [ ] `vin_v` reads about 12 V.
+- [ ] `link` on the console (or the status) shows the CAN link up,
+      the error counters near zero and no bus-off.
 - [ ] Link LED on, `net` shows the expected address and mode.
 - [ ] Every plane is found at its address, with the number of units
       you fitted, and no address collision is reported.
-- [ ] Every board plugged fully into its neighbour and screwed down on the bar; every unit reports its
-      input voltage.
+- [ ] Every unit plugged fully into its neighbour and screwed down on
+      the bar, the core ribbons seated and dressed; every unit reports
+      its input voltage.
+- [ ] Two jumper caps on JP301 of the last unit, none elsewhere.
 - [ ] Every module screwed down with lock washers and reported present.
 - [ ] Every node number matches the motherboard you expect: power each
       node off and on in turn from the Status page and watch which one
@@ -63,12 +69,12 @@ that is much cheaper to find now.
 
 ## Firmware verified
 
-- [ ] Controller: running image is the release you intend, `ota_0`
-      holds it, nothing is `pending_verify`.
-- [ ] Planes: every core runs the plane firmware release you intend.
-      (**Current firmware**: the plane core firmware is not written yet
-      at the time of writing; until it is, this item cannot be done and
-      the planes run on their hardware defaults.)
+- [ ] Controller: running image is the `link-canfd` release you
+      intend, `ota_0` holds it, nothing is `pending_verify`.
+- [ ] Planes: every core runs the plane firmware release you intend
+      (`plane-fd`, flashed over SWD). Plane cores cannot be updated
+      over the link yet (no plane bootloader), so after sealing a
+      plane keeps the image it has.
 - [ ] Optional but strongly advised once per site: push a controller
       update over the air and watch it validate, then push a
       deliberately broken image and watch the board come back on the
