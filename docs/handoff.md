@@ -1,6 +1,82 @@
-# Handoff - granite-plane (updated 2026-11-19)
+# Handoff - granite-plane (updated 2026-11-23)
 
 Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
+
+## 2026-11-23: FD batch 1 on the bench - controller-fd flashed, core next
+
+Batch 1 boards are in hand. Work done on a second PC (not the usual
+build machine); nothing below changed copper or schematics.
+
+- **controller-fd (granite-b4499b, MAC d4:05:92:b4:49:9b) flashed and
+  booted** with the default `link-canfd` image (ota_0, valid), on USB
+  power only. First hardware run of the FD controller:
+  - W5500 link up, DHCP 192.168.8.151, mDNS, https 443.
+  - MCP2518FD answers on SPI at 10 MHz (nCS GPIO2, nINT GPIO3),
+    TCAN1044V STB low. No plane on the bus yet, so no CAN frame has
+    been exchanged.
+  - TMP1075 at 0x48 on LP I2C (GPIO6/7); ESP-IDF prints its generic
+    pull-up warning there. 1-wire up, 0 probes (none fitted).
+  - VIN 0 mV (`outside 10000..14000 mV` warning): expected on USB.
+  - Admin password not set, no fleet key yet. The recovery token was
+    printed at first boot and is with the user, not in the repo.
+- **Fleet key, next**: the user wants the key pair from the home box.
+  Either paste `fleet-recovery.pub` on the Security page (after
+  `set-password`), or rebuild with `FLEET_RECOVERY_PUBKEY` and reflash;
+  a built-in key is only taken while none is stored (identity.rs), which
+  is the case on this board now.
+- **granite-fw toolchain** (649cf61, pushed): nightly pinned to
+  nightly-2026-10-08 (later nightlies break std or rustc for espidf);
+  bindgen needs libclang 21 (`LIBCLANG_PATH=/usr/lib/llvm21/lib`, Arch
+  clang21), libclang 23 makes `struct _reent` opaque. Details in
+  firmware/README.md, "Toolchain install". The usual build machine
+  probably never hit the libclang one through an espup symlink.
+- **Core on the lab supply (31 V max)**: everything on core-fd runs from
+  VIN through two regulators with UVLO dividers near 30 V: U1 LM5164
+  (R3 1M / R4 52.3k, on ~30.2 V typ, off ~28 V) and U2 LM5018 Fly-Buck
+  (R10 100k / R11 4.22k, on ~30.3 V typ, off ~28.3 V). Worst-case
+  turn-on with threshold and 1 % tolerances ~31.7-31.8 V, so 31 V
+  starts a typical board with ~0.8 V margin, not guaranteed. Bench-only
+  fallback if a board does not start: stack 2.2M on R3 and 220k on R10
+  (both on ~21 V); remove before 48 V. Units do not switch slots below
+  41.3 V (batch 1 UVLO), so the lab supply tests core, link and unit
+  logic, not module power.
+- **The link carries no power toward the core**: AUX_12V flows core ->
+  controller (D10 OR diode, isolated LINK_GND domain); the controller
+  on USB puts nothing on it. Core needs VIN on its XT30.
+- **plane-fd (core image) builds** on stable, `link-mcp` default:
+  50.2 KB text, 7.9 KB RAM of 128 / 36 KB; clippy clean. Not flashed:
+  SWD probe is at home. J6 (fitted) is the ARM 10-pin 1.27 mm Cortex
+  header; J5 is a TC2030-NL Tag-Connect footprint (pads only). User has
+  an ST-LINK/V2 and some V3s (to check) and a Tag-Connect cable (type
+  to check: CTX = 10-pin 1.27, IDC = 6-pin 2.54). probe-rs 0.32.0
+  installed from the Arch repos; its packaged udev rules (69-probe-rs,
+  uaccess) cover all ST-Link variants. Flash: `cd firmware/plane-fd &&
+  cargo run --release` with the core on VIN.
+- **PM module (rev A pm-19v-250w, two coils) L1 / L2 not wetted**: the
+  APS1510M220F coils lift off by hand. Likely causes: both pads tied by
+  via fields into inner copper (heat sink), the XAL1510 land is smaller
+  than COILANK's own (3.18 x 13.2 vs 4.5 x 15.0 mm), and the joint is
+  entirely under the body (pads end at +-6.9 mm, body at +-7.7 mm), so
+  no iron access and no visible fillet. Not yet known: solder left on
+  the pads or bare copper, and whether every coil on every module. If
+  systematic, photograph and raise with JLC.
+  - Rework plan given: board suspended (two-sided, not on a hotplate
+    surface) over a bottom preheat ~120 C, wick and re-tin pads and
+    terminals with Sn63/Pb37 and gel flux, hot air on the coil body, a
+    scrap of Sn63 at the pad edge as the temperature indicator (no
+    surface thermometer on hand), DCR check ~16 mOhm pad to pad. Bottom
+    parts under the coils (LTC7810, BSC070s, C24 7360 polymer) are held
+    by surface tension if they reflow; keep the board level.
+  - **Next rev, both PM boards** (pm-19v-250w-b has the same land with
+    APS1510M100F): COILANK's land (4.5 x 15.0 pads, 6.0 gap) with pad
+    beyond the body, and reconsider direct vias under the pads.
+
+Next steps:
+1. Fleet key onto the controller (Security page or built-in, above).
+2. At home: identify the probe and cable, core on 31 V, flash plane-fd,
+   then controller + core over the link (first CAN FD traffic; `link` on
+   the controller console shows the counters).
+3. PM coil rework once the pad side has been looked at.
 
 ## 2026-11-19: open item - MQTT measurements are not stored
 
