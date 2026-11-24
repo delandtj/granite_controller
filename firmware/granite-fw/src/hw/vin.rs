@@ -1,10 +1,16 @@
-//! 19 V bus voltage on GPIO5 / ADC1 channel 5 (ADR 0001 component 4,
+//! Input voltage on GPIO5 / ADC1 channel 5 (ADR 0001 component 4,
 //! "VIN on ADC1 ch5 with the ESP-IDF curve calibration, 16-sample average
-//! every 1 s, scaled by the 110/10 divider with a per-board trim factor").
+//! every 1 s, scaled by the divider with a per-board trim factor").
 //!
-//! docs/controller.md, "Added inputs": R63 100k over R64 10k, so the pin
-//! sees Vin/11 and 19 V lands at 1.73 V. 12 dB attenuation is the only
-//! range that reaches the 3.23 V the TVS clamp allows.
+//! The divider R63 / R64 differs per board:
+//! - rev C (docs/controller.md, "Added inputs"): 100k over 10k, Vin/11,
+//!   19 V lands at 1.73 V.
+//! - rev D and controller-fd (docs/controller-rev-d.md; controller-fd
+//!   schematic/power.kicad_sch): 68k over 10k, Vin/7.8, 12 V lands at
+//!   1.54 V and the 24.4 V clamp at 3.13 V. Scaling a controller-fd by 11
+//!   read 16.9 V for a metered 12.6 V (2026-11-24).
+//!
+//! 12 dB attenuation is the only range that reaches the clamp voltage.
 
 use std::sync::atomic::{AtomicU32, Ordering};
 
@@ -16,8 +22,15 @@ use esp_idf_hal::gpio::Gpio5;
 use esp_idf_sys::EspError;
 use granite_core::hal::{BusVoltage, HalError, HalResult};
 
-/// Divider ratio: (R63 + R64) / R64 = (100k + 10k) / 10k.
-pub const DIVIDER: u32 = 11;
+/// Divider ratio (R63 + R64) / R64 as a fraction, DIVIDER_NUM / DIVIDER_DEN.
+/// Rev C: (100k + 10k) / 10k = 11.
+#[cfg(feature = "rev-c")]
+pub const DIVIDER_NUM: u32 = 110;
+/// Rev D and controller-fd: (68k + 10k) / 10k = 7.8.
+#[cfg(not(feature = "rev-c"))]
+pub const DIVIDER_NUM: u32 = 78;
+/// Denominator of the divider ratio (R64, in k).
+pub const DIVIDER_DEN: u32 = 10;
 /// Samples averaged per reading.
 pub const SAMPLES: u32 = 16;
 
@@ -76,7 +89,9 @@ impl Vin {
         let channel = AdcChannelDriver::new(driver, pin, &config)?;
         let milli = trim_milli(trim);
         TRIM_MILLI.store(milli, Ordering::Relaxed);
-        log::info!("vin: ADC1 ch5 on GPIO5, divider 1:{DIVIDER}, trim {milli}/1000");
+        log::info!(
+            "vin: ADC1 ch5 on GPIO5, divider {DIVIDER_NUM}/{DIVIDER_DEN}, trim {milli}/1000"
+        );
         Ok(Vin { channel })
     }
 
@@ -97,6 +112,6 @@ impl Vin {
 impl BusVoltage for Vin {
     fn read_mv(&mut self) -> HalResult<u32> {
         let pin_mv = self.read_pin_mv()?;
-        Ok(pin_mv * DIVIDER * trim() / 1000)
+        Ok(pin_mv * DIVIDER_NUM * trim() / (DIVIDER_DEN * 1000))
     }
 }
