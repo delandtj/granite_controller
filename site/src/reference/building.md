@@ -159,7 +159,8 @@ the MCP2518FD on SPI1. `link-fdcan` is for a core fitted with the
 STM32G0B1CC instead (same board, FDCAN1), flashed with
 `probe-rs run --chip STM32G0B1CCTx`; no such core is in the first
 batch. Logs come over RTT (defmt). The firmware README in
-`firmware/plane-fd` has the details.
+`firmware/plane-fd` has the details; the bench wiring is in
+[Flash a plane core over SWD](../commissioning/flash-core.md).
 
 ## Host tests and the simulator
 

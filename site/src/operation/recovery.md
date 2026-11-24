@@ -299,7 +299,8 @@ SWD writes both images: `plane-boot`, which is only ever written over
 SWD and never in the field, and `plane-fd`. Flash the `link-mcp` build
 of `plane-fd` (the default; the first batch has the STM32G070 with an
 MCP2518FD), with `probe-rs` or the `cargo run --release` runner in
-`firmware/plane-fd`. The plane's address comes from the switch on the
+`firmware/plane-fd`; wiring and steps in
+[Flash a plane core over SWD](../commissioning/flash-core.md). The plane's address comes from the switch on the
 core, not from the image, so a reflashed core keeps its address.
 
 The STM32's own ROM bootloader is no way in over the link: the

@@ -13,6 +13,7 @@
 
 - [Overview and order of work](commissioning/overview.md)
 - [Assembling and cabling planes](commissioning/planes.md)
+- [Flash a plane core over SWD](commissioning/flash-core.md)
 - [Flash and first boot over USB](commissioning/first-boot.md)
 - [First setup over the network](commissioning/first-setup.md)
 - [Network configuration](commissioning/network.md)

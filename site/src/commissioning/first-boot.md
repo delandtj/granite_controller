@@ -47,7 +47,7 @@ token and configuration across firmware reflashes over USB.
 
 The planes are not flashed from here. A plane core is flashed on the
 bench over SWD; see
-[Recovery](../operation/recovery.md#bench-recovery-of-a-plane-core).
+[Flash a plane core over SWD](flash-core.md).
 
 ## 2. Watch the first boot
 
