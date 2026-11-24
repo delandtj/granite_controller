@@ -13,3 +13,6 @@ PHR-4,4,option I2C J9
 PHR-5,4,option dry contacts J10
 SPH-002T-P0.5S,60,option PH contact
 DS18B20+,5,option probes
+61200621721,3,controller-fd J15 box header (hand-solder)
+2743,2,Adafruit SWD 2x5 1.27 mm breakout (core flashing)
+1675,1,Adafruit 2x5 1.27 mm SWD ribbon (core J6)

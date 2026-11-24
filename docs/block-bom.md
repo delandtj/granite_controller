@@ -58,6 +58,17 @@ Not in the CSV yet, no part found:
 | Male IDC plug 2x3, same family, W_CORELINK core end | 1 | 4 | as above. The two plugs sit 7.4 mm apart: try the fit |
 | 19 V barrel plug for the AXB35's DC-045D jack, W_19V node end | 8 | 10 | jack size not measured (DC-045D is not one standard size). The best solder plugs found (Switchcraft 760 / 761, 5.5 x 2.5 mm) are rated 5 A, under the node's 8.7 A |
 
+## Bench and board fixes (also in the CSV)
+
+| Use | Maker | Part number | Need | Order | Note |
+|-----|-------|-------------|-----:|------:|------|
+| controller-fd J15 | Wurth | 61200621721 | 1 per controller | 3 | 2x3 right-angle THT box header, PBT, replaces LCSC C34945; JLC left it off (only bottom-side part). Hand-solder on B, pin 1 at the bottom of the column. Check the body overhang past the edge against C34945 |
+| Core flashing | Adafruit | 2743 | 1 | 2 | SWD 2x5 1.27 mm to 2.54 mm breakout, takes the TC2030-CTX-NL. Check that the 2x5 header comes fitted |
+| Core flashing | Adafruit | 1675 | 1 | 1 | 2x5 1.27 mm socket-socket ribbon, 150 mm: core J6 to the breakout, no hand-held Tag-Connect |
+
+Breakout to ST-LINK/V2: 2 SWDIO, 4 SWCLK, 3 GND, 10 NRST (optional);
+pin 1 is the board's 3V3, left open on a clone ST-LINK.
+
 ## Tools
 
 | Job | Tool | Where seen | Note |
