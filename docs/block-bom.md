@@ -83,8 +83,8 @@ An IDC plier cannot crimp GH, and a crimp plier cannot press IDC.
 
 | Use | Item | Need | Order | Note |
 |-----|------|-----:|------:|------|
-| Module screws | M2 x 5 pan head, A2 | 32 | 50 | head at most 4.4 mm, 0.15 Nm max |
-| Module washers | M2 spring washer DIN 127, A2 | 32 | 50 | |
+| Module screws | M2 x 5 socket cap DIN 912, A2: TME Kraftberg M2X5/D912-A2 | 32 | 100 | head 3.8 mm, 1.5 mm hex key, 0.15 Nm max; TME minimum 100 |
+| Module washers | M2 split washer DIN 127 B, A2: TME Kraftberg K2_D127-A2 | 32 | 100 | OD 4.4 mm; TME minimum 100 |
 | Board mounting | M3 screws, washers | 24 | 30 | hold: length and standoff follow from the bar |
 | Node network | Cat6 patch, non-PVC jacket and cores | 8 | 12 | hold: length; LSZH alone does not prove the cores |
 | Controller network | Cat5e or better, solid, non-PVC, straight | 1 | 2 | 3 m; solid, as stranded wicks oil through the wall |

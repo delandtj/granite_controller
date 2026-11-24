@@ -74,7 +74,7 @@ Host standoff (one part per designator, JLC places one part each):
   apertures (as drawn at tag pm-mount-drawn), solid to the pour.
 - 8-12 stitching vias around the pad to the inner planes.
 
-Hardware: M2 x 5 pan or cheese head, A2 stainless, with a spring lock
+Hardware: M2 x 5 pan, cheese or socket cap head (DIN 912, 3.8 mm), A2 stainless, with a spring lock
 washer (DIN 127 / split ring) under the head. Engagement: 5 - 1.6
 (PCB) - 0.5 (washer) = 2.9 mm (the screw goes into the standoff's top,
 so the standoff length does not change it). Torque: 0.15 Nm max, the
