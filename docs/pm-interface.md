@@ -150,15 +150,26 @@ placement error changes nothing, a 90 degree one does.
   minimum and OV_KILL glitches low. Every host must ignore OV_KILL
   until the module has carried VIN for some milliseconds; the number is
   to be measured (the glitch has only been seen through its effect, a
-  slot latch set at every power-up, not on a scope). What the PP-48
-  plane does: the slot's OV latch is cleared once 100 ms after the
-  unit's input power-good rises, with LCLR held long enough that the
-  module's start-up falls inside the hold (firmware ADR 0002 decision
-  7b). It is not a fault reset - a latch that sets afterwards stays
-  set. The glitch outlasts a 10 ms clear on the rev A module and not on
-  rev B, so the hold is where a new module's VAUX network shows up:
-  a module whose OV_KILL is low longer than the plane's hold comes up
-  latched.
+  slot latch set at every power-up, not on a scope). It is not only a
+  power-up matter: the glitch belongs to **the module getting VIN**, so
+  it comes back at every switch-on of the slot's rail. Measured on
+  2026-11-25: with the power-up clear in place, a commanded `on` on a
+  slot whose rail had been switched off latched that slot at once.
+  What the PP-48 plane does, in two places:
+  - once 100 ms after the unit's input power-good rises, one clear per
+    slot with LCLR held across the module's start-up (firmware ADR 0002
+    decision 7b);
+  - and at **every** rail switch-on of a slot that is not already
+    latched, LCLR asserted with the OFF release and held 100 ms past it
+    (decision 7c).
+
+  Neither is a fault reset - a latch that sets outside those windows
+  stays set, and a slot that is already latched is left latched. The
+  glitch outlasts a 10 ms clear on the rev A module and not on rev B,
+  so the hold is where a new module's VAUX network shows up: a module
+  whose OV_KILL is low longer than the plane's hold comes up latched.
+  Both holds are one-line firmware constants; a module that does not
+  glitch costs nothing by them.
 - Host side: OV_KILL and PGOOD pulled up in the column (open = good,
   so an absent module reads "good"; presence comes from ID). RUN is
   the module's UVLO divider node (~1.9 V at 60 V in): the host only

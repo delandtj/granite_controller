@@ -9,8 +9,10 @@
 //! Everything a status bit says comes from this cycle, so a bit cannot
 //! be stale: the only sticky ones are the latches (OV, power limit),
 //! which ADR 0002 decision 7 says are never cleared automatically. The
-//! one exception is the start-up artifact of decision 7b, armed from
-//! here and fired by the sequencer ([`crate::power_up_clear`]).
+//! exceptions are the two start-up artifacts of the module's OV
+//! comparator: decision 7b, armed from here and fired by the sequencer
+//! ([`crate::power_up_clear`]), and decision 7c, which the sequencer
+//! does at every rail switch-on ([`crate::switch_on_blank`]).
 
 use granite_proto::{CrossCheck, EventKind, EventTarget, SEGMENT_CHANNELS, SlotStatus};
 
