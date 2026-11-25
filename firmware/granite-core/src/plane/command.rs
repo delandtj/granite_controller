@@ -24,6 +24,22 @@
 //! host is still lit, so the node always ends up off (ADR 0004
 //! decision 4, user 2026-10-29).
 //!
+//! A node whose settings say it has no front panel
+//! ([`NodeOptions::front_panel`]) gets another table, because there is
+//! no button to press and no LED to wait for (ADR 0004, "Nodes without a
+//! front panel"):
+//!
+//! | Verb | Plane command |
+//! |---|---|
+//! | on | 0x40 enable on |
+//! | off, force_off | 0x40 enable off: a hard cut ([`HARD_CUT_TEXT`]) |
+//! | cycle | 0x40 off, [`CYCLE_OFF_S`], 0x40 on, as two stages |
+//! | on_all | 0x4B stagger as usual, then 0x40 enable on per slot |
+//! | reset, press | refused by the dispatcher, never a job |
+//!
+//! The plane is told nothing about any of this: the choice of command is
+//! the whole mechanism, so plane-logic and ADR 0003 do not change.
+//!
 //! A job is one or more **stages**, each a list of per-plane CTRL
 //! writes. Almost every verb is one stage of one write; `on_all` is
 //! two, because the stagger has to finish before each slot gets its
@@ -142,6 +158,11 @@ pub struct NodeOptions {
     pub soft_off_s: u16,
     /// How far `off` and `force_off` escalate.
     pub escalate: Escalate,
+    /// Whether the node has a front panel at all (ADR 0004, "Nodes
+    /// without a front panel"). `false` turns every verb that would
+    /// press a button into a rail-only plane command; the plane is told
+    /// nothing, because the choice of command is the whole mechanism.
+    pub front_panel: bool,
 }
 
 impl Default for NodeOptions {
@@ -156,17 +177,40 @@ impl NodeOptions {
         led_timeout_s: ON_TIMEOUT_S,
         soft_off_s: OFF_TIMEOUT_S,
         escalate: Escalate::HoldPwrThenCutRail,
+        front_panel: true,
     };
 
     /// The options one node's configured settings ask for.
+    ///
+    /// `front_panel = false` ignores `led_sense`: a node with no
+    /// front-panel cable has no LED to trust, and the LED timeout goes
+    /// to zero because no verb of its own waits for a light.
     pub fn of_settings(settings: &NodeSettings) -> Self {
+        let front_panel = settings.front_panel;
         NodeOptions {
-            led_timeout_s: if settings.led_sense { ON_TIMEOUT_S } else { 0 },
+            led_timeout_s: if settings.led_sense && front_panel {
+                ON_TIMEOUT_S
+            } else {
+                0
+            },
             soft_off_s: settings.t_soft_off_s,
             escalate: settings.escalation.as_wire(),
+            front_panel,
         }
     }
+
+    /// The same options for a node that has no front panel.
+    pub const fn without_front_panel(mut self) -> Self {
+        self.front_panel = false;
+        self.led_timeout_s = 0;
+        self
+    }
 }
+
+/// What an ack, an HTTP job result and an `action_done` event say about a
+/// verb that cut a node's rail with no shutdown (ADR 0004, "Nodes
+/// without a front panel").
+pub const HARD_CUT_TEXT: &str = "rail cut, no shutdown (no front panel)";
 
 /// What a command on one node or a set of them asks for.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -224,6 +268,11 @@ pub enum NodeCommand {
         /// out of it - `on_all` is a staggered `on` (ADR 0004
         /// decision 4), not a power cycle.
         stagger: Vec<NodeId>,
+        /// Of those, the ones with no front panel: they get the rail
+        /// (0x40 enable) instead of a node-on, because there is no
+        /// button to press and no LED to wait for (ADR 0004, "Nodes
+        /// without a front panel").
+        rail_only: Vec<NodeId>,
         /// Timings of the nodes in the set. One set of options for the
         /// group: a staggered `on_all` is one plane command per plane
         /// and cannot carry a timeout per slot.
@@ -286,6 +335,7 @@ impl NodeCommand {
         NodeCommand::OnAll {
             stagger: nodes.clone(),
             nodes,
+            rail_only: Vec::new(),
             opts: NodeOptions::DEFAULT,
         }
     }
@@ -297,6 +347,7 @@ impl NodeCommand {
         NodeCommand::OnAll {
             nodes,
             stagger,
+            rail_only: Vec::new(),
             opts: NodeOptions::DEFAULT,
         }
     }
@@ -310,10 +361,34 @@ impl NodeCommand {
             NodeCommand::ForceOff { node, .. } => NodeCommand::ForceOff { node, opts },
             NodeCommand::Cycle { node, .. } => NodeCommand::Cycle { node, opts },
             NodeCommand::OnAll {
-                nodes, stagger, ..
+                nodes,
+                stagger,
+                rail_only,
+                ..
             } => NodeCommand::OnAll {
                 nodes,
                 stagger,
+                rail_only,
+                opts,
+            },
+            other => other,
+        }
+    }
+
+    /// `on_all` where some of the set have no front panel: those slots
+    /// get the rail and nothing else (ADR 0004, "Nodes without a front
+    /// panel").
+    pub fn with_rail_only(self, rail_only: Vec<NodeId>) -> Self {
+        match self {
+            NodeCommand::OnAll {
+                nodes,
+                stagger,
+                opts,
+                ..
+            } => NodeCommand::OnAll {
+                nodes,
+                stagger,
+                rail_only,
                 opts,
             },
             other => other,
@@ -364,11 +439,17 @@ impl NodeCommand {
     /// True for a verb whose end state is "the rail is off", which is
     /// what the intended-OFF set remembers (see [`super::intent`]).
     ///
-    /// `off` and `force_off` are not listed: whether they end with the
-    /// rail cut depends on the host, so the client decides from the
-    /// slot's state once the sequence has finished.
+    /// `off` and `force_off` on a node with a front panel are not
+    /// listed: whether they end with the rail cut depends on the host,
+    /// so the client decides from the slot's state once the sequence has
+    /// finished. On a node without one they *are* the rail cut
+    /// ([`Self::hard_cut`]), so the intent is certain.
     pub const fn intends_rail_off(&self) -> bool {
-        matches!(self, NodeCommand::PowerOff { .. })
+        match self {
+            NodeCommand::PowerOff { .. } => true,
+            NodeCommand::Off { opts, .. } | NodeCommand::ForceOff { opts, .. } => !opts.front_panel,
+            _ => false,
+        }
     }
 
     /// True for a verb that ends with the rail up, which clears the
@@ -387,7 +468,43 @@ impl NodeCommand {
     /// True for a verb that may end with the rail cut, so the client
     /// looks at the slot once it is done.
     pub const fn may_cut_rail(&self) -> bool {
-        matches!(self, NodeCommand::Off { .. } | NodeCommand::ForceOff { .. })
+        match self {
+            NodeCommand::Off { opts, .. } | NodeCommand::ForceOff { opts, .. } => opts.front_panel,
+            _ => false,
+        }
+    }
+
+    /// True for a verb that takes the host's power away without a
+    /// shutdown: `off`, `force_off` and `cycle` on a node with no front
+    /// panel (ADR 0004, "Nodes without a front panel").
+    ///
+    /// The ack, the HTTP job result and the `action_done` event say so,
+    /// with [`HARD_CUT_TEXT`]. `power_off` is not listed: a verb that
+    /// names the rail is the operator asking for exactly this.
+    pub const fn hard_cut(&self) -> bool {
+        match self {
+            NodeCommand::Off { opts, .. }
+            | NodeCommand::ForceOff { opts, .. }
+            | NodeCommand::Cycle { opts, .. } => !opts.front_panel,
+            _ => false,
+        }
+    }
+
+    /// How long the client waits after the previous stage before stage
+    /// `stage` of this command goes out \[ms\].
+    ///
+    /// Zero for everything the plane sequences itself. The one exception
+    /// is `cycle` on a node without a front panel: no plane command cuts
+    /// a rail, waits and brings it back without a press, so the
+    /// controller runs the off, the [`CYCLE_OFF_S`] wait and the on as
+    /// one job of two stages.
+    pub const fn stage_delay_ms(&self, stage: usize) -> u64 {
+        match self {
+            NodeCommand::Cycle { opts, .. } if !opts.front_panel && stage == 1 => {
+                CYCLE_OFF_S as u64 * 1_000
+            }
+            _ => 0,
+        }
     }
 
     /// The longest the plane can take over this command \[ms\], from the
@@ -400,6 +517,16 @@ impl NodeCommand {
     pub fn worst_case_ms(&self) -> u64 {
         let led = |opts: &NodeOptions| u64::from(opts.led_timeout_s) * 1_000;
         let press = u64::from(PRESS_MS);
+        // A node with no front panel runs the rail and nothing else: one
+        // enable write, or two with the cycle's wait between them.
+        if let NodeCommand::On { opts, .. }
+        | NodeCommand::Off { opts, .. }
+        | NodeCommand::ForceOff { opts, .. }
+        | NodeCommand::Cycle { opts, .. } = self
+            && !opts.front_panel
+        {
+            return self.stage_delay_ms(1) + SEQUENCE_SLACK_MS;
+        }
         match self {
             // Wait for the LED, press PWR, wait again (CTRL 0x50).
             NodeCommand::On { opts, .. } => 2 * led(opts) + press + SEQUENCE_SLACK_MS,
@@ -443,6 +570,24 @@ impl NodeCommand {
         let Some((address, slot)) = nodes.first().and_then(|n| node_location(*n)) else {
             return Vec::new();
         };
+        // A node with no front panel: the verbs of decision 4 become the
+        // rail (ADR 0004, "Nodes without a front panel"). `cycle` is two
+        // stages with [`CYCLE_OFF_S`] between them
+        // ([`Self::stage_delay_ms`]); `reset` and `press` never get this
+        // far, because the dispatcher refuses them.
+        if let NodeCommand::On { opts, .. }
+        | NodeCommand::Off { opts, .. }
+        | NodeCommand::ForceOff { opts, .. }
+        | NodeCommand::Cycle { opts, .. } = self
+            && !opts.front_panel
+        {
+            let enable = |on: bool| alloc::vec![Step::one(address, Ctrl::Enable { slot, on })];
+            return match self {
+                NodeCommand::On { .. } => alloc::vec![enable(true)],
+                NodeCommand::Cycle { .. } => alloc::vec![enable(false), enable(true)],
+                _ => alloc::vec![enable(false)],
+            };
+        }
         let command = match self {
             NodeCommand::On { opts, .. } => Ctrl::NodeOn {
                 slot,
@@ -495,9 +640,14 @@ impl NodeCommand {
     /// is there to spread inrush, and a slot that is already carrying a
     /// board has none left to spread.
     fn stagger_stages(&self) -> Vec<Vec<Step>> {
-        let (opts, cut) = match self {
-            NodeCommand::OnAll { opts, stagger, .. } => (*opts, stagger.as_slice()),
-            _ => (NodeOptions::default(), &[] as &[NodeId]),
+        let (opts, cut, rail_only) = match self {
+            NodeCommand::OnAll {
+                opts,
+                stagger,
+                rail_only,
+                ..
+            } => (*opts, stagger.as_slice(), rail_only.as_slice()),
+            _ => (NodeOptions::default(), &[] as &[NodeId], &[] as &[NodeId]),
         };
         let mut stagger: Vec<Step> = Vec::new();
         let mut on: Vec<Step> = Vec::new();
@@ -521,13 +671,18 @@ impl NodeCommand {
                     )),
                 }
             }
-            on.push(Step::one(
-                address,
-                Ctrl::NodeOn {
-                    slot,
-                    led_timeout_s: opts.led_timeout_s,
-                },
-            ));
+            // No front panel: the rail is the whole verb for this slot.
+            on.push(if rail_only.contains(&node) {
+                Step::one(address, Ctrl::Enable { slot, on: true })
+            } else {
+                Step::one(
+                    address,
+                    Ctrl::NodeOn {
+                        slot,
+                        led_timeout_s: opts.led_timeout_s,
+                    },
+                )
+            });
         }
         if on.is_empty() {
             return Vec::new();
@@ -663,6 +818,24 @@ impl Command {
         match self {
             Command::Node(c) => c.worst_case_ms(),
             Command::Plane(c) => c.worst_case_ms(),
+        }
+    }
+
+    /// How long the client waits before stage `stage` goes out \[ms\]
+    /// (see [`NodeCommand::stage_delay_ms`]).
+    pub const fn stage_delay_ms(&self, stage: usize) -> u64 {
+        match self {
+            Command::Node(c) => c.stage_delay_ms(stage),
+            Command::Plane(_) => 0,
+        }
+    }
+
+    /// True when it cut a node's rail with no shutdown (see
+    /// [`NodeCommand::hard_cut`]).
+    pub const fn hard_cut(&self) -> bool {
+        match self {
+            Command::Node(c) => c.hard_cut(),
+            Command::Plane(_) => false,
         }
     }
 }
@@ -895,6 +1068,99 @@ mod tests {
         assert!(PlaneCommand::Reboot { address: 0x40 }.stages().is_empty());
         let reboot = PlaneCommand::Reboot { address: 0x33 }.stages();
         assert_eq!(reboot[0][0].commands[0], Ctrl::Reboot);
+    }
+
+    /// ADR 0004, "Nodes without a front panel": the verbs of decision 4
+    /// become rail-only plane commands, and nothing presses a button.
+    #[test]
+    fn a_node_without_a_front_panel_gets_the_rail_only() {
+        let opts = NodeOptions::DEFAULT.without_front_panel();
+        assert_eq!(opts.led_timeout_s, 0, "there is no LED to wait for");
+
+        // Node 2 is plane 0x30, slot 1.
+        let on = NodeCommand::on(2).with_opts(opts).stages();
+        assert_eq!(on.len(), 1);
+        assert_eq!(
+            on[0][0].commands[0],
+            Ctrl::Enable { slot: 1, on: true },
+            "`on` is the rail, not the node-on sequence"
+        );
+
+        for verb in [NodeCommand::off(2), NodeCommand::force_off(2)] {
+            let stages = verb.with_opts(opts).stages();
+            assert_eq!(stages.len(), 1);
+            assert_eq!(
+                stages[0][0].commands[0],
+                Ctrl::Enable { slot: 1, on: false }
+            );
+        }
+
+        // `cycle` is the controller's own two stages with the cycle's
+        // off delay between them.
+        let cycle = NodeCommand::cycle(2).with_opts(opts);
+        let stages = cycle.stages();
+        assert_eq!(stages.len(), 2);
+        assert_eq!(
+            stages[0][0].commands[0],
+            Ctrl::Enable { slot: 1, on: false }
+        );
+        assert_eq!(stages[1][0].commands[0], Ctrl::Enable { slot: 1, on: true });
+        assert_eq!(cycle.stage_delay_ms(0), 0);
+        assert_eq!(cycle.stage_delay_ms(1), u64::from(CYCLE_OFF_S) * 1_000);
+        assert!(cycle.worst_case_ms() > u64::from(CYCLE_OFF_S) * 1_000);
+
+        // The three of them are a hard cut; `on` and `power_off` are
+        // not, and a node that has a front panel never is.
+        assert!(NodeCommand::off(2).with_opts(opts).hard_cut());
+        assert!(NodeCommand::force_off(2).with_opts(opts).hard_cut());
+        assert!(cycle.hard_cut());
+        assert!(!NodeCommand::on(2).with_opts(opts).hard_cut());
+        assert!(!NodeCommand::PowerOff { node: 2 }.hard_cut());
+        assert!(!NodeCommand::off(2).hard_cut());
+
+        // A rail cut is a certain rail-off intent, not a "look at the
+        // slot afterwards" (see `super::intent`).
+        assert!(NodeCommand::off(2).with_opts(opts).intends_rail_off());
+        assert!(!NodeCommand::off(2).with_opts(opts).may_cut_rail());
+        assert!(NodeCommand::off(2).may_cut_rail(), "with a front panel");
+
+        // The verbs that were rail-only all along do not change, and a
+        // rail-only `on` still asks for the rail.
+        assert_eq!(
+            NodeCommand::PowerOn { node: 2 }.stages()[0][0].commands[0],
+            Ctrl::Enable { slot: 1, on: true }
+        );
+        assert!(NodeCommand::on(2).with_opts(opts).intends_rail_on());
+    }
+
+    /// `on_all` keeps its stagger; the nodes with no front panel get the
+    /// rail where the others get a node-on.
+    #[test]
+    fn on_all_gives_a_rail_only_node_the_rail() {
+        let stages = NodeCommand::on_all_of(alloc::vec![1, 2], alloc::vec![1, 2])
+            .with_rail_only(alloc::vec![2])
+            .stages();
+        assert_eq!(stages.len(), 2);
+        assert_eq!(
+            stages[0][0].commands[0],
+            Ctrl::StaggerOn {
+                slots: IndexBitmap::I0 | IndexBitmap::I1,
+                delay_ms: STAGGER_MS
+            },
+            "both slots are staggered, front panel or not"
+        );
+        assert_eq!(
+            stages[1][0].commands[0],
+            Ctrl::NodeOn {
+                slot: 0,
+                led_timeout_s: ON_TIMEOUT_S
+            }
+        );
+        assert_eq!(
+            stages[1][1].commands[0],
+            Ctrl::Enable { slot: 1, on: true },
+            "node 2 has no button and no LED"
+        );
     }
 
     #[test]

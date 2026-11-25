@@ -213,6 +213,17 @@ pub struct Node {
     /// (EVENTS kind 6). Sticky until the slot is enabled again, because
     /// no status bit carries it.
     pub retry_limit: bool,
+    /// Whether the node has a front-panel cable at all: PWR, RST and
+    /// the power LED (`nodes[].front_panel`, ADR 0004 "Nodes without a
+    /// front panel"). True unless the configuration says otherwise.
+    ///
+    /// Pushed by [`super::PlaneClient::set_no_front_panel`] because the
+    /// host axis is derived on the poll path. With it `false` the host
+    /// axis stays [`HostState::Unknown`] - there is no LED, and standby
+    /// power cannot tell a running host from one that is booting - and
+    /// the LED cross-checks are dropped from the node's faults
+    /// ([`crate::observed::NodeObs::of_node`]).
+    pub front_panel: bool,
     /// The LED of this slot has been lit (steady or blinking) since the
     /// rail came up: proof that a node is cabled to it. Sticky while
     /// the rail stays on, so a host that shuts itself down to a standby
@@ -236,6 +247,7 @@ impl Node {
             summary_ms: 0,
             detail_ms: 0,
             retry_limit: false,
+            front_panel: true,
             host_seen: false,
         }
     }
@@ -307,6 +319,15 @@ impl Node {
         }
         if matches!(self.led, LedMode::On | LedMode::Blinking) && self.power == PowerState::On {
             self.host_seen = true;
+        }
+        // No front panel at all: there is no LED to read and standby
+        // power cannot tell a running host from one that is booting, so
+        // the host axis says nothing (ADR 0004, "Nodes without a front
+        // panel").
+        if !self.front_panel {
+            self.host_seen = false;
+            self.host = HostState::Unknown;
+            return;
         }
         // A dark LED is "off" only with evidence that a node is there:
         // the LED was lit earlier on this rail-on, or the slot draws at
@@ -698,6 +719,27 @@ impl Plane {
         self.derive_states();
     }
 
+    /// Say which of this plane's slots have no front-panel cable, as a
+    /// bitmap of slot indices, and derive the states again. True when
+    /// something changed.
+    ///
+    /// The configuration decides this, not the plane: the flag only ever
+    /// arrives through [`super::PlaneClient::set_no_front_panel`].
+    pub fn set_no_front_panel(&mut self, slots: IndexBitmap) -> bool {
+        let mut changed = false;
+        for node in &mut self.nodes {
+            let front_panel = !slots.has(node.slot);
+            if node.front_panel != front_panel {
+                node.front_panel = front_panel;
+                changed = true;
+            }
+        }
+        if changed {
+            self.derive_states();
+        }
+        changed
+    }
+
     /// Recompute every node's two axes.
     pub fn derive_states(&mut self) {
         for node in &mut self.nodes {
@@ -978,6 +1020,39 @@ mod tests {
         assert!(!plane.nodes[0].host_seen);
         summary_slot_0(&mut plane, 500, 20, LedMode::Off);
         assert_eq!(plane.nodes[0].host, HostState::Unknown);
+    }
+
+    /// A node with no front panel has no LED to read, so the host axis
+    /// says nothing whatever the opto and the slot power do (ADR 0004,
+    /// "Nodes without a front panel"). The power axis is untouched.
+    #[test]
+    fn without_a_front_panel_the_host_axis_is_always_unknown() {
+        let mut plane = plane_with_unit_0();
+        assert!(plane.nodes[0].front_panel, "the default");
+        assert!(
+            plane.set_no_front_panel(IndexBitmap::I0),
+            "slot 0 lost its front panel"
+        );
+        assert!(!plane.nodes[0].front_panel);
+        assert!(plane.nodes[1].front_panel, "only the slot named");
+        assert!(
+            !plane.set_no_front_panel(IndexBitmap::I0),
+            "the same mask changes nothing"
+        );
+
+        // A host that would read `off` on standby power, and one whose
+        // opto is lit: both `unknown`.
+        summary_slot_0(&mut plane, 100, 400, LedMode::Off);
+        assert_eq!(plane.nodes[0].power, PowerState::On, "the rail is the rail");
+        assert_eq!(plane.nodes[0].host, HostState::Unknown);
+        summary_slot_0(&mut plane, 200, 400, LedMode::On);
+        assert_eq!(plane.nodes[0].host, HostState::Unknown);
+        assert!(!plane.nodes[0].host_seen, "no LED evidence is kept");
+
+        // Give it back a front panel and the LED speaks again.
+        plane.set_no_front_panel(IndexBitmap::NONE);
+        summary_slot_0(&mut plane, 300, 400, LedMode::On);
+        assert_eq!(plane.nodes[0].host, HostState::On);
     }
 
     /// A threshold of 0 is the old behaviour: the LED decides alone.

@@ -205,6 +205,10 @@ struct Job {
     /// When the client gives up on it \[ms\]: the submission plus
     /// [`job_timeout_ms`] of its own command.
     deadline_ms: u64,
+    /// The current stage is waiting out a delay of its own and goes out
+    /// at this time \[ms\] (see [`Command::stage_delay_ms`]): the rail
+    /// cycle of a node with no front panel is the only one.
+    hold_until_ms: Option<u64>,
 }
 
 /// Everything the client knows and schedules for one address.
@@ -426,6 +430,10 @@ impl PlaneClient {
         if self.scan_due {
             self.scan(now_ms, link, &mut budget);
         }
+
+        // A stage that was waiting out a delay of its own goes out in
+        // this poll, before the planes are served.
+        self.release_stages(now_ms);
 
         self.cursor = (self.cursor + 1) % MAX_PLANES;
         for step in 0..MAX_PLANES {
@@ -967,6 +975,7 @@ impl PlaneClient {
             code: None,
             submitted_ms: now_ms,
             deadline_ms,
+            hold_until_ms: None,
         };
         let absent = job.stages.is_empty() || !self.targets_present(&job);
         self.jobs.push(job);
@@ -1033,7 +1042,8 @@ impl PlaneClient {
         true
     }
 
-    /// Queue every write of a job's current stage.
+    /// Queue every write of a job's current stage, or hold it back when
+    /// the stage asks to wait first.
     fn start_stage(&mut self, id: JobId, now_ms: u64) {
         let Some(job) = self.jobs.iter_mut().find(|j| j.id == id) else {
             return;
@@ -1045,7 +1055,23 @@ impl PlaneClient {
             self.finish_job(id, outcome, now_ms);
             return;
         };
-        job.outstanding = steps.len();
+        // The rail cycle of a node with no front panel: the rail stays
+        // down for the cycle's off delay before the second write goes
+        // out (ADR 0004, "Nodes without a front panel").
+        let delay = job.command.stage_delay_ms(stage);
+        if delay > 0 {
+            job.outstanding = 0;
+            job.hold_until_ms = Some(now_ms.saturating_add(delay));
+            return;
+        }
+        self.queue_stage(id, stage, steps);
+    }
+
+    /// Put one stage's writes on the plane queues.
+    fn queue_stage(&mut self, id: JobId, stage: usize, steps: Vec<Step>) {
+        if let Some(job) = self.jobs.iter_mut().find(|j| j.id == id) {
+            job.outstanding = steps.len();
+        }
         for step in steps {
             let Some(n) = granite_proto::plane_of_address(step.address) else {
                 continue;
@@ -1056,6 +1082,27 @@ impl PlaneClient {
                 commands: step.commands,
                 awaits_result: step.awaits_result,
             });
+        }
+    }
+
+    /// Release the stages whose wait is over.
+    fn release_stages(&mut self, now_ms: u64) {
+        let due: Vec<JobId> = self
+            .jobs
+            .iter()
+            .filter(|j| j.hold_until_ms.is_some_and(|until| now_ms >= until))
+            .map(|j| j.id)
+            .collect();
+        for id in due {
+            let Some(job) = self.jobs.iter_mut().find(|j| j.id == id) else {
+                continue;
+            };
+            job.hold_until_ms = None;
+            let stage = job.stage;
+            let Some(steps) = job.stages.get(stage).cloned() else {
+                continue;
+            };
+            self.queue_stage(id, stage, steps);
         }
     }
 
@@ -1436,6 +1483,39 @@ impl PlaneClient {
                 state.plane.derive_states();
             }
         }
+    }
+
+    /// Say which nodes have no front-panel cable, as a bitmap of node
+    /// ids (bit `id - 1`, so node 1 is bit 0): `nodes[].front_panel`
+    /// turned around, which is what [`crate::config::NodesCfg::no_front_panel_mask`]
+    /// gives (ADR 0004, "Nodes without a front panel").
+    ///
+    /// Like the host-detect threshold, this is a per-node setting the
+    /// poll path needs: the host axis of such a node is `unknown`
+    /// whatever its LED reads. The verbs themselves do not come through
+    /// here - the dispatcher reads the configuration when a command is
+    /// built (decision 4).
+    pub fn set_no_front_panel(&mut self, mask: u64) {
+        for (n, state) in self.planes.iter_mut().enumerate() {
+            let slots = (mask >> (n * SLOT_COUNT)) as u8;
+            state
+                .plane
+                .set_no_front_panel(IndexBitmap::from_bits(slots));
+        }
+    }
+
+    /// The nodes the client was told have no front panel, as the bitmap
+    /// [`PlaneClient::set_no_front_panel`] takes.
+    pub fn no_front_panel(&self) -> u64 {
+        let mut mask = 0u64;
+        for (n, state) in self.planes.iter().enumerate() {
+            for node in state.plane.nodes.iter() {
+                if !node.front_panel {
+                    mask |= 1 << (n * SLOT_COUNT + node.slot as usize);
+                }
+            }
+        }
+        mask
     }
 
     /// The host-detect threshold in force \[0.1 W\].

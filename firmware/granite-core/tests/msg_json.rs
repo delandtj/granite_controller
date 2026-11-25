@@ -300,10 +300,28 @@ fn event_fixtures() {
                 node: Some(3),
                 action: CommandKind::On,
                 result: "done".into(),
+                hard_cut: false,
             },
         ),
         json!({"v":1,"ts":1200,"kind":"action_done","id":"c-1","node":3,
                "action":"on","result":"done"}),
+    );
+    // A node with no front panel: the rail went down with no shutdown,
+    // and the event says so (ADR 0004, "Nodes without a front panel").
+    roundtrip_event(
+        &Event::new(
+            1_250,
+            EventKind::ActionDone {
+                id: "c-3".into(),
+                node: Some(5),
+                action: CommandKind::Off,
+                result: granite_core::plane::HARD_CUT_TEXT.into(),
+                hard_cut: true,
+            },
+        ),
+        json!({"v":1,"ts":1250,"kind":"action_done","id":"c-3","node":5,
+               "action":"off","result":"rail cut, no shutdown (no front panel)",
+               "hard_cut":true}),
     );
     roundtrip_event(
         &Event::new(

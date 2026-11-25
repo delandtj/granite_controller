@@ -1269,7 +1269,12 @@ fn resolve_from_event(
     let reply = match &event.kind {
         // A plane job reports once, when it is done, so there is no
         // intermediate step to skip here.
-        EventKind::ActionDone { id, result, .. } => Reply::ok(id, result.clone()),
+        EventKind::ActionDone {
+            id,
+            result,
+            hard_cut,
+            ..
+        } => Reply::ok(id, result.clone()).with_hard_cut(*hard_cut),
         EventKind::ActionFailed { id, error, .. } => Reply::err(id, error.clone()),
         // An `ota` pull ends in `verified` (then a reboot) or `failed`;
         // neither event carries the command id, and only one pull runs.

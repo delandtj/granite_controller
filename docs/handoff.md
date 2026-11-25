@@ -40,7 +40,7 @@ Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
   and repeat modes for power-cycle runs; single shot not yet tried on
   a real trigger).
 
-- [ ] **Per-node "no front panel" setting** (user, 2026-11-25): nodes
+- [x] **Per-node "no front panel" setting** (user, 2026-11-25): nodes
   with no PWR / RST / LED cabled, that come up by themselves from the
   BIOS (power on after AC loss) once the rail is up. What exists does
   not cover them:
@@ -58,7 +58,19 @@ Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
   - Decided (user): a `front_panel: bool` per node, and `off` on such a
     node reports a hard cut. Spec: firmware/docs/adr/0004, "Nodes
     without a front panel (2026-11-25)". Controller side only, the
-    plane is unchanged. Not implemented yet.
+    plane is unchanged.
+  - **Done 2026-11-25** (granite-core, granite-fw, granite-sim; the
+    plane and granite-proto untouched): `nodes[].front_panel`, default
+    true; with `false` the verbs become rail-only plane commands
+    (`on` -> enable on, `off` / `force_off` -> enable off reported as
+    `hard_cut` with "rail cut, no shutdown (no front panel)", `cycle` ->
+    off, 5 s, on as one controller job, `on_all` staggers and enables),
+    `reset` and `press` are refused ("no front panel"), the host axis
+    stays `unknown`, the LED cross-checks are dropped from faults / MQTT
+    / Modbus / rules, and the flag is in `state.nodes[]` and on Modbus
+    discrete input `300 + id - 1`. Not on the bench yet; the web UI
+    still speaks the rev C payload, so its "Power off (hard cut)" label
+    is still to do.
 
 - [ ] **Unit 1 latched off with no load** (2026-11-25, evening). After a
   full bench power cycle all four slots came up, the controller

@@ -543,6 +543,7 @@ One entry of `nodes` (only `node` is required; the rest default):
 | `name` | `""` | Display name. Empty = `node<N>`. |
 | `boot_policy` | `"leave"` | `"leave"`, `"on"`, `"off"` (section 5.4). |
 | `led_sense` | `true` | Trust the host LED (section 5.1). |
+| `front_panel` | `true` | `false`: no PWR / RST / LED is cabled, so `on` is the rail, `off` / `force_off` / `cycle` are a rail cut reported with `"hard_cut": true`, `reset` and `press` are refused, and `led_sense` is ignored. |
 | `t_soft_off_s` | `120` | How long `off` waits for the host. `0` becomes 120; above 3600 is clamped to 3600 (not refused). |
 | `escalation` | `"hold_then_cut"` | `"none"`, `"hold"`, `"hold_then_cut"` (section 5.2). |
 
@@ -678,8 +679,10 @@ the first. The simulator's HTTP route prints `a` as
 ```json
 {"v":1,"ts":3248,"uptime_s":3,
  "nodes":[{"node":1,"name":"node1","plane":0,"slot":0,"unit":0,"power":"on","host":"on",
+           "front_panel":true,
            "v":48.0,"a":1.8,"w":86,"w_min":86,"w_max":86,"temp_c":25,"energy_wh":0,"module_class":5},
           {"node":9,"name":"node9","plane":1,"slot":0,"unit":0,"power":"off","host":"unknown",
+           "front_panel":true,
            "v":48.0,"a":1.3,"w":62,"w_min":62,"w_max":62,"temp_c":25,"energy_wh":0,"module_class":5,
            "last_job":{"id":"api-3","job":5,"verb":"power_off","started_ms":21217,"finished_ms":21317,"result":"done"}}],
  "planes":[{"plane":0,"address":48,"type":"pp48_chained","firmware":"0.1.0","bus_v":48.0,"temp_c":25,
@@ -698,6 +701,7 @@ the first. The simulator's HTTP route prints `a` as
 | `nodes[].node`, `name` | Id 1..64 and display name. |
 | `nodes[].plane`, `slot`, `unit` | Where it is: plane 0..7, slot 0..7, unit 0..3 (= slot / 2). |
 | `nodes[].power`, `host` | The two axes of section 5.1. |
+| `nodes[].front_panel` | `false` on a node with no PWR / RST / LED cabled (`nodes[].front_panel` in config): its verbs are the rail alone, `reset` and `press` are refused, and `host` stays `unknown`. |
 | `nodes[].busy` | Present and `true` only while the plane runs a sequence on the slot. |
 | `nodes[].v`, `a`, `w` | Slot volts (0.1 V), amps (0.1 A), watts (whole). |
 | `nodes[].w_min`, `w_max` | Lowest / highest watts since the last min/max clear. |

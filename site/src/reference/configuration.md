@@ -91,6 +91,7 @@ NodeSettings:
 | `name` | string | `node<N>` | Empty (or left out) means the default. |
 | `boot_policy` | `leave`, `on`, `off` | `leave` | Sent once per **plane** boot, never because the controller itself restarted. |
 | `led_sense` | bool | `true` | `false`: `on`, `cycle` and `on_all` do not wait for the host LED. |
+| `front_panel` | bool | `true` | `false`: no PWR / RST / LED is cabled. `on` is the rail, `off` / `force_off` / `cycle` cut it (reported as a hard cut), `reset` and `press` are refused, `host` stays `unknown`, and `led_sense` is ignored. |
 | `t_soft_off_s` | seconds | 120 | How long `off` waits for the host before it escalates. `0` means 120; above 3600 is clamped to 3600. |
 | `escalation` | `none`, `hold`, `hold_then_cut` | `hold_then_cut` | How far `off` and `force_off` go when the host stays lit. |
 

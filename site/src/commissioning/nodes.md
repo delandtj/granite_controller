@@ -88,6 +88,7 @@ all. An entry for an id outside 1..64 is dropped when saved.
 | `name` | text | `node<N>` | Shown on the page and in the state payload. Empty means the default. |
 | `boot_policy` | `leave`, `on`, `off` | `leave` | What to send the node once after the controller starts. See below. |
 | `led_sense` | bool | `true` | Whether the plane's reading of the host LED is trusted. With `false`, `on`, `cycle` and `on_all` do not wait the usual 15 s for the light: the plane waits only its own minimum settle time before it presses PWR. |
+| `front_panel` | bool | `true` | Whether PWR, RST and the power LED are cabled at all. With `false` the node is switched by its rail: `on` powers it up, `off`, `force_off` and `cycle` cut it (the ack says "rail cut, no shutdown (no front panel)"), `reset` and `press` are refused, `host` stays `unknown`, and `led_sense` is ignored. For a node whose BIOS powers it on after AC loss. |
 | `t_soft_off_s` | seconds, 1..3600 | 120 | How long `off` waits for the host to go dark after the short PWR press before it escalates. `0` means the default; anything above 3600 is clamped to 3600. |
 | `escalation` | `none`, `hold`, `hold_then_cut` | `hold_then_cut` | How far `off` and `force_off` go when the host stays lit. `none`: stop and fail. `hold`: hold PWR 5 s and leave the rail alone. `hold_then_cut`: hold PWR 5 s, then cut the rail if the LED is still on. |
 
