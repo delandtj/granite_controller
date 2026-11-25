@@ -2,6 +2,25 @@
 
 Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
 
+## 2026-11-25: to do today
+
+- [ ] Flash plane-fd ba13f36 (empty-slot ID threshold) onto the
+  bench core over SWD; then slot A of an empty unit must read class 0.
+  Measure both slots' ID pins (about 3.3 V empty) to see how far under
+  full scale slot A sits.
+- [ ] G0B1CCT6 for the second order (ADR 0006 decision 6, same
+  footprint, MCP2518FD U5 and its 40 MHz crystal not fitted):
+  - [ ] LCSC stock of STM32G0B1CCT6 now (45 on 2026-11-04, none of
+    the other LQFP-48 G0B1s).
+  - [ ] G0B1 assembly variant in power/pp-48-core-fd/pcbkit.toml
+    (G0B1CCT6 in place of the G070, U5 and the crystal DNP).
+  - [ ] ADR 0002 flash layout for 256 KB: the link-fdcan image is
+    52.9 KB (45.8 text + 7.1 rodata), already over the 52 KB ACTIVE
+    slot of the 128 KB layout.
+  - [ ] plane-boot (embassy-boot-stm32) against the G0B1 first, then
+    update_store.rs on embassy-boot's FirmwareUpdater, so cores are
+    updated over the link. G070 cores (batch 1) stay on SWD.
+
 ## 2026-11-25: core-fd next rev - programming access
 
 Flashing the first core showed that neither SWD connector takes a probe
