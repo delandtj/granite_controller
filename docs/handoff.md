@@ -60,6 +60,63 @@ Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
     without a front panel (2026-11-25)". Controller side only, the
     plane is unchanged. Not implemented yet.
 
+- [ ] **Unit 1 latched off with no load** (2026-11-25, evening). After a
+  full bench power cycle all four slots came up, the controller
+  re-applied OFF to all four (they were in the intended-off set), and at
+  149.5 s plane uptime unit 1 reported `unit_hot_swap_latched_off` with
+  every slot on it off. `unit_reset` (MQTT `"target":"plane7.unit1"`)
+  brought it back at once; the unit and slot V / W read 0.0 for another
+  ~25 s after the `done` (telemetry lag, not power: worth a look).
+  What the latch means (plane-logic unit_latch.rs): U_PGD low for 500 ms
+  while the core's own 48 V input is in range. With no load the
+  LM5069-2 (uinput.py U207: 18.3 A limit, 75 W power limit, 10 ms fault
+  timer, 160 ms insertion) has nothing to trip on, so the candidates are:
+  - the unit's own input dropping out for more than ~340 ms (dropout +
+    160 ms insertion > 500 ms) while the core's stays up: XT60 / chain
+    contact, someone handling the unit;
+  - the U_PGD reading wrong for 10 polls in a row (unit 1's TCA6424A,
+    segment I2C);
+  - a real LM5069 fault (current or power limit) - unlikely without load.
+  No plane log: the controller does not read the plane's LOG block
+  (TAG_LOG_LINE 0xA0, an 8-line ring; the latch writes "unit fault,
+  hot-swap held off") and the STLink was not on the core.
+  - [ ] Ask: was unit 1 or its cable touched about 2.5 min after the
+    power-up?
+  - [ ] Scope (tools/sds_capture.py --single --timeout none): CH1 unit 1
+    VIN before the LM5069, CH2 U_PGD, trigger U_PGD falling, 50 ms/div,
+    left armed across power cycles.
+  - [ ] Controller: read the plane LOG block on an error event and
+    publish it on `.../log`, so the next one says what the plane saw.
+
+- [ ] **Module VIN sits at ~1.2 V with the slot off, every slot** (both
+  units, all four slots read 1.2 V right after `power_off`; the 0.0 V on
+  unit 1 later was the unit being latched off). The module side loads
+  VIN with R13 200k + R14 6.34k (UVLO divider) and R17 47k into VAUX, so
+  1.2 V needs only ~6-30 uA from somewhere. Hypotheses:
+  - leakage from 48 V into that load: the slot pass FET's Idss, or the
+    slot LM5069's SENSE / OUT pin currents while it holds the FET off;
+  - back-feed from the unit's 3V3 pull-ups (unit.py R13 OV_KILL, R14
+    PGOOD, 10k) into the module's VAUX. Less likely than first thought:
+    the MCP65R46 open-drain output is rated for a pull-up up to 10 V
+    independent of its 1.8-5.5 V supply, so it should have no diode to
+    VDD. Only the meter can rule it out.
+  Why it matters: at VIN 1.2 V the comparators' supply is below their
+  1.8 V minimum, their outputs are undefined, and OV_KILL low sets the
+  slot OV latch - which fits node58 and node60 latching at switch-off
+  (three times tonight, always B slots). Switch-on blanking does not
+  cover switch-off.
+  - [ ] Meter, slot off: module VIN, VAUX (D4 cathode) and OV_KILL.
+  - [ ] Meter, an empty slot off: OUT near 0 V -> back-feed through the
+    module; floating higher -> leakage from 48 V.
+  - [ ] Meter, a unit latched or held off (still on the chain): module
+    VIN still ~1.2 V -> back-feed from 3V3.
+  - Fix either way: whatever feeds it, the module comparators must not
+    sit half-powered. Options: a bleed on the module input that holds
+    VIN under ~0.5 V with the slot off (cost: standing loss when on, at
+    48 V a 10k bleed is 0.23 W), or OV_KILL ignored by the slot latch
+    while the slot is off (blank /PRE from the OFF line, the switch-off
+    twin of the switch-on blanking).
+
 ## 2026-11-25: to do today
 
 - Done: power-up OV latch clear (plane-logic power_up_clear, e8f6686
