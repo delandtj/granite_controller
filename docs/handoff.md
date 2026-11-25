@@ -1,6 +1,34 @@
-# Handoff - granite-plane (updated 2026-11-23)
+# Handoff - granite-plane (updated 2026-11-25)
 
 Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
+
+## 2026-11-25: core-fd next rev - programming access
+
+Flashing the first core showed that neither SWD connector takes a probe
+without an adapter: J5 (TC2030) needs the Tag-Connect cable and a 1.27
+mm breakout, J6 has 1.27 mm pins that 2.54 mm jumper wires do not fit.
+An nRF54L15-DK's on-board J-Link (Debug out, P19) was tried as a
+stand-in: no target response, and connecting the core reset the kit's
+J-Link and hung the PC's USB controller (P19 VTG is a 1.8 V domain;
+suspected back-feed from the core's 3V3, not proven). Waiting for an
+ST-LINK and the Adafruit 2743 breakouts.
+
+For the next core-fd revision (not part of the December reorder, which
+stays unchanged unless decided otherwise):
+
+- [ ] Add a 1x5 2.54 mm SWD header, holes only (DNP): 3V3, SWDIO,
+  SWCLK, GND, NRST. About 13 x 3 mm. Any probe connects with jumper
+  wires or a pressed-in pin strip. J5 and J6 stay.
+- [ ] Test pads for USART2, PA2 (TX) and PA3 (RX), both unconnected
+  today, plus GND. A blank STM32G070 boots its ROM bootloader (empty
+  flash check), so a 3.3 V USB-serial adapter can flash a core without
+  an SWD probe. USART1 (PA9 / PA10) is not an option: it is I2C2 to U6
+  (SCL2 / SDA2).
+- [ ] Test pads for BOOT0 (PA14, shared with SWCLK) and NRST, to force
+  the ROM bootloader on a core whose image is broken. Only works once
+  nBOOT_SEL is cleared in the option bytes (factory default: the pin is
+  ignored and nBOOT0 decides), so the image or the first flash would
+  have to set that.
 
 ## 2026-11-23: FD batch 1 on the bench - controller-fd flashed, core next
 
