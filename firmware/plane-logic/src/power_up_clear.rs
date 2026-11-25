@@ -32,9 +32,12 @@
 //! [`crate::unit_latch`] judges - and on every rising edge, boot
 //! included, arms one LCLR pulse per slot of that unit, due
 //! [`SETTLE_MS`] later. The pulse itself is the existing clear-latch
-//! mechanism of [`crate::sequencer`] ([`crate::sequencer::Phase::ClearLatch`],
-//! [`crate::sequencer::LCLR_PULSE_MS`]), so the timing and the per-slot
-//! conflict rules are the ones a commanded `clear_latch` already obeys.
+//! mechanism of [`crate::sequencer`]
+//! ([`crate::sequencer::Phase::ClearLatch`]), so the per-slot conflict
+//! rules are the ones a commanded `clear_latch` already obeys - but it
+//! is held for [`LCLR_HOLD_MS`] and not for the command's
+//! [`crate::sequencer::LCLR_PULSE_MS`], because the hardware latch
+//! cannot be cleared while the module is still pulling OV_KILL.
 //!
 //! What it is **not**: an automatic fault reset. It runs once per U_PGD
 //! rising edge and never on a latch that sets while the unit is up, so a
@@ -54,6 +57,42 @@
 //!   cleared by it. A slot that is mid-sequence 100 ms after its unit's
 //!   input came up is being driven by the controller anyway, which can
 //!   send `clear_latch` itself.
+
+/// How long the power-up clear holds LCLR asserted \[ms\].
+///
+/// **Longer than the commanded clear's
+/// [`crate::sequencer::LCLR_PULSE_MS`] on purpose**, and the two are
+/// separate constants so either can move on its own. CTRL 0x41 keeps
+/// the ADR's 10 ms.
+///
+/// The latch is a 74LVC1G74 (unit.py U3 / U53) with `/PRE` on OV_KILL
+/// and `/CLR` on the RC clear and Q4. Its truth table is the reason a
+/// short pulse is not enough: with `/PRE` low, Q is high whatever
+/// `/CLR` does, so a clear that is released while the module is *still*
+/// pulling OV_KILL leaves the slot latched. A clear that is released
+/// **after** OV_KILL has gone back high ends with Q low and the slot
+/// stays on. The hold therefore has to cover the module's whole
+/// start-up: the slot turns on the moment `/CLR` goes low, the module's
+/// VIN ramps from there, and only then does VAUX reach the comparator's
+/// minimum supply and OV_KILL release.
+///
+/// Measured on 2026-11-25: a 10 ms commanded clear left the rev B
+/// module (power/pm-19v-250w-b) on, and the rev A module
+/// (power/pm-19v-250w, different VAUX parts) re-latched at once.
+///
+/// **The trade-off**: while LCLR is held the slot's OV latch cannot
+/// fire, so for this long at start-up a real overvoltage would not cut
+/// the slot. It is bounded, it only ever happens in the first moments
+/// after the unit's input comes up, and the module's own OV comparator
+/// and the hardware latch take over the instant the hold ends.
+///
+/// **Resolution**: the hold ends at the first [`crate::Plane::tick`] at
+/// or after the deadline, so the real hold is this value rounded up to
+/// the bus task's period ([`crate::model::POLL_PERIOD_MS`], 50 ms). A
+/// value at or under one period therefore comes out as one period,
+/// which is already what the 10 ms command does; make it a multiple of
+/// the period to lengthen it.
+pub const LCLR_HOLD_MS: u32 = 50;
 
 /// How long after U_PGD rises the plane waits before it clears the slot
 /// OV latches \[ms\].
@@ -144,6 +183,14 @@ mod tests {
     const _TIMING: () = {
         assert!(SETTLE_MS >= crate::model::POLL_PERIOD_MS as u64);
         assert!(SETTLE_MS < 1_000);
+        // The hold is the power-up clear's own and never shorter than
+        // the command's, and it only lengthens anything above one bus
+        // cycle (see LCLR_HOLD_MS, "Resolution").
+        assert!(LCLR_HOLD_MS >= crate::sequencer::LCLR_PULSE_MS);
+        assert!(LCLR_HOLD_MS >= crate::model::POLL_PERIOD_MS);
+        // A hold is a window in which the slot's OV latch cannot fire,
+        // so it stays well under the settle time of a power-cycle.
+        assert!(LCLR_HOLD_MS < 1_000);
     };
 
     #[test]

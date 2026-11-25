@@ -25,6 +25,7 @@ use crate::device::{CorePins, Devices, SegmentBus};
 use crate::drivers::expander::{self, Out};
 use crate::log::level;
 use crate::plane::Plane;
+use crate::power_up_clear;
 
 /// How long a press lasts when the plane picks the duration itself (the
 /// wake press of `node on` and `power-cycle`, and the short press of
@@ -35,9 +36,14 @@ pub const SHORT_PRESS_MS: u32 = 300;
 /// escalate 1 and 3: "hold PWR 5 s").
 pub const HOLD_PRESS_MS: u32 = 5_000;
 
-/// How long the OV latch's clear line is held (ADR 0002 decision 6 asks
-/// for 10 ms; one tick is the shortest the bus task can do and a longer
-/// clear is harmless).
+/// How long the OV latch's clear line is held for a **commanded** clear
+/// (ADR 0002 decision 6 asks for 10 ms; one tick is the shortest the bus
+/// task can do and a longer clear is harmless).
+///
+/// The power-up clear of [`crate::power_up_clear`] holds it for its own,
+/// longer [`crate::power_up_clear::LCLR_HOLD_MS`] instead: it has to
+/// cover the module's start-up, which a commanded clear on a running
+/// slot does not.
 pub const LCLR_PULSE_MS: u32 = 10;
 
 /// How long after a `unit_reset` the plane judges whether the unit came
@@ -403,29 +409,27 @@ impl Plane {
     }
 
     /// Drive a slot's LCLR high and begin the pulse that releases it
-    /// [`LCLR_PULSE_MS`] later.
+    /// `hold_ms` later.
     ///
-    /// Both the commanded clear (CTRL 0x41) and the power-up clear of
-    /// [`crate::power_up_clear`] come through here, so there is one
-    /// pulse length and one set of conflict rules. `quiet` is the
-    /// plane's own clear: no result, no event (see [`Plane::finish`]).
+    /// Both the commanded clear (CTRL 0x41, [`LCLR_PULSE_MS`]) and the
+    /// power-up clear of [`crate::power_up_clear`]
+    /// ([`crate::power_up_clear::LCLR_HOLD_MS`], longer) come through
+    /// here, so there is one set of conflict rules and one place that
+    /// releases the line. `quiet` is the plane's own clear: no result,
+    /// no event (see [`Plane::finish`]).
     pub(crate) fn start_lclr_pulse<D: Devices>(
         &mut self,
         dev: &mut D,
         slot: u8,
         cmd_seq: u8,
+        hold_ms: u32,
         quiet: bool,
     ) -> bool {
         let (_, b) = Self::split(slot);
         if !self.drive(dev, slot, expander::out_line(b, Out::Lclr), true) {
             return false;
         }
-        self.begin(
-            slot,
-            cmd_seq,
-            Phase::ClearLatch,
-            self.now_ms + LCLR_PULSE_MS as u64,
-        );
+        self.begin(slot, cmd_seq, Phase::ClearLatch, self.now_ms + hold_ms as u64);
         self.sequences[slot as usize].quiet = quiet;
         true
     }
@@ -483,7 +487,7 @@ impl Plane {
                     self.note(level::WARN, "clear skipped, slot busy", Some(slot as u32));
                     continue;
                 }
-                if self.start_lclr_pulse(dev, slot, 0, true) {
+                if self.start_lclr_pulse(dev, slot, 0, power_up_clear::LCLR_HOLD_MS, true) {
                     self.note(level::INFO, "power-up latch clear", Some(slot as u32));
                 } else {
                     self.note(level::ERROR, "power-up clear failed", Some(slot as u32));
@@ -748,7 +752,7 @@ impl Plane {
         if let Some(code) = self.slot_guard(slot) {
             return code;
         }
-        if !self.start_lclr_pulse(dev, slot, cmd_seq, false) {
+        if !self.start_lclr_pulse(dev, slot, cmd_seq, LCLR_PULSE_MS, false) {
             return ResultCode::Failed;
         }
         ResultCode::Accepted

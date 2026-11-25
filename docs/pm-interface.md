@@ -151,10 +151,14 @@ placement error changes nothing, a 90 degree one does.
   until the module has carried VIN for some milliseconds; the number is
   to be measured (the glitch has only been seen through its effect, a
   slot latch set at every power-up, not on a scope). What the PP-48
-  plane does: the slot's OV latch is cleared once with an LCLR pulse
-  100 ms after the unit's input power-good rises (firmware ADR 0002
-  decision 7b), which is not a fault reset - a latch that sets
-  afterwards stays set.
+  plane does: the slot's OV latch is cleared once 100 ms after the
+  unit's input power-good rises, with LCLR held long enough that the
+  module's start-up falls inside the hold (firmware ADR 0002 decision
+  7b). It is not a fault reset - a latch that sets afterwards stays
+  set. The glitch outlasts a 10 ms clear on the rev A module and not on
+  rev B, so the hold is where a new module's VAUX network shows up:
+  a module whose OV_KILL is low longer than the plane's hold comes up
+  latched.
 - Host side: OV_KILL and PGOOD pulled up in the column (open = good,
   so an absent module reads "good"; presence comes from ID). RUN is
   the module's UVLO divider node (~1.9 V at 60 V in): the host only

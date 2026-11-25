@@ -199,9 +199,38 @@ Two things in the hardware shape the firmware more than the ADRs say:
      U_PGD (P27, the signal decision 7a already watches), boot
      included, the plane waits
      `power_up_clear::SETTLE_MS` (100 ms) and then issues **one** LCLR
-     pulse per slot of that unit, through the same mechanism and the
-     same `LCLR_PULSE_MS` as CTRL 0x41. Nothing else changes: the
-     slot's OFF line is untouched, so a slot commanded OFF stays OFF.
+     pulse per slot of that unit, through the same mechanism as
+     CTRL 0x41. Nothing else changes: the slot's OFF line is untouched,
+     so a slot commanded OFF stays OFF.
+   - **How long LCLR is held, and why it is not the command's 10 ms**
+     (2026-11-25, same bench session). A 10 ms commanded clear left the
+     rev B module (power/pm-19v-250w-b) on and made the rev A module
+     (power/pm-19v-250w, different VAUX parts) re-latch at once. The
+     74LVC1G74's truth table says why: with `/PRE` low, Q is high
+     whatever `/CLR` does, so a clear released while the module is
+     *still* pulling OV_KILL leaves the slot latched, while a clear
+     released **after** OV_KILL has gone back high ends with Q low. The
+     hold therefore has to cover the module's whole start-up - the slot
+     turns on the moment `/CLR` goes low, VIN ramps from there, and
+     only then does VAUX reach the comparator's minimum supply. So the
+     power-up clear has its own constant, `power_up_clear::LCLR_HOLD_MS`,
+     starting at 50 ms; `sequencer::LCLR_PULSE_MS` stays at the ADR's
+     10 ms for CTRL 0x41, which clears a latch on a slot that is
+     already running. Both are one-line constants.
+     - **The trade-off**: while LCLR is held the slot's OV latch cannot
+       fire, so for that long at start-up a real overvoltage would not
+       cut the slot. It is bounded, it happens only in the first
+       moments after the unit's input comes up, and the module's own
+       comparator plus the hardware latch take over the instant the
+       hold ends. Lengthening the hold buys start-up robustness and
+       pays for it in that blind window.
+     - **Resolution caveat**: the line is released at the first `tick`
+       at or after the deadline, and the bus task runs every 50 ms, so
+       the real hold is the constant rounded up to one poll period. 10
+       and 50 ms therefore both come out as one 50 ms cycle; only a
+       value above one period actually lengthens the hold. If rev A
+       still re-latches at 50 ms, the next value to try is a multiple
+       of the period (150 or 250 ms).
    - **Why this is not an automatic fault clear.** It is tied to the
      unit's input stage starting, not to a latch being set. It runs
      once per U_PGD rising edge and never on a latch that sets while

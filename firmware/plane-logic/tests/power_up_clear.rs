@@ -12,7 +12,7 @@
 use granite_proto::{Command, EventKind, SlotStatus};
 use plane_logic::backup::{BackupSet, Intended};
 use plane_logic::drivers::expander::{self, Out};
-use plane_logic::power_up_clear::SETTLE_MS;
+use plane_logic::power_up_clear::{LCLR_HOLD_MS, SETTLE_MS};
 use plane_logic::sim::Sim;
 
 /// A plane with `units` populated units whose slot OV latches are all
@@ -28,6 +28,14 @@ fn latched(units: usize) -> Sim {
 /// True while the slot's OV latch is set on its simulated unit.
 fn latch_set(sim: &mut Sim, slot: u8) -> bool {
     sim.fake_slot(slot).ov_latched
+}
+
+/// True while slot `slot`'s LCLR line is asserted on its expander.
+fn lclr_asserted(sim: &mut Sim, slot: u8) -> bool {
+    let (unit, b) = ((slot / 2) as usize, slot % 2 == 1);
+    sim.unit(unit)
+        .expander
+        .asserted(expander::out_line(b, Out::Lclr))
 }
 
 /// True while slot `slot`'s OFF line is asserted on its expander.
@@ -83,6 +91,54 @@ fn a_cold_boot_clears_both_slot_latches_once() {
     assert!(!sim.saw(EventKind::SequenceDone));
     assert!(!sim.saw(EventKind::SequenceFailed));
     assert!(sim.plane.intended().is_default());
+}
+
+#[test]
+fn the_clear_holds_lclr_for_its_own_hold_time_not_the_commands() {
+    let mut sim = latched(1);
+    sim.boot();
+
+    // Find the tick the pulse goes out on.
+    let mut fired_ms = None;
+    for _ in 0..20 {
+        sim.tick();
+        if lclr_asserted(&mut sim, 0) {
+            fired_ms = Some(sim.now_ms);
+            break;
+        }
+    }
+    let fired_ms = fired_ms.expect("the power-up clear drives LCLR");
+
+    // It stays asserted for the whole hold, however long the constant
+    // is made. The line is released at the first tick at or after the
+    // deadline, so the real hold is the constant rounded up to the bus
+    // task's period.
+    while sim.now_ms < fired_ms + LCLR_HOLD_MS as u64 {
+        assert!(
+            lclr_asserted(&mut sim, 0),
+            "LCLR dropped at {} ms, {} ms into a {LCLR_HOLD_MS} ms hold",
+            sim.now_ms,
+            sim.now_ms - fired_ms
+        );
+        sim.tick();
+    }
+    sim.tick();
+    assert!(!lclr_asserted(&mut sim, 0), "and is released afterwards");
+    assert!(!latch_set(&mut sim, 0));
+
+    // A commanded clear keeps the ADR's shorter pulse, which the bus
+    // task's period rounds up to one cycle.
+    sim.advance(1_000);
+    sim.fake_slot(0).ov_latched = true;
+    sim.advance(200);
+    sim.ctrl(9, &[Command::ClearOvLatch { slot: 0 }]);
+    sim.tick();
+    assert!(lclr_asserted(&mut sim, 0));
+    sim.tick();
+    assert!(
+        !lclr_asserted(&mut sim, 0),
+        "the commanded pulse is one cycle"
+    );
 }
 
 #[test]
