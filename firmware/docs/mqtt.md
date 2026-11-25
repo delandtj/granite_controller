@@ -686,7 +686,7 @@ the first. The simulator's HTTP route prints `a` as
 | `nodes[].w_min`, `w_max` | Lowest / highest watts since the last min/max clear. |
 | `nodes[].temp_c` | Slot temperature, whole degrees. |
 | `nodes[].energy_wh` | Energy since the plane's first boot. |
-| `nodes[].module_class` | The plane's module class code. |
+| `nodes[].module_class` | The plane's module class code: the entry of the ID table in docs/pm-interface.md. 0 no module, 1 a shorted ID pin (module fault), 2 the 2.2k, 3 the 4.7k, 4 the 10k (PM-19V-200W rev 0.1), 5 the 22k (PM-19V-250W), 6 the 47k. |
 | `nodes[].faults` | Present only when something is set: `absent`, `ov_latched`, `power_limit`, `retry_limit`, `unit_latched_off`, `cross_check`. |
 | `nodes[].last_job` | The last command that touched the node: `id`, `job`, `verb`, `started_ms`, and once done `finished_ms` and `result`. |
 | `planes[]` | Every plane that answers: `plane`, I2C `address` (48 = 0x30), `type`, `firmware`, `bus_v`, `temp_c`, `boot_count`, `uptime_s`, `image_state`. `sequence_running` and `intended_state_lost` appear only when true. |

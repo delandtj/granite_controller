@@ -122,7 +122,9 @@ pub struct NodeTelemetry {
     /// The plane boot count the energy figure belongs to: a reader that
     /// sees it change knows the counter restarted.
     pub energy_boot_count: u32,
-    /// The plane's module class code.
+    /// The plane's module class code (SLOT 0x22): the entry of the ID
+    /// table in docs/pm-interface.md, 0 for no module. Carried through
+    /// as the plane's own code; nothing here interprets it.
     pub module_class: u8,
     /// The raw module ID reading.
     pub module_id_raw: u16,

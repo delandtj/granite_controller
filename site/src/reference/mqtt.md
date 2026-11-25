@@ -64,7 +64,7 @@ does not answer is left out. Do not index it by position; select by
 | `w_min`, `w_max` | Lowest and highest power since the plane last cleared them, whole watts. |
 | `temp_c` | Slot temperature, whole degrees. |
 | `energy_wh` | Energy since the plane's first boot, whole watt-hours. |
-| `module_class` | The module class code the plane read from the slot. |
+| `module_class` | Which module the plane read off the slot's ID resistor: `0` none, `1` a shorted ID pin (a module fault), `2` the 2.2k entry, `3` the 4.7k, `4` the 10k (PM-19V-200W rev 0.1), `5` the 22k (PM-19V-250W), `6` the 47k. The table is in the module aux interface document. |
 | `faults` | Names of the faults that are set: `absent`, `ov_latched`, `power_limit`, `retry_limit`, `unit_latched_off`, `cross_check`. Left out when there are none. |
 | `last_job` | The last job the controller gave this node: `id` (the command id), `job`, `verb`, `started_ms`, and once it ended `finished_ms` and `result` (`done`, or `failed: <code>`, `absent: <code>`, `link_lost`, `timed_out`). Left out until the first command. |
 

@@ -979,7 +979,9 @@ pub struct NodeStatePayload {
     pub temp_c: i16,
     /// Energy since the plane's first boot, in watt-hours.
     pub energy_wh: u64,
-    /// The plane's module class code.
+    /// The plane's module class code (SLOT 0x22): the entry of the ID
+    /// table in docs/pm-interface.md, 0 for no module. Carried through
+    /// as the plane's own code; nothing here interprets it.
     pub module_class: u8,
     /// Which faults are set, by name; absent when there are none.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

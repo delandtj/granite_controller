@@ -2,7 +2,7 @@
 
 **Status**: Proposed
 **Date**: 2026-10-29
-**Updated**: 2026-10-29 (review asks answered by the user: EV_ACK, SUMMARY, asynchronous command outcome); 2026-10-30 (0x4A and the "hot-swap latched off" bit now mean the firmware's own unit latch, ADR 0002 decision 7a; the wire is unchanged)
+**Updated**: 2026-10-29 (review asks answered by the user: EV_ACK, SUMMARY, asynchronous command outcome); 2026-10-30 (0x4A and the "hot-swap latched off" bit now mean the firmware's own unit latch, ADR 0002 decision 7a; the wire is unchanged); 2026-11-25 (0x22 module class renumbered to the ID table of docs/pm-interface.md; the wire is unchanged)
 
 Related: docs/adr/0001-48v-power-plane.md ("Message format": the first
 draft of this protocol), firmware/docs/adr/0002-plane-core-firmware.md
@@ -137,7 +137,21 @@ Value types in brackets. Units: V in 10 mV, I in mA, P in 0.1 W, T in
   released), PGD, module PGOOD, OV latched, power limit tripped,
   retrying, sequence running, module run off, disarmed]
 - 0x21 retry count [u16]
-- 0x22 module class [u8]
+- 0x22 module class [u8]: the entry of the ID table in
+  docs/pm-interface.md the slot's ID resistor reads as. 0 no module
+  (open), 1 the short (a module fault), 2 the 2.2k, 3 the 4.7k, 4 the
+  10k (PM-19V-200W rev 0.1), 5 the 22k (PM-19V-250W), 6 the 47k; a new
+  module is a new entry at the end of the table. The boundaries are the
+  midpoints in counts between neighbouring entries
+  (`plane-logic/src/drivers/idadc.rs`). **Renumbered 2026-11-25**: it
+  used to be one of 16 equal bands of the ADC range, and the 22k entry
+  sat exactly on the 11 / 12 edge, so two identical PM-19V-250W modules
+  could report different classes. Not a protocol version: the tag, its
+  size and the direction are unchanged, and the value is "the plane's
+  own code" that no consumer interprets - the controller carries it
+  through to MQTT, the JSON API and the Modbus map and logs it. A
+  consumer that *does* start to interpret it (a model name per class)
+  takes that dependency from here on.
 - 0x23 module ID raw [u16]
 - 0x24 V [u16], 0x25 I [u16], 0x26 P [u16]
 - 0x27 P min / max since last read [u16, u16]

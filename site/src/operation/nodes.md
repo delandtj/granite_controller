@@ -37,8 +37,10 @@ one. It is `on`, and its `last_job` tells you when it was last reset.
 
 Each node also reports `v`, `a`, `w` (and `w_min` / `w_max` since the
 plane last cleared them), `temp_c`, `energy_wh` (since the plane's
-first boot), `module_class`, `busy` while the plane runs a sequence on
-the slot, and `faults`, a list of names:
+first boot), `module_class` (which module the plane read off the slot's
+ID resistor: `5` is a PM-19V-250W, `0` none, `1` a shorted ID pin; the
+reference has the whole table), `busy` while the plane runs a sequence
+on the slot, and `faults`, a list of names:
 
 | Fault | Meaning |
 |---|---|

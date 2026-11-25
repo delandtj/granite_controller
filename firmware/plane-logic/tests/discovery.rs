@@ -125,7 +125,9 @@ fn the_poll_schedule_is_twenty_two_and_one_hertz() {
     sim.tick();
     sim.advance(1_100);
     assert_eq!(sim.plane.slot(0).unwrap().module_id_raw, 0x0800);
-    assert_eq!(sim.plane.slot(0).unwrap().module_class, 9);
+    // 2048 counts is the 10k entry of the ID table (2047 nominal), so
+    // class 4 (plane_logic::drivers::idadc::ID_RESISTORS_OHMS).
+    assert_eq!(sim.plane.slot(0).unwrap().module_class, 4);
 }
 
 #[test]
