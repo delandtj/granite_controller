@@ -331,6 +331,50 @@ fn the_vin_window_defaults_to_the_12_v_feed_and_zero_means_unchecked() {
 }
 
 #[test]
+fn the_host_detect_threshold_defaults_above_the_module_idle() {
+    // A module with no node behind it idles at about 2 W on its 48 V
+    // input, so the default sits above it: a dark LED under 3 W is an
+    // empty slot and not a host that is off.
+    let c = Config::default();
+    assert_eq!(c.nodes.host_detect_w, 3.0);
+    assert_eq!(c.nodes.host_detect_dw(), 30);
+    c.validate().expect("the default must validate");
+
+    // 0 is "let the LED decide alone", the behaviour before the
+    // threshold existed.
+    let mut c = Config::default();
+    c.nodes.host_detect_w = 0.0;
+    assert_eq!(c.nodes.host_detect_dw(), 0);
+    c.validate().expect("0 is a valid threshold");
+
+    // Out of range is refused, and normalise clamps it.
+    let mut c = Config::default();
+    c.nodes.host_detect_w = 80.0;
+    assert!(
+        c.validate()
+            .unwrap_err()
+            .iter()
+            .any(|e| e.contains("host_detect_w")),
+        "{:?}",
+        c.validate()
+    );
+    c.normalise();
+    assert_eq!(
+        c.nodes.host_detect_w,
+        granite_core::config::MAX_HOST_DETECT_W
+    );
+    c.validate().unwrap();
+
+    let mut c = Config::default();
+    c.nodes.host_detect_w = -1.0;
+    assert!(c.validate().is_err());
+    assert_eq!(c.nodes.host_detect_dw(), 0, "a bad value invents no host");
+    c.normalise();
+    assert_eq!(c.nodes.host_detect_w, 0.0);
+    c.validate().unwrap();
+}
+
+#[test]
 fn too_many_rules_are_truncated_by_normalise() {
     let mut c = Config::default();
     let base = c.rules.rules[0].clone();

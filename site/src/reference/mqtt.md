@@ -58,7 +58,7 @@ does not answer is left out. Do not index it by position; select by
 | `name` | The configured name, or `node<N>`. |
 | `plane`, `slot`, `unit` | Where it sits: plane 0..7, slot 0..7, unit board 0..3. |
 | `power` | The rail: `off`, `on`, `starting`, `fault`, `absent`, `unknown`. |
-| `host` | The host LED: `off`, `on`, `sleep`, `unknown`. |
+| `host` | The host LED: `off`, `on`, `sleep`, `unknown`. `off` needs standby-power evidence as well as a dark LED - see [Nodes](../operation/nodes.md) and the `host_detect_w` setting. |
 | `busy` | `true` while the plane runs a sequence on the slot; left out otherwise. |
 | `v`, `a`, `w` | Slot volts (0.1 V), amperes (0.1 A) and whole watts. |
 | `w_min`, `w_max` | Lowest and highest power since the plane last cleared them, whole watts. |

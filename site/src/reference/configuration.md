@@ -77,6 +77,7 @@ Topic base: `<topic_root>/<site>/<device_id>`.
 | `vin_trim` | float | 1.0 | Multiplier on the measured controller input voltage. |
 | `vin_min_mv` | mV | 10000 | Lower bound of the input voltage window; `0` = unchecked. |
 | `vin_max_mv` | mV | 14000 | Upper bound; `0` = unchecked, at most 36000. |
+| `host_detect_w` | W | 3.0 | Slot power at or above which a dark host LED means `host: off` instead of `host: unknown`. `0` = the LED decides alone (the old behaviour). 0..50. |
 
 The node id is not configured: it is `8 x (plane address - 0x30) +
 slot + 1`, fixed by the plane's address straps and the slot. See
@@ -169,7 +170,8 @@ is what the commit-confirm step is for.
                        "t_soft_off_s": 120, "escalation": "hold_then_cut"}],
             "plane_update": "manual",
             "probes": [{"rom": "28ff000000000001", "name": "inlet"}],
-            "t_probe_s": 10, "vin_trim": 1.0, "vin_min_mv": 10000, "vin_max_mv": 14000},
+            "t_probe_s": 10, "vin_trim": 1.0, "vin_min_mv": 10000, "vin_max_mv": 14000,
+            "host_detect_w": 3.0},
   "rules": {"rules": ["..."]},
   "sec": {"admin_password_set": true, "session_hours": 12, "max_login_fails": 5,
           "lockout_s": 60,

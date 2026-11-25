@@ -223,7 +223,22 @@ Every node has two states in `state` and in `node_state` events:
 `power` (the rail: `off`, `on`, `starting`, `fault`, `absent`,
 `unknown`) and `host` (the motherboard's power LED as the plane reads
 it: `off`, `on`, `sleep` = blinking, `unknown` = rail off, LED not
-trusted, or no data).
+trusted, no data, or a dark LED with nothing to say a node is there).
+
+A dark LED on its own does **not** mean `off`. The opto on the unit
+board reads an unconnected front-panel cable exactly like a dark LED,
+so with the rail on and the LED dark the host is `off` only when there
+is evidence that a node is behind the slot:
+
+- the slot draws at least `nodes.host_detect_w` (default 3.0 W; the
+  module alone idles at about 2 W on its 48 V input, which is what the
+  slot's INA238 measures), or
+- the LED has been lit or blinking since the rail came up, which proves
+  a node is cabled even if it has since shut down to a lower draw.
+
+Without either, `host` is `unknown`. `nodes.host_detect_w` of `0` turns
+the power test off and lets the LED decide alone. A lit or blinking LED
+is always `on` / `sleep`, whatever the slot draws.
 
 `on`, `off`, `force_off` and `cycle` decide from the LED. The per-node
 setting `led_sense` (default true) says whether the LED is trusted:
@@ -518,6 +533,7 @@ client (within about 5 s, no reboot); `qos`, `t_state_s` and
 | `vin_trim` | `1.0` | Correction for the VIN divider. Not positive becomes 1.0. |
 | `vin_min_mv` | `10000` | Below it the `vin` fault bit is set. `0` = unchecked. Must be below `vin_max_mv` when both are set. |
 | `vin_max_mv` | `14000` | Above it the `vin` fault bit is set. `0` = unchecked. Clamped to 36000. |
+| `host_detect_w` | `3.0` | Slot power at or above which a dark host LED means `off` and not `unknown` (section 5.1). `0` = the LED decides alone. 0..50 W; outside that is refused, and a save through the API is clamped. |
 
 One entry of `nodes` (only `node` is required; the rest default):
 
@@ -532,7 +548,8 @@ One entry of `nodes` (only `node` is required; the rest default):
 
 Settings are read when a command is sent, so a change applies to the
 next command, no reboot. Probe and VIN changes apply on the next sense
-tick.
+tick. `host_detect_w` is pushed into the plane client when the section
+is saved, so the host states are re-derived at once.
 
 ### 8.4 `rules` (saved at once)
 
@@ -879,6 +896,7 @@ to `valid`. How to build the `.bin`: `README.md`, "Making the .bin".
 | `this action needs a plane target` / `a unit target` / `needs a single node target` | Wrong target kind for the verb (section 5). |
 | A whole block went off | A node verb was sent without `target` (rule 1). |
 | `on` acks `failed: failed` on a node with no LED | Section 5.1: use `power_on`. |
+| `host` stays `unknown` with the rail on | Section 5.1: the LED reads dark and the slot draws less than `nodes.host_detect_w`, so nothing says a node is there. An empty slot, an unplugged front-panel cable, or a threshold set above what the node draws in standby. |
 | `off` takes minutes | It waits `t_soft_off_s` for the host. `force_off` for now; lower the setting for later. |
 | `force_off` acks `failed` | Escalation `none` or `hold` on that node, or `no_escalate`. |
 | `timed_out` / `the action did not finish in time` | The plane did not report. Check the plane link; the job may still have run. |

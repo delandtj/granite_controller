@@ -1411,6 +1411,34 @@ impl PlaneClient {
         self.policy = policy;
     }
 
+    /// Set the host-detect threshold \[0.1 W\] every plane derives its
+    /// host axis with (`nodes.host_detect_w`, see
+    /// [`super::model::Node::host_seen`] and
+    /// [`super::model::DEFAULT_HOST_DETECT_DW`]).
+    ///
+    /// Unlike the per-node settings, which are read when a command is
+    /// dispatched, this one is used on the poll path, so the firmware
+    /// pushes it whenever the config changes. The states are derived
+    /// again at once so a save shows up without waiting for the next
+    /// SUMMARY.
+    pub fn set_host_detect_dw(&mut self, deciwatts: u16) {
+        for state in &mut self.planes {
+            if state.plane.host_detect_dw != deciwatts {
+                state.plane.host_detect_dw = deciwatts;
+                state.plane.derive_states();
+            }
+        }
+    }
+
+    /// The host-detect threshold in force \[0.1 W\].
+    pub fn host_detect_dw(&self) -> u16 {
+        self.planes
+            .first()
+            .map_or(crate::plane::model::DEFAULT_HOST_DETECT_DW, |s| {
+                s.plane.host_detect_dw
+            })
+    }
+
     /// The planes whose firmware is not `version`: what an `auto`
     /// policy offers an image to, one at a time.
     pub fn update_candidates(&self, version: Version) -> Vec<u8> {

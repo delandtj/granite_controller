@@ -156,6 +156,13 @@ mqtt:
   for such a node template on `power` instead (`on` or `starting`),
   and use `power_on` / `power_off` as the payloads if what you want to
   switch is the rail.
+- `host` is only `off` when the slot also draws at least the `nodes`
+  setting `host_detect_w` (default 3.0 W) or has had its LED lit since
+  the rail came up; otherwise it is `unknown`, because a dark LED and
+  an empty slot look the same to the opto. The templates above read
+  anything but `on` / `sleep` as OFF, so they need no change - but a
+  sensor that shows the raw value will say `unknown` for a slot with no
+  node in it. See [Nodes](nodes.md).
 - `id` in a command is what the ack is keyed on. HA payloads are static,
   so acks of the same button share an id; that only matters if you
   correlate acks in an automation.

@@ -65,6 +65,8 @@ Then for each node:
 | `power` `on`, `host` `on`, and the board really is running | Good. |
 | `power` `on`, `host` `off`, and the board really is running | The PLED wires are not connected, swapped with the switch wires, or the motherboard drives too little current. Without the LED, `on` and `off` cannot tell what the host does. Fix the cable, or set `led_sense` to false for that node. |
 | `power` `on`, `host` `sleep` | The LED blinks: the host sleeps. |
+| `power` `on`, `host` `unknown`, and a board is cabled to the slot | The LED reads dark and the slot draws less than `host_detect_w` (default 3.0 W), so nothing says a node is there at all: the module alone idles at about 2 W. Either the board draws almost nothing in standby (lower `host_detect_w`, or set it to `0` to let the LED decide alone) or the PLED and 48 V cabling needs a look. |
+| `power` `on`, `host` `unknown`, and the slot is empty | Expected. An empty slot with the rail on looks exactly like a dark LED to the opto, so the controller says `unknown` rather than claiming a host is off. |
 | `power` `off` | The rail is down, and the host with it. `host` is `unknown` while the rail is off. |
 | `power` `fault` | The slot latched or tripped; `faults` names why. See [Controlling nodes](../operation/nodes.md). |
 | A node you expected is not listed | No module in that slot, or its unit board is missing. |
@@ -105,7 +107,8 @@ curl -sk -H "Authorization: Bearer $T" -X PUT -d '{
   ],
   "plane_update": "manual",
   "probes": [{"rom": "28ff000000000001", "name": "inlet"}],
-  "t_probe_s": 10, "vin_trim": 1.0, "vin_min_mv": 10000, "vin_max_mv": 14000
+  "t_probe_s": 10, "vin_trim": 1.0, "vin_min_mv": 10000, "vin_max_mv": 14000,
+  "host_detect_w": 3.0
 }' https://granite-37adc7.local/api/v1/config/nodes
 ```
 
@@ -183,3 +186,17 @@ window the input is expected to stay in. Outside it the `vin` fault bit
 is set (Modbus input register 13, bit 3); either bound at `0` switches
 that side of the check off, and `vin_max_mv` cannot exceed 36000. The
 window only reports: acting on a sagging supply is a rule's job.
+
+## Host detection
+
+`host_detect_w` (default 3.0 W, range 0 to 50) is the slot power at or
+above which a dark host LED is reported as `host: off` rather than
+`host: unknown`. The opto that reads the LED cannot tell an unconnected
+front-panel cable from a dark LED, so the slot's power meter supplies
+the missing evidence: a module with nothing behind it idles at about
+2 W on its 48 V input, and a node that is only switched off draws more.
+Set it to `0` to let the LED decide alone, as the controller did before
+the setting existed. It is a whole-section setting, not per node, and a
+save applies it at once - the host states are derived again without a
+reboot. A lit or blinking LED is proof of a node whatever the slot
+draws.

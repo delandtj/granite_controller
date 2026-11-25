@@ -103,6 +103,7 @@ impl SimCore {
             last_states: Vec::new(),
         };
         core.plane.set_policy(config.nodes.plane_update);
+        core.plane.set_host_detect_dw(config.nodes.host_detect_dw());
         core.refresh_probes();
         core
     }
@@ -275,12 +276,13 @@ impl SimCore {
     }
 
     /// Apply a configuration change to the parts of the core that cache
-    /// it (the update policy, the probe names, the rules). The per-node
-    /// settings are read when a command is dispatched, so nothing has
-    /// to be pushed for them.
+    /// it (the update policy, the host-detect threshold, the probe
+    /// names, the rules). The per-node settings are read when a command
+    /// is dispatched, so nothing has to be pushed for them.
     pub fn reconfigure(&mut self, config: &Config) {
         self.config = config.clone();
         self.plane.set_policy(config.nodes.plane_update);
+        self.plane.set_host_detect_dw(config.nodes.host_detect_dw());
         self.rules.set_rules(config.rules.rules.clone());
         self.refresh_probes();
     }

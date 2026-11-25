@@ -27,10 +27,22 @@ A node has two state axes, the rail and the host, plus telemetry.
 
 | State | Meaning |
 |---|---|
-| `off` | The LED is dark. |
+| `off` | The LED is dark **and** something says a node is there: the slot draws at least `host_detect_w`, or the LED has been lit since the rail came up. |
 | `on` | The LED is steady. |
 | `sleep` | The LED blinks: the host sleeps. |
-| `unknown` | The rail is off, or there is no reading. |
+| `unknown` | The rail is off, there is no reading, or the LED is dark with nothing to say a node is there at all. |
+
+The opto that reads the power LED sees an unconnected front-panel cable
+exactly like a dark LED, so a dark LED on its own cannot tell "the host
+is off" from "there is no host". The slot's own power meter settles it:
+a module with nothing behind it idles at about 2 W on its 48 V input,
+and a node that is merely switched off draws more than that. The
+threshold is the `nodes` setting `host_detect_w` (default 3.0 W, range
+0 to 50 W); `0` means the LED decides alone, which is what the
+controller did before the setting existed. A lit or blinking LED is
+proof of a node whatever the slot draws, and that proof lasts until the
+rail goes down, so a host that shuts itself down to a small standby
+draw still reads `off` and not `unknown`.
 
 A hung node is not a state: nothing can tell a frozen OS from a running
 one. It is `on`, and its `last_job` tells you when it was last reset.
