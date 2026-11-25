@@ -43,14 +43,30 @@ use crate::scenario::{
 /// ADR 0002 decision 5.
 pub const PLANE_TICK_MS: u64 = POLL_PERIOD_MS as u64;
 
+/// What a slot draws while its rail is up and its host is not running
+/// \[mA\]: a motherboard in standby, its BMC alive, plus the module's
+/// own idle loss.
+///
+/// 100 mA on 48 V is 4.8 W, which sits between the two thresholds of
+/// ADR 0004 on purpose: above `nodes.host_detect_w` (3 W, "is anything
+/// behind this slot"), so a host that shut down still reads `off` and
+/// not `unknown`, and below `nodes.host_running_w` (15 W, "is it still
+/// running"), so `off` leaves its standby rail alone. A test that wants
+/// a host which keeps drawing behind a dark LED - the front-panel cable
+/// that fell out - says so with [`FakePlane::set_standby`].
+pub const STANDBY_MA: u32 = 100;
+
 /// One simulated plane: the plane logic, its fake hardware and the
 /// faults scheduled for it.
 #[derive(Debug)]
 pub struct FakePlane {
     /// The plane, its devices and its clock.
     pub sim: Sim,
-    /// What the host in each slot draws while its rail is up \[mA\].
+    /// What the host in each slot draws while it is running \[mA\].
     pub load_ma: [u32; SLOT_COUNT],
+    /// What each slot draws while its rail is up and its host is not
+    /// running \[mA\]: see [`STANDBY_MA`].
+    pub standby_ma: [u32; SLOT_COUNT],
     /// Transactions still to be answered with a NAK.
     pub drop_next: u32,
     /// Answers still to come back with a byte flipped.
@@ -95,6 +111,7 @@ impl FakePlane {
         let mut plane = FakePlane {
             sim: Sim::with_address(scenario.address, dev),
             load_ma,
+            standby_ma: [STANDBY_MA; SLOT_COUNT],
             drop_next: 0,
             corrupt_next: 0,
             transactions: 0,
@@ -131,7 +148,10 @@ impl FakePlane {
     ///
     /// The slot loads are re-applied first: [`FakeUnit::advance`] zeroes
     /// a slot's current while its rail is down, so a load is a property
-    /// to restate every step rather than a value to set once.
+    /// to restate every step rather than a value to set once. A slot
+    /// whose host is not running draws its standby share instead
+    /// ([`STANDBY_MA`]), so that a host which obeyed its button can be
+    /// told from one that never did.
     ///
     /// A plane that asked for a reset gets one, because a plane is its
     /// own MCU: nothing on the controller's side performs it, and a
@@ -139,11 +159,12 @@ impl FakePlane {
     /// restart the thing.
     pub fn step(&mut self) {
         for index in 0..SLOT_COUNT {
-            let load = self.load_ma[index];
+            let running = self.load_ma[index];
+            let standby = self.standby_ma[index];
             if let Some(slot) = self.slot_mut(index as u8)
                 && slot.pgd
             {
-                slot.ina.current_ma = load;
+                slot.ina.current_ma = if slot.node.on { running } else { standby };
             }
         }
         self.sim.step(PLANE_TICK_MS);
@@ -309,10 +330,22 @@ impl FakePlane {
         }
     }
 
-    /// Set what the host in this slot draws \[mA\].
+    /// Set what the host in this slot draws while it is running \[mA\].
     pub fn set_load(&mut self, slot: u8, milliamps: u32) {
         if (slot as usize) < SLOT_COUNT {
             self.load_ma[slot as usize] = milliamps;
+        }
+    }
+
+    /// Set what this slot draws while its rail is up and its host is
+    /// not running \[mA\] (see [`STANDBY_MA`]).
+    ///
+    /// A host whose front-panel cable is not connected keeps running
+    /// with its LED dark and the plane none the wiser, which is this
+    /// value at a running host's level.
+    pub fn set_standby(&mut self, slot: u8, milliamps: u32) {
+        if (slot as usize) < SLOT_COUNT {
+            self.standby_ma[slot as usize] = milliamps;
         }
     }
 

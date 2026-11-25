@@ -526,6 +526,21 @@ pub const DEFAULT_HOST_DETECT_W: f32 = crate::plane::model::DEFAULT_HOST_DETECT_
 /// has a host that is running, not one in standby.
 pub const MAX_HOST_DETECT_W: f32 = 50.0;
 
+/// Default of `nodes.host_running_w` \[W\]: the draw above which `off`
+/// takes a dark slot whose rail is still up to hold a running host, and
+/// cuts it (ADR 0004, "`force_off` always ends with the rail down").
+///
+/// It has to sit above a host's standby draw plus the module's own idle
+/// loss (about 2 W for a PM-19V-250W-B) and below the lightest running
+/// host. [`DEFAULT_HOST_DETECT_W`] is far too low for this: a host in
+/// standby with a BMC draws 5-15 W.
+pub const DEFAULT_HOST_RUNNING_W: f32 = crate::plane::DEFAULT_HOST_RUNNING_DW as f32 / 10.0;
+
+/// Highest host-running threshold a config may ask for \[W\]: the
+/// slot's own limit, so any value a module can really deliver is
+/// allowed.
+pub const MAX_HOST_RUNNING_W: f32 = 250.0;
+
 /// True when `mv` is outside the window `min_mv`..`max_mv`. A bound of
 /// `0` is not checked, so a `0`/`0` window never faults.
 ///
@@ -566,6 +581,11 @@ pub struct NodesCfg {
     /// `off` rather than `unknown`, in watts. `0` lets the LED decide
     /// alone. See [`DEFAULT_HOST_DETECT_W`].
     pub host_detect_w: f32,
+    /// Slot power above which `off` takes a dark host that kept its
+    /// rail to be running anyway, and cuts the rail, in watts. `0`
+    /// turns that check off and leaves the LED the last word. See
+    /// [`DEFAULT_HOST_RUNNING_W`].
+    pub host_running_w: f32,
 }
 
 impl Default for NodesCfg {
@@ -582,6 +602,7 @@ impl Default for NodesCfg {
             vin_min_mv: DEFAULT_VIN_MIN_MV,
             vin_max_mv: DEFAULT_VIN_MAX_MV,
             host_detect_w: DEFAULT_HOST_DETECT_W,
+            host_running_w: DEFAULT_HOST_RUNNING_W,
         }
     }
 }
@@ -680,6 +701,23 @@ impl NodesCfg {
         let dw = self.host_detect_w * 10.0;
         if dw >= MAX_HOST_DETECT_W * 10.0 {
             (MAX_HOST_DETECT_W * 10.0) as u16
+        } else {
+            dw as u16
+        }
+    }
+
+    /// The host-running threshold in the unit the slot telemetry uses
+    /// \[0.1 W\], which is what the plane client wants
+    /// ([`crate::plane::PlaneClient::set_host_running_dw`]). `0` for
+    /// "leave the LED the last word"; a nonsense value reads as `0`, so
+    /// a bad number can never cut a host's rail.
+    pub fn host_running_dw(&self) -> u16 {
+        if !self.host_running_w.is_finite() || self.host_running_w <= 0.0 {
+            return 0;
+        }
+        let dw = self.host_running_w * 10.0;
+        if dw >= MAX_HOST_RUNNING_W * 10.0 {
+            (MAX_HOST_RUNNING_W * 10.0) as u16
         } else {
             dw as u16
         }
@@ -1024,6 +1062,10 @@ impl Config {
         // The NaN case is already out of the way above, so `clamp` has
         // nothing to panic about.
         self.nodes.host_detect_w = self.nodes.host_detect_w.clamp(0.0, MAX_HOST_DETECT_W);
+        if !self.nodes.host_running_w.is_finite() {
+            self.nodes.host_running_w = DEFAULT_HOST_RUNNING_W;
+        }
+        self.nodes.host_running_w = self.nodes.host_running_w.clamp(0.0, MAX_HOST_RUNNING_W);
         self.rules.rules.truncate(MAX_RULES);
         if self.mqtt.qos > 2 {
             self.mqtt.qos = 1;
@@ -1094,6 +1136,15 @@ impl Config {
             errs.push(format!(
                 "nodes.host_detect_w ({}) must be between 0 and {MAX_HOST_DETECT_W} W",
                 self.nodes.host_detect_w
+            ));
+        }
+        if !self.nodes.host_running_w.is_finite()
+            || self.nodes.host_running_w < 0.0
+            || self.nodes.host_running_w > MAX_HOST_RUNNING_W
+        {
+            errs.push(format!(
+                "nodes.host_running_w ({}) must be between 0 and {MAX_HOST_RUNNING_W} W",
+                self.nodes.host_running_w
             ));
         }
         if self.rules.rules.len() > MAX_RULES {

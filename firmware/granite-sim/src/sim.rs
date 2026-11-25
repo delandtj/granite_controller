@@ -111,6 +111,8 @@ impl SimCore {
         core.plane.set_policy(config.nodes.plane_update);
         core.plane.set_host_detect_dw(config.nodes.host_detect_dw());
         core.plane
+            .set_host_running_dw(config.nodes.host_running_dw());
+        core.plane
             .set_no_front_panel(config.nodes.no_front_panel_mask());
         core.refresh_probes();
         core
@@ -309,6 +311,8 @@ impl SimCore {
         self.config = config.clone();
         self.plane.set_policy(config.nodes.plane_update);
         self.plane.set_host_detect_dw(config.nodes.host_detect_dw());
+        self.plane
+            .set_host_running_dw(config.nodes.host_running_dw());
         self.plane
             .set_no_front_panel(config.nodes.no_front_panel_mask());
         self.rules.set_rules(config.rules.rules.clone());

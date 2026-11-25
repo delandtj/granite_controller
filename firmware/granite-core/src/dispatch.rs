@@ -665,7 +665,16 @@ fn node_verb_with(
     // contact nothing is wired to (ADR 0004, "Nodes without a front
     // panel"). Everything else becomes a rail-only command, which
     // `NodeCommand::stages` builds from the options.
-    if !opts.front_panel && matches!(action, CommandKind::Reset | CommandKind::Press) {
+    // `force_button_off` is the hold alone, so it joins them: on a node
+    // with no panel it would press a contact nothing is wired to and
+    // leave the rail up, which is the one thing that verb promises not
+    // to do (ADR 0004, "Two explicit verbs").
+    if !opts.front_panel
+        && matches!(
+            action,
+            CommandKind::Reset | CommandKind::Press | CommandKind::ForceButtonOff
+        )
+    {
         return Err(alloc::format!(
             "node {node} has no front panel, so {} reaches nothing",
             action.as_str()
@@ -675,6 +684,8 @@ fn node_verb_with(
         CommandKind::On => NodeCommand::on(node),
         CommandKind::Off => NodeCommand::off(node),
         CommandKind::ForceOff => NodeCommand::force_off(node),
+        CommandKind::ForceButtonOff => NodeCommand::force_button_off(node),
+        CommandKind::ForcePowerOff => NodeCommand::force_power_off(node),
         CommandKind::Cycle => NodeCommand::cycle(node),
         CommandKind::Reset => NodeCommand::Reset { node },
         CommandKind::Press => NodeCommand::Press {

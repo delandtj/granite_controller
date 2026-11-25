@@ -51,6 +51,14 @@ fn command_fixtures() {
         json!({"v":1,"id":"c-3","action":"force_off","target":8}),
     );
     roundtrip_command(
+        &Command::new("c-3b", CommandKind::ForceButtonOff).with_target(Target::Node(8)),
+        json!({"v":1,"id":"c-3b","action":"force_button_off","target":8}),
+    );
+    roundtrip_command(
+        &Command::new("c-3c", CommandKind::ForcePowerOff).with_target(Target::Node(8)),
+        json!({"v":1,"id":"c-3c","action":"force_power_off","target":8}),
+    );
+    roundtrip_command(
         &Command::new("c-4", CommandKind::Reset)
             .with_target(Target::Node(1))
             .with_args(Args {
@@ -140,6 +148,8 @@ fn every_command_kind_has_a_fixture() {
         CommandKind::On,
         CommandKind::Off,
         CommandKind::ForceOff,
+        CommandKind::ForceButtonOff,
+        CommandKind::ForcePowerOff,
         CommandKind::Reset,
         CommandKind::Cycle,
         CommandKind::Press,
@@ -157,7 +167,7 @@ fn every_command_kind_has_a_fixture() {
         CommandKind::Reboot,
         CommandKind::FactoryReset,
     ];
-    assert_eq!(kinds.len(), 19);
+    assert_eq!(kinds.len(), 21);
     for k in kinds {
         let json = serde_json::to_string(&k).unwrap();
         assert_eq!(json, format!("\"{}\"", k.as_str()));
@@ -165,8 +175,11 @@ fn every_command_kind_has_a_fixture() {
         assert_eq!(back, k);
         assert_eq!(CommandKind::from_str_opt(k.as_str()), Some(k));
     }
-    // The twelve verbs that become plane jobs (ADR 0004 decision 4).
-    assert_eq!(CommandKind::PLANE_VERBS.len(), 12);
+    // The verbs that become plane jobs (ADR 0004 decision 4, plus the
+    // two explicit force verbs).
+    assert_eq!(CommandKind::PLANE_VERBS.len(), 14);
+    assert!(CommandKind::ForceButtonOff.is_node_verb());
+    assert!(CommandKind::ForcePowerOff.is_node_verb());
     assert!(CommandKind::On.is_plane_verb() && CommandKind::On.is_node_verb());
     assert!(CommandKind::UnitReset.is_plane_verb());
     assert!(!CommandKind::UnitReset.is_node_verb());
@@ -301,10 +314,28 @@ fn event_fixtures() {
                 action: CommandKind::On,
                 result: "done".into(),
                 hard_cut: false,
+                rail_cut: false,
             },
         ),
         json!({"v":1,"ts":1200,"kind":"action_done","id":"c-1","node":3,
                "action":"on","result":"done"}),
+    );
+    // A `force_off` the controller had to cut the rail for (ADR 0004,
+    // "`force_off` always ends with the rail down").
+    roundtrip_event(
+        &Event::new(
+            1_220,
+            EventKind::ActionDone {
+                id: "c-9".into(),
+                node: Some(7),
+                action: CommandKind::ForceOff,
+                result: "done".into(),
+                hard_cut: false,
+                rail_cut: true,
+            },
+        ),
+        json!({"v":1,"ts":1220,"kind":"action_done","id":"c-9","node":7,
+               "action":"force_off","result":"done","rail_cut":true}),
     );
     // A node with no front panel: the rail went down with no shutdown,
     // and the event says so (ADR 0004, "Nodes without a front panel").
@@ -317,10 +348,11 @@ fn event_fixtures() {
                 action: CommandKind::Off,
                 result: granite_core::plane::HARD_CUT_TEXT.into(),
                 hard_cut: true,
+                rail_cut: false,
             },
         ),
         json!({"v":1,"ts":1250,"kind":"action_done","id":"c-3","node":5,
-               "action":"off","result":"rail cut, no shutdown (no front panel)",
+               "action":"off","result":"rail cut, no shutdown",
                "hard_cut":true}),
     );
     roundtrip_event(
@@ -474,6 +506,7 @@ fn a_finished_job_becomes_an_ack_and_an_event() {
         code: Some(granite_proto::ResultCode::Ok),
         submitted_ms: 100,
         finished_ms: 900,
+        rail_cut: false,
     };
     let done = log.finish(&finished, 900);
     let reply = done.reply.expect("the command is finished");

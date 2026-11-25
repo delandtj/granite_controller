@@ -374,6 +374,69 @@ fn the_host_detect_threshold_defaults_above_the_module_idle() {
     c.validate().unwrap();
 }
 
+/// ADR 0004, "`force_off` always ends with the rail down": the
+/// threshold `off` cuts a still-drawing host at.
+#[test]
+fn the_host_running_threshold_sits_above_a_standby_host() {
+    // 15 W: above a host in standby with its BMC alive (5-15 W) plus
+    // the module's own idle loss, and below the lightest running host.
+    let c = Config::default();
+    assert_eq!(c.nodes.host_running_w, 15.0);
+    assert_eq!(c.nodes.host_running_dw(), 150);
+    assert!(
+        c.nodes.host_running_w > c.nodes.host_detect_w,
+        "`is it running` is a higher bar than `is anything there`"
+    );
+    c.validate().expect("the default must validate");
+
+    // 0 turns the `off` check off.
+    let mut c = Config::default();
+    c.nodes.host_running_w = 0.0;
+    assert_eq!(c.nodes.host_running_dw(), 0);
+    c.validate().expect("0 is a valid threshold");
+
+    // Out of range is refused, and normalise clamps it.
+    let mut c = Config::default();
+    c.nodes.host_running_w = 400.0;
+    assert!(
+        c.validate()
+            .unwrap_err()
+            .iter()
+            .any(|e| e.contains("host_running_w")),
+        "{:?}",
+        c.validate()
+    );
+    c.normalise();
+    assert_eq!(
+        c.nodes.host_running_w,
+        granite_core::config::MAX_HOST_RUNNING_W
+    );
+    c.validate().unwrap();
+
+    let mut c = Config::default();
+    c.nodes.host_running_w = -1.0;
+    assert!(c.validate().is_err());
+    assert_eq!(
+        c.nodes.host_running_dw(),
+        0,
+        "a bad value never cuts a host's rail"
+    );
+    c.normalise();
+    assert_eq!(c.nodes.host_running_w, 0.0);
+    c.validate().unwrap();
+
+    // A `nodes` section written before the setting existed still loads,
+    // with the default.
+    let old = r#"{"t_probe_s":10,"host_detect_w":3.0}"#;
+    let mut c = Config::default();
+    c.set_section_json(Section::Nodes, old)
+        .expect("a config written before the setting existed");
+    assert_eq!(
+        c.nodes.host_running_w,
+        granite_core::config::DEFAULT_HOST_RUNNING_W
+    );
+}
+
 /// ADR 0004, "Nodes without a front panel": a per-node flag, default
 /// true, and a config written before it existed still loads.
 #[test]

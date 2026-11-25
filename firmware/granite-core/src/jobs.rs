@@ -79,6 +79,10 @@ pub struct PendingJob {
     pub submitted_ms: u64,
     /// The jobs that have reported, with how they ended.
     pub finished: Vec<(JobId, JobOutcome)>,
+    /// Any job of this command had its rail cut by the controller
+    /// ([`FinishedJob::rail_cut`]): a `force_off` on `all` says so once
+    /// for the group, however many of its nodes needed the cut.
+    pub rail_cut: bool,
 }
 
 impl PendingJob {
@@ -167,6 +171,7 @@ impl JobLog {
             nodes,
             submitted_ms: now_ms,
             finished: Vec::new(),
+            rail_cut: false,
         });
     }
 
@@ -210,6 +215,9 @@ impl JobLog {
             self.pending[at]
                 .finished
                 .push((finished.id, finished.outcome));
+            // One node of a group needing the cut is enough for the
+            // group's ack to say so.
+            self.pending[at].rail_cut |= finished.rail_cut;
         }
         // Copied out of the entry: the per-node records below need the
         // log mutably.
@@ -295,12 +303,19 @@ impl JobLog {
         } else {
             text
         };
+        // The controller cut a rail to finish the verb (ADR 0004,
+        // "`force_off` always ends with the rail down"). A group reports
+        // it when any of its jobs needed it.
+        let rail_cut = finished.rail_cut || pending.as_ref().is_some_and(|p| p.rail_cut);
         let reply = if outcome.is_ok() {
             Reply::ok(&command_id, text.clone())
                 .with_job(job)
                 .with_hard_cut(hard_cut)
+                .with_rail_cut(rail_cut)
         } else {
-            Reply::err(&command_id, text.clone()).with_job(job)
+            Reply::err(&command_id, text.clone())
+                .with_job(job)
+                .with_rail_cut(rail_cut)
         };
         let event = if outcome.is_ok() {
             EventKind::ActionDone {
@@ -309,6 +324,7 @@ impl JobLog {
                 action,
                 result: text,
                 hard_cut,
+                rail_cut,
             }
         } else {
             EventKind::ActionFailed {
@@ -423,6 +439,7 @@ mod tests {
             code: None,
             submitted_ms: 100,
             finished_ms: 500,
+            rail_cut: false,
         }
     }
 

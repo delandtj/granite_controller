@@ -8,8 +8,10 @@
 //! | Verb | Plane command |
 //! |---|---|
 //! | on | 0x50 node on, LED timeout [`ON_TIMEOUT_S`] |
-//! | off | 0x51 node off, timeout [`OFF_TIMEOUT_S`], escalate 3 |
-//! | force_off | 0x51 node off, timeout 0, escalate 3 |
+//! | off | 0x51 node off, timeout [`OFF_TIMEOUT_S`], escalate 3, then the conditional cut |
+//! | force_off | 0x51 node off, timeout 0, escalate 3, then the rail |
+//! | force_button_off | 0x51 node off, timeout 0, escalate 1: the hold and nothing else |
+//! | force_power_off | 0x40 enable off: a hard cut ([`HARD_CUT_TEXT`]) |
 //! | reset | 0x46 press RST |
 //! | cycle | 0x47 power-cycle |
 //! | press | 0x45 / 0x46 press PWR / RST |
@@ -23,6 +25,15 @@
 //! short press, holds PWR for five seconds and cuts the rail if the
 //! host is still lit, so the node always ends up off (ADR 0004
 //! decision 4, user 2026-10-29).
+//!
+//! The plane's own cut depends on the host LED, and an open front-panel
+//! cable reads exactly like a dark LED, so neither `off` nor `force_off`
+//! ends at the plane's answer: each gets a second stage that cuts the
+//! rail itself, under a [`StageCondition`] the client evaluates against
+//! the slot's own telemetry (ADR 0004, "`force_off` always ends with the
+//! rail down"). `force_button_off` and `force_power_off` are the two
+//! halves of `force_off` an operator can ask for explicitly: the hold
+//! alone, and the rail alone.
 //!
 //! A node whose settings say it has no front panel
 //! ([`NodeOptions::front_panel`]) gets another table, because there is
@@ -101,6 +112,81 @@ pub const CUT_SETTLE_MS: u64 = 1_000;
 /// from a node's settings is never tighter than the sequence it has to
 /// cover.
 pub const SEQUENCE_SLACK_MS: u64 = 5_000;
+
+/// How long a slot has to keep drawing more than
+/// `nodes.host_running_w` before `off` takes the host to be still
+/// running and cuts the rail \[ms\] (ADR 0004, "`force_off` always ends
+/// with the rail down").
+///
+/// Two seconds is two SUMMARY reads at the client's 1 Hz poll, so the
+/// decision rests on more than one sample and on telemetry the client
+/// polls anyway.
+pub const HOST_RUNNING_CONFIRM_MS: u64 = 2_000;
+
+/// The default of `nodes.host_running_w` \[0.1 W\]: 15.0 W.
+///
+/// Above a host's standby draw plus the module's own idle loss (about
+/// 2 W for a PM-19V-250W-B) and below the lightest running host. The
+/// host-detect threshold is far too low for this: a host in standby with
+/// a BMC draws 5-15 W.
+pub const DEFAULT_HOST_RUNNING_DW: u16 = 150;
+
+/// What a job's stage asks the client to check before it goes out
+/// (ADR 0004, "`force_off` always ends with the rail down").
+///
+/// Almost every stage is [`StageCondition::Always`]: the writes go out
+/// as soon as the stage before them finished. The two cut stages are
+/// not, because whether the controller has to cut a rail at all is a
+/// question about the slot, and only the client holds the answer - it is
+/// the one reading SUMMARY. The condition says what to look for; the
+/// client's stage watch (see `client::StageWatch`) waits for telemetry
+/// newer than the stage it follows and then either queues the writes or
+/// ends the job without them.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum StageCondition {
+    /// Nothing to check: the stage goes out at once.
+    Always,
+    /// Only if the slot still reports its rail enabled: the second stage
+    /// of `force_off`. A plane that cut the rail itself (the host LED
+    /// was still lit after the hold) leaves nothing to do.
+    RailStillUp,
+    /// Only if the rail is up, the LED is dark and the slot keeps
+    /// drawing more than `nodes.host_running_w` for
+    /// [`HOST_RUNNING_CONFIRM_MS`]: the second stage of `off`.
+    ///
+    /// A threshold of `0` turns the check off, and so leaves the rail
+    /// up. `off` is the graceful verb, so every sample has to agree: a
+    /// draw that falls, a rail that goes down or an LED that lights
+    /// ends the job without a cut.
+    HostStillDrawing,
+}
+
+impl StageCondition {
+    /// True for the one condition that needs no telemetry.
+    pub const fn is_always(self) -> bool {
+        matches!(self, StageCondition::Always)
+    }
+
+    /// True when the stage runs even though the stage before it did not
+    /// end Ok.
+    ///
+    /// `force_off` promises the rail, not the plane's opinion of it:
+    /// its cut stage follows the node-off sequence whatever that
+    /// answered. `off` only looks at a slot whose sequence ended Ok.
+    pub const fn runs_after_failure(self) -> bool {
+        matches!(self, StageCondition::RailStillUp)
+    }
+
+    /// True when the stage goes out anyway if no fresh telemetry ever
+    /// arrives.
+    ///
+    /// `force_off` may not be fooled by the cabling, so a slot it
+    /// cannot read is cut; `off` may not cut a host on a guess, so it
+    /// leaves the rail up.
+    pub const fn cuts_when_unreadable(self) -> bool {
+        matches!(self, StageCondition::RailStillUp)
+    }
+}
 
 /// A job identifier: unique for the life of the client.
 pub type JobId = u32;
@@ -208,9 +294,20 @@ impl NodeOptions {
 }
 
 /// What an ack, an HTTP job result and an `action_done` event say about a
-/// verb that cut a node's rail with no shutdown (ADR 0004, "Nodes
-/// without a front panel").
-pub const HARD_CUT_TEXT: &str = "rail cut, no shutdown (no front panel)";
+/// verb that cut a node's rail with no shutdown: `off`, `force_off` and
+/// `cycle` on a node with no front panel (ADR 0004, "Nodes without a
+/// front panel") and `force_power_off` on any node (ADR 0004, "Two
+/// explicit verbs").
+pub const HARD_CUT_TEXT: &str = "rail cut, no shutdown";
+
+/// How long a conditional stage waits for telemetry newer than the
+/// stage before it \[ms\].
+///
+/// SUMMARY arrives once a second per plane, so this is three chances at
+/// a fresh reading. What happens when none comes is the verb's to
+/// decide: `force_off` cuts anyway (it may not be fooled by a cable),
+/// `off` does not (it may not cut a host on a guess).
+pub const STAGE_WATCH_MS: u64 = 3_000;
 
 /// What a command on one node or a set of them asks for.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -229,12 +326,28 @@ pub enum NodeCommand {
         /// Timings and escalation from the node's settings.
         opts: NodeOptions,
     },
-    /// Hold PWR five seconds; cut the rail if the host is still lit.
+    /// Hold PWR five seconds; cut the rail if the host is still lit,
+    /// and cut it from here if the slot is still enabled afterwards.
     ForceOff {
         /// Node id 1-64.
         node: NodeId,
         /// Timings and escalation from the node's settings.
         opts: NodeOptions,
+    },
+    /// Hold PWR five seconds and nothing else: the rail is left alone,
+    /// whatever the LED says (ADR 0004, "Two explicit verbs").
+    ForceButtonOff {
+        /// Node id 1-64.
+        node: NodeId,
+        /// Timings from the node's settings; the escalation is the
+        /// hold, whatever the node configured.
+        opts: NodeOptions,
+    },
+    /// Cut the rail now, no button: the same write as `power_off`,
+    /// reported as a hard cut (ADR 0004, "Two explicit verbs").
+    ForcePowerOff {
+        /// Node id 1-64.
+        node: NodeId,
     },
     /// Press RST.
     Reset {
@@ -320,6 +433,19 @@ impl NodeCommand {
         }
     }
 
+    /// `force_button_off` with the default timings.
+    pub const fn force_button_off(node: NodeId) -> Self {
+        NodeCommand::ForceButtonOff {
+            node,
+            opts: NodeOptions::DEFAULT,
+        }
+    }
+
+    /// `force_power_off`: the rail, now.
+    pub const fn force_power_off(node: NodeId) -> Self {
+        NodeCommand::ForcePowerOff { node }
+    }
+
     /// `cycle` with the default timings.
     pub const fn cycle(node: NodeId) -> Self {
         NodeCommand::Cycle {
@@ -359,6 +485,7 @@ impl NodeCommand {
             NodeCommand::On { node, .. } => NodeCommand::On { node, opts },
             NodeCommand::Off { node, .. } => NodeCommand::Off { node, opts },
             NodeCommand::ForceOff { node, .. } => NodeCommand::ForceOff { node, opts },
+            NodeCommand::ForceButtonOff { node, .. } => NodeCommand::ForceButtonOff { node, opts },
             NodeCommand::Cycle { node, .. } => NodeCommand::Cycle { node, opts },
             NodeCommand::OnAll {
                 nodes,
@@ -401,6 +528,8 @@ impl NodeCommand {
             NodeCommand::On { .. } => "on",
             NodeCommand::Off { .. } => "off",
             NodeCommand::ForceOff { .. } => "force_off",
+            NodeCommand::ForceButtonOff { .. } => "force_button_off",
+            NodeCommand::ForcePowerOff { .. } => "force_power_off",
             NodeCommand::Reset { .. } => "reset",
             NodeCommand::Cycle { .. } => "cycle",
             NodeCommand::Press { .. } => "press",
@@ -427,6 +556,8 @@ impl NodeCommand {
             NodeCommand::On { node, .. }
             | NodeCommand::Off { node, .. }
             | NodeCommand::ForceOff { node, .. }
+            | NodeCommand::ForceButtonOff { node, .. }
+            | NodeCommand::ForcePowerOff { node }
             | NodeCommand::Reset { node }
             | NodeCommand::Cycle { node, .. }
             | NodeCommand::Press { node, .. }
@@ -439,15 +570,23 @@ impl NodeCommand {
     /// True for a verb whose end state is "the rail is off", which is
     /// what the intended-OFF set remembers (see [`super::intent`]).
     ///
-    /// `off` and `force_off` on a node with a front panel are not
-    /// listed: whether they end with the rail cut depends on the host,
-    /// so the client decides from the slot's state once the sequence has
-    /// finished. On a node without one they *are* the rail cut
-    /// ([`Self::hard_cut`]), so the intent is certain.
+    /// `off` on a node with a front panel is not listed: whether it ends
+    /// with the rail cut depends on the host, so the client decides from
+    /// the slot's state once the sequence has finished. On a node
+    /// without one it *is* the rail cut ([`Self::hard_cut`]), so the
+    /// intent is certain.
+    ///
+    /// `force_off` is listed whatever the cabling: it ends with the rail
+    /// down or it does not end Ok (ADR 0004, "`force_off` always ends
+    /// with the rail down"), and a job that ended with the rail cut has
+    /// to leave the node in the intended-OFF set. `force_button_off`
+    /// never touches the rail, so it is not here.
     pub const fn intends_rail_off(&self) -> bool {
         match self {
-            NodeCommand::PowerOff { .. } => true,
-            NodeCommand::Off { opts, .. } | NodeCommand::ForceOff { opts, .. } => !opts.front_panel,
+            NodeCommand::PowerOff { .. }
+            | NodeCommand::ForcePowerOff { .. }
+            | NodeCommand::ForceOff { .. } => true,
+            NodeCommand::Off { opts, .. } => !opts.front_panel,
             _ => false,
         }
     }
@@ -467,26 +606,60 @@ impl NodeCommand {
 
     /// True for a verb that may end with the rail cut, so the client
     /// looks at the slot once it is done.
+    ///
+    /// Only `off` on a node with a front panel: it cuts the rail when
+    /// the slot keeps drawing (the [`StageCondition::HostStillDrawing`]
+    /// stage) and leaves it up otherwise, and which of the two happened
+    /// is the slot's answer, not the verb's. `force_off` is certain
+    /// ([`Self::intends_rail_off`]).
     pub const fn may_cut_rail(&self) -> bool {
         match self {
-            NodeCommand::Off { opts, .. } | NodeCommand::ForceOff { opts, .. } => opts.front_panel,
+            NodeCommand::Off { opts, .. } => opts.front_panel,
             _ => false,
         }
     }
 
-    /// True for a verb that takes the host's power away without a
-    /// shutdown: `off`, `force_off` and `cycle` on a node with no front
-    /// panel (ADR 0004, "Nodes without a front panel").
+    /// True for a verb that takes the host's power away without even
+    /// trying a shutdown: `off`, `force_off` and `cycle` on a node with
+    /// no front panel (ADR 0004, "Nodes without a front panel") and
+    /// `force_power_off` on any node (ADR 0004, "Two explicit verbs").
     ///
     /// The ack, the HTTP job result and the `action_done` event say so,
     /// with [`HARD_CUT_TEXT`]. `power_off` is not listed: a verb that
     /// names the rail is the operator asking for exactly this.
+    /// `force_off` on a node with a front panel is not either - it holds
+    /// PWR first, and that it had to cut afterwards is `rail_cut`
+    /// ([`FinishedJob::rail_cut`]), not a hard cut.
     pub const fn hard_cut(&self) -> bool {
         match self {
+            NodeCommand::ForcePowerOff { .. } => true,
             NodeCommand::Off { opts, .. }
             | NodeCommand::ForceOff { opts, .. }
             | NodeCommand::Cycle { opts, .. } => !opts.front_panel,
             _ => false,
+        }
+    }
+
+    /// What the client has to check before stage `stage` of this command
+    /// goes out (ADR 0004, "`force_off` always ends with the rail
+    /// down").
+    ///
+    /// Only the cut stages of `off` and `force_off` on a node with a
+    /// front panel have one; every other stage of every other verb goes
+    /// out as soon as the stage before it finished.
+    pub const fn stage_condition(&self, stage: usize) -> StageCondition {
+        match self {
+            NodeCommand::ForceOff { opts, .. } if opts.front_panel && stage == 1 => {
+                StageCondition::RailStillUp
+            }
+            NodeCommand::Off { opts, .. }
+                if opts.front_panel
+                    && stage == 1
+                    && matches!(opts.escalate, Escalate::HoldPwrThenCutRail) =>
+            {
+                StageCondition::HostStillDrawing
+            }
+            _ => StageCondition::Always,
         }
     }
 
@@ -527,16 +700,27 @@ impl NodeCommand {
         {
             return self.stage_delay_ms(1) + SEQUENCE_SLACK_MS;
         }
+        // What a conditional cut stage adds: the wait for telemetry
+        // newer than the sequence, the confirm window where there is
+        // one, and the cut itself.
+        let watch = STAGE_WATCH_MS + CUT_SETTLE_MS;
         match self {
             // Wait for the LED, press PWR, wait again (CTRL 0x50).
             NodeCommand::On { opts, .. } => 2 * led(opts) + press + SEQUENCE_SLACK_MS,
-            // Short press, wait for the host, hold PWR, cut the rail.
+            // Short press, wait for the host, hold PWR, cut the rail,
+            // then the controller's own look at the slot's draw.
             NodeCommand::Off { opts, .. } => {
                 press + u64::from(opts.soft_off_s) * 1_000 + HOLD_MS + CUT_SETTLE_MS
+                    + HOST_RUNNING_CONFIRM_MS
+                    + watch
                     + SEQUENCE_SLACK_MS
             }
-            // The same without the wait: the hold starts at once.
-            NodeCommand::ForceOff { .. } => HOLD_MS + CUT_SETTLE_MS + SEQUENCE_SLACK_MS,
+            // The same without the wait: the hold starts at once, and
+            // the rail comes down from here if it is still up.
+            NodeCommand::ForceOff { .. } => HOLD_MS + CUT_SETTLE_MS + watch + SEQUENCE_SLACK_MS,
+            // The hold and nothing else.
+            NodeCommand::ForceButtonOff { .. } => HOLD_MS + SEQUENCE_SLACK_MS,
+            NodeCommand::ForcePowerOff { .. } => SEQUENCE_SLACK_MS,
             // Rail down, the off delay, rail up, then an `on`.
             NodeCommand::Cycle { opts, .. } => {
                 u64::from(CYCLE_OFF_S) * 1_000 + 2 * led(opts) + press + SEQUENCE_SLACK_MS
@@ -588,21 +772,58 @@ impl NodeCommand {
                 _ => alloc::vec![enable(false)],
             };
         }
+        // `off` and `force_off` on a node with a front panel end with a
+        // cut stage the client only sends if the slot asks for it
+        // ([`Self::stage_condition`]): the plane's own cut reads the
+        // host LED, and an open front-panel cable reads like a dark LED
+        // (ADR 0004, "`force_off` always ends with the rail down").
+        let cut = || alloc::vec![Step::one(address, Ctrl::Enable { slot, on: false })];
+        match self {
+            NodeCommand::ForceOff { opts, .. } => {
+                return alloc::vec![
+                    alloc::vec![Step::one(
+                        address,
+                        Ctrl::NodeOff {
+                            slot,
+                            timeout_s: 0,
+                            escalate: opts.escalate,
+                        }
+                    )],
+                    cut(),
+                ];
+            }
+            NodeCommand::Off { opts, .. } => {
+                let first = alloc::vec![Step::one(
+                    address,
+                    Ctrl::NodeOff {
+                        slot,
+                        timeout_s: opts.soft_off_s,
+                        escalate: opts.escalate,
+                    }
+                )];
+                // Escalation `none` or `hold` asked for no cut, so the
+                // verb is the one write it always was.
+                return if matches!(opts.escalate, Escalate::HoldPwrThenCutRail) {
+                    alloc::vec![first, cut()]
+                } else {
+                    alloc::vec![first]
+                };
+            }
+            _ => {}
+        }
         let command = match self {
             NodeCommand::On { opts, .. } => Ctrl::NodeOn {
                 slot,
                 led_timeout_s: opts.led_timeout_s,
             },
-            NodeCommand::Off { opts, .. } => Ctrl::NodeOff {
-                slot,
-                timeout_s: opts.soft_off_s,
-                escalate: opts.escalate,
-            },
-            NodeCommand::ForceOff { opts, .. } => Ctrl::NodeOff {
+            // The hold, with the plane's escalation pinned to it: this
+            // verb never cuts a rail, whatever the node configured.
+            NodeCommand::ForceButtonOff { .. } => Ctrl::NodeOff {
                 slot,
                 timeout_s: 0,
-                escalate: opts.escalate,
+                escalate: Escalate::HoldPwr,
             },
+            NodeCommand::ForcePowerOff { .. } => Ctrl::Enable { slot, on: false },
             NodeCommand::Reset { .. } => Ctrl::PressRst { slot, ms: PRESS_MS },
             NodeCommand::Cycle { opts, .. } => Ctrl::PowerCycle {
                 slot,
@@ -620,7 +841,11 @@ impl NodeCommand {
             NodeCommand::PowerOn { .. } => Ctrl::Enable { slot, on: true },
             NodeCommand::PowerOff { .. } => Ctrl::Enable { slot, on: false },
             NodeCommand::ClearLatch { .. } => Ctrl::ClearOvLatch { slot },
-            NodeCommand::OnAll { .. } => unreachable!("handled above"),
+            // `on_all` staggers; `off` and `force_off` carry the cut
+            // stage and both are built above.
+            NodeCommand::OnAll { .. } | NodeCommand::Off { .. } | NodeCommand::ForceOff { .. } => {
+                unreachable!("handled above")
+            }
         };
         alloc::vec![alloc::vec![Step::one(address, command)]]
     }
@@ -830,6 +1055,15 @@ impl Command {
         }
     }
 
+    /// What the client checks before stage `stage` goes out (see
+    /// [`NodeCommand::stage_condition`]).
+    pub const fn stage_condition(&self, stage: usize) -> StageCondition {
+        match self {
+            Command::Node(c) => c.stage_condition(stage),
+            Command::Plane(_) => StageCondition::Always,
+        }
+    }
+
     /// True when it cut a node's rail with no shutdown (see
     /// [`NodeCommand::hard_cut`]).
     pub const fn hard_cut(&self) -> bool {
@@ -912,6 +1146,15 @@ pub struct FinishedJob {
     pub submitted_ms: u64,
     /// When it ended \[ms\].
     pub finished_ms: u64,
+    /// The controller cut the slot's rail itself, as the second stage of
+    /// an `off` or a `force_off` whose plane sequence left it up
+    /// (ADR 0004, "`force_off` always ends with the rail down").
+    ///
+    /// Reported as `"rail_cut": true` in the ack, the HTTP job result
+    /// and the `action_done` event. Not the same as
+    /// [`NodeCommand::hard_cut`]: a hard cut never tried a shutdown,
+    /// while this one held PWR first and then found the rail still up.
+    pub rail_cut: bool,
 }
 
 impl FinishedJob {
@@ -979,6 +1222,15 @@ mod tests {
                 timeout_s: 0,
                 escalate: Escalate::HoldPwrThenCutRail
             }
+        );
+        // And both end with the cut stage the client only sends if the
+        // slot asks for it.
+        assert_eq!(off.len(), 2);
+        assert_eq!(force.len(), 2);
+        assert_eq!(off[1][0].commands[0], Ctrl::Enable { slot: 0, on: false });
+        assert_eq!(
+            force[1][0].commands[0],
+            Ctrl::Enable { slot: 0, on: false }
         );
 
         // A press out of range is clamped rather than refused by the
@@ -1163,12 +1415,119 @@ mod tests {
         );
     }
 
+    /// ADR 0004, "`force_off` always ends with the rail down": the cut
+    /// stage and the condition the client checks before it sends it.
+    #[test]
+    fn the_cut_stage_is_conditional() {
+        // `force_off`: the rail, if the slot still says it is enabled.
+        let force = NodeCommand::force_off(1);
+        assert_eq!(force.stage_condition(0), StageCondition::Always);
+        assert_eq!(force.stage_condition(1), StageCondition::RailStillUp);
+        assert!(force.stage_condition(1).runs_after_failure());
+        assert!(force.stage_condition(1).cuts_when_unreadable());
+
+        // `off`: the rail, if the host keeps drawing behind a dark LED.
+        let off = NodeCommand::off(1);
+        assert_eq!(off.stage_condition(1), StageCondition::HostStillDrawing);
+        assert!(!off.stage_condition(1).runs_after_failure());
+        assert!(
+            !off.stage_condition(1).cuts_when_unreadable(),
+            "`off` never cuts a host on a guess"
+        );
+
+        // An operator who asked for no cut gets no cut stage at all.
+        for escalate in [Escalate::None, Escalate::HoldPwr] {
+            let opts = NodeOptions {
+                escalate,
+                ..NodeOptions::DEFAULT
+            };
+            let held = NodeCommand::off(1).with_opts(opts);
+            assert_eq!(held.stages().len(), 1, "{escalate:?} is one write");
+            assert_eq!(held.stage_condition(1), StageCondition::Always);
+        }
+
+        // A node with no front panel cuts the rail as its whole verb,
+        // so there is nothing conditional about it.
+        let bare = NodeOptions::DEFAULT.without_front_panel();
+        assert_eq!(
+            NodeCommand::force_off(2).with_opts(bare).stages().len(),
+            1,
+            "the rail is the verb"
+        );
+        assert_eq!(
+            NodeCommand::force_off(2)
+                .with_opts(bare)
+                .stage_condition(1),
+            StageCondition::Always
+        );
+
+        // The deadline covers the confirm window and the watch.
+        assert!(
+            NodeCommand::off(1).worst_case_ms()
+                > u64::from(OFF_TIMEOUT_S) * 1_000 + HOST_RUNNING_CONFIRM_MS + STAGE_WATCH_MS
+        );
+        assert!(NodeCommand::force_off(1).worst_case_ms() > HOLD_MS + STAGE_WATCH_MS);
+    }
+
+    /// ADR 0004, "Two explicit verbs": the two halves of `force_off` an
+    /// operator can ask for by name.
+    #[test]
+    fn the_explicit_force_verbs_are_the_two_halves() {
+        // The hold, and only the hold: escalation 1, whatever the node
+        // configured, and no second stage.
+        let button = NodeCommand::force_button_off(1);
+        let stages = button.stages();
+        assert_eq!(stages.len(), 1, "no cut stage");
+        assert_eq!(
+            stages[0][0].commands[0],
+            Ctrl::NodeOff {
+                slot: 0,
+                timeout_s: 0,
+                escalate: Escalate::HoldPwr
+            }
+        );
+        assert_eq!(button.verb(), "force_button_off");
+        assert!(!button.hard_cut(), "it tried a shutdown");
+        // Even a node configured to cut keeps its rail under this verb.
+        let cutting = NodeCommand::force_button_off(1).with_opts(NodeOptions {
+            escalate: Escalate::HoldPwrThenCutRail,
+            ..NodeOptions::DEFAULT
+        });
+        assert_eq!(
+            cutting.stages()[0][0].commands[0],
+            Ctrl::NodeOff {
+                slot: 0,
+                timeout_s: 0,
+                escalate: Escalate::HoldPwr
+            }
+        );
+
+        // The rail, and only the rail, reported as a hard cut.
+        let rail = NodeCommand::force_power_off(1);
+        let stages = rail.stages();
+        assert_eq!(stages.len(), 1);
+        assert_eq!(stages[0][0].commands[0], Ctrl::Enable { slot: 0, on: false });
+        assert_eq!(rail.verb(), "force_power_off");
+        assert!(rail.hard_cut(), "no shutdown was even tried");
+        assert!(
+            !NodeCommand::PowerOff { node: 1 }.hard_cut(),
+            "`power_off` stays the plain rail verb"
+        );
+    }
+
     #[test]
     fn intent_follows_the_verb() {
         assert!(NodeCommand::PowerOff { node: 1 }.intends_rail_off());
         assert!(!NodeCommand::off(1).intends_rail_off());
         assert!(NodeCommand::off(1).may_cut_rail());
-        assert!(NodeCommand::force_off(1).may_cut_rail());
+        // `force_off` is certain now: its cut stage ends with the rail
+        // down, so the intent needs no look at the slot afterwards
+        // (ADR 0004, "`force_off` always ends with the rail down").
+        assert!(NodeCommand::force_off(1).intends_rail_off());
+        assert!(!NodeCommand::force_off(1).may_cut_rail());
+        assert!(NodeCommand::force_power_off(1).intends_rail_off());
+        assert!(!NodeCommand::force_button_off(1).intends_rail_off());
+        assert!(!NodeCommand::force_button_off(1).may_cut_rail());
         assert!(NodeCommand::PowerOn { node: 1 }.intends_rail_on());
         assert!(NodeCommand::on_all(alloc::vec![1]).intends_rail_on());
         assert_eq!(

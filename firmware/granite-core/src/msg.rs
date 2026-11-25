@@ -54,8 +54,16 @@ pub enum CommandKind {
     On,
     /// Soft-off, escalating per the node's setting.
     Off,
-    /// Hold PWR, then cut the rail if the host is still lit.
+    /// Hold PWR, then cut the rail: the plane cuts it if the host is
+    /// still lit, and the controller cuts it if the slot is still
+    /// enabled afterwards (ADR 0004, "`force_off` always ends with the
+    /// rail down"). The verb of the safety rules.
     ForceOff,
+    /// Hold PWR and nothing else: the rail is left alone, whatever the
+    /// LED says. Refused on a node with no front panel.
+    ForceButtonOff,
+    /// Cut the rail now, no button: `power_off` reported as a hard cut.
+    ForcePowerOff,
     /// Short RST press.
     Reset,
     /// Rail off, wait, rail on, PWR if the host stays dark.
@@ -117,10 +125,12 @@ pub enum CommandKind {
 impl CommandKind {
     /// Every verb that goes to a plane, in table order (ADR 0004
     /// decision 4).
-    pub const PLANE_VERBS: [CommandKind; 12] = [
+    pub const PLANE_VERBS: [CommandKind; 14] = [
         CommandKind::On,
         CommandKind::Off,
         CommandKind::ForceOff,
+        CommandKind::ForceButtonOff,
+        CommandKind::ForcePowerOff,
         CommandKind::Reset,
         CommandKind::Cycle,
         CommandKind::Press,
@@ -138,6 +148,8 @@ impl CommandKind {
             CommandKind::On => "on",
             CommandKind::Off => "off",
             CommandKind::ForceOff => "force_off",
+            CommandKind::ForceButtonOff => "force_button_off",
+            CommandKind::ForcePowerOff => "force_power_off",
             CommandKind::Reset => "reset",
             CommandKind::Cycle => "cycle",
             CommandKind::Press => "press",
@@ -185,6 +197,8 @@ impl CommandKind {
             CommandKind::On,
             CommandKind::Off,
             CommandKind::ForceOff,
+            CommandKind::ForceButtonOff,
+            CommandKind::ForcePowerOff,
             CommandKind::Reset,
             CommandKind::Cycle,
             CommandKind::Press,
@@ -222,6 +236,8 @@ impl CommandKind {
             CommandKind::On
                 | CommandKind::Off
                 | CommandKind::ForceOff
+                | CommandKind::ForceButtonOff
+                | CommandKind::ForcePowerOff
                 | CommandKind::Reset
                 | CommandKind::Cycle
                 | CommandKind::Press
@@ -470,6 +486,15 @@ pub struct Reply {
     /// words ([`crate::plane::HARD_CUT_TEXT`]).
     #[serde(default, skip_serializing_if = "is_false")]
     pub hard_cut: bool,
+    /// True when the controller had to cut the slot's rail itself to end
+    /// the verb: an `off` whose host kept drawing, or a `force_off`
+    /// whose node-off sequence left the rail up (ADR 0004, "`force_off`
+    /// always ends with the rail down").
+    ///
+    /// Not a hard cut: PWR was held first. With `ok` false it says the
+    /// cut was sent and the sequence around it did not end cleanly.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub rail_cut: bool,
     /// Payload for the commands that return data (`config_get`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub data: Option<Value>,
@@ -486,6 +511,7 @@ impl Reply {
             error: None,
             job: None,
             hard_cut: false,
+            rail_cut: false,
             data: None,
         }
     }
@@ -510,6 +536,14 @@ impl Reply {
         self
     }
 
+    /// Builder: mark the result as one the controller had to cut the
+    /// rail for (ADR 0004, "`force_off` always ends with the rail
+    /// down").
+    pub fn with_rail_cut(mut self, rail_cut: bool) -> Self {
+        self.rail_cut = rail_cut;
+        self
+    }
+
     /// A failed reply.
     pub fn err(id: impl Into<String>, error: impl Into<String>) -> Self {
         Reply {
@@ -520,6 +554,7 @@ impl Reply {
             error: Some(error.into()),
             job: None,
             hard_cut: false,
+            rail_cut: false,
             data: None,
         }
     }
@@ -592,6 +627,12 @@ pub enum EventKind {
         /// records it.
         #[serde(default, skip_serializing_if = "is_false")]
         hard_cut: bool,
+        /// True when the controller had to cut the slot's rail itself to
+        /// end the verb (ADR 0004, "`force_off` always ends with the
+        /// rail down"). A `force_off` that failed around its cut
+        /// reports `action_failed`, and the flag is then in the ack.
+        #[serde(default, skip_serializing_if = "is_false")]
+        rail_cut: bool,
     },
     /// A plane job did not reach its goal.
     ActionFailed {

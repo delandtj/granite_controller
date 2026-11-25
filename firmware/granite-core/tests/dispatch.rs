@@ -419,6 +419,90 @@ fn the_node_settings_shape_the_verb() {
     assert_eq!(h.config.nodes.name_of(7), "node7");
 }
 
+/// ADR 0004, "`force_off` always ends with the rail down": the verb the
+/// safety rules fire carries its cut stage through the dispatcher, with
+/// `force` set and whatever the arguments say about escalation.
+#[test]
+fn the_safety_force_off_keeps_its_cut_stage() {
+    use granite_core::msg::Args;
+    use granite_core::rules::{Fired, Rearm, RuleAction};
+
+    let mut h = Harness::new();
+
+    // What `rules.rs` builds for a leak or an over-temperature rule.
+    let fired = Fired {
+        rule_id: 4,
+        name: "leak float closed".into(),
+        action: RuleAction::Act {
+            kind: CommandKind::ForceOff,
+        },
+        target: Target::Node(1),
+        value: Some(1),
+        rearm: Rearm::Auto,
+    };
+    let command = fired.command().expect("an acting rule has a command");
+    assert!(command.args.force, "the safety action carries force");
+    assert_eq!(command.action, CommandKind::ForceOff);
+
+    let out = h.dispatched(&command);
+    assert!(out.reply.ok, "{:?}", out.reply.error);
+    assert_eq!(out.jobs.len(), 1, "one plane job for the node it names");
+
+    // The verb the dispatcher builds from those arguments keeps its cut
+    // stage. `no_escalate` takes the plane's own escalation away; the
+    // controller's cut stays, because that is what `force_off`
+    // promises, while `off` under the same argument has none.
+    let opts = Args {
+        no_escalate: true,
+        force: true,
+        ..Args::default()
+    }
+    .apply_to(granite_core::plane::NodeOptions::of_settings(
+        &h.config.nodes.settings(1),
+    ));
+    let force = granite_core::plane::NodeCommand::force_off(1).with_opts(opts);
+    assert_eq!(force.stages().len(), 2, "the cut stage is there");
+    assert_eq!(
+        force.stage_condition(1),
+        granite_core::plane::StageCondition::RailStillUp
+    );
+    assert!(force.intends_rail_off());
+    assert_eq!(
+        granite_core::plane::NodeCommand::off(1)
+            .with_opts(opts)
+            .stages()
+            .len(),
+        1,
+        "`off` with no escalation asked for no cut"
+    );
+}
+
+/// ADR 0004, "Two explicit verbs": both reach the plane, and the hold
+/// is refused where there is no front panel.
+#[test]
+fn the_explicit_force_verbs_dispatch() {
+    let mut h = Harness::new();
+    for action in [CommandKind::ForceButtonOff, CommandKind::ForcePowerOff] {
+        let reply = h.verb(action, Target::Node(1));
+        assert!(reply.ok, "{action} was refused: {:?}", reply.error);
+        assert_eq!(reply.result.as_deref(), Some("accepted"), "{action}");
+    }
+
+    h.config.nodes.nodes.push(NodeSettings {
+        front_panel: false,
+        ..NodeSettings::for_node(1)
+    });
+    let reply = h.verb(CommandKind::ForceButtonOff, Target::Node(1));
+    assert!(!reply.ok, "the hold reaches nothing on node 1");
+    assert!(
+        reply.error.unwrap_or_default().contains("no front panel"),
+        "the reason names the cabling"
+    );
+    // The rail verb is still fine: it never wanted a button.
+    let reply = h.verb(CommandKind::ForcePowerOff, Target::Node(1));
+    assert!(reply.ok, "{:?}", reply.error);
+}
+
 /// ADR 0004, "Nodes without a front panel": `reset` and `press` are
 /// refused at dispatch, the rail verbs are accepted, and a group verb
 /// still reaches the nodes it can.

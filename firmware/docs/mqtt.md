@@ -175,9 +175,12 @@ Time limits:
   `the controller task did not answer in time`.
 - A plane job gets the longest its sequence can take with that node's
   settings, plus 75 s (60 s plane-client margin, 15 s grace). With the
-  defaults that is about 110 s for `on`, 206 s for `off`, 86 s for
-  `force_off`, 115 s for `cycle`, 80 s for `reset`, `power_on`,
-  `power_off`, `clear_latch`, `unit_reset` and `plane_reboot`. A larger
+  defaults that is about 110 s for `on`, 213 s for `off`, 90 s for
+  `force_off` (both include the controller's own look at the slot
+  afterwards, section 5.2), 115 s for `cycle`, 85 s for
+  `force_button_off`, 80 s for `reset`, `power_on`, `power_off`,
+  `force_power_off`, `clear_latch`, `unit_reset` and
+  `plane_reboot`. A larger
   `t_soft_off_s` makes the `off` wait longer. On `all` the slowest
   configured node sets the limit. Normally the plane client gives up
   first and the ack says `timed_out`; if it does not, the ack is
@@ -203,8 +206,10 @@ through; the plane has the last word.
 | Action | Target | Args | Does |
 |---|---|---|---|
 | `on` | node or `all` | - | Rail on if it is off, wait for the host's power LED, press PWR once if it stayed dark, wait again. Already lit: done at once. |
-| `off` | node or `all` | `no_escalate` | Short PWR press, wait up to `t_soft_off_s` for the LED to go dark, then escalate per the node's `escalation`. Already dark: done at once. |
-| `force_off` | node or `all` | `no_escalate` | Skip the short press: hold PWR 5 s, then (escalation `hold_then_cut`) cut the rail if the LED is still lit. Ends with the node off. |
+| `off` | node or `all` | `no_escalate` | Short PWR press, wait up to `t_soft_off_s` for the LED to go dark, then escalate per the node's `escalation`. Already dark: done at once. With escalation `hold_then_cut`, a slot that stays above `nodes.host_running_w` for 2 s afterwards is a host the plane cannot see, and the rail is cut: `"rail_cut": true` (section 5.2). |
+| `force_off` | node or `all` | `no_escalate` | Skip the short press: hold PWR 5 s, then cut the rail if it is still up, whatever the LED said. Always ends with the rail down, and says `"rail_cut": true` when the controller had to cut it. The verb of the safety rules. |
+| `force_button_off` | node or `all` | - | The hold alone: PWR for 5 s, and the rail is left alone whatever the LED says. Refused on a node with `front_panel: false` ("no front panel"), and skipped for such nodes under `all`. |
+| `force_power_off` | node or `all` | - | The rail alone, now, with no button and no shutdown: `"hard_cut": true` and `rail cut, no shutdown`. The same write as `power_off`, reported as the cut it is. |
 | `reset` | node or `all` | - | 300 ms RST press. |
 | `cycle` | node or `all` | `hard` | Rail off, 5 s, rail on, then like `on` (PWR if the host stays dark). |
 | `press` | node or `all` | `switch` (`"pwr"` default / `"rst"`), `duration_ms` (default 300, clamped to 50..10000) | One raw button press. |
@@ -219,7 +224,7 @@ through; the plane has the last word.
 
 | Arg | Effect |
 |---|---|
-| `no_escalate: true` | `off` / `force_off` use escalation `none` this once. `off` then fails if the host stays up; `force_off` with `none` does nothing and fails (it skips the short press and has no escalation left). |
+| `no_escalate: true` | `off` / `force_off` use escalation `none` this once. `off` then fails if the host stays up and gets no rail cut; `force_off` loses the plane's own escalation and reports `failed`, but still ends with the rail down - the controller's cut is not the plane's escalation. |
 | `hard: true` | `cycle` (and `on`) ask the plane not to wait for the LED (LED timeout 0, see 5.1). |
 | `force: true` | Accepted for rev C clients and ignored: an absent node is still refused. |
 
@@ -266,12 +271,33 @@ Per node, `nodes.nodes[].escalation`:
 
 | Value | `off` after `t_soft_off_s` | `force_off` |
 |---|---|---|
-| `hold_then_cut` (default) | hold PWR 5 s, then cut the rail if still lit | hold 5 s, cut if still lit |
-| `hold` | hold PWR 5 s; fails if still lit | hold 5 s; fails if still lit |
-| `none` | fails if still lit | fails at once |
+| `hold_then_cut` (default) | hold PWR 5 s, cut the rail if still lit, then cut it anyway if the slot keeps drawing | hold 5 s, then the rail |
+| `hold` | hold PWR 5 s; fails if still lit, and never cuts | hold 5 s, then the rail |
+| `none` | fails if still lit, and never cuts | fails at the plane, then the rail |
 
 A host turned off by a button keeps its standby power; only a cut rail
 removes it.
+
+**Why the controller cuts rails the plane did not.** The plane decides
+to cut from the host's power LED, and the opto reads a front-panel
+cable that fell out exactly like a dark LED (section 5.1). So a verb
+that promises the node ends off cannot stop at the plane's answer:
+
+- `force_off` always cuts the rail if the slot still reports it
+  enabled, whatever the plane's sequence said. A host that did shut
+  down loses its standby power too (BMC, wake-on-LAN): that is the
+  price of an emergency verb that cannot be fooled by the cabling. Use
+  `off` for a graceful shutdown, or `force_button_off` for the hold
+  with no cut.
+- `off` keeps the rail unless the slot is still drawing: with the LED
+  dark and the rail up, a draw above `nodes.host_running_w` (default
+  15.0 W) held for 2 s means a host that is still running, and the rail
+  is cut. Below it the LED is trusted. `nodes.host_running_w` of `0`
+  turns the check off, as do escalation `none` and `hold`.
+
+Either way the result says which way it ended: `"rail_cut": true` in
+the ack, in the HTTP job result and in the `action_done` event when the
+controller had to cut. It is not `hard_cut`: PWR was held first.
 
 ### 5.3 `on_all`
 
@@ -583,6 +609,7 @@ client (within about 5 s, no reboot); `qos`, `t_state_s` and
 | `vin_min_mv` | `10000` | Below it the `vin` fault bit is set. `0` = unchecked. Must be below `vin_max_mv` when both are set. |
 | `vin_max_mv` | `14000` | Above it the `vin` fault bit is set. `0` = unchecked. Clamped to 36000. |
 | `host_detect_w` | `3.0` | Slot power at or above which a dark host LED means `off` and not `unknown` (section 5.1). `0` = the LED decides alone. 0..50 W; outside that is refused, and a save through the API is clamped. |
+| `host_running_w` | `15.0` | Slot power above which `off` takes a dark host that kept its rail to be running anyway, and cuts the rail (section 5.2). `0` = the check is off. 0..250 W; outside that is refused, and a save through the API is clamped. It has to sit above a host's standby draw plus the module's own idle loss (about 2 W) and below the lightest running host; `host_detect_w` is far too low, because a host in standby with a BMC draws 5-15 W. |
 
 One entry of `nodes` (only `node` is required; the rest default):
 
@@ -592,14 +619,15 @@ One entry of `nodes` (only `node` is required; the rest default):
 | `name` | `""` | Display name. Empty = `node<N>`. |
 | `boot_policy` | `"leave"` | `"leave"`, `"on"`, `"off"` (section 5.4). |
 | `led_sense` | `true` | Trust the host LED (section 5.1). |
-| `front_panel` | `true` | `false`: no PWR / RST / LED is cabled, so `on` is the rail, `off` / `force_off` / `cycle` are a rail cut reported with `"hard_cut": true`, `reset` and `press` are refused, and `led_sense` is ignored. |
+| `front_panel` | `true` | `false`: no PWR / RST / LED is cabled, so `on` is the rail, `off` / `force_off` / `cycle` are a rail cut reported with `"hard_cut": true`, `reset`, `press` and `force_button_off` are refused, and `led_sense` is ignored. Whether a cable is really plugged in cannot be detected - an open cable reads like a dark LED - so this flag is what an operator configured, and it is published with the node in `state`. |
 | `t_soft_off_s` | `120` | How long `off` waits for the host. `0` becomes 120; above 3600 is clamped to 3600 (not refused). |
 | `escalation` | `"hold_then_cut"` | `"none"`, `"hold"`, `"hold_then_cut"` (section 5.2). |
 
 Settings are read when a command is sent, so a change applies to the
 next command, no reboot. Probe and VIN changes apply on the next sense
-tick. `host_detect_w` is pushed into the plane client when the section
-is saved, so the host states are re-derived at once.
+tick. `host_detect_w` and `host_running_w` are pushed into the plane
+client when the section is saved: the first re-derives the host states
+at once, and the second applies to the next `off`.
 
 ### 8.4 `rules` (saved at once)
 
@@ -750,7 +778,7 @@ the first. The simulator's HTTP route prints `a` as
 | `nodes[].node`, `name` | Id 1..64 and display name. |
 | `nodes[].plane`, `slot`, `unit` | Where it is: plane 0..7, slot 0..7, unit 0..3 (= slot / 2). |
 | `nodes[].power`, `host` | The two axes of section 5.1. |
-| `nodes[].front_panel` | `false` on a node with no PWR / RST / LED cabled (`nodes[].front_panel` in config): its verbs are the rail alone, `reset` and `press` are refused, and `host` stays `unknown`. |
+| `nodes[].front_panel` | `false` on a node with no PWR / RST / LED cabled (`nodes[].front_panel` in config): its verbs are the rail alone, `reset`, `press` and `force_button_off` are refused, and `host` stays `unknown`. A UI reads this to leave out the verbs that would press nothing. |
 | `nodes[].busy` | Present and `true` only while the plane runs a sequence on the slot. |
 | `nodes[].v`, `a`, `w` | Slot volts (0.1 V), amps (0.1 A), watts (whole). |
 | `nodes[].w_min`, `w_max` | Lowest / highest watts since the last min/max clear. |
@@ -780,7 +808,7 @@ shown as `null` are present with a null value; fields marked
 |---|---|---|
 | `node_state` | `node`, `power`, `host` | A node's power or host state changed (and once per node when the controller first sees it). |
 | `accepted` | `id`, `action`, `target`, `job` | A node, unit or plane verb became a plane job. |
-| `action_done` | `id`, `node` (null for a group, unit or plane), `action`, `result` | That job (or the last of a group) finished as asked. |
+| `action_done` | `id`, `node` (null for a group, unit or plane), `action`, `result`; optional `hard_cut`, `rail_cut` | That job (or the last of a group) finished as asked. `hard_cut`: the rail went away with no shutdown tried (section 8.3, `force_power_off`). `rail_cut`: the controller had to cut the rail to finish an `off` or a `force_off` (section 5.2). On a group, either flag is set when any node of it needed that. |
 | `action_failed` | `id`, `node`, `action`, `error` | It did not; also a rule that could not act. |
 | `plane` | `what`; optional `address`, `node`, `unit`, `detail` | The plane client learned something (below). |
 | `switch` | `what`; optional `switch` (`2`, left out for the first switch), `port`, `node`, `detail` | `docs/switch.md` sections 9 and 12. |
@@ -951,7 +979,10 @@ to `valid`. How to build the `.bin`: `README.md`, "Making the .bin".
 | `on` acks `failed: failed` on a node with no LED | Section 5.1: use `power_on`. |
 | `host` stays `unknown` with the rail on | Section 5.1: the LED reads dark and the slot draws less than `nodes.host_detect_w`, so nothing says a node is there. An empty slot, an unplugged front-panel cable, or a threshold set above what the node draws in standby. |
 | `off` takes minutes | It waits `t_soft_off_s` for the host. `force_off` for now; lower the setting for later. |
-| `force_off` acks `failed` | Escalation `none` or `hold` on that node, or `no_escalate`. |
+| `force_off` acks `failed` | Escalation `none` or `hold` on that node, or `no_escalate`: the plane's own sequence failed. The rail still went down - check `rail_cut` in the ack. |
+| `off` took the rail down and the host lost its standby power | Section 5.2: the slot kept drawing more than `nodes.host_running_w` with its LED dark, so the host looked like it was still running. An unplugged front-panel cable does that; so does a threshold set below what this host draws in standby. Raise `nodes.host_running_w`, or set it to `0` to turn the check off. |
+| `off` left a running host running | The reverse: its draw is under `nodes.host_running_w`, or its escalation is `none` / `hold`. `force_off` always ends with the rail down. |
+| An ack says `"rail_cut":true` | The controller cut the rail itself, because the plane's sequence left it up (section 5.2). Expected on every `force_off`, and on an `off` whose host kept drawing. |
 | `timed_out` / `the action did not finish in time` | The plane did not report. Check the plane link; the job may still have run. |
 | A node or a unit went off and nothing says why | The plane's own account is on `.../log` under `target` `planeN`, and `plane_log` (section 6.8) asks for it again. |
 | `state.probes` is `[]` with a probe plugged in | Check the probe's wire order: the board's JST PH pins are 1 = 3V3, 2 = DQ, 3 = GND. A reversed probe holds the bus low; the log shows `1-wire reset pulse receive timeout`. |

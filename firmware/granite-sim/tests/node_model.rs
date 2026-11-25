@@ -773,3 +773,139 @@ fn a_boot_policy_on_a_node_without_a_front_panel_is_its_rail() {
     );
     assert_eq!(last_press_ms(&mut rig, 1), 0, "and it pressed nothing");
 }
+
+// --- the rail force_off ends with ---------------------------------------
+//
+// ADR 0004, "`force_off` always ends with the rail down".
+
+/// A frame where every node's front-panel cable has fallen out: no
+/// press is felt, no LED ever lights, and every slot keeps drawing a
+/// running host's watts. The bench case of 2026-11-25.
+fn unplug_every_front_panel(rig: &mut Rig) {
+    let plane = rig
+        .core
+        .planes
+        .plane_mut(0x30)
+        .expect("the plane at 0x30");
+    for slot in 0..4u8 {
+        plane
+            .slot_mut(slot)
+            .expect("a slot")
+            .node
+            .min_press_ms = u32::MAX;
+        plane.set_load(slot, 1_000);
+        plane.set_standby(slot, 1_000);
+    }
+}
+
+/// The documented action of the leak and over-temperature rules:
+/// `force_off` on `all`, through the dispatcher with `force` set. Every
+/// rail ends down even though no host answers its button.
+#[test]
+fn a_leak_rule_takes_every_rail_down() {
+    use granite_core::rules::{Op, Rule, RuleAction, Source};
+
+    let mut config = Config::default();
+    config.rules.rules.push(Rule {
+        id: 1,
+        enabled: true,
+        name: "leak float closed".into(),
+        source: Source::DryIn { n: 1 },
+        op: Op::Eq,
+        threshold: 1,
+        action: RuleAction::Act {
+            kind: CommandKind::ForceOff,
+        },
+        target: Target::All,
+        ..Rule::default()
+    });
+    let mut rig = Rig::with_scenario(scenario(), config);
+    unplug_every_front_panel(&mut rig);
+
+    // Bring the hosts up so there is something to take down.
+    let reply = rig.verb("c-on", CommandKind::OnAll, Target::All);
+    assert!(reply.ok, "{:?}", reply.error);
+    rig.run(20_000);
+    for node in 1..=4 {
+        assert_eq!(rig.power(node), PowerState::On, "node {node} never came up");
+    }
+
+    // The float closes.
+    rig.core.sensors.set_dry(1, true);
+    assert!(
+        rig.run_until(60_000, |core| (1..=4)
+            .all(|node| core.observed.node_power(node) == PowerState::Off)),
+        "rails: {:?}",
+        (1..=4).map(|n| rig.power(n)).collect::<Vec<_>>()
+    );
+
+    // And the controller keeps them off over a plane that loses its
+    // intended state.
+    let mut intended = rig.core.plane.intended_off().to_vec();
+    intended.sort_unstable();
+    assert_eq!(intended, vec![1, 2, 3, 4]);
+    assert!(
+        rig.core.events.iter().any(|e| matches!(
+            e,
+            EventKind::ActionDone { rail_cut: true, .. }
+        )),
+        "no action_done said the controller cut a rail"
+    );
+}
+
+/// The two explicit verbs over the API and over Modbus (ADR 0004, "Two
+/// explicit verbs").
+#[test]
+fn the_explicit_force_verbs_reach_the_plane() {
+    let mut rig = Rig::with_scenario(scenario(), no_front_panel_config(2, BootPolicy::Leave));
+    use granite_core::plane::HARD_CUT_TEXT;
+
+    // Node 1 has a panel: the hold alone leaves its rail up.
+    let reply = rig.verb("c-on1", CommandKind::On, Target::Node(1));
+    assert!(reply.ok, "{:?}", reply.error);
+    rig.ack("c-on1", 60_000);
+    assert_eq!(rig.host(1), HostState::On);
+
+    let reply = rig.verb("c-btn", CommandKind::ForceButtonOff, Target::Node(1));
+    assert!(reply.ok, "{:?}", reply.error);
+    let ack = rig.ack("c-btn", 30_000);
+    assert!(ack.ok, "{:?}", ack.error);
+    assert!(!ack.rail_cut, "force_button_off may not touch the rail");
+    assert!(rig.run_until(10_000, |core| core.observed.node_host(1)
+        == HostState::Off));
+    assert_eq!(rig.power(1), PowerState::On, "the rail stayed up");
+    assert!(rig.core.plane.intended_off().is_empty());
+
+    // Node 2 has no panel, so the hold reaches nothing and is refused.
+    let reply = rig.verb("c-btn2", CommandKind::ForceButtonOff, Target::Node(2));
+    assert!(!reply.ok, "force_button_off was accepted on node 2");
+    let error = reply.error.unwrap_or_default();
+    assert!(error.contains("no front panel"), "{error}");
+
+    // The rail verb takes node 1 down with no shutdown at all, and says
+    // so the way the other cuts do.
+    let reply = rig.verb("c-pwr", CommandKind::ForcePowerOff, Target::Node(1));
+    assert!(reply.ok, "{:?}", reply.error);
+    let ack = rig.ack("c-pwr", 30_000);
+    assert!(ack.ok, "{:?}", ack.error);
+    assert!(ack.hard_cut, "no shutdown was even tried");
+    assert_eq!(ack.result.as_deref(), Some(HARD_CUT_TEXT));
+    assert!(rig.run_until(10_000, |core| {
+        core.observed.node_power(1) == PowerState::Off
+    }));
+    assert_eq!(rig.core.plane.intended_off(), &[1]);
+
+    // And both have a Modbus command word (the map version did not
+    // move: they are the next free values).
+    let (_, result) = rig.modbus_write(NODE_CMD_BASE + 2, cmd_word::FORCE_POWER_OFF);
+    assert_eq!(result, Some(ResultCode::Accepted));
+    assert!(rig.run_until(30_000, |core| {
+        core.observed.node_power(3) == PowerState::Off
+    }));
+    let (_, result) = rig.modbus_write(NODE_CMD_BASE + 1, cmd_word::FORCE_BUTTON_OFF);
+    assert_eq!(
+        result,
+        Some(ResultCode::Refused),
+        "node 2 has no front panel"
+    );
+}

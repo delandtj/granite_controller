@@ -109,7 +109,7 @@ curl -sk -H "Authorization: Bearer $T" -X PUT -d '{
   "plane_update": "manual",
   "probes": [{"rom": "28ff000000000001", "name": "inlet"}],
   "t_probe_s": 10, "vin_trim": 1.0, "vin_min_mv": 10000, "vin_max_mv": 14000,
-  "host_detect_w": 3.0
+  "host_detect_w": 3.0, "host_running_w": 15.0
 }' https://granite-37adc7.local/api/v1/config/nodes
 ```
 
@@ -201,3 +201,24 @@ the setting existed. It is a whole-section setting, not per node, and a
 save applies it at once - the host states are derived again without a
 reboot. A lit or blinking LED is proof of a node whatever the slot
 draws.
+
+## Is it still running
+
+`host_running_w` (default 15.0 W, range 0 to 250) is the other side of
+the same measurement, and the one `off` acts on: with the rail up and
+the LED dark, a slot that keeps drawing more than this for two seconds
+holds a host that is still running - behind a front panel the plane
+cannot see - and `off` cuts the rail. Below it the LED is trusted and
+the standby rail stays up.
+
+Set it above a host's standby draw plus the module's own idle loss
+(about 2 W for a PM-19V-250W-B) and below the lightest running host.
+`host_detect_w` is far too low for this: a host in standby with a BMC
+alive draws 5 to 15 W. Measure a node both ways on the bench if the
+frame is mixed - `w` in `state` while the host runs, and again a minute
+after it has shut down - and put the threshold between the two. `0`
+turns the check off, and so do the escalations `none` and `hold`, which
+asked for no cut at all.
+
+Like `host_detect_w` it is whole-section, not per node, and a save
+applies to the next command.

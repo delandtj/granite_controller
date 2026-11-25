@@ -642,6 +642,203 @@ fn force_off_cuts_the_rail_of_a_host_that_ignores_its_button() {
     assert!(!harness.client.take_intent_dirty());
 }
 
+// --- the rail the controller cuts itself -------------------------------
+//
+// ADR 0004, "`force_off` always ends with the rail down": the plane's
+// own cut reads the host LED, and a front-panel cable that fell out
+// reads exactly like a dark LED.
+
+/// A host whose front-panel cable is not connected: no press is ever
+/// felt, the LED never lights, and the slot keeps drawing a running
+/// host's watts. This is the bench case of 2026-11-25 (nodes 58-60).
+fn unplug_front_panel(harness: &mut Harness, address: u8, slot: u8, running_ma: u32) {
+    let fake = harness.fake(address);
+    fake.slot_mut(slot)
+        .expect("the scenario has that slot")
+        .node
+        .min_press_ms = u32::MAX;
+    // Its draw does not fall when the plane thinks it went dark.
+    fake.set_load(slot, running_ma);
+    fake.set_standby(slot, running_ma);
+}
+
+/// `off` with a soft-off window a test can wait out: the plane's own
+/// default is two minutes.
+fn off_soon(node: u8, escalate: granite_proto::Escalate) -> NodeCommand {
+    NodeCommand::off(node).with_opts(granite_core::plane::NodeOptions {
+        soft_off_s: 2,
+        escalate,
+        ..granite_core::plane::NodeOptions::DEFAULT
+    })
+}
+
+/// The plane reports Ok (it saw no light after the hold) with the rail
+/// still up, and the controller cuts it.
+#[test]
+fn force_off_cuts_the_rail_of_a_host_behind_a_dead_front_panel() {
+    let mut harness = Harness::new(&scenario());
+    // Node 10 is plane 0x31, slot 1: its host is dark from the start.
+    unplug_front_panel(&mut harness, 0x31, 1, 1_000);
+    harness.run(2_000);
+
+    let job = harness.do_verb(NodeCommand::force_off(10), 30_000);
+    assert_eq!(job.outcome, JobOutcome::Done);
+    assert!(
+        job.rail_cut,
+        "the plane left the rail up, so the controller had to cut it"
+    );
+    assert!(
+        harness.run_until(3_000, |h| !h.status(10).contains(SlotStatus::ENABLED)),
+        "the rail is still up"
+    );
+    assert!(harness.run_until(3_000, |h| h.node(10).power == PowerState::Off));
+    // A job that ended with the rail cut keeps the node off over a
+    // plane that loses its intended state.
+    assert!(
+        harness.run_until(2_000, |h| h.client.intended_off() == [10]),
+        "intended off: {:?}",
+        harness.client.intended_off()
+    );
+}
+
+/// The same verb on a host that does obey the hold: the rail still ends
+/// up down, because standby power is not off either (ADR 0004: the
+/// price of an emergency verb that cannot be fooled by the cabling).
+#[test]
+fn force_off_cuts_the_rail_of_a_host_that_did_shut_down() {
+    let mut harness = Harness::new(&scenario());
+    assert_eq!(harness.node(1).host, granite_core::plane::HostState::On);
+
+    let job = harness.do_verb(NodeCommand::force_off(1), 30_000);
+    assert_eq!(job.outcome, JobOutcome::Done);
+    assert!(job.rail_cut, "the hold worked, and the rail went anyway");
+    assert!(
+        harness.run_until(3_000, |h| !h.status(1).contains(SlotStatus::ENABLED)),
+        "force_off always ends with the rail down"
+    );
+    assert!(
+        harness.run_until(2_000, |h| h.client.intended_off() == [1]),
+        "intended off: {:?}",
+        harness.client.intended_off()
+    );
+}
+
+/// `off` is the graceful verb, but a dark slot that keeps drawing more
+/// than `nodes.host_running_w` holds a host the plane cannot see.
+#[test]
+fn off_cuts_a_dark_node_that_keeps_drawing() {
+    let mut harness = Harness::new(&scenario());
+    unplug_front_panel(&mut harness, 0x31, 1, 1_000);
+    harness.run(2_000);
+    // 48 W against a 15 W threshold (the default this client starts
+    // with).
+    assert_eq!(harness.client.host_running_dw(), 150);
+
+    let job = harness.do_verb(
+        off_soon(10, granite_proto::Escalate::HoldPwrThenCutRail),
+        30_000,
+    );
+    assert_eq!(job.outcome, JobOutcome::Done);
+    assert!(job.rail_cut, "the host was still drawing");
+    assert!(
+        harness.run_until(3_000, |h| !h.status(10).contains(SlotStatus::ENABLED)),
+        "the rail is still up"
+    );
+    assert!(
+        harness.run_until(2_000, |h| h.client.intended_off() == [10]),
+        "intended off: {:?}",
+        harness.client.intended_off()
+    );
+}
+
+/// And a host that really shut down keeps its standby rail: that is
+/// what `off` is for (BMC, wake-on-LAN).
+#[test]
+fn off_leaves_the_rail_up_when_the_host_shut_down() {
+    let mut harness = Harness::new(&scenario());
+    assert_eq!(harness.node(1).host, granite_core::plane::HostState::On);
+
+    let job = harness.do_verb(
+        off_soon(1, granite_proto::Escalate::HoldPwrThenCutRail),
+        30_000,
+    );
+    assert_eq!(job.outcome, JobOutcome::Done);
+    assert!(!job.rail_cut, "nothing to cut: the host obeyed");
+    // Watched for the whole confirm window and then some.
+    harness.run(6_000);
+    assert!(
+        harness.status(1).contains(SlotStatus::ENABLED),
+        "a host that obeyed its button keeps its standby rail"
+    );
+    assert_eq!(harness.node(1).host, granite_core::plane::HostState::Off);
+    assert_eq!(
+        harness.client.intended_off(),
+        &[] as &[u8],
+        "nothing to put back after a plane power loss"
+    );
+}
+
+/// An operator who set escalation `hold` asked for no cut, and a draw
+/// above the threshold does not change that.
+#[test]
+fn off_with_escalation_hold_never_cuts() {
+    let mut harness = Harness::new(&scenario());
+    unplug_front_panel(&mut harness, 0x31, 1, 1_000);
+    harness.run(2_000);
+
+    let job = harness.do_verb(off_soon(10, granite_proto::Escalate::HoldPwr), 30_000);
+    assert!(!job.rail_cut, "escalation `hold` has no cut stage");
+    harness.run(6_000);
+    assert!(
+        harness.status(10).contains(SlotStatus::ENABLED),
+        "the rail came down under escalation `hold`"
+    );
+    assert_eq!(harness.client.intended_off(), &[] as &[u8]);
+
+    // The threshold at 0 turns the check off for `hold_then_cut` too.
+    harness.client.set_host_running_dw(0);
+    let job = harness.do_verb(
+        off_soon(10, granite_proto::Escalate::HoldPwrThenCutRail),
+        30_000,
+    );
+    assert!(!job.rail_cut, "`host_running_w` = 0 is the check off");
+    harness.run(6_000);
+    assert!(harness.status(10).contains(SlotStatus::ENABLED));
+}
+
+/// The two explicit verbs (ADR 0004, "Two explicit verbs").
+#[test]
+fn the_explicit_force_verbs_do_their_half_only() {
+    let mut harness = Harness::new(&scenario());
+    unplug_front_panel(&mut harness, 0x31, 1, 1_000);
+    harness.run(2_000);
+
+    // The hold alone leaves the rail up, even on a host nothing can
+    // switch off.
+    let job = harness.do_verb(NodeCommand::force_button_off(10), 30_000);
+    assert_eq!(job.outcome, JobOutcome::Done);
+    assert!(!job.rail_cut);
+    harness.run(6_000);
+    assert!(
+        harness.status(10).contains(SlotStatus::ENABLED),
+        "force_button_off may not touch the rail"
+    );
+
+    // The rail alone, with no button and no waiting.
+    let job = harness.do_verb(NodeCommand::force_power_off(10), 10_000);
+    assert_eq!(job.outcome, JobOutcome::Done);
+    assert!(job.command.hard_cut(), "no shutdown was even tried");
+    assert!(
+        harness.run_until(3_000, |h| !h.status(10).contains(SlotStatus::ENABLED)),
+        "the rail is still up"
+    );
+    assert!(
+        harness.run_until(2_000, |h| h.client.intended_off() == [10]),
+        "intended off: {:?}",
+        harness.client.intended_off()
+    );
+}
+
 #[test]
 fn a_write_whose_result_is_lost_is_resent_and_does_not_run_twice() {
     let mut harness = Harness::new(&scenario());

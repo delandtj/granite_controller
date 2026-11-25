@@ -54,7 +54,8 @@ use crate::NodeId;
 use crate::hal::PlaneLink;
 
 use super::command::{
-    Command, FinishedJob, JobId, JobOutcome, NodeCommand, Step, outcome_of, severity,
+    Command, DEFAULT_HOST_RUNNING_DW, FinishedJob, HOST_RUNNING_CONFIRM_MS, JobId, JobOutcome,
+    NodeCommand, STAGE_WATCH_MS, StageCondition, Step, outcome_of, severity,
 };
 use super::config::DesiredConfig;
 use super::event::ClientEvent;
@@ -191,6 +192,32 @@ struct PendingIntent {
     until_ms: u64,
 }
 
+/// A stage that is waiting for the slot to say whether it is needed
+/// (ADR 0004, "`force_off` always ends with the rail down").
+///
+/// The cut stage of `off` and `force_off` asks a question about the
+/// slot, and SUMMARY answers it once a second. The watch holds the
+/// question and what has been seen so far; [`PlaneClient::read_summary`]
+/// feeds it and it ends one of three ways: the writes are queued, the
+/// job finishes without them, or it runs out of time
+/// ([`StageCondition::cuts_when_unreadable`] decides which of the two
+/// that is).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct StageWatch {
+    condition: StageCondition,
+    /// The plane and slot the question is about.
+    address: u8,
+    slot: u8,
+    /// A SUMMARY has to be newer than this to count: anything older was
+    /// composed while the stage before this one was still running.
+    after_ms: u64,
+    /// When the watch gives up \[ms\].
+    until_ms: u64,
+    /// Since when every fresh reading has met the condition \[ms\]:
+    /// where [`HOST_RUNNING_CONFIRM_MS`] is counted from.
+    above_since_ms: Option<u64>,
+}
+
 /// A job the client has accepted and not finished.
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct Job {
@@ -210,6 +237,12 @@ struct Job {
     /// at this time \[ms\] (see [`Command::stage_delay_ms`]): the rail
     /// cycle of a node with no front panel is the only one.
     hold_until_ms: Option<u64>,
+    /// The current stage is waiting for the slot to say whether it is
+    /// needed at all (see [`StageWatch`]).
+    watch: Option<StageWatch>,
+    /// The controller sent the cut stage: the rail came down from here
+    /// and not from the plane's own escalation.
+    rail_cut: bool,
 }
 
 /// Everything the client knows and schedules for one address.
@@ -344,6 +377,11 @@ pub struct PlaneClient {
     intent: IntendedOff,
     update: Option<UpdateJob>,
     policy: UpdatePolicy,
+    /// `nodes.host_running_w` \[0.1 W\]: the draw above which a dark
+    /// slot whose rail is still up is taken to hold a running host, so
+    /// `off` cuts it (ADR 0004, "`force_off` always ends with the rail
+    /// down"). `0` turns the check off.
+    host_running_dw: u16,
     /// Scratch for one answer; no read allocates. Boxed with `planes`,
     /// for the same reason.
     buf: Box<[u8; frame::MAX_ANSWER]>,
@@ -403,6 +441,7 @@ impl PlaneClient {
             intent: IntendedOff::new(),
             update: None,
             policy: UpdatePolicy::Manual,
+            host_running_dw: DEFAULT_HOST_RUNNING_DW,
             buf,
         }
     }
@@ -452,6 +491,7 @@ impl PlaneClient {
         }
 
         self.step_update(now_ms, link, &mut budget);
+        self.expire_stage_watches(now_ms);
         self.expire_jobs(now_ms);
         self.expire_intents(now_ms);
     }
@@ -756,6 +796,7 @@ impl PlaneClient {
                     }
                 }
                 self.resolve_intents(i);
+                self.check_stage_watches(i, now_ms);
             }
             Err(_) => self.after_failure(i, now_ms),
         }
@@ -1029,6 +1070,14 @@ impl PlaneClient {
             }
             state.pending_intent.clear();
         }
+        // A job whose cut stage is waiting for this plane's telemetry
+        // has nothing left to wait for: no SUMMARY will come, and a
+        // write would sit in a queue nobody serves.
+        for job in &self.jobs {
+            if job.watch.is_some_and(|w| w.address == address) && !hit.contains(&job.id) {
+                hit.push(job.id);
+            }
+        }
         for id in hit {
             self.finish_job(id, outcome, now_ms);
         }
@@ -1060,6 +1109,8 @@ impl PlaneClient {
             submitted_ms: now_ms,
             deadline_ms,
             hold_until_ms: None,
+            watch: None,
+            rail_cut: false,
         };
         let absent = job.stages.is_empty() || !self.targets_present(&job);
         self.jobs.push(job);
@@ -1148,7 +1199,159 @@ impl PlaneClient {
             job.hold_until_ms = Some(now_ms.saturating_add(delay));
             return;
         }
+        // A cut stage asks the slot whether it is needed. The answer is
+        // in a SUMMARY newer than this moment, so the stage waits for
+        // one (ADR 0004, "`force_off` always ends with the rail down").
+        let condition = job.command.stage_condition(stage);
+        if !condition.is_always() {
+            let node = job.command.nodes().first().copied().unwrap_or(0);
+            match node_location(node) {
+                Some((address, slot)) => {
+                    let window = match condition {
+                        StageCondition::HostStillDrawing => {
+                            HOST_RUNNING_CONFIRM_MS + STAGE_WATCH_MS
+                        }
+                        _ => STAGE_WATCH_MS,
+                    };
+                    job.outstanding = 0;
+                    job.watch = Some(StageWatch {
+                        condition,
+                        address,
+                        slot,
+                        after_ms: now_ms,
+                        until_ms: now_ms.saturating_add(window),
+                        above_since_ms: None,
+                    });
+                    return;
+                }
+                // Not a node id: there is nothing to look at and
+                // nothing to cut.
+                None => {
+                    let code = job.code;
+                    let outcome = code.map_or(JobOutcome::Done, outcome_of);
+                    self.finish_job(id, outcome, now_ms);
+                    return;
+                }
+            }
+        }
         self.queue_stage(id, stage, steps);
+    }
+
+    /// Send the cut stage a watch decided on, and remember that the
+    /// rail came down from here.
+    fn cut_stage(&mut self, id: JobId, now_ms: u64) {
+        let Some(job) = self.jobs.iter_mut().find(|j| j.id == id) else {
+            return;
+        };
+        job.watch = None;
+        job.rail_cut = true;
+        let stage = job.stage;
+        let Some(steps) = job.stages.get(stage).cloned() else {
+            self.finish_job(id, JobOutcome::Done, now_ms);
+            return;
+        };
+        self.queue_stage(id, stage, steps);
+    }
+
+    /// End a job whose cut stage turned out not to be needed: the rail
+    /// is already down, or the host really did shut down.
+    fn skip_cut_stage(&mut self, id: JobId, now_ms: u64) {
+        let Some(job) = self.jobs.iter_mut().find(|j| j.id == id) else {
+            return;
+        };
+        job.watch = None;
+        // The outcome is the one the plane's own sequence earned: the
+        // stage that was skipped never ran, so it cannot change it.
+        let outcome = job.code.map_or(JobOutcome::Done, outcome_of);
+        self.finish_job(id, outcome, now_ms);
+    }
+
+    /// A fresh SUMMARY has arrived on plane `i`: let the cut stages
+    /// waiting on one of its slots decide.
+    ///
+    /// Three outcomes per watch, in the order they are tested: the
+    /// condition is met and the cut goes out, a reading says the cut is
+    /// not needed and the job ends, or nothing is decided yet and the
+    /// next SUMMARY is awaited (until the watch expires, see
+    /// [`PlaneClient::expire_stage_watches`]).
+    fn check_stage_watches(&mut self, i: usize, now_ms: u64) {
+        let address = self.planes[i].plane.address;
+        let threshold = self.host_running_dw;
+        let mut cut: Vec<JobId> = Vec::new();
+        let mut skip: Vec<JobId> = Vec::new();
+        for job in self.jobs.iter_mut() {
+            let Some(watch) = job.watch.as_mut() else {
+                continue;
+            };
+            if watch.address != address {
+                continue;
+            }
+            let Some(node) = self.planes[i].plane.node(watch.slot) else {
+                continue;
+            };
+            // Anything the plane composed before the sequence ended
+            // says nothing about how it ended.
+            if node.summary_ms == 0 || node.summary_ms <= watch.after_ms {
+                continue;
+            }
+            let enabled = node.status.contains(granite_proto::SlotStatus::ENABLED);
+            match watch.condition {
+                StageCondition::Always => {}
+                // The plane cuts the rail itself when the host LED is
+                // still lit after the hold, so a slot that is already
+                // off needs nothing from us.
+                StageCondition::RailStillUp => {
+                    if enabled {
+                        cut.push(job.id);
+                    } else {
+                        skip.push(job.id);
+                    }
+                }
+                // A dark LED on a rail that keeps drawing is a host
+                // behind a front panel the plane cannot see. Every
+                // reading has to agree: `off` is the graceful verb.
+                StageCondition::HostStillDrawing => {
+                    let dark = matches!(node.led, granite_proto::LedMode::Off);
+                    let drawing = threshold != 0 && node.telemetry.watts > threshold;
+                    if !(enabled && dark && drawing) {
+                        skip.push(job.id);
+                        continue;
+                    }
+                    let since = *watch.above_since_ms.get_or_insert(now_ms);
+                    if now_ms.saturating_sub(since) >= HOST_RUNNING_CONFIRM_MS {
+                        cut.push(job.id);
+                    }
+                }
+            }
+        }
+        for id in cut {
+            self.cut_stage(id, now_ms);
+        }
+        for id in skip {
+            self.skip_cut_stage(id, now_ms);
+        }
+    }
+
+    /// The watches nobody answered in time: `force_off` cuts anyway,
+    /// `off` leaves the rail alone (see
+    /// [`StageCondition::cuts_when_unreadable`]).
+    fn expire_stage_watches(&mut self, now_ms: u64) {
+        let late: Vec<(JobId, bool)> = self
+            .jobs
+            .iter()
+            .filter_map(|job| {
+                job.watch
+                    .filter(|w| now_ms > w.until_ms)
+                    .map(|w| (job.id, w.condition.cuts_when_unreadable()))
+            })
+            .collect();
+        for (id, cut) in late {
+            if cut {
+                self.cut_stage(id, now_ms);
+            } else {
+                self.skip_cut_stage(id, now_ms);
+            }
+        }
     }
 
     /// Put one stage's writes on the plane queues.
@@ -1345,9 +1548,23 @@ impl PlaneClient {
             return;
         }
         let worst = job.code.unwrap_or(ResultCode::Ok);
-        if worst.is_ok() && job.stage + 1 < job.stages.len() {
-            job.stage += 1;
-            job.code = None;
+        let next = job.stage + 1;
+        // `force_off`'s cut stage follows the node-off sequence whatever
+        // that answered: the verb promises the rail, not the plane's
+        // opinion of it (ADR 0004, "`force_off` always ends with the
+        // rail down"). A failure is kept as the job's own code, so a
+        // sequence that went wrong is still reported - with `rail_cut`
+        // beside it saying the node did end up off.
+        let condition = job.command.stage_condition(next);
+        if (worst.is_ok() || condition.runs_after_failure()) && next < job.stages.len() {
+            job.stage = next;
+            // A cut stage may never run at all, so the code the plane's
+            // sequence earned is kept: it is what the job reports when
+            // the cut turns out not to be needed. `severity` makes that
+            // safe - an Ok loses to anything the cut itself reports.
+            if worst.is_ok() && condition.is_always() {
+                job.code = None;
+            }
             self.start_stage(id, now_ms);
             return;
         }
@@ -1367,7 +1584,7 @@ impl PlaneClient {
             state.queue.retain(|q| q.job != id);
         }
         let code = job.code;
-        self.note_intent(&job.command, outcome, now_ms);
+        self.note_intent(&job.command, outcome, job.rail_cut, now_ms);
         self.events
             .push_back(ClientEvent::JobFinished { id, outcome, code });
         self.finished.push_back(FinishedJob {
@@ -1377,6 +1594,7 @@ impl PlaneClient {
             code,
             submitted_ms: job.submitted_ms,
             finished_ms: now_ms,
+            rail_cut: job.rail_cut,
         });
     }
 
@@ -1396,7 +1614,18 @@ impl PlaneClient {
     // --- intended OFF -------------------------------------------------
 
     /// What a finished job means for the intended-OFF set.
-    fn note_intent(&mut self, command: &Command, outcome: JobOutcome, now_ms: u64) {
+    ///
+    /// `rail_cut` says the controller sent the cut stage itself, which
+    /// is a certainty where the verb alone is not: such a job has to
+    /// leave the node in the set, or the re-apply of ADR 0004 would let
+    /// a plane that lost its intended state bring the rail back.
+    fn note_intent(
+        &mut self,
+        command: &Command,
+        outcome: JobOutcome,
+        rail_cut: bool,
+        now_ms: u64,
+    ) {
         let Command::Node(node_command) = command else {
             return;
         };
@@ -1419,7 +1648,7 @@ impl PlaneClient {
             // made again on the next STATUS.
             return;
         }
-        if node_command.intends_rail_off() {
+        if node_command.intends_rail_off() || rail_cut {
             for node in node_command.nodes() {
                 self.intent.insert(node);
             }
@@ -1567,6 +1796,24 @@ impl PlaneClient {
                 state.plane.derive_states();
             }
         }
+    }
+
+    /// Set the host-running threshold \[0.1 W\] the cut stage of `off`
+    /// uses (`nodes.host_running_w`, see
+    /// [`StageCondition::HostStillDrawing`] and
+    /// [`DEFAULT_HOST_RUNNING_DW`]). `0` turns that check off, and the
+    /// rail stays up whenever the plane's sequence ended Ok.
+    ///
+    /// Pushed by the firmware's `apply_config`, like the host-detect
+    /// threshold: a job decides this on the poll path, from the SUMMARY
+    /// telemetry, and not where the command was built.
+    pub fn set_host_running_dw(&mut self, deciwatts: u16) {
+        self.host_running_dw = deciwatts;
+    }
+
+    /// The host-running threshold in force \[0.1 W\].
+    pub const fn host_running_dw(&self) -> u16 {
+        self.host_running_dw
     }
 
     /// Say which nodes have no front-panel cable, as a bitmap of node

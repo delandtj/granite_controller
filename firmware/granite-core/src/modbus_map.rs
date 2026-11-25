@@ -126,6 +126,11 @@ pub mod cmd_word {
     pub const POWER_OFF: u16 = 7;
     /// `clear_latch`.
     pub const CLEAR_LATCH: u16 = 8;
+    /// `force_button_off`: hold PWR and leave the rail alone (ADR 0004,
+    /// "Two explicit verbs"). Refused on a node with no front panel.
+    pub const FORCE_BUTTON_OFF: u16 = 9;
+    /// `force_power_off`: cut the rail now, no button.
+    pub const FORCE_POWER_OFF: u16 = 10;
 }
 
 /// Plane command words (holding register [`PLANE_CMD_BASE`] + plane).
@@ -723,7 +728,8 @@ pub const BLOCKS: &[Block] = &[
         access: Access::Rw,
         meaning: "Node command word; reads the rail state",
         scale: "w: 1 on, 2 off, 3 force_off, 4 reset, 5 cycle, 6 power_on, 7 power_off, \
-8 clear_latch; r: see the node block's power field",
+8 clear_latch, 9 force_button_off, 10 force_power_off; \
+r: see the node block's power field",
     },
     Block {
         kind: RegKind::HoldingRegister,
@@ -1116,6 +1122,8 @@ pub fn command_from_holding(addr: u16, value: u16, id: &str) -> Result<Option<Co
             cmd_word::POWER_ON => CommandKind::PowerOn,
             cmd_word::POWER_OFF => CommandKind::PowerOff,
             cmd_word::CLEAR_LATCH => CommandKind::ClearLatch,
+            cmd_word::FORCE_BUTTON_OFF => CommandKind::ForceButtonOff,
+            cmd_word::FORCE_POWER_OFF => CommandKind::ForcePowerOff,
             _ => return Err(MapError::BadValue { addr, value }),
         };
         return Ok(Some(

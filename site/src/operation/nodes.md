@@ -71,8 +71,10 @@ fault that kills a node, so a person decides.
 | Verb | Target | What happens | Typical duration |
 |---|---|---|---|
 | `on` | node, `all` | If the host LED is already steady: done, nothing changes. Otherwise rail on if it is off, wait up to 15 s for the LED, press PWR once if it stayed dark, and wait again. | up to about 30 s |
-| `off` | node, `all` | If the host is already dark: done, the rail stays up. Otherwise a short PWR press (the OS sees an ACPI power button and shuts down), then wait `t_soft_off_s` (default 120 s) for the LED to go dark, then **escalate** per the node's `escalation`. | up to `t_soft_off_s` + 6 s |
-| `force_off` | node, `all` | No short press: hold PWR 5 s at once, then cut the rail if the LED is still on (with the default escalation). | about 6 s |
+| `off` | node, `all` | If the host is already dark: done, the rail stays up. Otherwise a short PWR press (the OS sees an ACPI power button and shuts down), then wait `t_soft_off_s` (default 120 s) for the LED to go dark, then **escalate** per the node's `escalation`. With the default escalation the controller then checks the slot's draw and cuts the rail if the host is still running behind a dark LED. | up to `t_soft_off_s` + 12 s |
+| `force_off` | node, `all` | No short press: hold PWR 5 s at once, then cut the rail if it is still up, whatever the LED said. Always ends with the rail down. The verb the leak and over-temperature rules use. | about 10 s |
+| `force_button_off` | node, `all` | The hold alone: PWR for 5 s, and the rail is left alone whatever the LED says. Refused on a node with no front panel. | about 6 s |
+| `force_power_off` | node, `all` | The rail alone, now: no button, no shutdown. The same thing `power_off` does, reported as the hard cut it is. | under a second |
 | `reset` | node, `all` | A 300 ms press on RST. | 0.3 s |
 | `cycle` | node, `all` | Rail off, wait 5 s, rail on, then a PWR press if the host stays dark after the LED wait. | about 5 s + up to 15 s |
 | `press` | node, `all` | Raw press of PWR (default) or RST, 50..10000 ms (default 300). Ignores the LED. For motherboards that need something unusual. | as given |
@@ -85,14 +87,45 @@ fault that kills a node, so a person decides.
 
 `off` and `power_off` are different on purpose. `off` means "shut the
 host down" and leaves the standby rail up when the host obeyed; only
-`power_off` (or an escalation that ends in a cut) takes the rail down.
+`power_off` (or a cut) takes the rail down.
 
-The escalation of `off` and `force_off` comes from the node's setting
-(see [Nodes and boot policy](../commissioning/nodes.md)): `none` stops
-and fails, `hold` holds PWR for 5 s and leaves the rail, and the
-default `hold_then_cut` also cuts the rail if the LED is still on after
-the hold. With `none`, `force_off` has nothing left to do and fails at
-once.
+The escalation of `off` comes from the node's setting (see
+[Nodes and boot policy](../commissioning/nodes.md)): `none` stops and
+fails, `hold` holds PWR for 5 s and leaves the rail, and the default
+`hold_then_cut` also cuts the rail if the LED is still on after the
+hold.
+
+### Why the controller cuts rails the plane did not
+
+The plane decides whether to cut from the host's power LED, and the
+opto reads a front-panel cable that fell out exactly like a dark LED.
+A `force_off` that trusted the plane therefore reported "done" while
+the host kept running - seen on the bench, and `force_off` on `all` is
+what the leak and over-temperature rules do. So the controller finishes
+the job itself:
+
+- **`force_off`** cuts the rail whenever the slot still reports it
+  enabled, whatever the plane's sequence answered. It always ends with
+  the rail down. A host that did shut down loses its standby power too
+  (BMC, wake-on-LAN): that is the price of an emergency verb that
+  cannot be fooled by the cabling. `force_button_off` is the hold with
+  no cut, for when that matters.
+- **`off`** keeps the rail unless the slot is still drawing: with the
+  LED dark and the rail up, a draw above `host_running_w` (default
+  15.0 W, range 0 to 250) held for two seconds means the host is still
+  running, and the rail is cut. Below it the LED is trusted and the
+  standby rail stays up. Escalation `none` and `hold`, and a threshold
+  of `0`, never cut.
+
+A job that had to cut says so: `rail_cut` in the ack, in the HTTP job
+result and in the `action_done` event. It is not the same as
+`hard_cut`, which means no shutdown was tried at all
+(`force_power_off`, and the verbs of a node with no front panel).
+
+Whether a front-panel cable is really plugged in cannot be detected,
+which is why `force_off` does not depend on the LED. The per-node
+`front_panel` setting is what an operator configured, and a UI uses it
+to leave out the verbs that would press nothing.
 
 ### `on_all`
 
@@ -116,7 +149,7 @@ on". When every present node is already running it is answered with
 
 | Arg | Used by | Meaning |
 |---|---|---|
-| `no_escalate` | `off`, `force_off` | Escalation `none` for this command only. |
+| `no_escalate` | `off`, `force_off` | Escalation `none` for this command only. It takes the plane's own escalation away, not the controller's cut: `force_off` still ends with the rail down. |
 | `hard` | `on`, `cycle`, `on_all` | Do not wait for the host LED: the plane presses PWR after its minimum settle time. |
 | `switch` | `press` | `pwr` (default) or `rst`. |
 | `duration_ms` | `press` | 50..10000, clamped to that range. Default 300. |

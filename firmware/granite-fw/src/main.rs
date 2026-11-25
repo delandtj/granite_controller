@@ -998,6 +998,7 @@ fn apply_config(
     rules.set_rules(cfg.rules.rules.clone());
     plane.set_policy(cfg.nodes.plane_update);
     plane.set_host_detect_dw(cfg.nodes.host_detect_dw());
+    plane.set_host_running_dw(cfg.nodes.host_running_dw());
     plane.set_no_front_panel(cfg.nodes.no_front_panel_mask());
     hw::vin::set_trim(cfg.nodes.vin_trim);
     push_sense_cfg(cfg);

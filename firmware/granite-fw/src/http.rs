@@ -300,8 +300,13 @@ fn finished_reply(event: &Event, id: &str) -> Option<Reply> {
             id: done,
             result,
             hard_cut,
+            rail_cut,
             ..
-        } if done == id => Some(Reply::ok(id, result.clone()).with_hard_cut(*hard_cut)),
+        } if done == id => Some(
+            Reply::ok(id, result.clone())
+                .with_hard_cut(*hard_cut)
+                .with_rail_cut(*rail_cut),
+        ),
         EventKind::ActionFailed {
             id: failed, error, ..
         } if failed == id => Some(Reply::err(id, error.clone())),
@@ -1035,6 +1040,7 @@ mod tests {
                 action: CommandKind::On,
                 result: result.into(),
                 hard_cut: false,
+                rail_cut: false,
             },
         )
     }

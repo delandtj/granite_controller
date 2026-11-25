@@ -1273,8 +1273,11 @@ fn resolve_from_event(
             id,
             result,
             hard_cut,
+            rail_cut,
             ..
-        } => Reply::ok(id, result.clone()).with_hard_cut(*hard_cut),
+        } => Reply::ok(id, result.clone())
+            .with_hard_cut(*hard_cut)
+            .with_rail_cut(*rail_cut),
         EventKind::ActionFailed { id, error, .. } => Reply::err(id, error.clone()),
         // An `ota` pull ends in `verified` (then a reboot) or `failed`;
         // neither event carries the command id, and only one pull runs.

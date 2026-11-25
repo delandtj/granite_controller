@@ -723,7 +723,9 @@ requests inside the rate-limit window cost one read.
   route does.
 
 ### `force_off` always ends with the rail down (2026-11-25)
-Decided by the user, not yet implemented.
+Decided by the user and implemented 2026-11-25, as described here.
+`granite-proto`, plane-logic and plane-fd are untouched; the choices
+this section left open are at the end of it.
 
 Decision 4 promises that `force_off` "always ends with the node off",
 but the plane cuts the rail only when the host LED is still lit after
@@ -798,6 +800,60 @@ down; `off` on a dark node drawing more than `host_running_w` ends with
 the rail down; `off` on a host that shut down to a standby draw below
 it keeps the rail up; `off` with escalation `hold` never cuts; a leak
 rule with `force_off` on `all` takes every rail down.
+
+**As built.** The cut is a second stage of the same job, as `cycle` is
+for a node without a front panel, so the plane does not change. The
+stage machinery needed one addition: a `plane::StageCondition` the
+client checks before a stage goes out, because whether a rail has to be
+cut is a question about the slot and only the client reads SUMMARY.
+Two conditions, one per verb - `RailStillUp` for `force_off` and
+`HostStillDrawing` for `off` - and `Always` for every other stage of
+every other verb. A stage that has one does not go on the plane queue:
+it becomes a watch (`client::StageWatch`) that waits for a SUMMARY
+newer than the stage before it and then either queues the writes or
+ends the job without them. The conditions differ in two more places,
+which is the whole of the asymmetry between the two verbs:
+
+- `runs_after_failure`: `force_off`'s cut follows the node-off sequence
+  whatever that answered ("whatever its result"), and the sequence's
+  result code is kept as the job's, so a sequence that really failed is
+  still reported - with `rail_cut` beside it saying the node did end up
+  off. A slot the plane says is `not_present` has no ENABLED bit, so
+  that case needs no rule of its own: the watch skips the cut and the
+  job reports `absent`.
+- `cuts_when_unreadable`: a watch that times out without a fresh
+  SUMMARY (`STAGE_WATCH_MS`, 3 s = three chances at 1 Hz) cuts for
+  `force_off` and does not for `off`. A plane that goes away fails such
+  a job at once instead, like any other.
+
+Choices this section left open, and what was decided:
+- **`rail_cut` is about the attempt, not the outcome.** It is set when
+  the controller sends the cut stage, so an ack can read `failed` with
+  `"rail_cut": true`: the cut went out and something around it did not
+  work. The outcome field says whether it worked.
+- **`force_off` is now a certain rail-off intent.** It no longer waits
+  for a SUMMARY to decide what to remember (`may_cut_rail`): it ends
+  with the rail down or it does not end Ok. `off` keeps the old
+  pending-intent path, because either way is a real outcome for it. A
+  job that ended with the rail cut is also inserted directly, so the
+  re-apply can never bring such a node back.
+- **`action_failed` carries no flag.** The ADR names the ack, the HTTP
+  job result and `action_done`; the ack of a failed job carries
+  `rail_cut` too (it is a `Reply` field), so nothing is lost.
+- **`HARD_CUT_TEXT` lost its parenthetical.** It now reads `rail cut,
+  no shutdown`: `force_power_off` reports the same text on a node that
+  does have a front panel, which made "(no front panel)" untrue.
+- **The simulator had to learn standby draw.** A simulated slot drew
+  its scenario load while its rail was up, host or no host, so a host
+  that obeyed its button was indistinguishable from one that never
+  did - and every `off` in the suite would have cut. `FakePlane` now
+  draws `load_ma` while the fake host runs and `standby_ma`
+  (`STANDBY_MA`, 100 mA = 4.8 W, between the two thresholds) while it
+  does not; `set_standby` at a running level is how a test says "this
+  node's front-panel cable fell out".
+- **Not done:** `firmware/web` is the stale rev C UI and was left
+  alone, so the two new verbs have no button yet;
+  `docs/modbus_map.md` is generated and was already stale.
 
 ### Still open
 - The web UI (`firmware/web`) is unchanged and still speaks the rev C
