@@ -544,6 +544,74 @@ empty slot, the same for Modbus input register `host`, and the MQTT
 `host` field says `unknown`. The `host on` discrete input and the
 `node_on` rule source are untouched.
 
+### Nodes without a front panel (2026-11-25)
+Decided by the user, not yet implemented.
+
+Some nodes have no front-panel cable at all: no PWR, no RST, no LED.
+Their BIOS is set to power on after AC loss, so the host starts when the
+rail comes up and stops when it goes down. The verbs of decision 4 do
+not fit them, and `led_sense = false` does not either:
+
+- `on` still runs the plane's node-on sequence. With no LED it waits the
+  settle time, presses PWR, waits again and ends Failed with
+  `NO_LED_AFTER_CYCLE` (the `cross_check` fault). On a host that has a
+  front panel but powers on from the BIOS, that press shuts it down
+  again.
+- `off` and `force_off` press and hold a button that reaches nothing,
+  then the plane's `ConfirmDark` sees no light and finishes Ok: the
+  result says off while the rail stays up and the host keeps running.
+  Only escalation `cut` really ends it. (With a front panel and
+  `led_sense = false` that Ok is right: the hold did shut the host
+  down, the LED just cannot confirm it.)
+
+**Setting.** `front_panel: bool` in `NodeSettings`, default `true`. Per
+node, like `led_sense`; with `false` the node's `led_sense` is ignored.
+The plane is told nothing: everything below is the controller choosing
+other plane commands, so plane-logic and ADR 0003 do not change.
+
+**Verbs on a node with `front_panel = false`:**
+
+| Verb | Becomes | Result |
+|---|---|---|
+| on | `power_on` (rail only) | Ok on PGD; nothing waits for a host |
+| off | `power_off` (rail cut) | Ok when the rail is down, reported as a hard cut |
+| force_off | `power_off` | the same |
+| cycle | `power_off`, the cycle off delay (`CYCLE_OFF_S`, as for a plane power-cycle), `power_on`, as one controller job | Ok on PGD; a hard cut |
+| on_all | the stagger, with `power_on` for these nodes | per node as `on` |
+| reset, press | refused at dispatch | `failed`, "no front panel" |
+| power_on, power_off, clear_latch, unit_reset | unchanged | unchanged |
+
+**Hard cut.** `off`, `force_off` and `cycle` on such a node cut the
+host's power without a shutdown, and every result says so: the ack and
+the HTTP job result carry `"hard_cut": true` and the text
+`rail cut, no shutdown (no front panel)`, and the `action_done` event
+carries the same flag. The web UI labels the button "Power off (hard
+cut)". Rules and Modbus command words run the same mapping; they have no
+place for the text, so the flag in the event is what records it.
+
+**Boot policy.** Unchanged in meaning, but `on` and `off` now mean the
+rail for these nodes: `boot_policy = on` with `front_panel = false` is
+"this node powers up at every plane boot", and `off` cuts the rail
+(the "Boot policy" note above, where `off` leaves a dark host's rail
+up, applies to nodes with a front panel only).
+
+**State.** The power axis is unchanged. The host axis is `unknown`
+whenever the rail is down and also with it up: there is no LED, and
+standby power cannot tell a running host from one that is booting. The
+LED cross-checks (`LED_AT_ZERO_CURRENT`, `LED_WHILE_OFF`,
+`NO_LED_AFTER_CYCLE`) are dropped from the node's `faults`, MQTT,
+Modbus fault bits and rule sources, so a leftover bit from before the
+setting changed does not show either. `front_panel` is published with
+the node in `state.nodes[]` and readable over Modbus, so an operator can
+see why the node behaves this way.
+
+**Tests.** granite-sim: with `front_panel = false`, `on` ends Ok with no
+PWR press seen by the fake host and no `NO_LED_AFTER_CYCLE`; `off` ends
+with the rail down and `hard_cut`; `cycle` takes the rail down and up
+without a press; `reset` is refused; `boot_policy = on` brings the rail
+up after a plane boot; and a node with a front panel behaves exactly as
+before.
+
 ### Still open
 - The web UI (`firmware/web`) is unchanged and still speaks the rev C
   state payload; `docs/home-assistant.md` and `docs/modbus_map.md` are

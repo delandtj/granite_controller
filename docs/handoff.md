@@ -55,13 +55,10 @@ Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
     escalation `cut` really turns it off.
   - `boot_policy = on` already brings the rail up once per plane boot,
     so with the new setting it gives "powers up at boot".
-  - Proposed (controller side, plane unchanged, ADR 0004 to amend): a
-    node with no front panel maps `on` to the rail-only `power_on` (Ok
-    on PGD), `off` and `force_off` to the rail cut `power_off`, `cycle`
-    to rail off / delay / rail on without a press, refuses `reset` (no
-    contact), keeps the host axis `unknown`, and masks the LED
-    cross-checks. To decide: the field (`front_panel: bool` or a node
-    kind), and whether `off` on such a node says it is a hard cut.
+  - Decided (user): a `front_panel: bool` per node, and `off` on such a
+    node reports a hard cut. Spec: firmware/docs/adr/0004, "Nodes
+    without a front panel (2026-11-25)". Controller side only, the
+    plane is unchanged. Not implemented yet.
 
 ## 2026-11-25: to do today
 
