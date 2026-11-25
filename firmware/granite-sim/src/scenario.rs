@@ -29,7 +29,7 @@
 //! [[plane.slot]]
 //! slot = 0
 //! module = true
-//! module_id = 0x0400
+//! module_id = 2815             # the 22k ID entry: a PM-19V-250W
 //! load_ma = 1200
 //! host_on = true
 //! respond = "normal"       # normal | ignores_short_press | ignores_hold
@@ -60,6 +60,8 @@
 //! host off), one probe at 40 C and 12 V in.
 
 use std::path::Path;
+
+use plane_logic::drivers::idadc;
 
 use serde::{Deserialize, Serialize};
 
@@ -118,7 +120,9 @@ pub struct PlaneSlotScenario {
     /// A module is screwed down, so its ID resistor answers.
     pub module: bool,
     /// The module's 12-bit ID count; the plane maps it to a class
-    /// itself. Full scale (0x0FFF) is an empty slot.
+    /// itself (the ID table of docs/pm-interface.md, read through a 10k
+    /// pull-up). Full scale (0x0FFF) is an empty slot; the default is
+    /// the 22k entry, a PM-19V-250W.
     pub module_id: u16,
     /// What the host draws while its rail is up \[mA\].
     pub load_ma: u32,
@@ -136,7 +140,9 @@ impl Default for PlaneSlotScenario {
         PlaneSlotScenario {
             slot: 0,
             module: true,
-            module_id: 0x0400,
+            // The 22k entry of the ID table: a PM-19V-250W, so a
+            // capture shows the class a real module reads.
+            module_id: idadc::table_counts(22_000),
             load_ma: 1_000,
             host_on: false,
             respond: PlaneRespond::Normal,

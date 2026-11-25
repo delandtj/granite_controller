@@ -111,7 +111,7 @@ blink_window_ms = [100, 500]   # shortens every wait on a host LED
 [[plane.slot]]
 slot = 0
 module = true
-module_id = 0x0400
+module_id = 2815             # the 22k ID entry: a PM-19V-250W
 load_ma = 1200
 host_on = true
 respond = "normal"             # normal | ignores_short_press | ignores_hold
