@@ -30,6 +30,7 @@ use crate::log::{Log, level};
 use crate::model::{SlotModel, UnitModel};
 use crate::power_up_clear::PowerUpClear;
 use crate::sequencer::{Sequence, Stagger, UnitRelease};
+use crate::switch_on_blank::SwitchOnBlank;
 use crate::unit_latch::UnitLatch;
 use crate::update::Update;
 
@@ -156,6 +157,10 @@ pub struct Plane {
     /// per slot after the unit's input comes up (ADR 0002 decision 7,
     /// note of 2026-11-25).
     pub(crate) power_up_clear: [PowerUpClear; UNIT_COUNT],
+    /// Per-slot switch-on blanking of the OV latch: LCLR held across the
+    /// module's start-up whenever the plane releases a slot's OFF line
+    /// (ADR 0002 decision 7c).
+    pub(crate) switch_on_blank: [SwitchOnBlank; SLOT_COUNT],
     /// Per-unit `unit_reset` releases waiting on their verdict
     /// (CTRL 0x4A).
     pub(crate) unit_releases: [Option<UnitRelease>; UNIT_COUNT],
@@ -234,6 +239,7 @@ impl Plane {
             stagger: None,
             unit_latch: [UnitLatch::new(); UNIT_COUNT],
             power_up_clear: [PowerUpClear::new(); UNIT_COUNT],
+            switch_on_blank: [SwitchOnBlank::new(); SLOT_COUNT],
             unit_releases: [None; UNIT_COUNT],
             press_trig_ms: 0,
             events: Events::new(),
@@ -308,6 +314,14 @@ impl Plane {
         self.power_up_clear
             .get(unit as usize)
             .is_some_and(PowerUpClear::armed)
+    }
+
+    /// True while a slot's switch-on blanking holds LCLR
+    /// (ADR 0002 decision 7c, [`crate::switch_on_blank`]).
+    pub fn switch_on_blanking(&self, slot: u8) -> bool {
+        self.switch_on_blank
+            .get(slot as usize)
+            .is_some_and(SwitchOnBlank::active)
     }
 
     /// The event ring.

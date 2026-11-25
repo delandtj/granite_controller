@@ -508,6 +508,24 @@ pub const DEFAULT_VIN_MIN_MV: u32 = 10_000;
 /// Upper bound of the healthy VIN window by default \[mV\].
 pub const DEFAULT_VIN_MAX_MV: u32 = 14_000;
 
+/// Default host-detect threshold \[W\]: the slot power at or above
+/// which a dark host LED is read as "the host is off" and not
+/// "unknown".
+///
+/// The unit board's TLP291 reads an unconnected front-panel cable
+/// exactly like a dark LED, so a dark LED alone cannot tell an empty
+/// slot from a host that is off. A module with nothing behind it idles
+/// at about 2 W on its 48 V input, which is what the slot's INA238
+/// measures, so the threshold sits above that and below any
+/// motherboard's standby draw
+/// ([`crate::plane::model::Node::derive`]).
+pub const DEFAULT_HOST_DETECT_W: f32 = crate::plane::model::DEFAULT_HOST_DETECT_DW as f32 / 10.0;
+
+/// Highest host-detect threshold a config may ask for \[W\]. Far past
+/// any motherboard's standby draw; a slot that really draws this much
+/// has a host that is running, not one in standby.
+pub const MAX_HOST_DETECT_W: f32 = 50.0;
+
 /// True when `mv` is outside the window `min_mv`..`max_mv`. A bound of
 /// `0` is not checked, so a `0`/`0` window never faults.
 ///
@@ -544,6 +562,10 @@ pub struct NodesCfg {
     /// Upper bound of the healthy VIN window, in millivolts. Above it the
     /// `vin` fault bit is set. `0` disables the check.
     pub vin_max_mv: u32,
+    /// Slot power at or above which a dark host LED means the host is
+    /// `off` rather than `unknown`, in watts. `0` lets the LED decide
+    /// alone. See [`DEFAULT_HOST_DETECT_W`].
+    pub host_detect_w: f32,
 }
 
 impl Default for NodesCfg {
@@ -559,6 +581,7 @@ impl Default for NodesCfg {
             // loaded bus eat: 10 V to 14 V.
             vin_min_mv: DEFAULT_VIN_MIN_MV,
             vin_max_mv: DEFAULT_VIN_MAX_MV,
+            host_detect_w: DEFAULT_HOST_DETECT_W,
         }
     }
 }
@@ -614,11 +637,52 @@ impl NodesCfg {
         out
     }
 
+    /// True when this node has a front-panel cable: PWR, RST and the
+    /// power LED (ADR 0004, "Nodes without a front panel"). The default
+    /// for a node with no entry.
+    pub fn front_panel(&self, node: NodeId) -> bool {
+        self.nodes
+            .iter()
+            .find(|n| n.node == node)
+            .is_none_or(|n| n.front_panel)
+    }
+
+    /// The nodes with no front panel, as a bitmap of node ids (bit
+    /// `id - 1`): what the plane client is told
+    /// ([`crate::plane::PlaneClient::set_no_front_panel`]), because the
+    /// host axis is derived on the poll path.
+    pub fn no_front_panel_mask(&self) -> u64 {
+        let mut mask = 0u64;
+        for settings in &self.nodes {
+            if !settings.front_panel && crate::is_node(settings.node) {
+                mask |= 1 << (settings.node - 1);
+            }
+        }
+        mask
+    }
+
     /// True when `mv` is outside the configured VIN window, which is what
     /// sets the `vin` fault bit. A bound of `0` is not checked, so a
     /// window of `0`/`0` never faults.
     pub fn vin_out_of_window(&self, mv: u32) -> bool {
         vin_out_of_window(mv, self.vin_min_mv, self.vin_max_mv)
+    }
+
+    /// The host-detect threshold in the unit the slot telemetry uses
+    /// \[0.1 W\], which is what the plane client wants
+    /// ([`crate::plane::PlaneClient::set_host_detect_dw`]). `0` for
+    /// "let the LED decide alone"; a nonsense value reads as `0` so a
+    /// bad number can never invent a host.
+    pub fn host_detect_dw(&self) -> u16 {
+        if !self.host_detect_w.is_finite() || self.host_detect_w <= 0.0 {
+            return 0;
+        }
+        let dw = self.host_detect_w * 10.0;
+        if dw >= MAX_HOST_DETECT_W * 10.0 {
+            (MAX_HOST_DETECT_W * 10.0) as u16
+        } else {
+            dw as u16
+        }
     }
 }
 
@@ -954,6 +1018,12 @@ impl Config {
         if self.nodes.vin_max_mv > VIN_WINDOW_MAX_MV {
             self.nodes.vin_max_mv = VIN_WINDOW_MAX_MV;
         }
+        if !self.nodes.host_detect_w.is_finite() {
+            self.nodes.host_detect_w = DEFAULT_HOST_DETECT_W;
+        }
+        // The NaN case is already out of the way above, so `clamp` has
+        // nothing to panic about.
+        self.nodes.host_detect_w = self.nodes.host_detect_w.clamp(0.0, MAX_HOST_DETECT_W);
         self.rules.rules.truncate(MAX_RULES);
         if self.mqtt.qos > 2 {
             self.mqtt.qos = 1;
@@ -1015,6 +1085,15 @@ impl Config {
             errs.push(format!(
                 "nodes.vin_max_mv ({}) is above the {VIN_WINDOW_MAX_MV} mV the divider can read",
                 self.nodes.vin_max_mv
+            ));
+        }
+        if !self.nodes.host_detect_w.is_finite()
+            || self.nodes.host_detect_w < 0.0
+            || self.nodes.host_detect_w > MAX_HOST_DETECT_W
+        {
+            errs.push(format!(
+                "nodes.host_detect_w ({}) must be between 0 and {MAX_HOST_DETECT_W} W",
+                self.nodes.host_detect_w
             ));
         }
         if self.rules.rules.len() > MAX_RULES {

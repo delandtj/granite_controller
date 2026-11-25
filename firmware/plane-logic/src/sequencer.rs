@@ -41,9 +41,11 @@ pub const HOLD_PRESS_MS: u32 = 5_000;
 /// task can do and a longer clear is harmless).
 ///
 /// The power-up clear of [`crate::power_up_clear`] holds it for its own,
-/// longer [`crate::power_up_clear::LCLR_HOLD_MS`] instead: it has to
-/// cover the module's start-up, which a commanded clear on a running
-/// slot does not.
+/// longer [`crate::power_up_clear::LCLR_HOLD_MS`] instead, and the
+/// switch-on blanking of [`crate::switch_on_blank`] for its own
+/// [`crate::switch_on_blank::SWITCH_ON_BLANK_MS`]: both have to cover a
+/// module's start-up, which a commanded clear on a running slot does
+/// not.
 pub const LCLR_PULSE_MS: u32 = 10;
 
 /// How long after a `unit_reset` the plane judges whether the unit came
@@ -332,8 +334,17 @@ impl Plane {
 
     /// Set or clear a slot's OFF, in the model, on the expander and in
     /// the backup registers.
+    ///
+    /// Every switch-on the plane does comes through here - `enable`,
+    /// `node on`, the power-cycle's rail-on step, the stagger - so this
+    /// is also where the switch-on blanking of
+    /// [`crate::switch_on_blank`] asserts LCLR, before the OFF line is
+    /// released (ADR 0002 decision 7c).
     pub(crate) fn set_slot_off<D: Devices>(&mut self, dev: &mut D, slot: u8, off: bool) -> bool {
         let (unit, b) = Self::split(slot);
+        if !off {
+            self.start_switch_on_blank(dev, slot);
+        }
         self.intended.set_off(slot, off);
         self.save_intended(dev);
         let ok = self.drive(dev, slot, expander::out_line(b, Out::Off), off);
@@ -434,6 +445,56 @@ impl Plane {
         true
     }
 
+    /// Assert LCLR for a switch-on that is about to release OFF
+    /// ([`crate::switch_on_blank`], ADR 0002 decision 7c).
+    ///
+    /// Two cases do nothing at all:
+    ///
+    /// - The OFF line is already released, so this write switches no
+    ///   rail on and the module is not about to start.
+    /// - The slot's latch is set (LQ, as this cycle's poll read it). The
+    ///   slot then stays latched and the caller's action reports as it
+    ///   always did: a latch is cleared by `clear_latch` and by the
+    ///   power-up clear, by nothing else (ADR 0002 decision 7).
+    ///
+    /// It is not a sequence and claims no [`Phase`], so whatever the
+    /// switch-on is part of runs on while the line is held.
+    fn start_switch_on_blank<D: Devices>(&mut self, dev: &mut D, slot: u8) {
+        let (unit, b) = Self::split(slot);
+        if !self.expanders[unit].get_output(expander::out_line(b, Out::Off)) {
+            return;
+        }
+        if self.slots[slot as usize]
+            .status
+            .contains(SlotStatus::OV_LATCHED)
+        {
+            return;
+        }
+        if self.drive(dev, slot, expander::out_line(b, Out::Lclr), true) {
+            self.switch_on_blank[slot as usize].start(self.now_ms);
+        } else {
+            // The switch-on itself goes ahead: a slot that cannot be
+            // blanked is better on and possibly latched than refused.
+            self.note(level::WARN, "blank not armed", Some(slot as u32));
+        }
+    }
+
+    /// Drive a slot's LCLR low, unless the other holder still wants it.
+    ///
+    /// The commanded clear, the power-up clear ([`Phase::ClearLatch`])
+    /// and the switch-on blanking all hold the one line, so the line
+    /// comes down when the last of them is done - which makes the
+    /// effective hold the longer of the two and never cuts either short.
+    fn release_lclr<D: Devices>(&mut self, dev: &mut D, slot: u8) {
+        if self.switch_on_blank[slot as usize].active()
+            || matches!(self.sequences[slot as usize].phase, Phase::ClearLatch)
+        {
+            return;
+        }
+        let (_, b) = Self::split(slot);
+        self.drive(dev, slot, expander::out_line(b, Out::Lclr), false);
+    }
+
     /// Begin a sequence on a slot, with the phase and deadline its first
     /// step wants.
     pub(crate) fn begin(&mut self, slot: u8, cmd_seq: u8, phase: Phase, deadline_ms: u64) {
@@ -457,6 +518,31 @@ impl Plane {
         self.step_stagger(dev);
         self.step_unit_releases(dev);
         self.step_power_up_clears(dev);
+        self.step_switch_on_blanks(dev);
+    }
+
+    /// End the switch-on blanking windows whose time is up
+    /// ([`crate::switch_on_blank`], ADR 0002 decision 7c).
+    ///
+    /// The latch is read from this cycle's poll, so a window that ends
+    /// with it set means a real overvoltage, or an OV_KILL pulse wider
+    /// than [`crate::switch_on_blank::SWITCH_ON_BLANK_MS`]. Either way
+    /// the slot stays latched and is reported exactly as before; the log
+    /// line is the only trace the blanking leaves.
+    fn step_switch_on_blanks<D: Devices>(&mut self, dev: &mut D) {
+        for slot in 0..SLOT_COUNT as u8 {
+            if !self.switch_on_blank[slot as usize].over(self.now_ms) {
+                continue;
+            }
+            self.switch_on_blank[slot as usize].end();
+            self.release_lclr(dev, slot);
+            if self.slots[slot as usize]
+                .status
+                .contains(SlotStatus::OV_LATCHED)
+            {
+                self.note(level::WARN, "blank ended latched", Some(slot as u32));
+            }
+        }
     }
 
     /// Fire the power-up clear of a unit whose settle time has passed
@@ -516,15 +602,17 @@ impl Plane {
             }
             Phase::ClearLatch => {
                 if due {
-                    let (_, b) = Self::split(slot);
-                    self.drive(dev, slot, expander::out_line(b, Out::Lclr), false);
                     // The latch is cleared, so the power-limit trip that
                     // may have set it is cleared with it. Nothing else
                     // ever clears that bit (ADR 0002 decision 7).
                     self.slots[slot as usize].status = self.slots[slot as usize]
                         .status
                         .without(SlotStatus::POWER_LIMIT_TRIPPED);
+                    // `finish` first, so the phase is Idle and the line
+                    // comes down unless a switch-on blanking still holds
+                    // it (ADR 0002 decision 7c).
                     self.finish(dev, slot, ResultCode::Ok);
+                    self.release_lclr(dev, slot);
                 }
             }
             Phase::CycleOff => {

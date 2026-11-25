@@ -115,6 +115,12 @@ impl NodeTelemetryObs {
     }
 }
 
+/// `true`, for a serde default: a field that is missing from an older
+/// payload means "yes" (see [`NodeObs::front_panel`]).
+pub(crate) const fn yes() -> bool {
+    true
+}
+
 /// Round a non-negative division.
 const fn div_round(value: u32, by: u32) -> u32 {
     (value + by / 2) / by
@@ -188,6 +194,12 @@ pub struct NodeObs {
     pub host: HostState,
     /// True when the slot holds a module on a unit that is on the chain.
     pub present: bool,
+    /// False on a node with no front-panel cable (ADR 0004, "Nodes
+    /// without a front panel"): its verbs are rail-only, its host axis
+    /// is always `unknown` and the LED cross-checks are dropped from
+    /// its faults. Published so an operator can see why.
+    #[serde(default = "crate::observed::yes")]
+    pub front_panel: bool,
     /// True while the plane runs a sequence on this slot.
     pub busy: bool,
     /// Why it is in fault, when it is.
@@ -213,6 +225,7 @@ impl NodeObs {
             power: PowerState::Unknown,
             host: HostState::Unknown,
             present: false,
+            front_panel: true,
             busy: false,
             faults: NodeFaultsObs::default(),
             telemetry: NodeTelemetryObs::default(),
@@ -234,6 +247,7 @@ impl NodeObs {
             power: node.power,
             host: node.host,
             present: node.is_present(),
+            front_panel: node.front_panel,
             busy: node.is_busy(),
             faults: NodeFaultsObs {
                 absent: !node.is_present(),
@@ -241,7 +255,14 @@ impl NodeObs {
                 power_limit: status.contains(SlotStatus::POWER_LIMIT_TRIPPED),
                 retry_limit: node.retry_limit,
                 unit_latched_off: unit.is_latched_off(),
-                cross_check: !node.telemetry.cross.is_empty(),
+                // The LED cross-checks (LED_AT_ZERO_CURRENT,
+                // LED_WHILE_OFF, NO_LED_AFTER_CYCLE) are about a light
+                // a node with no front panel has not got: dropped here,
+                // which is the one place the faults are read from, so
+                // MQTT, Modbus and the rules all stop seeing them -
+                // a leftover bit from before the setting changed
+                // included (ADR 0004, "Nodes without a front panel").
+                cross_check: node.front_panel && !node.telemetry.cross.is_empty(),
             },
             telemetry: NodeTelemetryObs {
                 volts: node.telemetry.volts,
@@ -653,6 +674,35 @@ mod tests {
             ..NodeTelemetryObs::default()
         };
         assert_eq!(cold.temp_whole_c(), -16);
+    }
+
+    /// The LED cross-checks are about a light a node with no front
+    /// panel has not got, so they are dropped from its faults - the one
+    /// place every surface reads them from (ADR 0004, "Nodes without a
+    /// front panel").
+    #[test]
+    fn a_node_without_a_front_panel_shows_no_led_cross_check() {
+        let mut node = Node::new(0x30, 0);
+        node.status = granite_proto::SlotStatus::PRESENT
+            | granite_proto::SlotStatus::ENABLED
+            | granite_proto::SlotStatus::PGD;
+        node.power = PowerState::On;
+        node.telemetry.cross = granite_proto::CrossCheck::NO_LED_AFTER_CYCLE;
+        let mut unit = Unit::new(0);
+        unit.status = granite_proto::UnitStatus::PRESENT;
+
+        let obs = NodeObs::of_node(&node, &unit);
+        assert!(obs.front_panel, "the default");
+        assert!(obs.faults.cross_check, "a cabled node reports it");
+
+        node.front_panel = false;
+        let obs = NodeObs::of_node(&node, &unit);
+        assert!(!obs.front_panel);
+        assert!(
+            !obs.faults.cross_check,
+            "a leftover bit does not show on a node with no LED"
+        );
+        assert!(!obs.faults.any());
     }
 
     #[test]

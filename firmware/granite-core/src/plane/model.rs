@@ -73,13 +73,16 @@ impl core::fmt::Display for PowerState {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum HostState {
-    /// The LED is dark.
+    /// The LED is dark and something else says a node is there: the
+    /// slot draws standby power, or the LED was lit earlier on this
+    /// rail-on. See [`Node::derive`].
     Off,
     /// The LED is steady.
     On,
     /// The LED blinks: the host sleeps.
     Sleep,
-    /// The rail is off, the LED is not trusted, or there is no data.
+    /// The rail is off, the LED is not trusted, there is no data, or
+    /// the LED is dark with nothing to say a node is there at all.
     #[default]
     Unknown,
 }
@@ -172,6 +175,17 @@ impl NodeTelemetry {
     }
 }
 
+/// Default host-detect threshold \[0.1 W\]: the slot power at or above
+/// which a dark LED is read as a host that is off.
+///
+/// The TLP291 on the unit board reads a dark power LED and an
+/// unconnected front-panel cable the same way, so a dark LED on its own
+/// cannot tell "the host is off" from "there is no host". The module
+/// itself idles at about 2 W with nothing behind it (slot telemetry is
+/// the INA238 on the module's 48 V input), so 3.0 W is above the idle
+/// and below any motherboard's standby draw.
+pub const DEFAULT_HOST_DETECT_DW: u16 = 30;
+
 /// One node: a slot on a plane.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Node {
@@ -199,6 +213,23 @@ pub struct Node {
     /// (EVENTS kind 6). Sticky until the slot is enabled again, because
     /// no status bit carries it.
     pub retry_limit: bool,
+    /// Whether the node has a front-panel cable at all: PWR, RST and
+    /// the power LED (`nodes[].front_panel`, ADR 0004 "Nodes without a
+    /// front panel"). True unless the configuration says otherwise.
+    ///
+    /// Pushed by [`super::PlaneClient::set_no_front_panel`] because the
+    /// host axis is derived on the poll path. With it `false` the host
+    /// axis stays [`HostState::Unknown`] - there is no LED, and standby
+    /// power cannot tell a running host from one that is booting - and
+    /// the LED cross-checks are dropped from the node's faults
+    /// ([`crate::observed::NodeObs::of_node`]).
+    pub front_panel: bool,
+    /// The LED of this slot has been lit (steady or blinking) since the
+    /// rail came up: proof that a node is cabled to it. Sticky while
+    /// the rail stays on, so a host that shuts itself down to a standby
+    /// draw below the threshold is still `off` and not `unknown`
+    /// ([`Node::derive`]).
+    pub host_seen: bool,
 }
 
 impl Node {
@@ -216,6 +247,8 @@ impl Node {
             summary_ms: 0,
             detail_ms: 0,
             retry_limit: false,
+            front_panel: true,
+            host_seen: false,
         }
     }
 
@@ -241,11 +274,27 @@ impl Node {
         self.power = PowerState::Unknown;
         self.host = HostState::Unknown;
         self.status = SlotStatus::NONE;
+        self.host_seen = false;
     }
 
-    /// Recompute both axes from the status word, the LED and whether
-    /// the unit is there.
-    fn derive(&mut self, unit_present: bool, unit_latched_off: bool) {
+    /// Recompute both axes from the status word, the LED, the slot power
+    /// and whether the unit is there.
+    ///
+    /// `host_detect_dw` is the configured host-detect threshold
+    /// \[0.1 W\] (`nodes.host_detect_w`): with the rail on and the LED
+    /// dark, the host is `off` only when the slot draws at least that
+    /// much, because the opto reads an unconnected front-panel cable
+    /// exactly like a dark LED. `0` turns the test off and lets the LED
+    /// decide alone, which is what the controller did before.
+    ///
+    /// Instead of a numeric hysteresis band the sticky
+    /// [`host_seen`](Self::host_seen) flag carries the evidence: a lit
+    /// or blinking LED proves a node is cabled to the slot, and from
+    /// then until the rail goes down a dark LED means `off` whatever
+    /// the slot draws. That keeps a host that shut itself down to a
+    /// standby draw near the threshold from flapping, and it costs one
+    /// bool instead of a second threshold.
+    fn derive(&mut self, unit_present: bool, unit_latched_off: bool, host_detect_dw: u16) {
         self.power = if !unit_present || !self.status.contains(SlotStatus::PRESENT) {
             PowerState::Absent
         } else if unit_latched_off
@@ -263,9 +312,32 @@ impl Node {
             PowerState::Starting
         };
         // The ADR is explicit: with the rail down the LED says nothing,
-        // so the host axis is `unknown` rather than `off`.
+        // so the host axis is `unknown` rather than `off`. The LED
+        // evidence only lives as long as the rail does.
+        if self.power != PowerState::On {
+            self.host_seen = false;
+        }
+        if matches!(self.led, LedMode::On | LedMode::Blinking) && self.power == PowerState::On {
+            self.host_seen = true;
+        }
+        // No front panel at all: there is no LED to read and standby
+        // power cannot tell a running host from one that is booting, so
+        // the host axis says nothing (ADR 0004, "Nodes without a front
+        // panel").
+        if !self.front_panel {
+            self.host_seen = false;
+            self.host = HostState::Unknown;
+            return;
+        }
+        // A dark LED is "off" only with evidence that a node is there:
+        // the LED was lit earlier on this rail-on, or the slot draws at
+        // least the host-detect threshold. Without it the opto cannot
+        // tell an unconnected front panel from a dark LED, and the
+        // honest answer is `unknown`.
+        let dark_means_off =
+            host_detect_dw == 0 || self.host_seen || self.telemetry.watts >= host_detect_dw;
         self.host = match (self.power, self.led) {
-            (PowerState::On, LedMode::Off) => HostState::Off,
+            (PowerState::On, LedMode::Off) if dark_means_off => HostState::Off,
             (PowerState::On, LedMode::On) => HostState::On,
             (PowerState::On, LedMode::Blinking) => HostState::Sleep,
             _ => HostState::Unknown,
@@ -466,6 +538,11 @@ pub struct Plane {
     pub info_ms: u64,
     /// When STATUS last arrived \[ms\].
     pub status_ms: u64,
+    /// The host-detect threshold the host axis is derived with
+    /// \[0.1 W\], from `nodes.host_detect_w`. The firmware pushes it
+    /// with [`super::PlaneClient::set_host_detect_dw`]; nothing here
+    /// reads the config.
+    pub host_detect_dw: u16,
 }
 
 impl Plane {
@@ -498,6 +575,7 @@ impl Plane {
             nodes: core::array::from_fn(|i| Node::new(address, i as u8)),
             info_ms: 0,
             status_ms: 0,
+            host_detect_dw: DEFAULT_HOST_DETECT_DW,
         }
     }
 
@@ -641,6 +719,27 @@ impl Plane {
         self.derive_states();
     }
 
+    /// Say which of this plane's slots have no front-panel cable, as a
+    /// bitmap of slot indices, and derive the states again. True when
+    /// something changed.
+    ///
+    /// The configuration decides this, not the plane: the flag only ever
+    /// arrives through [`super::PlaneClient::set_no_front_panel`].
+    pub fn set_no_front_panel(&mut self, slots: IndexBitmap) -> bool {
+        let mut changed = false;
+        for node in &mut self.nodes {
+            let front_panel = !slots.has(node.slot);
+            if node.front_panel != front_panel {
+                node.front_panel = front_panel;
+                changed = true;
+            }
+        }
+        if changed {
+            self.derive_states();
+        }
+        changed
+    }
+
     /// Recompute every node's two axes.
     pub fn derive_states(&mut self) {
         for node in &mut self.nodes {
@@ -654,7 +753,7 @@ impl Plane {
                 unit.is_present()
             };
             let latched = unit.is_latched_off();
-            node.derive(present, latched);
+            node.derive(present, latched, self.host_detect_dw);
         }
     }
 
@@ -812,5 +911,158 @@ mod tests {
         );
         assert_eq!(plane.nodes[0].power, PowerState::Fault);
         assert_eq!(plane.nodes[1].power, PowerState::Fault);
+    }
+
+    /// A plane with unit 0 on the chain, ready to take slot summaries.
+    fn plane_with_unit_0() -> Plane {
+        let mut plane = Plane::new(0x30);
+        plane.units_present = IndexBitmap::I0;
+        plane.apply_unit(
+            0,
+            0,
+            &payload(|w| {
+                let _ =
+                    UnitRecord::Status(UnitStatus::PRESENT | UnitStatus::HOT_SWAP_PGD).encode(w);
+            }),
+        );
+        plane
+    }
+
+    /// One SUMMARY for slot 0 with the rail up, `watts` \[0.1 W\] on the
+    /// slot's INA238 and `led` on the opto.
+    fn summary_slot_0(plane: &mut Plane, now_ms: u64, watts: u16, led: LedMode) {
+        plane.apply_summary(
+            now_ms,
+            &payload(|w| {
+                let _ = SlotSummary {
+                    slot: 0,
+                    status: SlotStatus::PRESENT | SlotStatus::ENABLED | SlotStatus::PGD,
+                    volts: 4_800,
+                    amps: watts,
+                    watts,
+                    led,
+                }
+                .encode(w);
+            }),
+        );
+    }
+
+    /// The bench case the host axis was wrong about: a -B module with no
+    /// node behind it reads "LED dark" exactly like a host that is off,
+    /// because the TLP291 sees an unconnected front-panel cable the
+    /// same way. Only the standby power tells them apart.
+    #[test]
+    fn a_dark_led_needs_standby_power_to_mean_off() {
+        let mut plane = plane_with_unit_0();
+        assert_eq!(plane.host_detect_dw, DEFAULT_HOST_DETECT_DW);
+
+        // No node: the module's own 2 W idle, LED dark.
+        summary_slot_0(&mut plane, 100, 20, LedMode::Off);
+        assert_eq!(plane.nodes[0].power, PowerState::On);
+        assert_eq!(
+            plane.nodes[0].host,
+            HostState::Unknown,
+            "2 W is the module idling with nothing behind it"
+        );
+
+        // A node in standby draws more than the module alone.
+        summary_slot_0(&mut plane, 200, 40, LedMode::Off);
+        assert_eq!(
+            plane.nodes[0].host,
+            HostState::Off,
+            "4 W is a node that is off, not an empty slot"
+        );
+    }
+
+    /// A lit LED is proof of a node whatever the slot draws, and the
+    /// proof lasts as long as the rail does.
+    #[test]
+    fn a_lit_led_is_proof_of_a_node() {
+        let mut plane = plane_with_unit_0();
+
+        // Nothing measured yet and the LED is steady: `on`.
+        summary_slot_0(&mut plane, 100, 0, LedMode::On);
+        assert_eq!(plane.nodes[0].host, HostState::On);
+        assert!(plane.nodes[0].host_seen);
+
+        // Blinking is `sleep`, at any power.
+        summary_slot_0(&mut plane, 200, 10, LedMode::Blinking);
+        assert_eq!(plane.nodes[0].host, HostState::Sleep);
+
+        // The host shuts itself down: the LED goes dark and the slot
+        // falls back to little more than the module's idle. The LED
+        // said a node is there, so this is `off` and not `unknown`.
+        summary_slot_0(&mut plane, 300, 22, LedMode::Off);
+        assert_eq!(plane.nodes[0].host, HostState::Off);
+
+        // The rail goes down and comes back with nothing behind it: the
+        // evidence went with the rail.
+        plane.apply_summary(
+            400,
+            &payload(|w| {
+                let _ = SlotSummary {
+                    slot: 0,
+                    status: SlotStatus::PRESENT,
+                    volts: 0,
+                    amps: 0,
+                    watts: 0,
+                    led: LedMode::Off,
+                }
+                .encode(w);
+            }),
+        );
+        assert_eq!(plane.nodes[0].power, PowerState::Off);
+        assert_eq!(
+            plane.nodes[0].host,
+            HostState::Unknown,
+            "with the rail down the LED says nothing (ADR 0004 decision 3)"
+        );
+        assert!(!plane.nodes[0].host_seen);
+        summary_slot_0(&mut plane, 500, 20, LedMode::Off);
+        assert_eq!(plane.nodes[0].host, HostState::Unknown);
+    }
+
+    /// A node with no front panel has no LED to read, so the host axis
+    /// says nothing whatever the opto and the slot power do (ADR 0004,
+    /// "Nodes without a front panel"). The power axis is untouched.
+    #[test]
+    fn without_a_front_panel_the_host_axis_is_always_unknown() {
+        let mut plane = plane_with_unit_0();
+        assert!(plane.nodes[0].front_panel, "the default");
+        assert!(
+            plane.set_no_front_panel(IndexBitmap::I0),
+            "slot 0 lost its front panel"
+        );
+        assert!(!plane.nodes[0].front_panel);
+        assert!(plane.nodes[1].front_panel, "only the slot named");
+        assert!(
+            !plane.set_no_front_panel(IndexBitmap::I0),
+            "the same mask changes nothing"
+        );
+
+        // A host that would read `off` on standby power, and one whose
+        // opto is lit: both `unknown`.
+        summary_slot_0(&mut plane, 100, 400, LedMode::Off);
+        assert_eq!(plane.nodes[0].power, PowerState::On, "the rail is the rail");
+        assert_eq!(plane.nodes[0].host, HostState::Unknown);
+        summary_slot_0(&mut plane, 200, 400, LedMode::On);
+        assert_eq!(plane.nodes[0].host, HostState::Unknown);
+        assert!(!plane.nodes[0].host_seen, "no LED evidence is kept");
+
+        // Give it back a front panel and the LED speaks again.
+        plane.set_no_front_panel(IndexBitmap::NONE);
+        summary_slot_0(&mut plane, 300, 400, LedMode::On);
+        assert_eq!(plane.nodes[0].host, HostState::On);
+    }
+
+    /// A threshold of 0 is the old behaviour: the LED decides alone.
+    #[test]
+    fn a_zero_threshold_lets_the_led_decide_alone() {
+        let mut plane = plane_with_unit_0();
+        plane.host_detect_dw = 0;
+        summary_slot_0(&mut plane, 100, 20, LedMode::Off);
+        assert_eq!(plane.nodes[0].host, HostState::Off);
+        summary_slot_0(&mut plane, 200, 0, LedMode::Off);
+        assert_eq!(plane.nodes[0].host, HostState::Off);
     }
 }

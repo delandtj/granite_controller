@@ -331,6 +331,88 @@ fn the_vin_window_defaults_to_the_12_v_feed_and_zero_means_unchecked() {
 }
 
 #[test]
+fn the_host_detect_threshold_defaults_above_the_module_idle() {
+    // A module with no node behind it idles at about 2 W on its 48 V
+    // input, so the default sits above it: a dark LED under 3 W is an
+    // empty slot and not a host that is off.
+    let c = Config::default();
+    assert_eq!(c.nodes.host_detect_w, 3.0);
+    assert_eq!(c.nodes.host_detect_dw(), 30);
+    c.validate().expect("the default must validate");
+
+    // 0 is "let the LED decide alone", the behaviour before the
+    // threshold existed.
+    let mut c = Config::default();
+    c.nodes.host_detect_w = 0.0;
+    assert_eq!(c.nodes.host_detect_dw(), 0);
+    c.validate().expect("0 is a valid threshold");
+
+    // Out of range is refused, and normalise clamps it.
+    let mut c = Config::default();
+    c.nodes.host_detect_w = 80.0;
+    assert!(
+        c.validate()
+            .unwrap_err()
+            .iter()
+            .any(|e| e.contains("host_detect_w")),
+        "{:?}",
+        c.validate()
+    );
+    c.normalise();
+    assert_eq!(
+        c.nodes.host_detect_w,
+        granite_core::config::MAX_HOST_DETECT_W
+    );
+    c.validate().unwrap();
+
+    let mut c = Config::default();
+    c.nodes.host_detect_w = -1.0;
+    assert!(c.validate().is_err());
+    assert_eq!(c.nodes.host_detect_dw(), 0, "a bad value invents no host");
+    c.normalise();
+    assert_eq!(c.nodes.host_detect_w, 0.0);
+    c.validate().unwrap();
+}
+
+/// ADR 0004, "Nodes without a front panel": a per-node flag, default
+/// true, and a config written before it existed still loads.
+#[test]
+fn the_front_panel_flag_defaults_to_true_and_older_configs_load() {
+    let c = Config::default();
+    assert!(c.nodes.front_panel(1), "a node with no entry has one");
+    assert_eq!(c.nodes.no_front_panel_mask(), 0);
+
+    let mut c = Config::default();
+    c.nodes.nodes.push(granite_core::node::NodeSettings {
+        front_panel: false,
+        ..granite_core::node::NodeSettings::for_node(57)
+    });
+    c.nodes
+        .nodes
+        .push(granite_core::node::NodeSettings::for_node(1));
+    assert!(!c.nodes.front_panel(57));
+    assert!(c.nodes.front_panel(1));
+    assert_eq!(c.nodes.no_front_panel_mask(), 1 << 56);
+    c.validate().expect("a bool needs no validation");
+
+    // The round trip keeps it, and a `nodes` entry from before the flag
+    // existed reads as "has a front panel".
+    let json = c.export_json().unwrap();
+    let back = Config::import_json(&json).unwrap();
+    assert_eq!(
+        back.nodes.no_front_panel_mask(),
+        c.nodes.no_front_panel_mask()
+    );
+    let old = r#"{"nodes":[{"node":3,"name":"old","boot_policy":"on","led_sense":false,
+                 "t_soft_off_s":60,"escalation":"hold"}]}"#;
+    let mut c = Config::default();
+    c.set_section_json(Section::Nodes, old)
+        .expect("a config written before the flag existed");
+    assert!(c.nodes.front_panel(3));
+    assert!(!c.nodes.settings(3).led_sense, "the rest is still read");
+}
+
+#[test]
 fn too_many_rules_are_truncated_by_normalise() {
     let mut c = Config::default();
     let base = c.rules.rules[0].clone();

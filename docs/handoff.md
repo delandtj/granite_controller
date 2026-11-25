@@ -2,6 +2,133 @@
 
 Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
 
+## 2026-11-25 (late): node57 "powers off by itself" - controller bug, fixed
+
+- Symptom: `on` for node57 (unit 0 slot A, no host cabled) brought the
+  rail up and about 30 s later the slot went off, untouched. Same at
+  every `on` since the plane's boot.
+- Cause: the controller, not the slot. The plane flags
+  `intended_state_lost` after a power loss, and node57 was in the
+  controller's intended-off set (kept in NVS) from earlier `power_off`
+  jobs. `on` with no host ends `sequence_failed` after the LED wait and
+  the PWR press, and `note_intent` (granite-core plane/client.rs) only
+  took a node out of the set when the job succeeded, so the intended-off
+  re-apply saw the rail up and cut it at once (two `power_off` jobs of
+  its own, `job-N` ids, right after the failure).
+- Fixed in 8130df6: a rail-on verb (`on`, `power_on`, `cycle`,
+  `clear_latch`) leaves the set whatever its outcome, as ADR 0004
+  already said. Regression test: granite-sim tests/plane_client.rs
+  `a_failed_on_still_takes_the_node_out_of_the_intended_off_set`.
+- Flashed onto controller-fd granite-b4499b by OTA pull; image `valid`.
+  Bench check: `on` -> `sequence_failed` after 30.3 s, rail stays up at
+  48.1 V, no re-apply. The version still reads 0.1.0 (not bumped).
+- So these shut-offs say nothing against slot A; its power-up latch and
+  low empty-ID read (below) are still open.
+- `on` vs `power_on`: on a slot without a host use `power_on` (rail
+  only). `on` waits for the LED, presses PWR, fails and sets
+  `NO_LED_AFTER_CYCLE` (the `cross_check` fault).
+- OTA pull as done (http, not https: heap, firmware README section 6.3
+  of docs/mqtt.md): `cargo build --release` in granite-fw;
+  `espflash save-image --chip esp32c6
+  target/riscv32imac-esp-espidf/release/granite-fw granite-fw.bin`;
+  `python3 -m http.server 8099 --bind 192.168.64.99` in its folder;
+  `mosquitto_pub -h 127.0.0.1 -t granite/bench/granite-b4499b/cmd -m
+  '{"v":1,"id":"ota-x","action":"ota","args":{"url":"http://192.168.64.99:8099/granite-fw.bin","sha256":"..."}}'`;
+  watch `.../event` for `verified`, then `pending_verify`, `valid`.
+- Bench scope: Siglent SDS1202X-E on the LAN at 192.168.64.163;
+  tools/sds_capture.py grabs screenshots and raw waveforms (single-shot
+  and repeat modes for power-cycle runs; single shot not yet tried on
+  a real trigger).
+
+- [x] **Per-node "no front panel" setting** (user, 2026-11-25): nodes
+  with no PWR / RST / LED cabled, that come up by themselves from the
+  BIOS (power on after AC loss) once the rail is up. What exists does
+  not cover them:
+  - `led_sense = false` (granite-core node.rs NodeSettings) only cuts
+    the LED wait to the settle time: `on` still presses PWR and still
+    ends Failed with `NO_LED_AFTER_CYCLE` (plane-logic sequencer.rs,
+    `Phase::WaitLight`). On a host that does have a front panel but
+    powers on from the BIOS, that press shuts it down again.
+  - `off` on such a node: the short press and the 5 s hold reach
+    nothing, then `Phase::ConfirmDark` sees no light and finishes Ok -
+    the result says off while the rail stays up and the host runs. Only
+    escalation `cut` really turns it off.
+  - `boot_policy = on` already brings the rail up once per plane boot,
+    so with the new setting it gives "powers up at boot".
+  - Decided (user): a `front_panel: bool` per node, and `off` on such a
+    node reports a hard cut. Spec: firmware/docs/adr/0004, "Nodes
+    without a front panel (2026-11-25)". Controller side only, the
+    plane is unchanged.
+  - **Done 2026-11-25** (granite-core, granite-fw, granite-sim; the
+    plane and granite-proto untouched): `nodes[].front_panel`, default
+    true; with `false` the verbs become rail-only plane commands
+    (`on` -> enable on, `off` / `force_off` -> enable off reported as
+    `hard_cut` with "rail cut, no shutdown (no front panel)", `cycle` ->
+    off, 5 s, on as one controller job, `on_all` staggers and enables),
+    `reset` and `press` are refused ("no front panel"), the host axis
+    stays `unknown`, the LED cross-checks are dropped from faults / MQTT
+    / Modbus / rules, and the flag is in `state.nodes[]` and on Modbus
+    discrete input `300 + id - 1`. Not on the bench yet; the web UI
+    still speaks the rev C payload, so its "Power off (hard cut)" label
+    is still to do.
+
+- [ ] **Unit 1 latched off with no load** (2026-11-25, evening). After a
+  full bench power cycle all four slots came up, the controller
+  re-applied OFF to all four (they were in the intended-off set), and at
+  149.5 s plane uptime unit 1 reported `unit_hot_swap_latched_off` with
+  every slot on it off. `unit_reset` (MQTT `"target":"plane7.unit1"`)
+  brought it back at once; the unit and slot V / W read 0.0 for another
+  ~25 s after the `done` (telemetry lag, not power: worth a look).
+  What the latch means (plane-logic unit_latch.rs): U_PGD low for 500 ms
+  while the core's own 48 V input is in range. With no load the
+  LM5069-2 (uinput.py U207: 18.3 A limit, 75 W power limit, 10 ms fault
+  timer, 160 ms insertion) has nothing to trip on, so the candidates are:
+  - the unit's own input dropping out for more than ~340 ms (dropout +
+    160 ms insertion > 500 ms) while the core's stays up: XT60 / chain
+    contact, someone handling the unit;
+  - the U_PGD reading wrong for 10 polls in a row (unit 1's TCA6424A,
+    segment I2C);
+  - a real LM5069 fault (current or power limit) - unlikely without load.
+  No plane log: the controller does not read the plane's LOG block
+  (TAG_LOG_LINE 0xA0, an 8-line ring; the latch writes "unit fault,
+  hot-swap held off") and the STLink was not on the core.
+  - [ ] Ask: was unit 1 or its cable touched about 2.5 min after the
+    power-up?
+  - [ ] Scope (tools/sds_capture.py --single --timeout none): CH1 unit 1
+    VIN before the LM5069, CH2 U_PGD, trigger U_PGD falling, 50 ms/div,
+    left armed across power cycles.
+  - [ ] Controller: read the plane LOG block on an error event and
+    publish it on `.../log`, so the next one says what the plane saw.
+
+- [ ] **Module VIN sits at ~1.2 V with the slot off, every slot** (both
+  units, all four slots read 1.2 V right after `power_off`; the 0.0 V on
+  unit 1 later was the unit being latched off). The module side loads
+  VIN with R13 200k + R14 6.34k (UVLO divider) and R17 47k into VAUX, so
+  1.2 V needs only ~6-30 uA from somewhere. Hypotheses:
+  - leakage from 48 V into that load: the slot pass FET's Idss, or the
+    slot LM5069's SENSE / OUT pin currents while it holds the FET off;
+  - back-feed from the unit's 3V3 pull-ups (unit.py R13 OV_KILL, R14
+    PGOOD, 10k) into the module's VAUX. Less likely than first thought:
+    the MCP65R46 open-drain output is rated for a pull-up up to 10 V
+    independent of its 1.8-5.5 V supply, so it should have no diode to
+    VDD. Only the meter can rule it out.
+  Why it matters: at VIN 1.2 V the comparators' supply is below their
+  1.8 V minimum, their outputs are undefined, and OV_KILL low sets the
+  slot OV latch - which fits node58 and node60 latching at switch-off
+  (three times tonight, always B slots). Switch-on blanking does not
+  cover switch-off.
+  - [ ] Meter, slot off: module VIN, VAUX (D4 cathode) and OV_KILL.
+  - [ ] Meter, an empty slot off: OUT near 0 V -> back-feed through the
+    module; floating higher -> leakage from 48 V.
+  - [ ] Meter, a unit latched or held off (still on the chain): module
+    VIN still ~1.2 V -> back-feed from 3V3.
+  - Fix either way: whatever feeds it, the module comparators must not
+    sit half-powered. Options: a bleed on the module input that holds
+    VIN under ~0.5 V with the slot off (cost: standing loss when on, at
+    48 V a 10k bleed is 0.23 W), or OV_KILL ignored by the slot latch
+    while the slot is off (blank /PRE from the OFF line, the switch-off
+    twin of the switch-on blanking).
+
 ## 2026-11-25: to do today
 
 - Done: power-up OV latch clear (plane-logic power_up_clear, e8f6686
@@ -18,6 +145,19 @@ Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
   out until measured on the bench module holder (to order).** Keep
   LCLR_HOLD_MS at 50 ms: it works for -B and must not mask a faulty
   module.
+- Switch-on blanking (d8dadaa, ADR 0002 decision 7c): a commanded `on`
+  latched the slot on the bench, so every rail switch-on now holds LCLR
+  for SWITCH_ON_BLANK_MS (100 ms). Not yet flashed / tried on a board.
+  Unit 0 slot A (node57) latched at two power-ups in a row with the
+  power-up clear; it is also the slot whose empty ID read low this
+  morning: suspect leakage / a fault on that slot (module swap pending).
+- PM-19V-250W-B idle loss: about 2 W per module with the slot on and no
+  load (unit current 0.1 A for two modules, coarse), coils about 45 C in
+  air. By design: R12 sets the LM5116 to full synchronous (forced
+  continuous), ~4.5 A p-p ripple at 252 kHz. About 100 W permanent for
+  6 blocks. Candidate for the next module order: diode emulation at
+  light load via DEMB / R12 (check the LM5116 datasheet). No change for
+  the first run (user).
 
 - [ ] `cross_check` on both slots with no node and no front-panel
   cable: **not** the LED sense. The opto is a TLP291 (unit.py U8 /

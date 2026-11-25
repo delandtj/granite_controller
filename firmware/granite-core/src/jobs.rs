@@ -285,8 +285,20 @@ impl JobLog {
             result.clone()
         };
         let job = pending.as_ref().map_or(finished.id, PendingJob::job);
+        // A verb that took the host's power away without a shutdown says
+        // so, in the flag and in words (ADR 0004, "Nodes without a front
+        // panel"). A group keeps its count as its text; the flag still
+        // records what happened.
+        let hard_cut = finished.command.hard_cut();
+        let text = if hard_cut && outcome.is_ok() && total <= 1 {
+            String::from(crate::plane::HARD_CUT_TEXT)
+        } else {
+            text
+        };
         let reply = if outcome.is_ok() {
-            Reply::ok(&command_id, text.clone()).with_job(job)
+            Reply::ok(&command_id, text.clone())
+                .with_job(job)
+                .with_hard_cut(hard_cut)
         } else {
             Reply::err(&command_id, text.clone()).with_job(job)
         };
@@ -296,6 +308,7 @@ impl JobLog {
                 node,
                 action,
                 result: text,
+                hard_cut,
             }
         } else {
             EventKind::ActionFailed {
@@ -491,6 +504,56 @@ mod tests {
             }
             other => panic!("expected action_failed, got {other:?}"),
         }
+    }
+
+    /// A verb on a node with no front panel took the host's power away
+    /// without a shutdown, and the ack, the HTTP job result and the
+    /// event all say so (ADR 0004, "Nodes without a front panel").
+    #[test]
+    fn a_hard_cut_is_reported_as_one() {
+        use crate::plane::{HARD_CUT_TEXT, NodeOptions};
+
+        let mut log = JobLog::new();
+        log.note("c-cut", CommandKind::Off, Target::Node(3), &one(7, 3), 100);
+        let cut = FinishedJob {
+            command: PlaneJobCommand::Node(
+                NodeCommand::off(3).with_opts(NodeOptions::DEFAULT.without_front_panel()),
+            ),
+            ..finished(7, JobOutcome::Done)
+        };
+        let done = log.finish(&cut, 500);
+        let reply = done.reply.expect("the command is finished");
+        assert!(reply.ok);
+        assert!(reply.hard_cut);
+        assert_eq!(reply.result.as_deref(), Some(HARD_CUT_TEXT));
+        match done.event {
+            Some(EventKind::ActionDone {
+                hard_cut, result, ..
+            }) => {
+                assert!(hard_cut);
+                assert_eq!(result, HARD_CUT_TEXT);
+            }
+            other => panic!("expected action_done, got {other:?}"),
+        }
+        // The node's own record keeps the plain outcome: a dashboard
+        // reads "done" there, as for any other verb.
+        assert_eq!(
+            log.last(3).and_then(|r| r.result.clone()).as_deref(),
+            Some("done")
+        );
+
+        // The same verb on a node that has a front panel is no hard cut.
+        log.note("c-soft", CommandKind::Off, Target::Node(3), &one(8, 3), 600);
+        let soft = FinishedJob {
+            command: PlaneJobCommand::Node(NodeCommand::off(3)),
+            ..finished(8, JobOutcome::Done)
+        };
+        let reply = log
+            .finish(&soft, 700)
+            .reply
+            .expect("the command is finished");
+        assert!(!reply.hard_cut);
+        assert_eq!(reply.result.as_deref(), Some("done"));
     }
 
     #[test]

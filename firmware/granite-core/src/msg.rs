@@ -464,6 +464,12 @@ pub struct Reply {
     /// same number.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub job: Option<crate::plane::JobId>,
+    /// True when this verb took the host's power away without a
+    /// shutdown, because the node has no front panel (ADR 0004, "Nodes
+    /// without a front panel"). The `result` text says the same thing in
+    /// words ([`crate::plane::HARD_CUT_TEXT`]).
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub hard_cut: bool,
     /// Payload for the commands that return data (`config_get`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub data: Option<Value>,
@@ -479,6 +485,7 @@ impl Reply {
             result: Some(result.into()),
             error: None,
             job: None,
+            hard_cut: false,
             data: None,
         }
     }
@@ -496,6 +503,13 @@ impl Reply {
         self
     }
 
+    /// Builder: mark the result a hard cut, the rail taken away with no
+    /// shutdown (ADR 0004, "Nodes without a front panel").
+    pub fn with_hard_cut(mut self, hard_cut: bool) -> Self {
+        self.hard_cut = hard_cut;
+        self
+    }
+
     /// A failed reply.
     pub fn err(id: impl Into<String>, error: impl Into<String>) -> Self {
         Reply {
@@ -505,6 +519,7 @@ impl Reply {
             result: None,
             error: Some(error.into()),
             job: None,
+            hard_cut: false,
             data: None,
         }
     }
@@ -567,8 +582,16 @@ pub enum EventKind {
         node: Option<NodeId>,
         /// Verb.
         action: CommandKind,
-        /// Outcome string ("done").
+        /// Outcome string ("done", or
+        /// [`crate::plane::HARD_CUT_TEXT`] for a hard cut).
         result: String,
+        /// True when the verb cut the node's rail with no shutdown,
+        /// because it has no front panel (ADR 0004, "Nodes without a
+        /// front panel"). Rules and Modbus command words run the same
+        /// mapping and have no place for the text, so this flag is what
+        /// records it.
+        #[serde(default, skip_serializing_if = "is_false")]
+        hard_cut: bool,
     },
     /// A plane job did not reach its goal.
     ActionFailed {
@@ -974,6 +997,11 @@ pub struct NodeStatePayload {
     pub power: String,
     /// The host: `off`, `on`, `sleep`, `unknown`.
     pub host: String,
+    /// False on a node with no front-panel cable (ADR 0004, "Nodes
+    /// without a front panel"): `on` and `off` are the rail, `reset` and
+    /// `press` are refused, and `host` stays `unknown`.
+    #[serde(default = "crate::observed::yes")]
+    pub front_panel: bool,
     /// True while the plane runs a sequence on this slot.
     #[serde(skip_serializing_if = "is_false")]
     pub busy: bool,
@@ -1121,6 +1149,7 @@ impl State {
                 unit: obs.unit,
                 power: String::from(obs.power.as_str()),
                 host: String::from(obs.host.as_str()),
+                front_panel: obs.front_panel,
                 busy: obs.busy,
                 v: f32::from(obs.telemetry.volts_tenths()) / 10.0,
                 a: f32::from(obs.telemetry.amps_tenths()) / 10.0,

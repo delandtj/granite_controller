@@ -120,6 +120,16 @@ pub struct NodeSettings {
     /// Whether the plane's reading of the host's power LED is trusted.
     /// With it off, `on` and `off` never wait for the light.
     pub led_sense: bool,
+    /// Whether the node has a front-panel cable at all: PWR, RST and the
+    /// power LED (ADR 0004, "Nodes without a front panel").
+    ///
+    /// With `false` the controller maps the verbs onto the rail alone -
+    /// `on` is `power_on`, `off` and `force_off` are a `power_off` hard
+    /// cut, `cycle` is the two of them around a wait - `reset` and
+    /// `press` are refused, and [`led_sense`](Self::led_sense) is
+    /// ignored because there is no LED to sense. Such a node is set to
+    /// power on after AC loss in its BIOS, so the rail is its switch.
+    pub front_panel: bool,
     /// How long `off` waits for the host \[s\].
     pub t_soft_off_s: u16,
     /// How far `off` and `force_off` escalate.
@@ -133,6 +143,7 @@ impl Default for NodeSettings {
             name: String::new(),
             boot_policy: BootPolicy::Leave,
             led_sense: true,
+            front_panel: true,
             t_soft_off_s: DEFAULT_SOFT_OFF_S,
             escalation: Escalation::HoldThenCut,
         }
@@ -208,6 +219,10 @@ mod tests {
         assert_eq!(s.display_name(), "node9");
         assert_eq!(s.boot_policy, BootPolicy::Leave);
         assert!(s.led_sense);
+        assert!(
+            s.front_panel,
+            "a node has a front panel unless it is told otherwise"
+        );
         assert_eq!(s.escalation, Escalation::HoldThenCut);
         assert_eq!(
             s.escalation.as_wire(),

@@ -326,9 +326,15 @@ impl FakeNode {
     }
 }
 
-/// One simulated slot: its monitor, its ID ADC, its hot-swap and its
-/// host.
-#[derive(Debug, Clone, Copy, Default)]
+/// One simulated slot: its monitor, its ID ADC, its hot-swap, its OV
+/// latch and its host.
+///
+/// The OV latch is the 74LVC1G74 of unit.py U3 / U53 with its real truth
+/// table, because the firmware's clears depend on it: `/PRE` is the
+/// OV_KILL node (three open-drain sources wire-ORed), `/CLR` is the LCLR
+/// line, and while `/PRE` is low Q is high whatever `/CLR` does. A clear
+/// therefore only takes once OV_KILL is back high.
+#[derive(Debug, Clone, Copy)]
 pub struct FakeSlot {
     /// The slot's INA238 (0x40 or 0x41).
     pub ina: FakeIna,
@@ -336,7 +342,8 @@ pub struct FakeSlot {
     pub adc: FakeIdAdc,
     /// The hot-swap's power-good.
     pub pgd: bool,
-    /// The OV latch, set by a trip source and cleared only by LCLR.
+    /// The OV latch's Q: set while OV_KILL is low, cleared by LCLR once
+    /// OV_KILL is high again, and sticky in between.
     pub ov_latched: bool,
     /// The module's PGOOD.
     pub module_pgood: bool,
@@ -347,6 +354,98 @@ pub struct FakeSlot {
     /// Drop PGD on the next advance, whatever the rail says: a hot-swap
     /// that retried, for the retry-policy test.
     pub glitch_pgd: bool,
+    /// How long the module's OV comparator pulls OV_KILL low after the
+    /// slot first hands it VIN \[ms\]: the start-up glitch of
+    /// docs/pm-interface.md (MCP65R46 on VAUX, 47k into ~1.3 uF).
+    ///
+    /// Zero - the default - is a module whose comparator is already up,
+    /// so no slot glitches unless a test asks for it. The real width has
+    /// never been measured; the bench only ever saw its effect.
+    pub startup_ov_kill_ms: u32,
+    /// How long VAUX keeps the comparator alive after the module loses
+    /// VIN \[ms\]. A rail that comes back inside this window does not
+    /// glitch again; one that comes back later does.
+    pub vaux_hold_ms: u32,
+    /// What is left of the start-up glitch \[ms\].
+    ///
+    /// It runs as a one-shot, counting down whatever the rail does: the
+    /// latch cutting the slot does not re-arm the comparator, and the
+    /// bench found OV_KILL back high with the slot cut and VIN at 1.3 V.
+    glitch_left_ms: u32,
+    /// How long the module has been without VIN \[ms\].
+    no_vin_ms: u32,
+    /// The comparator has its supply: OV_KILL is released.
+    vaux_up: bool,
+    /// The OV_KILL node (`/PRE`) as the last advance left it: low while
+    /// any of the three sources pulls.
+    ov_kill_low: bool,
+}
+
+impl Default for FakeSlot {
+    fn default() -> Self {
+        FakeSlot {
+            ina: FakeIna::default(),
+            adc: FakeIdAdc::default(),
+            pgd: false,
+            ov_latched: false,
+            module_pgood: false,
+            module: false,
+            node: FakeNode::default(),
+            glitch_pgd: false,
+            startup_ov_kill_ms: 0,
+            vaux_hold_ms: 500,
+            glitch_left_ms: 0,
+            no_vin_ms: 0,
+            vaux_up: false,
+            ov_kill_low: false,
+        }
+    }
+}
+
+impl FakeSlot {
+    /// True while the module pulls OV_KILL low for its start-up glitch.
+    pub const fn glitching(&self) -> bool {
+        self.glitch_left_ms > 0
+    }
+
+    /// The OV_KILL node as the expander's OVK input reads it: low while
+    /// the module's comparator, the INA's ALERT or the PGOOD-loss trip
+    /// pulls it.
+    pub const fn ov_kill_low(&self) -> bool {
+        self.ov_kill_low
+    }
+
+    /// Step the module's VAUX by `dt` and start a glitch when the module
+    /// gets VIN with its comparator still down.
+    ///
+    /// `vin` is the slot's hot-swap conducting into a module that is
+    /// there - the latch's Q cuts it, which is why this is read from the
+    /// pin state at the start of the step.
+    fn step_comparator(&mut self, dt: u32, vin: bool) {
+        if vin {
+            self.no_vin_ms = 0;
+            if !self.vaux_up && self.glitch_left_ms == 0 {
+                self.glitch_left_ms = self.startup_ov_kill_ms;
+                self.vaux_up = self.startup_ov_kill_ms == 0;
+            }
+        } else {
+            self.no_vin_ms = self.no_vin_ms.saturating_add(dt);
+            if self.no_vin_ms >= self.vaux_hold_ms {
+                self.vaux_up = false;
+            }
+        }
+    }
+
+    /// Age the glitch by `dt`, at the end of the step it was seen in.
+    fn age_glitch(&mut self, dt: u32) {
+        if self.glitch_left_ms == 0 {
+            return;
+        }
+        self.glitch_left_ms = self.glitch_left_ms.saturating_sub(dt);
+        if self.glitch_left_ms == 0 {
+            self.vaux_up = true;
+        }
+    }
 }
 
 /// A simulated LM5069-**2** unit hot-swap (uinput.py U207).
@@ -541,9 +640,10 @@ impl FakeUnit {
             set(expander::in_line(b, In::Pgd), slot.pgd);
             set(expander::in_line(b, In::Pg), slot.module_pgood);
             set(expander::in_line(b, In::Lq), slot.ov_latched);
-            // The OV_KILL node idles high and is pulled low by a trip
-            // source; the latch holds the slot down afterwards.
-            set(expander::in_line(b, In::Ovk), !slot.ina.alert());
+            // The OV_KILL node idles high and is pulled low by any of
+            // its three open-drain sources; the latch holds the slot
+            // down afterwards.
+            set(expander::in_line(b, In::Ovk), !slot.ov_kill_low());
             // The opto pulls the LED line low while the host's LED is
             // lit.
             set(expander::in_line(b, In::Led), !slot.node.led());
@@ -591,19 +691,32 @@ impl FakeUnit {
             let rstd = self.expander.asserted(expander::out_line(b, Out::Rstd)) && press_en;
             let slot = &mut self.slots[half];
 
-            if lclr {
-                slot.ov_latched = false;
-                slot.ina.diag &= !ina238::DIAG_POL;
-            }
             // The INA238's alert is one of the three sources on OV_KILL.
+            // With ALATCH programmed it holds the pin until the core
+            // reads DIAG_ALRT, which bus.rs models.
             if slot.ina.over_limit() {
                 slot.ina.diag |= ina238::DIAG_POL;
-                slot.ov_latched = true;
             }
-            // The PGOOD-loss trip, unless the slot is disarmed.
-            if !disarm && slot.pgd && slot.module && !slot.module_pgood {
+            // The module has VIN while the slot's hot-swap conducts: the
+            // latch's Q and the OFF line both cut it, and this is read
+            // from the state the step starts in.
+            let vin = unit_rail && !off && !slot.ov_latched && slot.module;
+            slot.step_comparator(dt, vin);
+            // `/PRE`: the OV_KILL node, with the module's start-up
+            // glitch, the INA's ALERT and the PGOOD-loss trip on it. The
+            // trip is held off while the slot is disarmed (Q6, unit.py).
+            let pgood_trip = !disarm && slot.pgd && slot.module && !slot.module_pgood;
+            slot.ov_kill_low = slot.glitching() || slot.ina.alert() || pgood_trip;
+            // The 74LVC1G74's truth table: `/PRE` low puts Q high
+            // whatever `/CLR` does, and `/CLR` low with `/PRE` high puts
+            // it low. So a clear only takes once OV_KILL is back up,
+            // which is what the firmware's holds are for.
+            if slot.ov_kill_low {
                 slot.ov_latched = true;
+            } else if lclr {
+                slot.ov_latched = false;
             }
+            slot.age_glitch(dt);
 
             let rail = unit_rail && !off && !slot.ov_latched;
             slot.pgd = rail && !core::mem::take(&mut slot.glitch_pgd);

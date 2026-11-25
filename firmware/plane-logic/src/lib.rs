@@ -27,6 +27,9 @@
 //! - [`power_up_clear`]: the one LCLR pulse per slot that follows a
 //!   unit's input coming up, because the module's OV comparator glitches
 //!   while its own supply starts.
+//! - [`switch_on_blank`]: the same glitch at every *switch-on* of a
+//!   slot's rail, blanked by holding LCLR across the first 100 ms of the
+//!   module's start-up.
 //! - [`link`] / [`update`] / [`events`] / [`log`]: the controller link,
 //!   the firmware update, the event ring and the log ring.
 //! - [`can_link`]: the CAN FD transport under that link (ADR 0005), over
@@ -82,6 +85,7 @@ pub mod plane;
 pub mod poll;
 pub mod power_up_clear;
 pub mod sequencer;
+pub mod switch_on_blank;
 pub mod unit_latch;
 pub mod update;
 
@@ -98,4 +102,5 @@ pub use model::{SlotModel, UnitModel};
 pub use plane::{LedPattern, Plane, Setup, reset_cause};
 pub use power_up_clear::PowerUpClear;
 pub use sequencer::Button;
+pub use switch_on_blank::SwitchOnBlank;
 pub use unit_latch::UnitLatch;

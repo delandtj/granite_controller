@@ -467,6 +467,7 @@ function fillNodes() {
   val('nodes-vin_trim', config.nodes.vin_trim);
   val('nodes-vin_min_mv', config.nodes.vin_min_mv);
   val('nodes-vin_max_mv', config.nodes.vin_max_mv);
+  val('nodes-host_detect_w', config.nodes.host_detect_w);
   const t = $('timings');
   t.textContent = '';
   for (const [k, v] of Object.entries(config.nodes.timings)) {
@@ -531,6 +532,7 @@ $('nodes-save').onclick = async () => {
     vin_trim: Number($('nodes-vin_trim').value),
     vin_min_mv: num('nodes-vin_min_mv'),
     vin_max_mv: num('nodes-vin_max_mv'),
+    host_detect_w: Number($('nodes-host_detect_w').value),
   };
   const r = await api('PUT', '/api/v1/config/nodes', section);
   if (r.ok) { banner('Nodes saved.', 'ok'); loadConfig(); }

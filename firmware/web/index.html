@@ -168,6 +168,15 @@
         <input id="nodes-vin_min_mv" type="number" min="0" max="36000"></label>
       <label>VIN window high (mV, 0 = unchecked)
         <input id="nodes-vin_max_mv" type="number" min="0" max="36000"></label>
+      <label>Host detect threshold (W, 0 = the LED decides alone)
+        <input id="nodes-host_detect_w" type="number" min="0" max="50" step="0.1"></label>
+      <p class="dim">
+        A dark power LED reads the same as an unplugged front-panel cable,
+        so a node's host is only reported <code>off</code> when the slot
+        draws at least this much (a module with nothing behind it idles at
+        about 2 W); below it the host is <code>unknown</code>. A lit or
+        blinking LED is proof of a node whatever the slot draws.
+      </p>
       <p class="dim">
         A bus voltage outside the window sets the <code>vin</code> fault bit
         (Modbus input register 13, bit 3) and lights the fault pattern; it

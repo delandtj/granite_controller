@@ -62,6 +62,8 @@ This repo's firmware targets rev D only.
      not answering).
    - Host (the motherboard, from the LED): `off`, `on`, `sleep`
      (blinking), `unknown` (rail off, LED sense disabled, or no data).
+     Since 2026-11-25 `off` also needs standby-power evidence that a
+     node is there at all: see "A dark LED alone is not `off`" below.
    - Plus telemetry: V, I, P, P min / max, temperature, energy, module
      class.
 
@@ -503,6 +505,137 @@ Two behaviours an operator sees are different:
   `done` when the unit carries power again, `failed` when the fault is
   still there and the plane latched it again. The default job timeout
   covers that easily.
+
+### A dark LED alone is not `off` (2026-11-25)
+Decision 3 reads the host axis off the power LED, and the bench showed
+what that misses: the TLP291 on the unit board reads an unconnected
+front-panel cable exactly like a dark LED. Four slots with -B modules
+and no node attached all reported `host: off`, which is a claim about a
+motherboard that is not there.
+
+The host axis keeps its four values and the LED keeps deciding `on` and
+`sleep` - a lit or blinking LED is proof of a node. What changed is the
+dark case, in `plane::model::Node::derive`: with the rail on and the
+LED dark the host is `off` only with evidence that a node is behind the
+slot, and `unknown` without it. Two kinds of evidence, both cheap:
+
+1. **Standby power.** The slot's INA238 sits on the module's 48 V
+   input, where a module with nothing behind it idles at about 2 W. The
+   new `nodes.host_detect_w` setting (default 3.0 W, range 0..50,
+   whole-section and not per node) is the threshold; `0` restores the
+   old LED-only behaviour.
+2. **The LED was lit.** `Node::host_seen` is set while the LED is lit or
+   blinking and cleared when the rail leaves `on`. A host that shut
+   itself down to a standby draw near the threshold is still `off`,
+   which is what a numeric hysteresis band would have bought, for one
+   bool and no second setting.
+
+The threshold is the one `nodes` setting the plane client has to be
+told about (`PlaneClient::set_host_detect_dw`, pushed by
+`apply_config`), because the host axis is derived on the poll path and
+not when a command is dispatched.
+
+No verb changed. `on_all` already skipped only the hosts that are `on`
+or `sleep`, so a slot that moved from `off` to `unknown` is still in
+its set, and the plane - not the controller - decides from its own LED
+read whether to press PWR. What an operator sees differently: a
+`node_host` rule source reads 0 (`unknown`) instead of 1 (`off`) for an
+empty slot, the same for Modbus input register `host`, and the MQTT
+`host` field says `unknown`. The `host on` discrete input and the
+`node_on` rule source are untouched.
+
+### Nodes without a front panel (2026-11-25)
+Decided by the user and implemented 2026-11-25, as described here.
+`granite-proto`, plane-logic and plane-fd are untouched; the two places
+the implementation had to choose for itself are at the end of this
+section.
+
+Some nodes have no front-panel cable at all: no PWR, no RST, no LED.
+Their BIOS is set to power on after AC loss, so the host starts when the
+rail comes up and stops when it goes down. The verbs of decision 4 do
+not fit them, and `led_sense = false` does not either:
+
+- `on` still runs the plane's node-on sequence. With no LED it waits the
+  settle time, presses PWR, waits again and ends Failed with
+  `NO_LED_AFTER_CYCLE` (the `cross_check` fault). On a host that has a
+  front panel but powers on from the BIOS, that press shuts it down
+  again.
+- `off` and `force_off` press and hold a button that reaches nothing,
+  then the plane's `ConfirmDark` sees no light and finishes Ok: the
+  result says off while the rail stays up and the host keeps running.
+  Only escalation `cut` really ends it. (With a front panel and
+  `led_sense = false` that Ok is right: the hold did shut the host
+  down, the LED just cannot confirm it.)
+
+**Setting.** `front_panel: bool` in `NodeSettings`, default `true`. Per
+node, like `led_sense`; with `false` the node's `led_sense` is ignored.
+The plane is told nothing: everything below is the controller choosing
+other plane commands, so plane-logic and ADR 0003 do not change.
+
+**Verbs on a node with `front_panel = false`:**
+
+| Verb | Becomes | Result |
+|---|---|---|
+| on | `power_on` (rail only) | Ok on PGD; nothing waits for a host |
+| off | `power_off` (rail cut) | Ok when the rail is down, reported as a hard cut |
+| force_off | `power_off` | the same |
+| cycle | `power_off`, the cycle off delay (`CYCLE_OFF_S`, as for a plane power-cycle), `power_on`, as one controller job | Ok on PGD; a hard cut |
+| on_all | the stagger, with `power_on` for these nodes | per node as `on` |
+| reset, press | refused at dispatch | `failed`, "no front panel" |
+| power_on, power_off, clear_latch, unit_reset | unchanged | unchanged |
+
+**Hard cut.** `off`, `force_off` and `cycle` on such a node cut the
+host's power without a shutdown, and every result says so: the ack and
+the HTTP job result carry `"hard_cut": true` and the text
+`rail cut, no shutdown (no front panel)`, and the `action_done` event
+carries the same flag. The web UI labels the button "Power off (hard
+cut)". Rules and Modbus command words run the same mapping; they have no
+place for the text, so the flag in the event is what records it.
+
+**Boot policy.** Unchanged in meaning, but `on` and `off` now mean the
+rail for these nodes: `boot_policy = on` with `front_panel = false` is
+"this node powers up at every plane boot", and `off` cuts the rail
+(the "Boot policy" note above, where `off` leaves a dark host's rail
+up, applies to nodes with a front panel only).
+
+**State.** The power axis is unchanged. The host axis is `unknown`
+whenever the rail is down and also with it up: there is no LED, and
+standby power cannot tell a running host from one that is booting. The
+LED cross-checks (`LED_AT_ZERO_CURRENT`, `LED_WHILE_OFF`,
+`NO_LED_AFTER_CYCLE`) are dropped from the node's `faults`, MQTT,
+Modbus fault bits and rule sources, so a leftover bit from before the
+setting changed does not show either. `front_panel` is published with
+the node in `state.nodes[]` and readable over Modbus, so an operator can
+see why the node behaves this way.
+
+**Tests.** granite-sim: with `front_panel = false`, `on` ends Ok with no
+PWR press seen by the fake host and no `NO_LED_AFTER_CYCLE`; `off` ends
+with the rail down and `hard_cut`; `cycle` takes the rail down and up
+without a press; `reset` is refused; `boot_policy = on` brings the rail
+up after a plane boot; and a node with a front panel behaves exactly as
+before.
+
+**As built.** The mapping lives where the verb is built, so the plane
+sees nothing of it: the flag travels with the verb in
+`plane::NodeOptions` (as `led_sense` and the timings do), and
+`NodeCommand::stages` answers with `0x40 enable` instead of 0x50 / 0x51.
+`cycle` is the one verb the plane cannot do without a press, so the
+client runs it as two stages with `Command::stage_delay_ms` between
+them - the only delay the job machinery has. The poll path needs the
+flag too (the host axis and the cross-checks), and it gets it the way
+`host_detect_w` does: `PlaneClient::set_no_front_panel` takes a bitmap
+of node ids, pushed by `apply_config`. The cross-checks are masked in
+`observed::NodeObs::of_node`, the one place faults are read from, so
+MQTT, Modbus and the rules all drop them together. Two choices this
+section left open:
+- **Modbus.** `front_panel` is discrete input `300 + id - 1` (1 = the
+  panel is cabled), an addition beside the rail and host bits. Nothing
+  in the map moved, so a version 2 client reads what it always did.
+  `docs/modbus_map.md` is generated and was already stale; it is still
+  stale.
+- **A button verb on `all`.** `reset` or `press` on `all` is refused for
+  a node with no front panel but still runs on the nodes that have one;
+  the command fails as a whole only when none of them has.
 
 ### Still open
 - The web UI (`firmware/web`) is unchanged and still speaks the rev C

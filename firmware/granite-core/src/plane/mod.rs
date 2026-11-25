@@ -60,8 +60,9 @@ use granite_proto::{ADDR_BASE, MAX_PLANES, SLOT_COUNT};
 
 pub use client::{JOB_MARGIN_MS, PlaneClient, UpdatePolicy, job_timeout_ms};
 pub use command::{
-    CUT_SETTLE_MS, Command, FinishedJob, HOLD_MS, JobId, JobOutcome, NodeCommand, NodeOptions,
-    OFF_TIMEOUT_S, ON_TIMEOUT_S, PRESS_MS, PlaneCommand, SEQUENCE_SLACK_MS, STAGGER_MS,
+    CUT_SETTLE_MS, CYCLE_OFF_S, Command, FinishedJob, HARD_CUT_TEXT, HOLD_MS, JobId, JobOutcome,
+    NodeCommand, NodeOptions, OFF_TIMEOUT_S, ON_TIMEOUT_S, PRESS_MS, PlaneCommand,
+    SEQUENCE_SLACK_MS, STAGGER_MS,
 };
 pub use config::DesiredConfig;
 pub use event::ClientEvent;

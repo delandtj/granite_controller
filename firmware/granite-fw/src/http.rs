@@ -297,8 +297,11 @@ fn wait_outcome(completions: &Receiver<Event>, pending: &PendingWait) -> Option<
 fn finished_reply(event: &Event, id: &str) -> Option<Reply> {
     match &event.kind {
         EventKind::ActionDone {
-            id: done, result, ..
-        } if done == id => Some(Reply::ok(id, result.clone())),
+            id: done,
+            result,
+            hard_cut,
+            ..
+        } if done == id => Some(Reply::ok(id, result.clone()).with_hard_cut(*hard_cut)),
         EventKind::ActionFailed {
             id: failed, error, ..
         } if failed == id => Some(Reply::err(id, error.clone())),
@@ -1031,6 +1034,7 @@ mod tests {
                 node: Some(1),
                 action: CommandKind::On,
                 result: result.into(),
+                hard_cut: false,
             },
         )
     }
