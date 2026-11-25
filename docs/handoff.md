@@ -2,6 +2,67 @@
 
 Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
 
+## 2026-11-25 (late): node57 "powers off by itself" - controller bug, fixed
+
+- Symptom: `on` for node57 (unit 0 slot A, no host cabled) brought the
+  rail up and about 30 s later the slot went off, untouched. Same at
+  every `on` since the plane's boot.
+- Cause: the controller, not the slot. The plane flags
+  `intended_state_lost` after a power loss, and node57 was in the
+  controller's intended-off set (kept in NVS) from earlier `power_off`
+  jobs. `on` with no host ends `sequence_failed` after the LED wait and
+  the PWR press, and `note_intent` (granite-core plane/client.rs) only
+  took a node out of the set when the job succeeded, so the intended-off
+  re-apply saw the rail up and cut it at once (two `power_off` jobs of
+  its own, `job-N` ids, right after the failure).
+- Fixed in 8130df6: a rail-on verb (`on`, `power_on`, `cycle`,
+  `clear_latch`) leaves the set whatever its outcome, as ADR 0004
+  already said. Regression test: granite-sim tests/plane_client.rs
+  `a_failed_on_still_takes_the_node_out_of_the_intended_off_set`.
+- Flashed onto controller-fd granite-b4499b by OTA pull; image `valid`.
+  Bench check: `on` -> `sequence_failed` after 30.3 s, rail stays up at
+  48.1 V, no re-apply. The version still reads 0.1.0 (not bumped).
+- So these shut-offs say nothing against slot A; its power-up latch and
+  low empty-ID read (below) are still open.
+- `on` vs `power_on`: on a slot without a host use `power_on` (rail
+  only). `on` waits for the LED, presses PWR, fails and sets
+  `NO_LED_AFTER_CYCLE` (the `cross_check` fault).
+- OTA pull as done (http, not https: heap, firmware README section 6.3
+  of docs/mqtt.md): `cargo build --release` in granite-fw;
+  `espflash save-image --chip esp32c6
+  target/riscv32imac-esp-espidf/release/granite-fw granite-fw.bin`;
+  `python3 -m http.server 8099 --bind 192.168.64.99` in its folder;
+  `mosquitto_pub -h 127.0.0.1 -t granite/bench/granite-b4499b/cmd -m
+  '{"v":1,"id":"ota-x","action":"ota","args":{"url":"http://192.168.64.99:8099/granite-fw.bin","sha256":"..."}}'`;
+  watch `.../event` for `verified`, then `pending_verify`, `valid`.
+- Bench scope: Siglent SDS1202X-E on the LAN at 192.168.64.163;
+  tools/sds_capture.py grabs screenshots and raw waveforms (single-shot
+  and repeat modes for power-cycle runs; single shot not yet tried on
+  a real trigger).
+
+- [ ] **Per-node "no front panel" setting** (user, 2026-11-25): nodes
+  with no PWR / RST / LED cabled, that come up by themselves from the
+  BIOS (power on after AC loss) once the rail is up. What exists does
+  not cover them:
+  - `led_sense = false` (granite-core node.rs NodeSettings) only cuts
+    the LED wait to the settle time: `on` still presses PWR and still
+    ends Failed with `NO_LED_AFTER_CYCLE` (plane-logic sequencer.rs,
+    `Phase::WaitLight`). On a host that does have a front panel but
+    powers on from the BIOS, that press shuts it down again.
+  - `off` on such a node: the short press and the 5 s hold reach
+    nothing, then `Phase::ConfirmDark` sees no light and finishes Ok -
+    the result says off while the rail stays up and the host runs. Only
+    escalation `cut` really turns it off.
+  - `boot_policy = on` already brings the rail up once per plane boot,
+    so with the new setting it gives "powers up at boot".
+  - Proposed (controller side, plane unchanged, ADR 0004 to amend): a
+    node with no front panel maps `on` to the rail-only `power_on` (Ok
+    on PGD), `off` and `force_off` to the rail cut `power_off`, `cycle`
+    to rail off / delay / rail on without a press, refuses `reset` (no
+    contact), keeps the host axis `unknown`, and masks the LED
+    cross-checks. To decide: the field (`front_panel: bool` or a node
+    kind), and whether `off` on such a node says it is a hard cut.
+
 ## 2026-11-25: to do today
 
 - Done: power-up OV latch clear (plane-logic power_up_clear, e8f6686
