@@ -10,8 +10,17 @@ mm breakout, J6 has 1.27 mm pins that 2.54 mm jumper wires do not fit.
 An nRF54L15-DK's on-board J-Link (Debug out, P19) was tried as a
 stand-in: no target response, and connecting the core reset the kit's
 J-Link and hung the PC's USB controller (P19 VTG is a 1.8 V domain;
-suspected back-feed from the core's 3V3, not proven). Waiting for an
-ST-LINK and the Adafruit 2743 breakouts.
+suspected back-feed from the core's 3V3, not proven).
+
+**First core flashed, first CAN FD link up (2026-11-25).** EEmaker
+STLink-V2.1 (0483:374b, labels SDO = SWDIO, SCK = SWCLK, its 3V3 pin
+is an output and back-fed the core until removed) on J5 through the cut
+TC2030-CTX-NL. DEV_ID 0x20016460 (STM32G07x, rev 0x2001). plane-fd
+from 813d05c flashed and verified; log: address 0x37 from SW1, units
+0b0000, MCP2518FD up, node 7. Link ribbon to controller-fd J15: the
+controller lists plane 7 (address 55), firmware 0.1.0 confirmed, bus
+47.8 V, no units. temp_c reads 0 (no unit, so no sensor yet). Steps and
+probe labels in site/src/commissioning/flash-core.md.
 
 For the next core-fd revision (not part of the December reorder, which
 stays unchanged unless decided otherwise):
