@@ -1054,6 +1054,8 @@ pub enum Route {
     Plane(u8),
     /// `GET /api/v1/planes/<n>/units`.
     PlaneUnits(u8),
+    /// `GET /api/v1/planes/<n>/log`.
+    PlaneLog(u8),
     /// `POST /api/v1/cmd`.
     Cmd,
     /// `GET`/`PUT /api/v1/config`.
@@ -1175,6 +1177,7 @@ pub fn route_of(path: &str) -> Option<Route> {
         ["planes"] => Route::Planes,
         ["planes", n] => Route::Plane(parse_plane(n)?),
         ["planes", n, "units"] => Route::PlaneUnits(parse_plane(n)?),
+        ["planes", n, "log"] => Route::PlaneLog(parse_plane(n)?),
         ["cmd"] => Route::Cmd,
         ["config"] => Route::Config,
         ["config", "export"] => Route::ConfigExport,
@@ -1275,6 +1278,7 @@ fn dispatch_route(route: Route, req: &ApiRequest, ctx: &mut ApiCtx<'_>) -> ApiRe
         (Route::Planes, Get | Head) => planes(ctx),
         (Route::Plane(n), Get | Head) => plane(*n, ctx),
         (Route::PlaneUnits(n), Get | Head) => plane_units(*n, ctx),
+        (Route::PlaneLog(n), Get | Head) => plane_log(*n, ctx),
         (Route::Cmd, Post) => raw_command(req, ctx),
         (Route::Config, Get | Head) => match ctx.config.export_json() {
             Ok(text) => json_text(200, text),
@@ -1677,6 +1681,32 @@ fn plane_units(number: u8, ctx: &mut ApiCtx<'_>) -> ApiResponse {
         Ok(v) => ApiResponse::ok(json!({"ok": true, "plane": number, "units": v})),
         Err(e) => ApiResponse::error(500, e.to_string()),
     }
+}
+
+/// `GET /api/v1/planes/<n>/log`: the plane's own log ring (ADR 0004,
+/// "Plane log readout").
+///
+/// The lines come from the plane client's cache and a fresh read of the
+/// plane's LOG block is put in hand, so a second call a few seconds
+/// later shows what the plane has written since. The same `plane_log`
+/// command the MQTT `cmd` topic takes does the work, which is what keeps
+/// the two transports from drifting apart.
+fn plane_log(number: u8, ctx: &mut ApiCtx<'_>) -> ApiResponse {
+    if ctx.observed.plane(number).is_none() {
+        return ApiResponse::error(404, format!("plane {number} is not present"));
+    }
+    let mut cmd = new_command(ctx, CommandKind::PlaneLog);
+    cmd.target = Target::Plane(number);
+    let reply = ctx.commands.dispatch(&cmd);
+    if !reply.ok {
+        return ApiResponse::error(409, reply.error.unwrap_or_default());
+    }
+    let lines = reply
+        .data
+        .as_ref()
+        .and_then(|d| d.get("lines").cloned())
+        .unwrap_or(Value::Array(Vec::new()));
+    ApiResponse::ok(json!({"ok": true, "plane": number, "lines": lines}))
 }
 
 /// Longest a node action may hold its HTTP reply with `?wait=1`.

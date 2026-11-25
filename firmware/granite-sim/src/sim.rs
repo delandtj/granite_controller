@@ -15,7 +15,7 @@ use granite_core::msg::{
 };
 use granite_core::node::BootPolicy;
 use granite_core::observed::{Observed, ProbeObs};
-use granite_core::plane::{PlaneClient, UpdatePolicy};
+use granite_core::plane::{ClientEvent, PlaneClient, UpdatePolicy};
 use granite_core::rules::RuleEngine;
 use granite_core::{NodeId, Target};
 
@@ -67,6 +67,11 @@ pub struct SimCore {
     pub effects: Vec<SideEffect>,
     /// Events, drained by the tick loop into the MQTT stream.
     pub events: Vec<EventKind>,
+    /// Lines read out of the planes' own log rings (ADR 0004, "Plane log
+    /// readout"), as level name, target (`planeN`) and message. Drained
+    /// by the tick loop into the simulator's log, the way the firmware
+    /// puts them in its log ring.
+    pub logs: Vec<(&'static str, String, String)>,
     /// Acks of finished jobs, newest last: the simulator's `.../ack/`
     /// topic.
     pub acks: Vec<Reply>,
@@ -97,6 +102,7 @@ impl SimCore {
             staged: Vec::new(),
             effects: Vec::new(),
             events: Vec::new(),
+            logs: Vec::new(),
             acks: Vec::new(),
             now_ms: 0,
             boot: BootPolicyWatch::new(),
@@ -146,6 +152,23 @@ impl SimCore {
 
         // 3. The plane's events and the jobs it finished.
         for event in self.plane.drain_events() {
+            // A line out of a plane's own log ring is a log line, not an
+            // event (ADR 0004, "Plane log readout").
+            if let ClientEvent::PlaneLog {
+                address,
+                level,
+                text,
+                uptime_ms,
+            } = &event
+            {
+                use granite_core::plane::log as plane_log;
+                self.logs.push((
+                    plane_log::level_name(*level),
+                    plane_log::log_target(*address),
+                    plane_log::log_message(text, *uptime_ms),
+                ));
+                continue;
+            }
             if let Some(published) = event_from_client(&event, now_ms) {
                 self.events.push(published.kind);
             }
@@ -443,6 +466,13 @@ impl Sim {
         let events: Vec<EventKind> = std::mem::take(&mut self.core.events);
         for kind in events {
             self.platform.push_event(kind);
+        }
+        // The planes' own log lines go to the log, not to the event
+        // stream: on a board the same lines land in the log ring and on
+        // the `.../log` topic.
+        let logs = std::mem::take(&mut self.core.logs);
+        for (level, target, message) in logs {
+            self.platform.log_line(level, format!("{target}: {message}"));
         }
     }
 

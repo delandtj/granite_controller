@@ -46,7 +46,7 @@ use granite_core::modbus_map::{PLANE_FAULT_MASK, fault_bits, plane_faults};
 use granite_core::msg::{Command, Event, EventKind, event_from_client, event_from_rule};
 use granite_core::node::BootPolicy;
 use granite_core::observed::{Observed, ProbeObs, Stamped};
-use granite_core::plane::PlaneClient;
+use granite_core::plane::{ClientEvent, PlaneClient};
 use granite_core::rules::RuleEngine;
 use granite_core::{NodeId, Target};
 use granite_fw::platform::{self, Platform};
@@ -750,6 +750,20 @@ fn dispatcher<L: PlaneLink>(
 
         // What the planes said.
         for event in plane.drain_events() {
+            // A line out of a plane's own log ring is a log line, not an
+            // event: it goes into the controller's ring under the target
+            // `planeN`, which is what puts it on `.../log` (ADR 0004,
+            // "Plane log readout").
+            if let ClientEvent::PlaneLog {
+                address,
+                level,
+                text,
+                uptime_ms,
+            } = &event
+            {
+                log_plane_line(*address, *level, text, *uptime_ms);
+                continue;
+            }
             if let Some(published) = event_from_client(&event, now) {
                 events.push(published);
             }
@@ -939,6 +953,26 @@ fn dispatcher<L: PlaneLink>(
             platform.publish(event);
         }
     }
+}
+
+/// Put one line of a plane's own log ring into the controller's log ring
+/// (ADR 0004, "Plane log readout").
+///
+/// The target is `planeN`, the name the plane has everywhere else, and
+/// the level is the plane's own mapped onto the controller's, so
+/// `sys.log_level` filters these lines exactly as it filters the
+/// controller's. The log ring is what publishes them on `.../log`, so
+/// nothing here knows about MQTT.
+fn log_plane_line(address: u8, level: u8, text: &str, uptime_ms: u32) {
+    use granite_core::plane::log as plane_log;
+
+    let target = plane_log::log_target(address);
+    let message = plane_log::log_message(text, uptime_ms);
+    log::log!(
+        target: target.as_str(),
+        platform::logring::level_of(plane_log::log_level(level)),
+        "{message}"
+    );
 }
 
 /// Push the rule set and the plane update policy from `cfg` into the

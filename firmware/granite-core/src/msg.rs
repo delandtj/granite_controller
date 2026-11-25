@@ -78,6 +78,10 @@ pub enum CommandKind {
     RuleAck,
     /// Re-enumerate the 1-wire bus.
     ProbeScan,
+    /// Read one plane's own log ring (target `planeN`): the lines it
+    /// holds come back in the ack's `data` and a fresh read is put in
+    /// hand (ADR 0004, "Plane log readout").
+    PlaneLog,
     /// Read the configuration (`args.section` for one section).
     ConfigGet,
     /// Write the configuration (`args.section` plus `args.config`).
@@ -145,6 +149,7 @@ impl CommandKind {
             CommandKind::PlaneReboot => "plane_reboot",
             CommandKind::RuleAck => "rule_ack",
             CommandKind::ProbeScan => "probe_scan",
+            CommandKind::PlaneLog => "plane_log",
             CommandKind::ConfigGet => "config_get",
             CommandKind::ConfigSet => "config_set",
             CommandKind::ConfigConfirm => "config_confirm",
@@ -191,6 +196,7 @@ impl CommandKind {
             CommandKind::PlaneReboot,
             CommandKind::RuleAck,
             CommandKind::ProbeScan,
+            CommandKind::PlaneLog,
             CommandKind::ConfigGet,
             CommandKind::ConfigSet,
             CommandKind::ConfigConfirm,
@@ -237,7 +243,7 @@ impl CommandKind {
     pub const fn wants(self) -> TargetKind {
         match self {
             CommandKind::UnitReset => TargetKind::Unit,
-            CommandKind::PlaneReboot => TargetKind::Plane,
+            CommandKind::PlaneReboot | CommandKind::PlaneLog => TargetKind::Plane,
             _ => TargetKind::Node,
         }
     }
@@ -747,11 +753,17 @@ impl Event {
 ///
 /// A finished job is not one of these: the firmware answers it with the
 /// ack and the `action_done` / `action_failed` event of the command that
-/// asked for it, which [`crate::jobs`] builds.
+/// asked for it, which [`crate::jobs`] builds. A plane log line is not
+/// one either: it is a log line, and the firmware puts it in the
+/// controller's log ring under the target `planeN`, which is what
+/// publishes it on `.../log` (ADR 0004, "Plane log readout").
 pub fn event_from_client(ev: &ClientEvent, ts: u64) -> Option<Event> {
     use alloc::string::ToString as _;
 
-    if matches!(ev, ClientEvent::JobFinished { .. }) {
+    if matches!(
+        ev,
+        ClientEvent::JobFinished { .. } | ClientEvent::PlaneLog { .. }
+    ) {
         return None;
     }
     let detail = match ev {

@@ -18,6 +18,8 @@
 //!   sequence number and drained as [`command::FinishedJob`].
 //! - [`event`]: plane events and the client's own, drained as
 //!   [`event::ClientEvent`].
+//! - [`log`]: the plane's own LOG ring, read after trouble and on
+//!   demand, de-duplicated and reported line by line.
 //! - [`config`]: the desired plane config, pushed with CONFIG_W when
 //!   the plane's hash does not match.
 //! - [`update`]: one plane firmware update at a time (ADR 0004
@@ -50,6 +52,7 @@ pub mod config;
 pub mod event;
 pub mod intent;
 pub mod link;
+pub mod log;
 pub mod model;
 pub mod update;
 
@@ -64,6 +67,7 @@ pub use config::DesiredConfig;
 pub use event::ClientEvent;
 pub use intent::IntendedOff;
 pub use link::{PlaneErrors, PlaneLinkError, Transactions};
+pub use log::{PlaneLogLine, PlaneLogState};
 pub use model::{HostState, Node, NodeTelemetry, Plane, PowerState, Unit};
 pub use update::{BufferedImage, ImageSource, UpdateFailure, UpdateRefused, UpdateStage};
 

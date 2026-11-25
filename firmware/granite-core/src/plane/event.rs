@@ -11,6 +11,7 @@
 //! that ended, a config set pushed, an update that finished, and the
 //! OFF commands it re-applied after a plane lost its intended state.
 
+use alloc::string::String;
 use alloc::vec::Vec;
 
 use granite_proto::{EventKind, ImageState, ResultCode, Version};
@@ -140,6 +141,23 @@ pub enum ClientEvent {
         /// answering.
         image_state: Option<ImageState>,
     },
+    /// One line of a plane's own log ring, read out of its LOG block
+    /// and not reported before (ADR 0004, "Plane log readout").
+    ///
+    /// This is not an event the `event` topic carries: it is a log line,
+    /// and the firmware puts it in the controller's log ring under the
+    /// target `planeN`, which is what publishes it on `.../log`.
+    PlaneLog {
+        /// The plane's address.
+        address: u8,
+        /// Severity, the plane's own scale (1 error, 2 warn, 3 info;
+        /// [`super::log::log_level`] maps it onto the controller's).
+        level: u8,
+        /// The text the plane wrote, with the number it appended.
+        text: String,
+        /// The plane's uptime when it wrote the line \[ms\].
+        uptime_ms: u32,
+    },
     /// A plane reported "intended state lost" and the client put the
     /// nodes it last commanded off back off.
     IntendedOffReapplied {
@@ -166,6 +184,7 @@ impl ClientEvent {
             | ClientEvent::ConfigRefused { address }
             | ClientEvent::UpdateConfirmed { address, .. }
             | ClientEvent::UpdateFailed { address, .. }
+            | ClientEvent::PlaneLog { address, .. }
             | ClientEvent::IntendedOffReapplied { address, .. } => Some(*address),
             ClientEvent::JobFinished { .. } => None,
         }
@@ -195,6 +214,7 @@ impl ClientEvent {
             ClientEvent::ConfigRefused { .. } => "config_refused",
             ClientEvent::UpdateConfirmed { .. } => "update_confirmed",
             ClientEvent::UpdateFailed { .. } => "update_failed",
+            ClientEvent::PlaneLog { .. } => "plane_log",
             ClientEvent::IntendedOffReapplied { .. } => "intended_off_reapplied",
         }
     }

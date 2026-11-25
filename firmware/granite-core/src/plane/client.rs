@@ -44,10 +44,10 @@ use alloc::collections::VecDeque;
 use alloc::vec::Vec;
 
 use granite_proto::{
-    BLK_CONFIG_W, BLK_CTRL, BLK_EV_ACK, BLK_EVENTS, BLK_INFO, BLK_SLOT, BLK_STATUS, BLK_SUMMARY,
-    BLK_UNIT, Command as Ctrl, EventKind, EventRecord, EventTarget, INDEX_NONE, IndexBitmap,
-    MAX_PAYLOAD, MAX_PLANES, RecordWriter, ResultCode, SEQ_MEMORY, SLOT_COUNT, Status, UNIT_COUNT,
-    Version, frame,
+    BLK_CONFIG_W, BLK_CTRL, BLK_EV_ACK, BLK_EVENTS, BLK_INFO, BLK_LOG, BLK_SLOT, BLK_STATUS,
+    BLK_SUMMARY, BLK_UNIT, Command as Ctrl, EventKind, EventRecord, EventTarget, INDEX_NONE,
+    IndexBitmap, MAX_PAYLOAD, MAX_PLANES, RecordWriter, ResultCode, SEQ_MEMORY, SLOT_COUNT, Status,
+    UNIT_COUNT, Version, frame,
 };
 
 use crate::NodeId;
@@ -60,6 +60,7 @@ use super::config::DesiredConfig;
 use super::event::ClientEvent;
 use super::intent::{INTENT_SETTLE_MS, IntendedOff};
 use super::link::{PlaneErrors, Transactions};
+use super::log::{PlaneLogLine, PlaneLogState};
 use super::model::Plane;
 use super::update::{ImageSource, UpdateEnd, UpdateFailure, UpdateJob, UpdateRefused, UpdateStage};
 use super::{MAX_IN_FLIGHT, node_id, node_location};
@@ -243,6 +244,9 @@ struct PlaneState {
     pending_intent: Vec<PendingIntent>,
     /// The collision flag has been reported once.
     collision_reported: bool,
+    /// The plane's LOG block: the cache, the rate limit and what has
+    /// been reported (see [`super::log`]).
+    log: PlaneLogState,
 }
 
 impl PlaneState {
@@ -266,6 +270,7 @@ impl PlaneState {
             reapplied_after: [0; SLOT_COUNT],
             pending_intent: Vec::new(),
             collision_reported: false,
+            log: PlaneLogState::new(),
         }
     }
 
@@ -539,6 +544,13 @@ impl PlaneClient {
             self.read_events(i, now_ms, link, budget);
         }
 
+        // Only when something asked for it, and at most once every
+        // `log::READ_PERIOD_MS`: the LOG block is never on a schedule of
+        // its own, so it cannot displace the 1 Hz poll.
+        if self.planes[i].log.is_due(now_ms) && spend(budget) {
+            self.read_log(i, now_ms, link);
+        }
+
         if now_ms >= self.planes[i].next_detail_ms {
             self.planes[i].next_detail_ms = now_ms + DETAIL_PERIOD_MS;
             self.planes[i].dirty_all();
@@ -567,6 +579,9 @@ impl PlaneClient {
                         (state.plane.boot_count, state.plane.last_reset_cause);
                     let lost = state.plane.intended_state_lost();
                     state.dirty_all();
+                    // A plane that restarted has a new ring, and what it
+                    // wrote on the way up says why it restarted.
+                    state.log.request();
                     self.events.push_back(ClientEvent::PlaneRebooted {
                         address,
                         boot_count,
@@ -802,10 +817,14 @@ impl PlaneClient {
         let mut dirty_slots: Vec<u8> = Vec::new();
         let mut dirty_units: Vec<u8> = Vec::new();
         let mut info_due = false;
+        let mut log_due = false;
         let mut retry_limits: Vec<u8> = Vec::new();
         for record in EventRecord::records(&self.buf[..n]).flatten() {
             match record {
                 EventRecord::Event(event) => {
+                    // What the plane says went wrong is worth the lines
+                    // it wrote about it (ADR 0004, "Plane log readout").
+                    log_due |= super::log::read_after(event.kind);
                     through = Some(match through {
                         Some(seq) if seq >= event.seq => seq,
                         _ => event.seq,
@@ -868,6 +887,9 @@ impl PlaneClient {
             self.planes[i].plane.note_retry_limit(slot);
         }
         self.planes[i].info_due |= info_due;
+        if log_due {
+            self.planes[i].log.request();
+        }
         for event in queue {
             self.events.push_back(event);
         }
@@ -886,6 +908,69 @@ impl PlaneClient {
                     self.after_failure(i, now_ms);
                 }
             }
+        }
+    }
+
+    // --- the log ring -------------------------------------------------
+
+    /// Read the LOG block and queue the lines that have not been
+    /// reported before (ADR 0004, "Plane log readout").
+    ///
+    /// The read counts against the rate limit whether or not the
+    /// transaction worked, so a plane that is falling off the link is
+    /// not asked again on the next poll.
+    fn read_log<L: PlaneLink>(&mut self, i: usize, now_ms: u64, link: &mut L) {
+        let address = self.planes[i].plane.address;
+        self.planes[i].log.note_read(now_ms);
+        let n = match self
+            .tx
+            .read(link, address, BLK_LOG, INDEX_NONE, &mut self.buf[..])
+        {
+            Ok(n) => n,
+            Err(_) => {
+                self.after_failure(i, now_ms);
+                return;
+            }
+        };
+        let lines = super::log::decode_block(&self.buf[..n]);
+        let boot_count = self.planes[i].plane.boot_count;
+        for line in self.planes[i].log.accept(boot_count, lines) {
+            self.events.push_back(ClientEvent::PlaneLog {
+                address,
+                level: line.level,
+                text: line.text,
+                uptime_ms: line.uptime_ms,
+            });
+        }
+    }
+
+    /// Ask for a plane's LOG block: the on-demand read of ADR 0004
+    /// ("Plane log readout"), which the `plane_log` command and
+    /// `GET /api/v1/planes/<n>/log` use.
+    ///
+    /// The read happens on a following poll, at most one per plane per
+    /// [`super::log::READ_PERIOD_MS`]; the lines it brings arrive as
+    /// [`ClientEvent::PlaneLog`] and in
+    /// [`PlaneClient::plane_log`]. False when no plane answers at that
+    /// address.
+    pub fn request_plane_log(&mut self, address: u8) -> bool {
+        match granite_proto::plane_of_address(address) {
+            Some(n) if self.planes[n as usize].present => {
+                self.planes[n as usize].log.request();
+                true
+            }
+            _ => false,
+        }
+    }
+
+    /// The log lines the client holds for a plane, oldest first.
+    ///
+    /// What the last read brought, which is the plane's whole ring;
+    /// empty while nothing has been read.
+    pub fn plane_log(&self, address: u8) -> &[PlaneLogLine] {
+        match granite_proto::plane_of_address(address) {
+            Some(n) => self.planes[n as usize].log.lines(),
+            None => &[],
         }
     }
 

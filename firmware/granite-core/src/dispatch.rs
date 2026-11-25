@@ -212,6 +212,10 @@ pub fn dispatch(cmd: &Command, ctx: &mut DispatchCtx<'_>) -> Dispatched {
             effects.push(SideEffect::ProbeScan);
             Reply::accepted(&cmd.id)
         }
+        CommandKind::PlaneLog => match plane_log(cmd, ctx) {
+            Ok(v) => Reply::ok(&cmd.id, "ok").with_data(v),
+            Err(e) => Reply::err(&cmd.id, e),
+        },
         CommandKind::ConfigGet => match config_get(ctx.config, cmd.args.section) {
             Ok(v) => Reply::ok(&cmd.id, "ok").with_data(v),
             Err(e) => Reply::err(&cmd.id, e),
@@ -423,6 +427,25 @@ fn switch_request(cmd: &Command, ctx: &DispatchCtx<'_>) -> Result<SwitchRequest,
         }
     };
     Ok(SwitchRequest::new(which, verb))
+}
+
+/// `plane_log`: the lines of one plane's own log ring, and a fresh read
+/// of its LOG block put in hand (ADR 0004, "Plane log readout").
+///
+/// The read itself happens on the plane client's next poll, rate-limited
+/// per plane, so this answers at once with what the client holds: the
+/// last read, which after a fault is the ring as it stood when the
+/// event came in. The lines a fresh read brings go to the log ring and
+/// `.../log`, and the next `plane_log` carries them too.
+fn plane_log(cmd: &Command, ctx: &mut DispatchCtx<'_>) -> Result<Value, String> {
+    let plane = cmd
+        .target
+        .plane()
+        .ok_or_else(|| String::from("plane_log needs a planeN target"))?;
+    let address = plane_address(plane, ctx)?;
+    ctx.plane.request_plane_log(address);
+    let lines = serde_json::to_value(ctx.plane.plane_log(address)).map_err(|e| e.to_string())?;
+    Ok(serde_json::json!({"plane": plane, "lines": lines}))
 }
 
 /// The staged sections as JSON strings, for the ack's `data`.
