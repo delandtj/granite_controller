@@ -1269,6 +1269,18 @@ impl PlaneClient {
         let Command::Node(node_command) = command else {
             return;
         };
+        if node_command.intends_rail_on() {
+            // The user asked for the rail, and that holds whatever the
+            // verb's outcome: an `on` with no host to wake ends failed
+            // after its LED wait with the rail up, and keeping the node
+            // in the set would have the re-apply cut it at once (bench,
+            // 2026-11-25). A rail that did not come up gives the
+            // re-apply nothing to do either way.
+            for node in node_command.nodes() {
+                self.intent.remove(node);
+            }
+            return;
+        }
         if !outcome.is_ok() {
             // A rail-off that did not happen is not a state to
             // remember. The re-apply of ADR 0004 needs nothing of us
@@ -1276,11 +1288,7 @@ impl PlaneClient {
             // made again on the next STATUS.
             return;
         }
-        if node_command.intends_rail_on() {
-            for node in node_command.nodes() {
-                self.intent.remove(node);
-            }
-        } else if node_command.intends_rail_off() {
+        if node_command.intends_rail_off() {
             for node in node_command.nodes() {
                 self.intent.insert(node);
             }
