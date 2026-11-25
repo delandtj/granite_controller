@@ -126,6 +126,15 @@ pub struct Sequence {
     pub escalate: Escalate,
     /// A wake press has already been tried in this sequence.
     pub pressed_once: bool,
+    /// The sequence is the plane's own and no controller command owns it:
+    /// it ends without a result under [`Sequence::cmd_seq`], without an
+    /// event and without touching [`Sequence::last`].
+    ///
+    /// Only the power-up clear of [`crate::power_up_clear`] sets this. A
+    /// result would claim command sequence number 0 and have the plane
+    /// deduplicate the controller's next write with that number
+    /// ([`crate::events::Results::is_duplicate`]).
+    pub quiet: bool,
     /// The state the link reports (SLOT 0x2D) once this ended.
     pub last: SequenceState,
 }
@@ -143,6 +152,7 @@ impl Sequence {
             press_if_dark: false,
             escalate: Escalate::None,
             pressed_once: false,
+            quiet: false,
             last: SequenceState::Idle,
         }
     }
@@ -363,26 +373,61 @@ impl Plane {
     }
 
     /// End a slot's sequence with a result.
+    ///
+    /// A `quiet` sequence (the power-up clear) belongs to no command, so
+    /// it leaves the result memory, the event ring and the reported
+    /// sequence state exactly as the last real command left them.
     pub(crate) fn finish<D: Devices>(&mut self, dev: &mut D, slot: u8, code: ResultCode) {
         self.release_press(dev, slot);
         let seq = &mut self.sequences[slot as usize];
         let cmd = seq.cmd_seq;
+        let quiet = core::mem::take(&mut seq.quiet);
         seq.phase = Phase::Idle;
-        seq.last = if code.is_ok() {
-            SequenceState::Done
-        } else {
-            SequenceState::Failed
-        };
-        self.results.finish(cmd, code);
-        let kind = if code.is_ok() {
-            EventKind::SequenceDone
-        } else {
-            EventKind::SequenceFailed
-        };
-        self.raise(EventTarget::Slot(slot), kind);
+        if !quiet {
+            seq.last = if code.is_ok() {
+                SequenceState::Done
+            } else {
+                SequenceState::Failed
+            };
+            self.results.finish(cmd, code);
+            let kind = if code.is_ok() {
+                EventKind::SequenceDone
+            } else {
+                EventKind::SequenceFailed
+            };
+            self.raise(EventTarget::Slot(slot), kind);
+        }
         self.slots[slot as usize].status = self.slots[slot as usize]
             .status
             .without(SlotStatus::SEQUENCE_RUNNING);
+    }
+
+    /// Drive a slot's LCLR high and begin the pulse that releases it
+    /// [`LCLR_PULSE_MS`] later.
+    ///
+    /// Both the commanded clear (CTRL 0x41) and the power-up clear of
+    /// [`crate::power_up_clear`] come through here, so there is one
+    /// pulse length and one set of conflict rules. `quiet` is the
+    /// plane's own clear: no result, no event (see [`Plane::finish`]).
+    pub(crate) fn start_lclr_pulse<D: Devices>(
+        &mut self,
+        dev: &mut D,
+        slot: u8,
+        cmd_seq: u8,
+        quiet: bool,
+    ) -> bool {
+        let (_, b) = Self::split(slot);
+        if !self.drive(dev, slot, expander::out_line(b, Out::Lclr), true) {
+            return false;
+        }
+        self.begin(
+            slot,
+            cmd_seq,
+            Phase::ClearLatch,
+            self.now_ms + LCLR_PULSE_MS as u64,
+        );
+        self.sequences[slot as usize].quiet = quiet;
+        true
     }
 
     /// Begin a sequence on a slot, with the phase and deadline its first
@@ -407,6 +452,44 @@ impl Plane {
         }
         self.step_stagger(dev);
         self.step_unit_releases(dev);
+        self.step_power_up_clears(dev);
+    }
+
+    /// Fire the power-up clear of a unit whose settle time has passed
+    /// ([`crate::power_up_clear`], ADR 0002 decision 7 note of
+    /// 2026-11-25).
+    ///
+    /// Once per U_PGD rising edge, one LCLR pulse per slot, and nothing
+    /// on a unit the firmware unit latch holds off. A slot that is busy
+    /// is skipped rather than deferred: a deferred pulse could clear a
+    /// latch that set in the meantime, which is the one thing this must
+    /// never do.
+    fn step_power_up_clears<D: Devices>(&mut self, dev: &mut D) {
+        for unit in 0..UNIT_COUNT {
+            if !self.power_up_clear[unit].due(self.now_ms) {
+                continue;
+            }
+            if !self.unit_present(unit) || self.unit_latch[unit].held() {
+                self.power_up_clear[unit].cancel();
+                continue;
+            }
+            for half in 0..2usize {
+                if !self.power_up_clear[unit].wants(half) {
+                    continue;
+                }
+                self.power_up_clear[unit].taken(half);
+                let slot = (2 * unit + half) as u8;
+                if self.sequences[slot as usize].running() {
+                    self.note(level::WARN, "clear skipped, slot busy", Some(slot as u32));
+                    continue;
+                }
+                if self.start_lclr_pulse(dev, slot, 0, true) {
+                    self.note(level::INFO, "power-up latch clear", Some(slot as u32));
+                } else {
+                    self.note(level::ERROR, "power-up clear failed", Some(slot as u32));
+                }
+            }
+        }
     }
 
     /// One slot's step.
@@ -665,16 +748,9 @@ impl Plane {
         if let Some(code) = self.slot_guard(slot) {
             return code;
         }
-        let (_, b) = Self::split(slot);
-        if !self.drive(dev, slot, expander::out_line(b, Out::Lclr), true) {
+        if !self.start_lclr_pulse(dev, slot, cmd_seq, false) {
             return ResultCode::Failed;
         }
-        self.begin(
-            slot,
-            cmd_seq,
-            Phase::ClearLatch,
-            self.now_ms + LCLR_PULSE_MS as u64,
-        );
         ResultCode::Accepted
     }
 

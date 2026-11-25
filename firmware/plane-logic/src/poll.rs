@@ -8,7 +8,9 @@
 //!
 //! Everything a status bit says comes from this cycle, so a bit cannot
 //! be stale: the only sticky ones are the latches (OV, power limit),
-//! which ADR 0002 decision 7 says are never cleared automatically.
+//! which ADR 0002 decision 7 says are never cleared automatically. The
+//! one exception is the start-up artifact of decision 7b, armed from
+//! here and fired by the sequencer ([`crate::power_up_clear`]).
 
 use granite_proto::{CrossCheck, EventKind, EventTarget, SEGMENT_CHANNELS, SlotStatus};
 
@@ -78,6 +80,15 @@ impl Plane {
         let u_pgd = expander.get_input(expander::LINE_U_PGD);
         self.judge_unit_hot_swap(dev, ch, u_pgd);
         self.units[ch].status = self.unit_hot_swap_status(ch, u_pgd);
+
+        // The unit's input stage just (re)started: the module's OV
+        // comparator glitched its OV_KILL low while its own supply came
+        // up, after the unit's RC power-on clear was over, so both slots
+        // may be latched for no fault at all. One LCLR pulse per slot
+        // follows, once ([`crate::power_up_clear`]).
+        if self.power_up_clear[ch].sample(self.now_ms, u_pgd) {
+            self.note(level::INFO, "unit input up, latch clear due", Some(ch as u32));
+        }
 
         for half in 0..2usize {
             self.poll_slot(dev, ch, half)?;

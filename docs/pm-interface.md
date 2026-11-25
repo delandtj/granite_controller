@@ -143,6 +143,18 @@ placement error changes nothing, a 90 degree one does.
   stated.
 - Module side: vias between the pad columns (x 141.15-142.65 on the
   250 W board) are fine, the header plastic sits over them, tented.
+- **OV_KILL at start-up: ignore it for the first few milliseconds.**
+  The module's OV comparator (MCP65R46) runs from VAUX, fed from VIN
+  through 47k into ~1.3 uF behind a 4.7 V zener, so for a short while
+  after the module first gets VIN that supply is under the part's
+  minimum and OV_KILL glitches low. Every host must ignore OV_KILL
+  until the module has carried VIN for some milliseconds; the number is
+  to be measured (the glitch has only been seen through its effect, a
+  slot latch set at every power-up, not on a scope). What the PP-48
+  plane does: the slot's OV latch is cleared once with an LCLR pulse
+  100 ms after the unit's input power-good rises (firmware ADR 0002
+  decision 7b), which is not a fault reset - a latch that sets
+  afterwards stays set.
 - Host side: OV_KILL and PGOOD pulled up in the column (open = good,
   so an absent module reads "good"; presence comes from ID). RUN is
   the module's UVLO divider node (~1.9 V at 60 V in): the host only

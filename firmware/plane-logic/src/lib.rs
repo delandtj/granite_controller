@@ -24,6 +24,9 @@
 //!   toggling that bounds a press.
 //! - [`unit_latch`]: the firmware latch that holds a faulted unit
 //!   hot-swap off, since the LM5069-2 would retry for ever.
+//! - [`power_up_clear`]: the one LCLR pulse per slot that follows a
+//!   unit's input coming up, because the module's OV comparator glitches
+//!   while its own supply starts.
 //! - [`link`] / [`update`] / [`events`] / [`log`]: the controller link,
 //!   the firmware update, the event ring and the log ring.
 //! - [`can_link`]: the CAN FD transport under that link (ADR 0005), over
@@ -77,6 +80,7 @@ pub mod log;
 pub mod model;
 pub mod plane;
 pub mod poll;
+pub mod power_up_clear;
 pub mod sequencer;
 pub mod unit_latch;
 pub mod update;
@@ -92,5 +96,6 @@ pub use device::{
 };
 pub use model::{SlotModel, UnitModel};
 pub use plane::{LedPattern, Plane, Setup, reset_cause};
+pub use power_up_clear::PowerUpClear;
 pub use sequencer::Button;
 pub use unit_latch::UnitLatch;

@@ -28,6 +28,7 @@ use crate::events::{Events, Results};
 use crate::link::PendingWrite;
 use crate::log::{Log, level};
 use crate::model::{SlotModel, UnitModel};
+use crate::power_up_clear::PowerUpClear;
 use crate::sequencer::{Sequence, Stagger, UnitRelease};
 use crate::unit_latch::UnitLatch;
 use crate::update::Update;
@@ -151,6 +152,10 @@ pub struct Plane {
     /// Per-unit hot-swap latch: the firmware half of the LM5069-2
     /// (ADR 0005 decision 3).
     pub(crate) unit_latch: [UnitLatch; UNIT_COUNT],
+    /// Per-unit power-up clear of the slot OV latches: one LCLR pulse
+    /// per slot after the unit's input comes up (ADR 0002 decision 7,
+    /// note of 2026-11-25).
+    pub(crate) power_up_clear: [PowerUpClear; UNIT_COUNT],
     /// Per-unit `unit_reset` releases waiting on their verdict
     /// (CTRL 0x4A).
     pub(crate) unit_releases: [Option<UnitRelease>; UNIT_COUNT],
@@ -228,6 +233,7 @@ impl Plane {
             sequences: [Sequence::idle(); SLOT_COUNT],
             stagger: None,
             unit_latch: [UnitLatch::new(); UNIT_COUNT],
+            power_up_clear: [PowerUpClear::new(); UNIT_COUNT],
             unit_releases: [None; UNIT_COUNT],
             press_trig_ms: 0,
             events: Events::new(),
@@ -294,6 +300,14 @@ impl Plane {
         self.unit_latch
             .get(unit as usize)
             .is_some_and(crate::unit_latch::UnitLatch::held)
+    }
+
+    /// True while a unit still owes its slots the power-up clear of the
+    /// OV latches (ADR 0002 decision 7, note of 2026-11-25).
+    pub fn power_up_clear_armed(&self, unit: u8) -> bool {
+        self.power_up_clear
+            .get(unit as usize)
+            .is_some_and(PowerUpClear::armed)
     }
 
     /// The event ring.

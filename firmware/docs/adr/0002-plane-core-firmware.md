@@ -2,7 +2,7 @@
 
 **Status**: Proposed
 **Date**: 2026-10-29
-**Updated**: 2026-10-29 (user answers: image integrity, stagger, latches decided; unit glitch state open; press deadline line asked from the hardware, docs/press-deadline-line.md); 2026-10-30 (the unit hot-swap is an LM5069-2 now, so the latch is this firmware's: decision 7a, and `unit reset` in decision 6 releases instead of pulsing)
+**Updated**: 2026-10-29 (user answers: image integrity, stagger, latches decided; unit glitch state open; press deadline line asked from the hardware, docs/press-deadline-line.md); 2026-10-30 (the unit hot-swap is an LM5069-2 now, so the latch is this firmware's: decision 7a, and `unit reset` in decision 6 releases instead of pulsing); 2026-11-25 (decision 7b, the power-up clear of the slot OV latches, from the first bench unit with modules)
 
 Related: docs/adr/0001-48v-power-plane.md (safety rules, TLV message
 format, data flow), docs/adr/0005-chained-plane-boards.md (core + unit
@@ -154,7 +154,7 @@ Two things in the hardware shape the firmware more than the ADRs say:
    |---|---|---|
    | enable / disable | OFF | OFF kept in RAM and in the backup registers; a CTRL record is the only way to set it |
    | press PWR / RST | PWRD / RSTD | 50-10000 ms, one press per slot at a time, released by a timer task and again at every boot |
-   | clear OV latch | LCLR pulse 10 ms | command only; never automatic (OV is the fault that kills a node) |
+   | clear OV latch | LCLR pulse 10 ms | command only; never automatic (OV is the fault that kills a node). One exception since 2026-11-25: the power-up clear of decision 7b, once per unit input start |
    | module run off / on | DISARM, then RUNOFF; release RUNOFF, then DISARM | ordering enforced, never RUNOFF without DISARM |
    | power-cycle | OFF, wait, ON, optional PWR press if the LED stays dark | the ADR 0001 0x47 sequence, with abort |
    | unit reset | U_OFF released | lets the firmware latch of decision 7a go; answers 1 s later with what the unit did |
@@ -169,7 +169,67 @@ Two things in the hardware shape the firmware more than the ADRs say:
    window and, past the configured maximum, sets the slot OFF and
    raises an event (ADR 0001 0x42: max, window, action). The slot OV
    latch and the unit hot-swap latch are never cleared automatically
-   in the first release; the controller decides.
+   in the first release; the controller decides. The one clear the
+   plane does by itself is decision 7b, which is a start-up artifact
+   and not a fault reset.
+
+7b. **Power-up clear of the slot OV latches** (added 2026-11-25, from
+   the first bench unit-fd with modules; `plane-logic/src/power_up_clear.rs`).
+
+   - **What the hardware does.** Per slot the OV latch U3 / U53
+     (74LVC1G74, power/pp-48-fd/tools/sch/blocks/unit.py, "enable chain
+     and OV latch") has `/PRE` on the OV_KILL node - pulled low by the
+     module's own overvoltage comparator, by the INA237 ALERT or by the
+     PGOOD-loss trip Q6 - and `/CLR` on an RC power-on clear (R11 100k,
+     C5 100n, ~10 ms after the unit's 3V3, which arrives over the
+     chain) in parallel with Q4, the expander's LCLR line.
+   - **Why the RC is not enough.** The module's comparator (MCP65R46,
+     power/pm-19v-250w-b/tools/gensch.py) runs from VAUX, fed from VIN
+     through 47k into ~1.3 uF behind a 4.7 V zener. For the first
+     ~2-3 ms after the slot hands the module VIN that supply is under
+     the part's minimum and OV_KILL glitches low. The unit's 3V3 - and
+     with it the RC clear - is long settled by then: the chain brings
+     3V3 first, then the unit's own hot-swap (LM5069-2) closes, then
+     the slot's. So the glitch always lands after the only clear the
+     hardware does by itself. Measured: at every power-up both slots
+     read `ov_latched` with the module's VIN at 1.3 V and OV_KILL at
+     3.3 V statically; a commanded `clear_latch` then left the slot ON,
+     VIN 48.1 V, output 19.1 V.
+   - **The rule.** On every rising edge of a unit's input power-good
+     U_PGD (P27, the signal decision 7a already watches), boot
+     included, the plane waits
+     `power_up_clear::SETTLE_MS` (100 ms) and then issues **one** LCLR
+     pulse per slot of that unit, through the same mechanism and the
+     same `LCLR_PULSE_MS` as CTRL 0x41. Nothing else changes: the
+     slot's OFF line is untouched, so a slot commanded OFF stays OFF.
+   - **Why this is not an automatic fault clear.** It is tied to the
+     unit's input stage starting, not to a latch being set. It runs
+     once per U_PGD rising edge and never on a latch that sets while
+     the unit is up, so a real overvoltage - the fault that kills a
+     node, which is why decision 7 says "command only" - still latches
+     the slot and stays latched until the controller clears it. If the
+     latch is set again after the clear it is reported exactly as
+     before (SLOT 0x20 "OV latched", EVENTS kind 4).
+   - **What it leaves alone.** A unit the firmware unit latch holds off
+     (decision 7a) gets no clear: its slots carry nothing and U_OFF is
+     out on purpose. A slot that is busy with a sequence when the pulse
+     comes due is skipped with a log line rather than deferred, because
+     a deferred pulse would fire at an unbounded later moment and could
+     clear a latch that had set in the meantime; the controller can
+     always send `clear_latch` itself.
+   - **Reporting.** A log ring line ("unit input up, latch clear due",
+     then "power-up latch clear" per slot, or "clear skipped, slot
+     busy"). No event and no new wire tag: the latch and its release
+     are already visible in SLOT 0x20, and the EVENTS kind 4 the plane
+     raises when it first reads the latch is the record that it
+     happened. The pulse carries no command sequence number, so it
+     leaves the STATUS 0x16 result memory alone.
+   - **The one case it over-covers.** A core reset that keeps VDD (a
+     watchdog reset, a firmware swap) comes back with no memory of
+     U_PGD, so the first poll is a rising edge and the clear runs even
+     though the unit's input never restarted. Accepted: the slots were
+     up throughout, so any latch standing at that moment was already
+     reported, and a latch that matters will set again.
 
 7a. **The unit hot-swap latch is this firmware's** (ADR 0005 decision 3,
    user 2026-10-30: the unit stage became an LM5069-**2**, auto-retry,
@@ -276,7 +336,8 @@ Two things in the hardware shape the firmware more than the ADRs say:
 1. **plane-logic** (`firmware/plane-logic`, no_std, host-testable)
    - Plane model (units, slots, events), sequencer (per-slot state
      machines and timers), discovery, poll scheduler, the unit
-     hot-swap latch (decision 7a), TLV request handler, config.
+     hot-swap latch (decision 7a), the power-up clear of the slot OV
+     latches (decision 7b), TLV request handler, config.
    - Device traits: `SegmentBus` (select channel, read / write a
      register at an address), `Clock`, `BackupRegs`, `ConfigStore`,
      `Int`. Drivers for TCA6424A, INA238, ADC121C027, TCA9548A are
@@ -454,6 +515,10 @@ link load and to keep one failure at a time.
 - **Latches never cleared automatically.** Decided (user 2026-10-29):
   OV latch and unit hot-swap latch need a controller command.
   Alternative: N retries for the unit hot-swap. Cost: config fields.
+  Amended 2026-11-25 (decision 7b): the slot OV latches get one clear
+  per unit input start, because the module's OV comparator glitches
+  while its own supply comes up and the unit's RC clear is over by
+  then. Still not a fault reset.
 - **The unit latch's two windows** (decision 7a): 500 ms of U_PGD low
   to latch, 300 ms high to forget. Alternative: count restart attempts
   the way decision 7 counts a slot's PGD drops, which would need the
@@ -516,7 +581,9 @@ proposed); the state after a unit glitch stays open.
   (user 2026-10-29).
 - [x] Unit hot-swap and OV latches: controller command only. The unit
   hot-swap latch itself is in this firmware since 2026-10-30
-  (decision 7a); the LM5069-2 has none of its own.
+  (decision 7a); the LM5069-2 has none of its own. Since 2026-11-25
+  the slot OV latches also get the power-up clear of decision 7b, once
+  per unit input start - not a fault clear.
 - [x] Power-up stagger: dropped, command only.
 - [x] After a rollback: adopt from the backup registers like any
   reset.
