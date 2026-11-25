@@ -8,8 +8,16 @@ Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
   on the core): after a full 48 V power cycle with two PM-19V-250W-B
   modules both slots come up ON, module VIN 48.1 V, class 5, no
   clear_latch needed (before: both ov_latched at 1.3 V, every power-up).
-  Rev A modules (two COILANKs) not yet tried with it; if they still
-  latch, raise LCLR_HOLD_MS (power_up_clear.rs) to 150-250 ms.
+- Rev A modules (pm-19v-250w, two COILANKs): still ov_latched after
+  the power-up clear on one unit; one slot later came on and drew
+  0.3 A at 47.8 V (about 14 W) with no load, slot sensor 44 C; switched
+  off by power_off. Too much for bad coil joints alone; open hypotheses:
+  phase-to-phase circulating current, forced-continuous light-load
+  mode, shoot-through, plus the coil land. **Decision (user): the
+  first run of 6 blocks uses PM-19V-250W-B only (48 modules). Rev A is
+  out until measured on the bench module holder (to order).** Keep
+  LCLR_HOLD_MS at 50 ms: it works for -B and must not mask a faulty
+  module.
 
 - [ ] `cross_check` on both slots with no node and no front-panel
   cable: **not** the LED sense. The opto is a TLP291 (unit.py U8 /
