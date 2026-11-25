@@ -18,6 +18,19 @@ Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
   out until measured on the bench module holder (to order).** Keep
   LCLR_HOLD_MS at 50 ms: it works for -B and must not mask a faulty
   module.
+- Switch-on blanking (d8dadaa, ADR 0002 decision 7c): a commanded `on`
+  latched the slot on the bench, so every rail switch-on now holds LCLR
+  for SWITCH_ON_BLANK_MS (100 ms). Not yet flashed / tried on a board.
+  Unit 0 slot A (node57) latched at two power-ups in a row with the
+  power-up clear; it is also the slot whose empty ID read low this
+  morning: suspect leakage / a fault on that slot (module swap pending).
+- PM-19V-250W-B idle loss: about 2 W per module with the slot on and no
+  load (unit current 0.1 A for two modules, coarse), coils about 45 C in
+  air. By design: R12 sets the LM5116 to full synchronous (forced
+  continuous), ~4.5 A p-p ripple at 252 kHz. About 100 W permanent for
+  6 blocks. Candidate for the next module order: diode emulation at
+  light load via DEMB / R12 (check the LM5116 datasheet). No change for
+  the first run (user).
 
 - [ ] `cross_check` on both slots with no node and no front-panel
   cable: **not** the LED sense. The opto is a TLP291 (unit.py U8 /
