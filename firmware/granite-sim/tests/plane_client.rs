@@ -186,6 +186,31 @@ impl Harness {
         )
     }
 
+    /// Every log line the client has reported for one plane, in order:
+    /// the plane's level and the text it wrote.
+    fn log_lines(&self, address: u8) -> Vec<(u8, String)> {
+        self.events
+            .iter()
+            .filter_map(|e| match e {
+                ClientEvent::PlaneLog {
+                    address: a,
+                    level,
+                    text,
+                    ..
+                } if *a == address => Some((*level, text.clone())),
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// How often one text has been reported for a plane.
+    fn log_count(&self, address: u8, text: &str) -> usize {
+        self.log_lines(address)
+            .iter()
+            .filter(|(_, t)| t == text)
+            .count()
+    }
+
     /// Forget the events and jobs collected so far.
     fn clear(&mut self) {
         self.events.clear();
@@ -1258,6 +1283,158 @@ fn the_sample_scenario_runs_through_its_faults() {
             .plane(0x31)
             .expect("0x31")
             .intended_state_lost()
+    );
+}
+
+// --- the plane's own log ring -----------------------------------------
+
+/// ADR 0004, "Plane log readout": a plane event that says something went
+/// wrong brings the plane's LOG block in, its lines arrive as
+/// [`ClientEvent::PlaneLog`] with the plane's own text and level, and a
+/// second read of the same ring reports nothing twice.
+///
+/// The bench case this was written for: a unit's hot-swap latched off and
+/// nobody could see what the plane saw.
+#[test]
+fn a_latched_unit_puts_the_planes_log_lines_through_once() {
+    const LATCHED: &str = "unit fault, hot-swap held off 1";
+
+    let mut harness = Harness::new(&scenario());
+    harness.clear();
+
+    harness.fake(0x30).fault_unit_hot_swap(1, true);
+    assert!(
+        harness.run_until(15_000, |h| h.saw(|e| matches!(
+            e,
+            ClientEvent::Unit {
+                address: 0x30,
+                kind: EventKind::UnitHotSwapLatchedOff,
+                ..
+            }
+        ))),
+        "the plane latched the unit off"
+    );
+    assert!(
+        harness.run_until(10_000, |h| h.log_count(0x30, LATCHED) == 1),
+        "the client read the plane's log: {:?}",
+        harness.log_lines(0x30)
+    );
+
+    // The level is the plane's own: this line is an error (1).
+    assert!(
+        harness
+            .log_lines(0x30)
+            .iter()
+            .any(|(level, text)| *level == 1 && text == LATCHED),
+        "{:?}",
+        harness.log_lines(0x30)
+    );
+
+    // Every read returns the whole ring, so a read on demand must not
+    // report a line a second time.
+    assert!(harness.client.request_plane_log(0x30));
+    harness.run(10_000);
+    assert_eq!(
+        harness.log_count(0x30, LATCHED),
+        1,
+        "a second read reported the same line again: {:?}",
+        harness.log_lines(0x30)
+    );
+
+    // And the client keeps the ring for a reader (`plane_log`,
+    // `GET /api/v1/planes/<n>/log`).
+    let cached = harness.client.plane_log(0x30);
+    assert!(
+        cached.iter().any(|l| l.text == LATCHED),
+        "the cache holds the ring: {cached:?}"
+    );
+    assert!(
+        cached.iter().all(|l| l.uptime_ms > 0),
+        "every line carries the plane's clock: {cached:?}"
+    );
+
+    // An address with no plane cannot be asked.
+    assert!(!harness.client.request_plane_log(0x33));
+    assert!(harness.client.plane_log(0x33).is_empty());
+}
+
+/// A latched overvoltage is read out the same way, and a plane that
+/// reboots starts a new ring whose lines all come through.
+#[test]
+fn an_ov_latch_and_a_reboot_are_read_out_of_the_log() {
+    let mut harness = Harness::new(&scenario());
+    harness.clear();
+
+    harness.fake(0x30).latch_ov(1);
+    assert!(
+        harness.run_until(15_000, |h| h.log_count(0x30, "ov latched 1") >= 1),
+        "the plane's own line about the latch: {:?}",
+        harness.log_lines(0x30)
+    );
+
+    // A plane that restarts starts its ring again; the boot line of the
+    // new boot is reported, once.
+    harness.clear();
+    harness
+        .fake(0x31)
+        .reboot(plane_logic::reset_cause::WATCHDOG);
+    assert!(
+        harness.run_until(20_000, |h| h.log_count(0x31, "boot 2") == 1),
+        "the new boot's line came through: {:?}",
+        harness.log_lines(0x31)
+    );
+    // The log line is armed by the plane's own boot event, which can
+    // arrive before the client has re-read INFO, so the reboot event
+    // itself may still be on its way.
+    assert!(
+        harness.run_until(10_000, |h| h.saw(|e| matches!(
+            e,
+            ClientEvent::PlaneRebooted { address: 0x31, .. }
+        ))),
+        "and the reboot itself is still an event"
+    );
+    assert!(harness.client.request_plane_log(0x31));
+    harness.run(10_000);
+    assert_eq!(
+        harness.log_count(0x31, "boot 2"),
+        1,
+        "the ring of the new boot is reported once: {:?}",
+        harness.log_lines(0x31)
+    );
+}
+
+/// The read is armed, never scheduled: a plane nothing is wrong with is
+/// never asked for its log, and a plane that faults in a loop costs one
+/// read every few seconds and no more.
+#[test]
+fn the_log_is_read_on_demand_and_rate_limited() {
+    let mut harness = Harness::new(&scenario());
+    // Settled: whatever the planes said at discovery has been read.
+    harness.run(5_000);
+    harness.clear();
+    let (reads, _) = harness.client.transaction_counts();
+    harness.run(5_000);
+    assert!(
+        harness.log_lines(0x30).is_empty() && harness.log_lines(0x31).is_empty(),
+        "a healthy plane is never asked for its log: {:?}",
+        harness.log_lines(0x30)
+    );
+
+    // One read on demand, and asking ten times inside the rate-limit
+    // window is still one read.
+    let idle_reads = harness.client.transaction_counts().0 - reads;
+    for _ in 0..10 {
+        assert!(harness.client.request_plane_log(0x30));
+        harness.run(100);
+    }
+    let busy_reads = harness.client.transaction_counts().0 - reads - idle_reads;
+    assert!(
+        busy_reads <= idle_reads + 2,
+        "ten requests in a second cost {busy_reads} reads against {idle_reads} idle ones"
+    );
+    assert!(
+        !harness.client.plane_log(0x30).is_empty(),
+        "but one of them did read the ring"
     );
 }
 

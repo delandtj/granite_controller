@@ -513,6 +513,40 @@ fn the_non_plane_commands_still_work() {
     assert!(!h.run(&version).0.ok, "an unknown payload version");
 }
 
+/// ADR 0004, "Plane log readout": `plane_log` names a plane, answers at
+/// once with the lines the plane client holds and arms a fresh read.
+#[test]
+fn plane_log_names_a_plane_and_answers_with_its_lines() {
+    let mut h = Harness::new();
+
+    let reply = h.verb(CommandKind::PlaneLog, Target::Plane(0));
+    assert!(reply.ok, "{:?}", reply.error);
+    let data = reply.data.expect("the lines");
+    assert_eq!(data["plane"], 0);
+    assert_eq!(
+        data["lines"].as_array().expect("an array").len(),
+        0,
+        "no plane has answered this client, so its cache is empty"
+    );
+
+    // A plane the snapshot does not have, and a target that is not a
+    // plane at all.
+    let absent = h.verb(CommandKind::PlaneLog, Target::Plane(3));
+    assert!(!absent.ok);
+    assert_eq!(absent.error.as_deref(), Some("plane 3 is not present"));
+    let not_a_plane = h.verb(CommandKind::PlaneLog, Target::Node(1));
+    assert!(!not_a_plane.ok);
+    assert_eq!(
+        not_a_plane.error.as_deref(),
+        Some("plane_log needs a planeN target")
+    );
+
+    // It is a read: nothing for the firmware to carry out.
+    let cmd = Command::new("c-log", CommandKind::PlaneLog).with_target(Target::Plane(0));
+    let out = h.dispatched(&cmd);
+    assert!(out.effects.is_empty() && out.jobs.is_empty());
+}
+
 #[test]
 fn the_plane_update_policy_lives_in_the_nodes_section() {
     let mut h = Harness::new();

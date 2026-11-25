@@ -941,8 +941,7 @@ impl PlaneClient {
             }
         };
         let lines = super::log::decode_block(&self.buf[..n]);
-        let boot_count = self.planes[i].plane.boot_count;
-        for line in self.planes[i].log.accept(boot_count, lines) {
+        for line in self.planes[i].log.accept(lines) {
             self.events.push_back(ClientEvent::PlaneLog {
                 address,
                 level: line.level,

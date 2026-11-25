@@ -66,7 +66,7 @@ All under `<topic_root>/<site>/<device id>` (defaults `granite`,
 | `.../status` (LWT) | out | yes | the broker loses the controller, or the controller drops the session on purpose | `{"v":1,"online":false}` |
 | `.../state` | out | yes | on connect, on change (coalesced 200 ms), and every `mqtt.t_state_s` (60 s) | full snapshot (section 9.2) |
 | `.../event` | out | no | as things happen | one event (section 9.3) |
-| `.../log` | out | no | each log line at or above `sys.log_level` | `{"v":1,"ts","level","target","msg"}` |
+| `.../log` | out | no | each log line at or above `sys.log_level`, the planes' own log lines included (`target` = `planeN`, section 6.8) | `{"v":1,"ts","level","target","msg"}` |
 | `.../cmd` | in | - | you publish | a command (section 4) |
 | `.../ack/<id>` | out | no | when the command is finished (section 4.3) | the reply |
 | `.../switch/counters` | out | no | every `switch.poll.counters_s` | see `docs/switch.md` section 9 |
@@ -83,6 +83,11 @@ subscribed at the same QoS.
 - Events that happen while there is no broker session are held (the
   last 64) and sent on reconnect. Acks are not held: an ack that falls
   due while the session is down is lost (logged on the console).
+- A line on `log` whose `target` is `planeN` is not the controller's
+  own: it is one line of that plane's log ring, read out of the plane
+  and filtered by `sys.log_level` like any other (section 6.8). Its
+  `ts` is when the controller read it; the plane's own clock is in the
+  message text as `[plane <ms> ms]`.
 - Reconnect: 1, 2, 4 ... 60 s, reset on a successful connect.
 
 ## 3. Watch while you work
@@ -139,8 +144,9 @@ mosquitto_sub -h 127.0.0.1 -C 1 -t "$T/state" | jq .
   There are no error codes; match on `ok`, show `error`.
 - `job`: the plane job the command became (node, unit and plane verbs
   only). The `accepted` event carries the same number.
-- `data`: for `config_get` (the configuration) and `config_confirm` /
-  `config_revert` (the list of sections).
+- `data`: for `config_get` (the configuration), `config_confirm` /
+  `config_revert` (the list of sections) and `plane_log` (the plane's
+  log lines, section 6.8).
 
 A payload that is not a valid command but has a string `id` (64
 characters at most) is answered on that id with
@@ -153,7 +159,7 @@ characters at most) is answered on that id with
 |---|---|---|
 | Node, unit and plane verbs (section 5) | when the plane reports the result; refusals (absent node, bad target) at once | `done` |
 | `on_all` with nothing left to start | at once | `done` |
-| `rule_ack`, `config_get`, `config_set`, `config_confirm`, `config_revert` | at once | `ok`, `saved` / `staged`, `confirmed`, `reverted` |
+| `rule_ack`, `config_get`, `config_set`, `config_confirm`, `config_revert`, `plane_log` | at once | `ok`, `saved` / `staged`, `confirmed`, `reverted` |
 | `reboot`, `factory_reset` | at once, before the restart | `rebooting` |
 | `ota` | when the image is verified (then it reboots) or the pull failed; at most 600 s | `verified, rebooting into the new image` |
 | switch verbs | at once; the outcome comes as `switch` events (`docs/switch.md`) | `accepted` |
@@ -287,7 +293,8 @@ reboot moves nothing. The commands use the id `boot-<node>`.
 
 ## 6. Other verbs
 
-None of these reads `target`.
+None of these reads `target`, except `plane_log` (section 6.8), which
+needs one.
 
 ### 6.1 `rule_ack`
 
@@ -394,6 +401,48 @@ Section names: `net`, `mqtt`, `switch`, `switch2`, `nodes`, `rules`,
 `switch_factory_reset`: see `docs/switch.md` section 8. On a controller
 with two block switches each of them takes an optional `"switch": 1` or
 `"switch": 2` (`docs/switch.md` section 12).
+
+### 6.8 `plane_log`
+
+```sh
+mosquitto_pub -h 127.0.0.1 -t "$T/cmd" -m '{"v":1,"id":"pl1","action":"plane_log","target":"plane0"}'
+```
+
+Reads one plane's own log ring: what the plane firmware wrote about
+what it did, which is the only way to see it on a board with no debug
+probe attached. `target` is `"planeN"` and is required.
+
+The ack is `ok` at once with `data`:
+
+```json
+{"plane":0,"lines":[
+ {"uptime_ms":1120,"level":3,"text":"boot 2"},
+ {"uptime_ms":64150,"level":1,"text":"unit fault, hot-swap held off 1"}]}
+```
+
+- `uptime_ms` is the **plane's** clock, not the controller's.
+- `level` is the plane's own scale: 1 error, 2 warn, 3 info.
+- `lines` is what the controller read last, oldest first; the plane
+  keeps the last eight. It is empty on a plane whose log has not been
+  read yet.
+- The command also puts a fresh read in hand. That read happens within
+  a second, and the lines it brings that the controller has not seen
+  before go out on `.../log` (section 2) - so the lines in `data` are
+  the picture from the last read and the next `plane_log` carries the
+  newer ones.
+- One read per plane per 3 s, so repeating the command faster than
+  that does not read the plane more often.
+
+The controller also reads the ring on its own, without being asked,
+after a plane event that says something went wrong (`ov_latched`,
+`unit_hot_swap_latched_off`, `retry_limit_reached`,
+`power_limit_trip`, `sequence_failed`, `pgd_lost`, `plane_boot`,
+`rolled_back`) and after a plane reboot. That is where the lines on
+`.../log` normally come from: watch that topic and the plane's own
+account of a fault arrives with it.
+
+HTTP: `GET /api/v1/planes/<n>/log` does the same thing and answers
+`{"ok":true,"plane":0,"lines":[...]}`.
 
 ## 7. Changing the configuration
 
@@ -904,6 +953,7 @@ to `valid`. How to build the `.bin`: `README.md`, "Making the .bin".
 | `off` takes minutes | It waits `t_soft_off_s` for the host. `force_off` for now; lower the setting for later. |
 | `force_off` acks `failed` | Escalation `none` or `hold` on that node, or `no_escalate`. |
 | `timed_out` / `the action did not finish in time` | The plane did not report. Check the plane link; the job may still have run. |
+| A node or a unit went off and nothing says why | The plane's own account is on `.../log` under `target` `planeN`, and `plane_log` (section 6.8) asks for it again. |
 | `state.probes` is `[]` with a probe plugged in | Check the probe's wire order: the board's JST PH pins are 1 = 3V3, 2 = DQ, 3 = GND. A reversed probe holds the bus low; the log shows `1-wire reset pulse receive timeout`. |
 | A setting went back to its default | `config_set` left the key out (rule 3). |
 | All per-node names gone | `config_set nodes` without `nodes`. |
@@ -925,15 +975,16 @@ plane job); `POST /api/v1/nodes/<target>/<action>?wait=1` waits up to
 30 s for the outcome. `GET`/`PUT /api/v1/config/<section>`,
 `POST /api/v1/config/confirm` and `/revert`,
 `GET /api/v1/config/export`, `POST /api/v1/config/import`,
-`GET /api/v1/state`. Secrets (admin password, API tokens, broker
+`GET /api/v1/state`, `GET /api/v1/planes/<n>/log` (section 6.8).
+Secrets (admin password, API tokens, broker
 credentials, device certificate, fleet key) are HTTPS-only. Details:
 `README.md`.
 
 ## 13. Not built yet, and not tested on hardware
 
 - No plane on the bench: every node, unit and plane verb, `state.nodes`,
-  `state.planes` and the `plane` events are verified against the
-  simulator and host tests only.
+  `state.planes`, the `plane` events and `plane_log` are verified
+  against the simulator and host tests only.
 - Dry contact inputs: no pin map on rev D, `dry_in` stays `null`.
 - `net.vlan`: ignored. `sys.coredump_report`, `sys.timezone`: unused.
 - `fault` events: never emitted.

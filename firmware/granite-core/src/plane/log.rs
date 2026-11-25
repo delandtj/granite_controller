@@ -28,17 +28,24 @@
 //!
 //! Every read returns the whole ring, so the same lines come back again
 //! and again. A line is reported once: [`PlaneLogState::accept`] keeps
-//! the uptime of the newest line it has reported, plus the texts of the
-//! lines that share exactly that millisecond, and emits only what is
-//! newer than that mark. A plane that reboots starts a new ring and a new
-//! clock; its boot count moves with it, and a boot count that changed -
-//! or a newest line older than the mark, which is a reboot the boot count
-//! did not show - clears the mark, so the fresh ring is reported in full.
+//! the last read and reports what the new one holds beyond it, matching
+//! on the line itself (its uptime, its level and its text) and counting
+//! copies, so two identical lines in one ring are both reported and
+//! neither is reported twice.
 //!
-//! The one case this misses is the same text logged twice inside one
-//! millisecond: the second copy looks like the first. The plane's own
-//! lines carry the slot or unit number and its cycle is 50 ms, so this
-//! costs nothing real.
+//! That is the whole rule, and it is why nothing here needs the boot
+//! count. A plane that reboots has a new ring with a new clock, so none
+//! of its lines match the kept ones and all of them are reported; a
+//! plane whose boot count the controller has not re-read yet behaves the
+//! same. (A mark on the newest uptime read was tried first and was
+//! wrong: the boot count arrives with the next INFO, one poll after the
+//! first read of the new ring, and clearing the mark on it then reported
+//! that ring twice.)
+//!
+//! The one case this misses is the same plane writing the identical text
+//! at the identical millisecond of two different boots, after the first
+//! copy has scrolled out of the ring. The plane's boot line carries its
+//! boot count, so that does not happen in practice.
 
 use alloc::string::String;
 use alloc::vec::Vec;
@@ -180,8 +187,8 @@ pub fn decode_block(payload: &[u8]) -> Vec<PlaneLogLine> {
     lines
 }
 
-/// One plane's LOG readout: the cache, the rate limit and the mark that
-/// decides what has been reported.
+/// One plane's LOG readout: the cache, the rate limit and the last read
+/// the next one is compared against.
 #[derive(Debug, Clone, Default)]
 pub struct PlaneLogState {
     /// The last read, oldest line first.
@@ -190,12 +197,6 @@ pub struct PlaneLogState {
     requested: bool,
     /// The earliest a read may happen \[ms\].
     next_ms: u64,
-    /// The uptime of the newest line that has been reported \[ms\].
-    mark_ms: u32,
-    /// The texts reported at exactly `mark_ms`.
-    mark_texts: Vec<String>,
-    /// The plane boot count the mark belongs to.
-    boot_count: u32,
     /// Anything has been read at all.
     read: bool,
 }
@@ -207,9 +208,6 @@ impl PlaneLogState {
             lines: Vec::new(),
             requested: false,
             next_ms: 0,
-            mark_ms: 0,
-            mark_texts: Vec::new(),
-            boot_count: 0,
             read: false,
         }
     }
@@ -246,44 +244,22 @@ impl PlaneLogState {
     /// Take a fresh read of the ring: keep it as the cache and give back
     /// the lines that have not been reported before.
     ///
-    /// `boot_count` is what INFO says the plane is on now. A different
-    /// one, or a ring whose newest line is older than the mark, is a
-    /// plane that started over: the mark goes with it and the new ring
-    /// is reported whole.
-    pub fn accept(&mut self, boot_count: u32, lines: Vec<PlaneLogLine>) -> Vec<PlaneLogLine> {
-        let newest = lines.last().map_or(0, |l| l.uptime_ms);
-        if !self.read || boot_count != self.boot_count || newest < self.mark_ms {
-            self.mark_ms = 0;
-            self.mark_texts.clear();
-        }
-        self.boot_count = boot_count;
-        self.read = true;
+    /// The new read is compared against the kept one line by line, with
+    /// copies counted, so a ring that has scrolled reports only what
+    /// came in and a ring that started over (a plane that rebooted)
+    /// reports every line of it.
+    pub fn accept(&mut self, lines: Vec<PlaneLogLine>) -> Vec<PlaneLogLine> {
         let mut fresh: Vec<PlaneLogLine> = Vec::new();
-        for line in &lines {
-            if !self.is_reported(line) {
-                self.note_reported(line);
+        for (i, line) in lines.iter().enumerate() {
+            let kept = self.lines.iter().filter(|l| *l == line).count();
+            let earlier = lines[..i].iter().filter(|l| *l == line).count();
+            if earlier >= kept {
                 fresh.push(line.clone());
             }
         }
         self.lines = lines;
+        self.read = true;
         fresh
-    }
-
-    /// True when this line has been reported already.
-    fn is_reported(&self, line: &PlaneLogLine) -> bool {
-        line.uptime_ms < self.mark_ms
-            || (line.uptime_ms == self.mark_ms && self.mark_texts.iter().any(|t| *t == line.text))
-    }
-
-    /// Move the mark onto a line that has just been reported.
-    fn note_reported(&mut self, line: &PlaneLogLine) {
-        if line.uptime_ms > self.mark_ms {
-            self.mark_ms = line.uptime_ms;
-            self.mark_texts.clear();
-        }
-        if self.mark_texts.len() < KEPT_LINES {
-            self.mark_texts.push(line.text.clone());
-        }
     }
 }
 
@@ -352,7 +328,7 @@ mod tests {
             line(100, level::INFO, "boot 1"),
             line(2_500, level::ERROR, "ov latched 5"),
         ];
-        assert_eq!(state.accept(1, lines.clone()), lines);
+        assert_eq!(state.accept(lines.clone()), lines);
         assert_eq!(state.lines(), lines.as_slice());
         assert!(state.has_read());
     }
@@ -364,60 +340,82 @@ mod tests {
             line(100, level::INFO, "boot 1"),
             line(2_500, level::ERROR, "ov latched 5"),
         ];
-        state.accept(1, first.clone());
-        assert!(state.accept(1, first.clone()).is_empty());
+        state.accept(first.clone());
+        assert!(state.accept(first.clone()).is_empty());
 
         // The ring moved on: only the new line is reported, and the old
         // ones that are still in it are not.
         let mut second = first;
         second.push(line(3_000, level::WARN, "unit lost 1"));
         assert_eq!(
-            state.accept(1, second.clone()),
+            state.accept(second.clone()),
             alloc::vec![line(3_000, level::WARN, "unit lost 1")]
         );
-        assert!(state.accept(1, second).is_empty());
+        assert!(state.accept(second).is_empty());
+    }
+
+    #[test]
+    fn a_line_that_scrolled_out_of_the_ring_is_not_reported_again() {
+        let mut state = PlaneLogState::new();
+        let first: Vec<PlaneLogLine> = (0..KEPT_LINES as u32)
+            .map(|i| line(100 * i, level::INFO, "unit present 0"))
+            .collect();
+        assert_eq!(state.accept(first.clone()).len(), KEPT_LINES);
+        // The oldest line is gone and a new one is in: one report.
+        let mut second: Vec<PlaneLogLine> = first[1..].to_vec();
+        second.push(line(9_000, level::WARN, "unit lost 1"));
+        assert_eq!(
+            state.accept(second.clone()),
+            alloc::vec![line(9_000, level::WARN, "unit lost 1")]
+        );
+        assert!(state.accept(second).is_empty());
     }
 
     #[test]
     fn two_lines_of_one_millisecond_are_both_reported_once() {
         let mut state = PlaneLogState::new();
         let first = alloc::vec![line(700, level::ERROR, "ov latched 5")];
-        assert_eq!(state.accept(1, first), alloc::vec![
+        assert_eq!(state.accept(first), alloc::vec![
             line(700, level::ERROR, "ov latched 5")
         ]);
-        // The plane wrote a second line in the same millisecond.
+        // The plane wrote a second line in the same millisecond, and
+        // then the identical line once more.
         let second = alloc::vec![
             line(700, level::ERROR, "ov latched 5"),
             line(700, level::ERROR, "ov latched 6"),
+            line(700, level::ERROR, "ov latched 6"),
         ];
-        assert_eq!(state.accept(1, second.clone()), alloc::vec![
-            line(700, level::ERROR, "ov latched 6")
+        assert_eq!(state.accept(second.clone()), alloc::vec![
+            line(700, level::ERROR, "ov latched 6"),
+            line(700, level::ERROR, "ov latched 6"),
         ]);
-        assert!(state.accept(1, second).is_empty());
+        assert!(state.accept(second).is_empty());
     }
 
     #[test]
-    fn a_plane_that_rebooted_has_its_ring_reported_again() {
+    fn a_plane_that_rebooted_has_its_new_ring_reported_whole() {
         let mut state = PlaneLogState::new();
-        state.accept(
-            1,
-            alloc::vec![
-                line(100, level::INFO, "boot 1"),
-                line(9_000, level::ERROR, "ov latched 5"),
-            ],
-        );
-        // A new boot count: the ring is a new one, even though its
-        // uptimes are lower than the mark.
-        let after = alloc::vec![line(80, level::INFO, "boot 2")];
-        assert_eq!(state.accept(2, after.clone()), after);
-        assert!(state.accept(2, after).is_empty());
-
-        // And a reboot the boot count did not show (the client has not
-        // re-read INFO yet): the clock went backwards, which is enough.
-        let again = alloc::vec![line(50, level::INFO, "boot 2")];
-        assert_eq!(state.accept(2, again), alloc::vec![
-            line(50, level::INFO, "boot 2")
+        state.accept(alloc::vec![
+            line(100, level::INFO, "boot 1"),
+            line(9_000, level::ERROR, "ov latched 5"),
         ]);
+        // The ring started over on a clock that started over: none of
+        // its lines are the kept ones, so all of them are reported.
+        let after = alloc::vec![line(80, level::INFO, "boot 2")];
+        assert_eq!(state.accept(after.clone()), after);
+        assert!(state.accept(after).is_empty());
+
+        // The boot count the controller holds plays no part in this: a
+        // read taken before the next INFO and one taken after it are
+        // the same read.
+        let same = alloc::vec![
+            line(80, level::INFO, "boot 2"),
+            line(2_000, level::WARN, "unit lost 1"),
+        ];
+        assert_eq!(state.accept(same.clone()), alloc::vec![
+            line(2_000, level::WARN, "unit lost 1")
+        ]);
+        assert!(state.accept(same).is_empty());
     }
 
     #[test]

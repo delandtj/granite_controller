@@ -477,6 +477,10 @@ fn routes_match_the_table() {
     assert_eq!(api::route_of("/api/v1/planes"), Some(Route::Planes));
     assert_eq!(api::route_of("/api/v1/planes/2"), Some(Route::Plane(2)));
     assert_eq!(
+        api::route_of("/api/v1/planes/7/log"),
+        Some(Route::PlaneLog(7))
+    );
+    assert_eq!(
         api::route_of("/api/v1/planes/0/units"),
         Some(Route::PlaneUnits(0))
     );
@@ -1492,9 +1496,30 @@ fn the_plane_routes_report_the_planes_and_their_units() {
     assert_eq!(r.status, 200);
     assert_eq!(body_json(&r)["units"].as_array().unwrap().len(), 4);
 
+    // The plane's own log ring (ADR 0004, "Plane log readout"): the
+    // lines come from the plane client's cache - empty here, because
+    // nothing has answered the client itself - and the read goes out as
+    // the `plane_log` command, so HTTP and MQTT do the same thing.
+    let r = rig.go(
+        ApiRequest::new(Method::Get, "/api/v1/planes/0/log")
+            .with_auth(Auth::Session(session.clone())),
+    );
+    assert_eq!(r.status, 200, "{}", body_text(&r));
+    let v = body_json(&r);
+    assert_eq!(v["plane"], 0);
+    assert_eq!(v["lines"].as_array().unwrap().len(), 0);
+    let seen = rig.commands.seen.last().cloned().expect("a command");
+    assert_eq!(seen.action, CommandKind::PlaneLog);
+    assert_eq!(seen.target, granite_core::Target::Plane(0));
+
     // A plane that does not answer is a 404, not an empty object.
-    let r =
-        rig.go(ApiRequest::new(Method::Get, "/api/v1/planes/5").with_auth(Auth::Session(session)));
+    let r = rig
+        .go(ApiRequest::new(Method::Get, "/api/v1/planes/5")
+            .with_auth(Auth::Session(session.clone())));
+    assert_eq!(r.status, 404);
+    let r = rig
+        .go(ApiRequest::new(Method::Get, "/api/v1/planes/5/log")
+            .with_auth(Auth::Session(session)));
     assert_eq!(r.status, 404);
 }
 

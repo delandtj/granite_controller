@@ -637,6 +637,91 @@ section left open:
   a node with no front panel but still runs on the nodes that have one;
   the command fails as a whole only when none of them has.
 
+### Plane log readout (2026-11-25)
+Decided by the user and implemented 2026-11-25, as described here.
+`granite-proto` and the plane firmware are untouched: the plane already
+keeps the ring (ADR 0002 decision 11) and already serves it as LOG 0x08
+(ADR 0003), and nothing on the controller read it. On the bench a unit's
+hot-swap latched off and nobody could see what the plane saw.
+
+**The component.** `granite_core::plane::log`, owned by the plane
+client. Per plane it holds the last read of the ring, a rate limit and
+the last read the next one is compared against. Nothing else in the
+controller decodes a LOG block.
+
+**When a read happens.** Never on a schedule of its own: the ring is
+only interesting after something went wrong, and a poll budget that
+pays for it every second would displace the 1 Hz STATUS and SUMMARY.
+A read is *armed*, and an armed read happens on the next poll that has
+budget left:
+
+- by a plane event that says something did not work, taken from the
+  EVENTS block the client already reads: `ov_latched`,
+  `unit_hot_swap_latched_off`, `retry_limit_reached`,
+  `power_limit_trip`, `sequence_failed`, `pgd_lost`, `plane_boot`,
+  `rolled_back`;
+- by a plane reboot, which the client learns from INFO (the ring and the
+  plane's clock have started over, and what it wrote on the way up says
+  why);
+- on demand, through `PlaneClient::request_plane_log`.
+
+One read per plane per 3 s (`log::READ_PERIOD_MS`), counted whether the
+transaction succeeded or not, so a plane faulting on every 50 ms cycle -
+or one falling off the link - costs one extra transaction every few
+seconds and no more.
+
+**What is reported.** Every read returns the whole ring, so the lines
+come back again and again. The new read is compared against the kept one
+line by line (uptime, level and text), with copies counted: what the new
+read holds beyond the kept one is reported, each line once. A plane that
+rebooted has a new ring on a new clock, so none of its lines match the
+kept ones and all of them are reported; the boot count plays no part,
+deliberately. (A high-water mark on the newest uptime was tried first
+and was wrong: the new boot count arrives with the next INFO, one poll
+after the first read of the new ring, and clearing the mark on it
+reported that ring a second time. The ring diff has no such edge.)
+
+**Where a line goes.** Out of the client as
+`ClientEvent::PlaneLog { address, level, text, uptime_ms }`. It is a log
+line and not an event: `msg::event_from_client` drops it, and
+granite-fw puts it in the controller's log ring under the target
+`planeN` with the plane's level mapped onto the controller's (1 error,
+2 warn, 3 info, anything else debug). The log ring is what publishes it
+on `.../log`, so `sys.log_level` filters these lines like any other and
+nothing in the plane path knows about MQTT. The plane's own clock
+travels in the message text as `[plane <ms> ms]`, because the record's
+`ts` is when the controller read the line. The simulator logs the same
+lines the same way.
+
+**Reading it back.** `plane_log` with target `planeN` over MQTT, HTTP
+and the dispatcher: it answers at once with the lines the client holds
+(`data`: `{"plane", "lines": [{"uptime_ms", "level", "text"}]}`) and
+arms a fresh read, whose new lines arrive on `.../log`.
+`GET /api/v1/planes/<n>/log` is the same command behind the planes
+routes of decision 7, and answers `{"ok", "plane", "lines"}`; a plane
+that does not answer is a 404. `docs/mqtt.md` section 6.8 is the
+operator's side of this.
+
+**Tests.** granite-core: the block decode, the level mapping, the
+`planeN` target naming and the ring diff (a second read of the same ring
+reports nothing, a line that scrolled out is not reported again, two
+identical lines in one ring are both reported once, a ring that started
+over is reported whole), the rate limit, and the command's target
+checks. granite-sim: a latched unit hot-swap on a simulated plane puts
+the plane's own `unit fault, hot-swap held off 1` through as a
+`PlaneLog` at level 1 and reports it once across two reads; a latched OV
+does the same; a plane that reboots has the boot line of its new ring
+reported once; a healthy plane is never asked for its log, and ten
+requests inside the rate-limit window cost one read.
+
+**Choices this section left open and the implementation made.**
+- The lines are not in `Observed` and so not in `state`: they are a
+  diagnostic, read through a command, and a retained `state` payload
+  carrying eight lines per plane would publish on every fault line.
+- `plane_log` is a read, so it produces no `SideEffect` and the HTTP
+  route is a `GET`; it needs the same authentication every other API
+  route does.
+
 ### Still open
 - The web UI (`firmware/web`) is unchanged and still speaks the rev C
   state payload; `docs/home-assistant.md` and `docs/modbus_map.md` are
