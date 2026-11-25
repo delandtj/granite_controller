@@ -128,6 +128,12 @@ Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
     48 V a 10k bleed is 0.23 W), or OV_KILL ignored by the slot latch
     while the slot is off (blank /PRE from the OFF line, the switch-off
     twin of the switch-on blanking).
+  - Done in firmware (2026-11-25): the second option, as ADR 0002
+    decision 7d (LCLR held while the slot is off), confirmed on the
+    bench. The 1.2 V itself is still unexplained (meter checks above),
+    and the hardware fix (`/CLR` or `/PRE` gated by the slot's OFF on
+    the unit) is for the next unit revision. A bleed sized to hold VIN
+    under 0.5 V needs only ~40-80k (30-60 mW on), not 10k.
 
 ## 2026-11-25: to do today
 
@@ -147,7 +153,14 @@ Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
   module.
 - Switch-on blanking (d8dadaa, ADR 0002 decision 7c): a commanded `on`
   latched the slot on the bench, so every rail switch-on now holds LCLR
-  for SWITCH_ON_BLANK_MS (100 ms). Not yet flashed / tried on a board.
+  for SWITCH_ON_BLANK_MS (100 ms). Flashed on the bench core 2026-11-25
+  (evening): works for a slot that is not latched, but the B slots latch
+  ~10 ms after every cut (module VIN floats at ~1.2 V), and 7c leaves an
+  already latched slot alone, so `off` then `on` stayed latched three
+  rounds out of three. Fixed by ADR 0002 decision 7d (LCLR held while a
+  slot is off, 1678bbf), flashed the same evening: three rounds of `off`
+  / `on` on nodes 58 and 60, no latch, back at 48.1 V every time. The
+  bench core now runs master at 7b90ef1 (boot count 3).
   Unit 0 slot A (node57) latched at two power-ups in a row with the
   power-up clear; it is also the slot whose empty ID read low this
   morning: suspect leakage / a fault on that slot (module swap pending).
@@ -221,8 +234,9 @@ Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
     `power_on` on a pod leaves a permanent fault flag. Not changed
     without a decision - it is a reporting contract (ADR 0003 SLOT
     0x2C, controller `faults`).
-- [ ] Flash plane-fd ba13f36 (empty-slot ID threshold) onto the
-  bench core over SWD; then slot A of an empty unit must read class 0.
+- [ ] ba13f36 (empty-slot ID threshold) is on the bench core since the
+  2026-11-25 evening flash; still to check: slot A of an empty unit must
+  read class 0 (all four slots had modules, so not tried).
   Measure both slots' ID pins (about 3.3 V empty) to see how far under
   full scale slot A sits.
 - [ ] G0B1CCT6 for the second order (ADR 0006 decision 6, same
