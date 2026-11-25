@@ -4,6 +4,36 @@ Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
 
 ## 2026-11-25: to do today
 
+- [ ] `cross_check` on both slots with no node and no front-panel
+  cable: **not** the LED sense. The opto is a TLP291 (unit.py U8 /
+  U58): the host's LED+ drives its LED through R21 220R, the collector
+  is the expander's A_LED / B_LED with a 47k pull-up to 3V3 and the
+  emitter is GND, so an open cable passes no current, the opto is dark
+  and the line reads **high** = "no light". The firmware inverts it in
+  the right direction (`poll.rs`: `lit = !get_input(In::Led)`), and
+  `LED_AT_ZERO_CURRENT` / `LED_WHILE_OFF` both need `shows_light()`,
+  i.e. `LedMode != Off`, which a line that never goes low cannot
+  produce. Tests pin this (plane-logic/tests/led_sense.rs). Open cable
+  and "host LED off" are the same reading, which is the right answer:
+  neither shows light.
+  What is left is `NO_LED_AFTER_CYCLE`, the third bit of SLOT 0x2C: any
+  `power_on` / `power_cycle` on a slot with no host waits out its LED
+  timeout, presses PWR, waits again and sets it - and nothing clears it
+  except a later wait that does see light, or the unit going away. So
+  it survives the slot being switched off again and a slot that will
+  never have a host keeps it for ever, which is what "cross_check while
+  the slot was off" looks like. `host: "unknown"` with the rail off is
+  by design (granite-core `HostState::Unknown`: "the rail is off, the
+  LED is not trusted, or there is no data").
+  - [ ] Confirm on the bench: read the node's SLOT 0x2C and check it is
+    only the "no LED after a power-cycle" bit, and that it appeared
+    after a `power_on` and not before.
+  - [ ] Then decide: should `NO_LED_AFTER_CYCLE` clear when the slot is
+    commanded off, or when the module goes away, instead of only on a
+    cycle that sees light? Leaving it sticky means every empty-slot
+    `power_on` on a pod leaves a permanent fault flag. Not changed
+    without a decision - it is a reporting contract (ADR 0003 SLOT
+    0x2C, controller `faults`).
 - [ ] Flash plane-fd ba13f36 (empty-slot ID threshold) onto the
   bench core over SWD; then slot A of an empty unit must read class 0.
   Measure both slots' ID pins (about 3.3 V empty) to see how far under
