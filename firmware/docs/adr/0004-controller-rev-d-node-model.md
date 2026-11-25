@@ -766,6 +766,28 @@ running host; `host_detect_w` (3 W, "is anything behind the slot") is
 far too low for this, because a host in standby with a BMC draws 5-15
 W.
 
+**Two explicit verbs** (user, 2026-11-25), additive: `force_off` keeps
+the meaning above and stays the verb of the safety rules.
+
+| Verb | Meaning | Plane command |
+|---|---|---|
+| force_button_off | hold PWR 5 s and nothing else: no rail cut, whatever the LED says | node off, timeout 0, escalate 1 (hold) |
+| force_power_off | cut the rail now, no button: the same as `power_off`, reported as a hard cut | 0x40 enable off |
+
+- `force_button_off` on a node with `front_panel = false` is refused at
+  dispatch ("no front panel"), like `reset` and `press`, and a UI does
+  not show it for such a node (the flag is in `state.nodes[]`). On
+  `all` it runs on the nodes that have a panel.
+- `force_power_off` carries `"hard_cut": true` and
+  `HARD_CUT_TEXT` like the other cuts with no shutdown; `power_off`
+  stays the plain rail verb without that wording.
+- Both are rule actions and Modbus command words (the next free words
+  after the existing ones; map version unchanged).
+
+Whether a front-panel cable is plugged in cannot be detected: an open
+cable reads like a dark LED. Only the configured `front_panel` flag is
+known, which is why `force_off` itself must not depend on the LED.
+
 **Nodes without a front panel** are unchanged: their `off` and
 `force_off` are already the rail cut.
 
