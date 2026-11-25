@@ -209,6 +209,15 @@ pub struct Plane {
     pub(crate) next_unit_poll_ms: u64,
     /// When the next 1 Hz ID read is due.
     pub(crate) next_id_poll_ms: u64,
+    /// Which slots have already logged "latched while off", bit per
+    /// slot (ADR 0002 decision 7d).
+    ///
+    /// The line says the latch is set while OFF and LCLR are both high,
+    /// which the hold makes impossible: a stuck latch or a broken LCLR
+    /// path. It is worth saying once and not at 20 Hz, so the bit is
+    /// set when it is said and cleared when the condition goes away.
+    pub(crate) latched_off_noted: u8,
+
     /// The OVK level of each slot on the last cycle, bit per slot.
     ///
     /// The link has no bit for OVK (it is three trip sources wire-ORed),
@@ -259,6 +268,7 @@ impl Plane {
             next_poll_ms: 0,
             next_unit_poll_ms: 0,
             next_id_poll_ms: 0,
+            latched_off_noted: 0,
             // Every OVK idles high; a trip pulls it low.
             ovk_high: 0xFF,
         }

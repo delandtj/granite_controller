@@ -55,7 +55,7 @@ use crate::hal::PlaneLink;
 
 use super::command::{
     Command, DEFAULT_HOST_RUNNING_DW, FinishedJob, HOST_RUNNING_CONFIRM_MS, JobId, JobOutcome,
-    NodeCommand, STAGE_WATCH_MS, StageCondition, Step, outcome_of, severity,
+    NodeCommand, STAGE_WATCH_MS, SlotLatch, StageCondition, Step, outcome_of, severity,
 };
 use super::config::DesiredConfig;
 use super::event::ClientEvent;
@@ -243,6 +243,10 @@ struct Job {
     /// The controller sent the cut stage: the rail came down from here
     /// and not from the plane's own escalation.
     rail_cut: bool,
+    /// The latch the slot reported after a rail-on stage, which is what
+    /// turns a plane's `ok` into a failed job
+    /// ([`StageCondition::SlotUnlatched`]).
+    latched: Option<SlotLatch>,
 }
 
 /// Everything the client knows and schedules for one address.
@@ -968,7 +972,7 @@ impl PlaneClient {
     /// The read counts against the rate limit whether or not the
     /// transaction worked, so a plane that is falling off the link is
     /// not asked again on the next poll.
-    fn read_log<L: PlaneLink>(&mut self, i: usize, now_ms: u64, link: &mut L) {
+    fn read_log<L: PlaneLink>(&mut self, i: usize, now_ms: u64, link: &mut L) -> bool {
         let address = self.planes[i].plane.address;
         self.planes[i].log.note_read(now_ms);
         let n = match self
@@ -978,7 +982,7 @@ impl PlaneClient {
             Ok(n) => n,
             Err(_) => {
                 self.after_failure(i, now_ms);
-                return;
+                return false;
             }
         };
         let lines = super::log::decode_block(&self.buf[..n]);
@@ -989,6 +993,37 @@ impl PlaneClient {
                 text: line.text,
                 uptime_ms: line.uptime_ms,
             });
+        }
+        true
+    }
+
+    /// Read a plane's LOG block now, on the caller's link, and say
+    /// whether the plane answered (ADR 0004, "As built": `plane_log`
+    /// answers from the fresh read, not from the cache).
+    ///
+    /// This is the one log read that is not on the poll's schedule and
+    /// not rate-limited: an operator asking for the ring by hand is not
+    /// a fault storm, and the whole point of the command is the lines
+    /// the plane has written since the last read. It still counts as a
+    /// read, so the automatic ones that follow keep their
+    /// [`super::log::READ_PERIOD_MS`] spacing. The lines it brings are
+    /// reported as [`ClientEvent::PlaneLog`] exactly as the scheduled
+    /// read's are, so nothing is logged twice, and
+    /// [`PlaneClient::plane_log`] holds them when this returns.
+    ///
+    /// False when the address has no plane or the read failed; the
+    /// caller then answers from the cache, marked stale.
+    pub fn read_plane_log_now<L: PlaneLink>(
+        &mut self,
+        address: u8,
+        now_ms: u64,
+        link: &mut L,
+    ) -> bool {
+        match granite_proto::plane_of_address(address) {
+            Some(n) if self.planes[n as usize].present => {
+                self.read_log(n as usize, now_ms, link)
+            }
+            _ => false,
         }
     }
 
@@ -1111,6 +1146,7 @@ impl PlaneClient {
             hold_until_ms: None,
             watch: None,
             rail_cut: false,
+            latched: None,
         };
         let absent = job.stages.is_empty() || !self.targets_present(&job);
         self.jobs.push(job);
@@ -1279,6 +1315,7 @@ impl PlaneClient {
         let threshold = self.host_running_dw;
         let mut cut: Vec<JobId> = Vec::new();
         let mut skip: Vec<JobId> = Vec::new();
+        let mut latched: Vec<(JobId, Option<SlotLatch>)> = Vec::new();
         for job in self.jobs.iter_mut() {
             let Some(watch) = job.watch.as_mut() else {
                 continue;
@@ -1322,6 +1359,35 @@ impl PlaneClient {
                         cut.push(job.id);
                     }
                 }
+                // The slot a rail-on verb asked for, on the first
+                // reading that is newer than the verb: a latch is the
+                // job's failure, under the latch's own name. The unit's
+                // hot-swap latch counts too - it holds both of its
+                // slots off and no `on` can lift it (ADR 0005
+                // decision 3).
+                StageCondition::SlotUnlatched => {
+                    let unit_held = self.planes[i]
+                        .plane
+                        .units
+                        .get(node.unit() as usize)
+                        .is_some_and(|u| {
+                            u.status
+                                .contains(granite_proto::UnitStatus::HOT_SWAP_LATCHED_OFF)
+                        });
+                    let found = if node.status.contains(granite_proto::SlotStatus::OV_LATCHED) {
+                        Some(SlotLatch::OvLatched)
+                    } else if node
+                        .status
+                        .contains(granite_proto::SlotStatus::POWER_LIMIT_TRIPPED)
+                    {
+                        Some(SlotLatch::PowerLimitTripped)
+                    } else if unit_held {
+                        Some(SlotLatch::UnitLatchedOff)
+                    } else {
+                        None
+                    };
+                    latched.push((job.id, found));
+                }
             }
         }
         for id in cut {
@@ -1330,23 +1396,29 @@ impl PlaneClient {
         for id in skip {
             self.skip_cut_stage(id, now_ms);
         }
+        for (id, found) in latched {
+            self.finish_latch_watch(id, found, now_ms);
+        }
     }
 
     /// The watches nobody answered in time: `force_off` cuts anyway,
     /// `off` leaves the rail alone (see
-    /// [`StageCondition::cuts_when_unreadable`]).
+    /// [`StageCondition::cuts_when_unreadable`]), and a rail-on verb
+    /// whose slot never reported ends on the plane's own result.
     fn expire_stage_watches(&mut self, now_ms: u64) {
-        let late: Vec<(JobId, bool)> = self
+        let late: Vec<(JobId, StageCondition)> = self
             .jobs
             .iter()
             .filter_map(|job| {
                 job.watch
                     .filter(|w| now_ms > w.until_ms)
-                    .map(|w| (job.id, w.condition.cuts_when_unreadable()))
+                    .map(|w| (job.id, w.condition))
             })
             .collect();
-        for (id, cut) in late {
-            if cut {
+        for (id, condition) in late {
+            if condition.checked_after() {
+                self.finish_latch_watch(id, None, now_ms);
+            } else if condition.cuts_when_unreadable() {
                 self.cut_stage(id, now_ms);
             } else {
                 self.skip_cut_stage(id, now_ms);
@@ -1568,7 +1640,63 @@ impl PlaneClient {
             self.start_stage(id, now_ms);
             return;
         }
+        // A rail-on verb is not done because the plane took its write:
+        // a slot whose OV latch is set answers `ok` and stays dark. The
+        // job waits for the first SUMMARY newer than this moment and
+        // ends on what the slot says (ADR 0004, "As built";
+        // [`StageCondition::SlotUnlatched`]).
+        if worst.is_ok() && self.watch_for_latch(id, now_ms) {
+            return;
+        }
         self.finish_job(id, outcome_of(worst), now_ms);
+    }
+
+    /// Hold a finished rail-on job back until the slot has reported
+    /// whether it is latched, and say whether it was held.
+    ///
+    /// Nothing is held when the verb is not one that ends with a rail
+    /// coming up ([`Command::checks_latch`]) or when the node is not a
+    /// place on the link; such a job ends as it always did.
+    fn watch_for_latch(&mut self, id: JobId, now_ms: u64) -> bool {
+        let Some(job) = self.jobs.iter_mut().find(|j| j.id == id) else {
+            return false;
+        };
+        if !job.command.checks_latch() {
+            return false;
+        }
+        let node = job.command.nodes().first().copied().unwrap_or(0);
+        let Some((address, slot)) = node_location(node) else {
+            return false;
+        };
+        job.outstanding = 0;
+        job.watch = Some(StageWatch {
+            condition: StageCondition::SlotUnlatched,
+            address,
+            slot,
+            after_ms: now_ms,
+            until_ms: now_ms.saturating_add(STAGE_WATCH_MS),
+            above_since_ms: None,
+        });
+        true
+    }
+
+    /// End a job whose latch watch has decided.
+    ///
+    /// A latch is a failure under the latch's own name, whatever the
+    /// plane's result said; no latch leaves the outcome the plane's
+    /// sequence earned, which is also what a watch that timed out ends
+    /// with - an unreadable slot is no proof of a latch.
+    fn finish_latch_watch(&mut self, id: JobId, latched: Option<SlotLatch>, now_ms: u64) {
+        let Some(job) = self.jobs.iter_mut().find(|j| j.id == id) else {
+            return;
+        };
+        job.watch = None;
+        job.latched = latched;
+        let outcome = match latched {
+            Some(_) => JobOutcome::Failed,
+            None => job.code.map_or(JobOutcome::Done, outcome_of),
+        };
+        self.finish_job(id, outcome, now_ms);
     }
 
     /// Take a job off the list, queue its outcome and apply what it
@@ -1595,6 +1723,7 @@ impl PlaneClient {
             submitted_ms: job.submitted_ms,
             finished_ms: now_ms,
             rail_cut: job.rail_cut,
+            latched: job.latched,
         });
     }
 

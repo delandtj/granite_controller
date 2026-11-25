@@ -70,6 +70,23 @@ pub enum SideEffect {
     /// worker is the only thing that may, and it answers through
     /// events, not through this ack.
     Switch(SwitchRequest),
+    /// Read this plane's LOG block **now**, before the ack goes out,
+    /// and put the lines it brings in the ack's `data`
+    /// (ADR 0004, "As built": `plane_log` answers from the fresh read).
+    ///
+    /// The dispatcher cannot do it itself: the plane link belongs to
+    /// the task that owns the client, and only that task may touch it.
+    /// So the ack it builds carries the cache with `"stale": true`, and
+    /// the task replaces the payload with
+    /// [`crate::plane::PlaneClient::read_plane_log_now`] and
+    /// [`plane_log_data`] before it answers. A transport that does not
+    /// (none today) still answers with the cache, correctly marked.
+    ReadPlaneLog {
+        /// The plane's I2C address.
+        address: u8,
+        /// The plane's number 0-7, which the payload names.
+        plane: u8,
+    },
 }
 
 /// What the switch worker is asked to do, and which switch it is about
@@ -213,7 +230,10 @@ pub fn dispatch(cmd: &Command, ctx: &mut DispatchCtx<'_>) -> Dispatched {
             Reply::accepted(&cmd.id)
         }
         CommandKind::PlaneLog => match plane_log(cmd, ctx) {
-            Ok(v) => Reply::ok(&cmd.id, "ok").with_data(v),
+            Ok((v, read)) => {
+                effects.push(read);
+                Reply::ok(&cmd.id, "ok").with_data(v)
+            }
             Err(e) => Reply::err(&cmd.id, e),
         },
         CommandKind::ConfigGet => match config_get(ctx.config, cmd.args.section) {
@@ -429,23 +449,43 @@ fn switch_request(cmd: &Command, ctx: &DispatchCtx<'_>) -> Result<SwitchRequest,
     Ok(SwitchRequest::new(which, verb))
 }
 
-/// `plane_log`: the lines of one plane's own log ring, and a fresh read
-/// of its LOG block put in hand (ADR 0004, "Plane log readout").
+/// `plane_log`: the lines of one plane's own log ring, read for this
+/// command (ADR 0004, "Plane log readout", as amended by "As built").
 ///
-/// The read itself happens on the plane client's next poll, rate-limited
-/// per plane, so this answers at once with what the client holds: the
-/// last read, which after a fault is the ring as it stood when the
-/// event came in. The lines a fresh read brings go to the log ring and
-/// `.../log`, and the next `plane_log` carries them too.
-fn plane_log(cmd: &Command, ctx: &mut DispatchCtx<'_>) -> Result<Value, String> {
+/// The answer must not be the cache: a `plane_log` sent because
+/// something went wrong is sent precisely to see the lines the plane
+/// has written *since* the last read, and answering from the cache put
+/// the newest lines one command behind. The dispatcher has no link, so
+/// it builds the ack from the cache with `"stale": true` and asks the
+/// task that owns the client to do the read and replace the payload
+/// ([`SideEffect::ReadPlaneLog`]). The background request is armed as
+/// well, so the lines reach the controller's log ring even when the
+/// read on this path fails.
+fn plane_log(cmd: &Command, ctx: &mut DispatchCtx<'_>) -> Result<(Value, SideEffect), String> {
     let plane = cmd
         .target
         .plane()
         .ok_or_else(|| String::from("plane_log needs a planeN target"))?;
     let address = plane_address(plane, ctx)?;
     ctx.plane.request_plane_log(address);
-    let lines = serde_json::to_value(ctx.plane.plane_log(address)).map_err(|e| e.to_string())?;
-    Ok(serde_json::json!({"plane": plane, "lines": lines}))
+    let data = plane_log_data(plane, ctx.plane.plane_log(address), true)?;
+    Ok((data, SideEffect::ReadPlaneLog { address, plane }))
+}
+
+/// The `data` payload of a `plane_log` ack and of
+/// `GET /api/v1/planes/<n>/log`.
+///
+/// `stale` is true when the lines are the cache rather than a read taken
+/// for this command: the plane did not answer, or the transport cannot
+/// read on the command path. A reader that cares whether it is looking
+/// at the plane's present ring has only this flag to go by.
+pub fn plane_log_data(
+    plane: u8,
+    lines: &[crate::plane::PlaneLogLine],
+    stale: bool,
+) -> Result<Value, String> {
+    let lines = serde_json::to_value(lines).map_err(|e| e.to_string())?;
+    Ok(serde_json::json!({"plane": plane, "lines": lines, "stale": stale}))
 }
 
 /// The staged sections as JSON strings, for the ack's `data`.

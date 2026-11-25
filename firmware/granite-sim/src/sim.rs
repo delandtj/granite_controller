@@ -338,7 +338,28 @@ impl Dispatcher for SimCore {
             staged: &self.staged,
             verify_sig: None,
         };
-        let out = dispatch(cmd, &mut ctx);
+        let mut out = dispatch(cmd, &mut ctx);
+        // `plane_log` is answered from a read taken for the command:
+        // the dispatcher has no link, this does (ADR 0004, "As built").
+        let mut log_read: Option<(u8, u8)> = None;
+        out.effects.retain(|effect| {
+            if let SideEffect::ReadPlaneLog { address, plane } = effect {
+                log_read = Some((*address, *plane));
+                false
+            } else {
+                true
+            }
+        });
+        if let Some((address, plane)) = log_read {
+            let fresh = self
+                .plane
+                .read_plane_log_now(address, self.now_ms, &mut self.planes);
+            if let Ok(data) =
+                granite_core::dispatch::plane_log_data(plane, self.plane.plane_log(address), !fresh)
+            {
+                out.reply = out.reply.with_data(data);
+            }
+        }
         if let Some(job) = out.job() {
             self.events.push(EventKind::Accepted {
                 id: cmd.id.clone(),
@@ -553,6 +574,12 @@ impl Sim {
                     );
                     self.switch_requests.push(request);
                 }
+                // Done on the command path, before the ack went out
+                // ([`SimCore::dispatch`]), so there is nothing left to
+                // do here. A dispatch that is not the simulator's own
+                // (there is none) would leave the ack's cached lines
+                // marked stale.
+                SideEffect::ReadPlaneLog { .. } => {}
             }
         }
         if self.platform.rollback_requested {

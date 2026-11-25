@@ -597,8 +597,11 @@ fn the_non_plane_commands_still_work() {
     assert!(!h.run(&version).0.ok, "an unknown payload version");
 }
 
-/// ADR 0004, "Plane log readout": `plane_log` names a plane, answers at
-/// once with the lines the plane client holds and arms a fresh read.
+/// ADR 0004, "Plane log readout" and "As built": `plane_log` names a
+/// plane, and the lines in its ack come from a read taken for the
+/// command - which the dispatcher cannot do itself, so it builds the
+/// payload from the cache, marks it stale and asks the task that owns
+/// the link to do the read ([`SideEffect::ReadPlaneLog`]).
 #[test]
 fn plane_log_names_a_plane_and_answers_with_its_lines() {
     let mut h = Harness::new();
@@ -611,6 +614,10 @@ fn plane_log_names_a_plane_and_answers_with_its_lines() {
         data["lines"].as_array().expect("an array").len(),
         0,
         "no plane has answered this client, so its cache is empty"
+    );
+    assert_eq!(
+        data["stale"], true,
+        "the dispatcher's own payload is the cache, and says so"
     );
 
     // A plane the snapshot does not have, and a target that is not a
@@ -625,10 +632,18 @@ fn plane_log_names_a_plane_and_answers_with_its_lines() {
         Some("plane_log needs a planeN target")
     );
 
-    // It is a read: nothing for the firmware to carry out.
+    // It is a read: no job, and the one side effect is the read the
+    // ack waits for.
     let cmd = Command::new("c-log", CommandKind::PlaneLog).with_target(Target::Plane(0));
     let out = h.dispatched(&cmd);
-    assert!(out.effects.is_empty() && out.jobs.is_empty());
+    assert!(out.jobs.is_empty());
+    assert_eq!(
+        out.effects,
+        vec![granite_core::dispatch::SideEffect::ReadPlaneLog {
+            address: 0x30,
+            plane: 0
+        }]
+    );
 }
 
 #[test]

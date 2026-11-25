@@ -29,7 +29,9 @@
 //!   while its own supply starts.
 //! - [`switch_on_blank`]: the same glitch at every *switch-on* of a
 //!   slot's rail, blanked by holding LCLR across the first 100 ms of the
-//!   module's start-up.
+//!   module's start-up - and, since ADR 0002 decision 7d, LCLR held for
+//!   as long as a slot's OFF line is high, because the module of a
+//!   switched-off slot can pull OV_KILL at any moment.
 //! - [`link`] / [`update`] / [`events`] / [`log`]: the controller link,
 //!   the firmware update, the event ring and the log ring.
 //! - [`can_link`]: the CAN FD transport under that link (ADR 0005), over

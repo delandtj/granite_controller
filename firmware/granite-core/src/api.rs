@@ -1686,9 +1686,11 @@ fn plane_units(number: u8, ctx: &mut ApiCtx<'_>) -> ApiResponse {
 /// `GET /api/v1/planes/<n>/log`: the plane's own log ring (ADR 0004,
 /// "Plane log readout").
 ///
-/// The lines come from the plane client's cache and a fresh read of the
-/// plane's LOG block is put in hand, so a second call a few seconds
-/// later shows what the plane has written since. The same `plane_log`
+/// The lines are the plane's own ring as a read taken for this request
+/// brings it back, so a page that opens after a fault shows what the
+/// plane has just written and not the ring as it stood at the last read
+/// (ADR 0004, "As built"). `stale` is true when the plane did not
+/// answer and the lines are the client's cache. The same `plane_log`
 /// command the MQTT `cmd` topic takes does the work, which is what keeps
 /// the two transports from drifting apart.
 fn plane_log(number: u8, ctx: &mut ApiCtx<'_>) -> ApiResponse {
@@ -1706,7 +1708,12 @@ fn plane_log(number: u8, ctx: &mut ApiCtx<'_>) -> ApiResponse {
         .as_ref()
         .and_then(|d| d.get("lines").cloned())
         .unwrap_or(Value::Array(Vec::new()));
-    ApiResponse::ok(json!({"ok": true, "plane": number, "lines": lines}))
+    let stale = reply
+        .data
+        .as_ref()
+        .and_then(|d| d.get("stale").and_then(Value::as_bool))
+        .unwrap_or(false);
+    ApiResponse::ok(json!({"ok": true, "plane": number, "lines": lines, "stale": stale}))
 }
 
 /// Longest a node action may hold its HTTP reply with `?wait=1`.

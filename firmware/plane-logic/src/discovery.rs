@@ -273,6 +273,13 @@ impl Plane {
 
     /// The expander output latch the intended state asks for on unit
     /// `ch`.
+    ///
+    /// An off slot carries LCLR with its OFF line: that is the hold of
+    /// ADR 0002 decision 7d, and it belongs here so that boot, the
+    /// intended-state re-application of decision 3 and the expander
+    /// reset of CTRL 0x4D all come back holding it. The write is
+    /// glitch-free for the same reason the OFF bit is
+    /// ([`Expander::configure`]).
     pub(crate) fn intended_latch(&self, ch: usize) -> [u8; 3] {
         let mut latch = [0u8; 3];
         let mut set = |line: u8| latch[(line >> 3) as usize] |= 1 << (line & 7);
@@ -281,6 +288,7 @@ impl Plane {
             let b = half == 1;
             if self.intended.off(slot) {
                 set(expander::out_line(b, expander::Out::Off));
+                set(expander::out_line(b, expander::Out::Lclr));
             }
             if self.intended.runoff(slot) {
                 set(expander::out_line(b, expander::Out::Runoff));

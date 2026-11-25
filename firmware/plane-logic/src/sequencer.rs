@@ -339,10 +339,21 @@ impl Plane {
     /// `node on`, the power-cycle's rail-on step, the stagger - so this
     /// is also where the switch-on blanking of
     /// [`crate::switch_on_blank`] asserts LCLR, before the OFF line is
-    /// released (ADR 0002 decision 7c).
+    /// released (ADR 0002 decision 7c). Every *cut* comes through here
+    /// too, which is why this is also where the hold of decision 7d
+    /// asserts LCLR, before the OFF line is raised: a switched-off
+    /// slot's module sits at about 1.2 V, its comparator runs
+    /// under-supplied, and OV_KILL can go low at any moment while the
+    /// slot is off and not only at the edge.
     pub(crate) fn set_slot_off<D: Devices>(&mut self, dev: &mut D, slot: u8, off: bool) -> bool {
         let (unit, b) = Self::split(slot);
-        if !off {
+        if off {
+            // Before OFF goes up, so there is no gap in which the
+            // latch could set (ADR 0002 decision 7d). A write that
+            // fails is retried by [`Plane::step_lclr_holds`] on every
+            // tick for as long as the slot is off.
+            self.drive(dev, slot, expander::out_line(b, Out::Lclr), true);
+        } else {
             self.start_switch_on_blank(dev, slot);
         }
         self.intended.set_off(slot, off);
@@ -479,20 +490,60 @@ impl Plane {
         }
     }
 
-    /// Drive a slot's LCLR low, unless the other holder still wants it.
+    /// True while any holder wants a slot's LCLR line up.
     ///
-    /// The commanded clear, the power-up clear ([`Phase::ClearLatch`])
-    /// and the switch-on blanking all hold the one line, so the line
-    /// comes down when the last of them is done - which makes the
-    /// effective hold the longer of the two and never cuts either short.
-    fn release_lclr<D: Devices>(&mut self, dev: &mut D, slot: u8) {
-        if self.switch_on_blank[slot as usize].active()
+    /// Three of them share the one line: the clear pulse of
+    /// [`Phase::ClearLatch`] (the commanded clear of CTRL 0x41 and the
+    /// power-up clear of [`crate::power_up_clear`]), the switch-on
+    /// blanking of [`crate::switch_on_blank`] (decision 7c) and the
+    /// hold while the slot is off (decision 7d). The line is released
+    /// only when none of them wants it, so the effective hold is the
+    /// longest and no holder ever cuts another short.
+    pub(crate) fn lclr_wanted(&self, slot: u8) -> bool {
+        let (unit, b) = Self::split(slot);
+        self.switch_on_blank[slot as usize].active()
             || matches!(self.sequences[slot as usize].phase, Phase::ClearLatch)
-        {
+            || self.expanders[unit].get_output(expander::out_line(b, Out::Off))
+    }
+
+    /// Drive a slot's LCLR low, unless another holder still wants it.
+    fn release_lclr<D: Devices>(&mut self, dev: &mut D, slot: u8) {
+        if self.lclr_wanted(slot) {
             return;
         }
         let (_, b) = Self::split(slot);
         self.drive(dev, slot, expander::out_line(b, Out::Lclr), false);
+    }
+
+    /// Put every slot's LCLR line where its holders want it
+    /// (ADR 0002 decision 7d).
+    ///
+    /// The holds themselves are asserted and released where they begin
+    /// and end; this is the one place that makes the line agree with
+    /// them again after something else moved it or a write was lost:
+    ///
+    /// - a cut whose LCLR write NAKed, which would leave an off slot
+    ///   with no hold at all,
+    /// - a release whose write NAKed, which would leave a running slot
+    ///   with its OV latch blanked,
+    /// - the expander reset of CTRL 0x4D and a unit that came back at
+    ///   its hardware defaults: [`Plane::intended_latch`] already asks
+    ///   for the hold on every off slot, so this only has to agree.
+    ///
+    /// It writes nothing while the line is where it belongs, which is
+    /// every cycle but the ones above.
+    fn step_lclr_holds<D: Devices>(&mut self, dev: &mut D) {
+        for slot in 0..SLOT_COUNT as u8 {
+            let (unit, b) = Self::split(slot);
+            if !self.unit_present(unit) || self.channels[unit].needs_config {
+                continue;
+            }
+            let line = expander::out_line(b, Out::Lclr);
+            let wanted = self.lclr_wanted(slot);
+            if self.expanders[unit].get_output(line) != wanted {
+                self.drive(dev, slot, line, wanted);
+            }
+        }
     }
 
     /// Begin a sequence on a slot, with the phase and deadline its first
@@ -519,6 +570,7 @@ impl Plane {
         self.step_unit_releases(dev);
         self.step_power_up_clears(dev);
         self.step_switch_on_blanks(dev);
+        self.step_lclr_holds(dev);
     }
 
     /// End the switch-on blanking windows whose time is up

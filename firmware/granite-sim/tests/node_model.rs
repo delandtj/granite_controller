@@ -909,3 +909,69 @@ fn the_explicit_force_verbs_reach_the_plane() {
         "node 2 has no front panel"
     );
 }
+
+/// `plane_log` answers from a read taken for the command, so a line the
+/// plane wrote after the client's last read is in the *first* reply
+/// (ADR 0004, "As built"). Before that it answered from the cache, and
+/// the lines an operator asked for arrived one command late.
+#[test]
+fn plane_log_answers_from_a_fresh_read_and_not_from_the_cache() {
+    let mut rig = Rig::new();
+    // The plane's boot event armed a read, so the client holds the ring
+    // as it was; the rate limit then keeps it from reading again for
+    // `log::READ_PERIOD_MS`.
+    rig.run(10_000);
+    let before = rig.verb("c-log1", CommandKind::PlaneLog, Target::Plane(0));
+    assert!(before.ok, "{:?}", before.error);
+    let data = before.data.expect("the lines");
+    assert_eq!(data["stale"], false, "the plane answered the read");
+    let boot = data["lines"]
+        .as_array()
+        .expect("an array")
+        .iter()
+        .any(|l| l["text"] == "boot 1");
+    assert!(boot, "the ring holds the plane's boot line: {data}");
+
+    // A new line on the plane, which the client has not read: the
+    // latch's own line, written by the plane's next poll cycle.
+    rig.core
+        .planes
+        .plane_mut(0x30)
+        .expect("the plane at 0x30")
+        .latch_ov(1);
+    rig.run(200);
+
+    let reply = rig.verb("c-log2", CommandKind::PlaneLog, Target::Plane(0));
+    assert!(reply.ok, "{:?}", reply.error);
+    let data = reply.data.expect("the lines");
+    assert_eq!(data["stale"], false);
+    let lines: Vec<String> = data["lines"]
+        .as_array()
+        .expect("an array")
+        .iter()
+        .map(|l| l["text"].as_str().unwrap_or_default().to_string())
+        .collect();
+    assert!(
+        lines.iter().any(|t| t == "ov latched 1"),
+        "the line the plane wrote after the last read is in the first reply: {lines:?}"
+    );
+
+    // A plane that does not answer the read: the cache, marked stale.
+    rig.core
+        .planes
+        .plane_mut(0x30)
+        .expect("the plane at 0x30")
+        .drop_transactions(8);
+    let reply = rig.verb("c-log3", CommandKind::PlaneLog, Target::Plane(0));
+    assert!(reply.ok, "{:?}", reply.error);
+    let data = reply.data.expect("the lines");
+    assert_eq!(data["stale"], true, "no read, so the cache: {data}");
+    assert!(
+        data["lines"]
+            .as_array()
+            .expect("an array")
+            .iter()
+            .any(|l| l["text"] == "ov latched 1"),
+        "and the cache is what the last read brought: {data}"
+    );
+}

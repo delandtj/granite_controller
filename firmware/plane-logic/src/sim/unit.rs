@@ -366,6 +366,16 @@ pub struct FakeSlot {
     /// VIN \[ms\]. A rail that comes back inside this window does not
     /// glitch again; one that comes back later does.
     pub vaux_hold_ms: u32,
+    /// How long the module pulls OV_KILL low after its slot takes VIN
+    /// away \[ms\]: the bench's "latch set about 10 ms after OFF went
+    /// high" (ADR 0002 decision 7d).
+    ///
+    /// A switched-off slot leaves its module's input at about 1.2 V, so
+    /// the comparator sits under its 1.8 V minimum and pulls at a
+    /// moment of its own choosing. Zero - the default - is a module
+    /// that stays quiet while it is off, so only a test that asks for
+    /// it sees this.
+    pub off_ov_kill_ms: u32,
     /// What is left of the start-up glitch \[ms\].
     ///
     /// It runs as a one-shot, counting down whatever the rail does: the
@@ -374,6 +384,9 @@ pub struct FakeSlot {
     glitch_left_ms: u32,
     /// How long the module has been without VIN \[ms\].
     no_vin_ms: u32,
+    /// VIN as the last step saw it, so the step that loses it can start
+    /// the pull of [`FakeSlot::off_ov_kill_ms`].
+    vin_last: bool,
     /// The comparator has its supply: OV_KILL is released.
     vaux_up: bool,
     /// The OV_KILL node (`/PRE`) as the last advance left it: low while
@@ -394,8 +407,10 @@ impl Default for FakeSlot {
             glitch_pgd: false,
             startup_ov_kill_ms: 0,
             vaux_hold_ms: 500,
+            off_ov_kill_ms: 0,
             glitch_left_ms: 0,
             no_vin_ms: 0,
+            vin_last: false,
             vaux_up: false,
             ov_kill_low: false,
         }
@@ -420,8 +435,12 @@ impl FakeSlot {
     ///
     /// `vin` is the slot's hot-swap conducting into a module that is
     /// there - the latch's Q cuts it, which is why this is read from the
-    /// pin state at the start of the step.
-    fn step_comparator(&mut self, dt: u32, vin: bool) {
+    /// pin state at the start of the step. `off` is the slot's OFF line,
+    /// which is what leaves the module's input floating at about 1.2 V
+    /// and its comparator under-supplied for as long as it is high
+    /// (ADR 0002 decision 7d); a slot the latch cut is not that case.
+    fn step_comparator(&mut self, dt: u32, vin: bool, off: bool) {
+        let had_vin = core::mem::replace(&mut self.vin_last, vin);
         if vin {
             self.no_vin_ms = 0;
             if !self.vaux_up && self.glitch_left_ms == 0 {
@@ -431,6 +450,15 @@ impl FakeSlot {
         } else {
             self.no_vin_ms = self.no_vin_ms.saturating_add(dt);
             if self.no_vin_ms >= self.vaux_hold_ms {
+                self.vaux_up = false;
+            }
+            // The module just lost VIN: its input decays to about
+            // 1.2 V, the comparator goes under its minimum supply and
+            // pulls OV_KILL (ADR 0002 decision 7d). It runs through the
+            // same one-shot as the start-up glitch, because it is the
+            // same pull on the same node.
+            if had_vin && off && self.off_ov_kill_ms > 0 && self.glitch_left_ms == 0 {
+                self.glitch_left_ms = self.off_ov_kill_ms;
                 self.vaux_up = false;
             }
         }
@@ -701,7 +729,7 @@ impl FakeUnit {
             // latch's Q and the OFF line both cut it, and this is read
             // from the state the step starts in.
             let vin = unit_rail && !off && !slot.ov_latched && slot.module;
-            slot.step_comparator(dt, vin);
+            slot.step_comparator(dt, vin, off);
             // `/PRE`: the OV_KILL node, with the module's start-up
             // glitch, the INA's ALERT and the PGOOD-loss trip on it. The
             // trip is held off while the slot is disarmed (Q6, unit.py).

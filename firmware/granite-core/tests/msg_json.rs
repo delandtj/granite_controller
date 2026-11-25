@@ -507,6 +507,7 @@ fn a_finished_job_becomes_an_ack_and_an_event() {
         submitted_ms: 100,
         finished_ms: 900,
         rail_cut: false,
+        latched: None,
     };
     let done = log.finish(&finished, 900);
     let reply = done.reply.expect("the command is finished");

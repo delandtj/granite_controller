@@ -681,7 +681,34 @@ fn dispatcher<L: PlaneLink>(
                     staged: &staged,
                     verify_sig: None,
                 };
-                let out = dispatch(&cmd, &mut ctx);
+                let mut out = dispatch(&cmd, &mut ctx);
+
+                // `plane_log` is answered from a read taken for the
+                // command and not from the client's cache (ADR 0004,
+                // "As built"). The dispatcher has no link; this task
+                // owns it, so the read happens here, before the ack
+                // goes out. It is one LOG block over a link this loop
+                // reads from every cycle anyway.
+                let mut log_read: Option<(u8, u8)> = None;
+                out.effects.retain(|effect| {
+                    if let SideEffect::ReadPlaneLog { address, plane } = effect {
+                        log_read = Some((*address, *plane));
+                        false
+                    } else {
+                        true
+                    }
+                });
+                if let Some((address, number)) = log_read {
+                    let fresh = plane.read_plane_log_now(address, now, &mut link);
+                    match granite_core::dispatch::plane_log_data(
+                        number,
+                        plane.plane_log(address),
+                        !fresh,
+                    ) {
+                        Ok(data) => out.reply = out.reply.with_data(data),
+                        Err(e) => log::warn!("plane log payload could not be built: {e}"),
+                    }
+                }
 
                 let _ = reply.send(out.reply.clone());
                 if let Some(job) = out.job() {
@@ -1194,6 +1221,9 @@ fn apply_effect(
             // and logs what it found. The result shows in `state.probes`.
             PROBE_SCAN.store(true, Ordering::Relaxed);
         }
+        // The command loop does this one itself, before the ack goes
+        // out: it is the only place that holds the plane link.
+        SideEffect::ReadPlaneLog { .. } => {}
     }
 }
 

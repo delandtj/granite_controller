@@ -154,7 +154,11 @@ fn a_glitch_wider_than_the_window_latches_and_says_so() {
 
 #[test]
 fn a_slot_that_is_already_latched_is_not_blanked_and_not_cleared() {
-    let mut sim = off_with_glitch(50);
+    // A latch on a slot that is *not* cut: since decision 7d a cut
+    // clears the latch, so the slot this is about is one whose rail was
+    // never taken away (see `a_latch_set_while_on_is_cleared_by_the_cut`
+    // in tests/clear_while_off.rs for the other half).
+    let mut sim = with_glitch(50);
     sim.fake_slot(0).ov_latched = true;
     sim.advance(200);
     assert!(
@@ -173,7 +177,7 @@ fn a_slot_that_is_already_latched_is_not_blanked_and_not_cleared() {
     assert!(!off_asserted(&mut sim, 0));
     assert!(
         !lclr_asserted(&mut sim, 0),
-        "a latch is cleared by clear_latch and by nothing else"
+        "a latch is cleared by clear_latch, by a cut and by nothing else"
     );
     assert!(!sim.plane.switch_on_blanking(0));
 
@@ -237,7 +241,10 @@ fn the_power_cycles_rail_on_is_blanked_too() {
         ResultCode::Accepted
     );
     assert!(off_asserted(&mut sim, 0));
-    assert!(!lclr_asserted(&mut sim, 0), "nothing is blanked on the way off");
+    assert!(
+        lclr_asserted(&mut sim, 0),
+        "the cut holds LCLR for as long as it lasts (decision 7d)"
+    );
 
     // Find the tick the rail comes back on.
     let mut back = None;

@@ -694,9 +694,11 @@ travels in the message text as `[plane <ms> ms]`, because the record's
 lines the same way.
 
 **Reading it back.** `plane_log` with target `planeN` over MQTT, HTTP
-and the dispatcher: it answers at once with the lines the client holds
+and the dispatcher: it answers with the lines the client holds
 (`data`: `{"plane", "lines": [{"uptime_ms", "level", "text"}]}`) and
-arms a fresh read, whose new lines arrive on `.../log`.
+arms a fresh read, whose new lines arrive on `.../log`. (Amended the
+same day: the reply carries a read taken for the command and a
+`"stale"` flag - see "`plane_log` answers from the fresh read" below.)
 `GET /api/v1/planes/<n>/log` is the same command behind the planes
 routes of decision 7, and answers `{"ok", "plane", "lines"}`; a plane
 that does not answer is a 404. `docs/mqtt.md` section 6.8 is the
@@ -854,6 +856,114 @@ Choices this section left open, and what was decided:
 - **Not done:** `firmware/web` is the stale rev C UI and was left
   alone, so the two new verbs have no button yet;
   `docs/modbus_map.md` is generated and was already stale.
+
+### A rail-on verb whose slot ends latched is not `done` (2026-11-25)
+Decided by the user and implemented 2026-11-25, as described here.
+`granite-proto`, plane-logic and plane-fd are untouched.
+
+**What was wrong.** The plane answers `ok` to CTRL 0x40 as soon as the
+write reaches the expander, and that is all it promises: the OFF line
+is released. A slot whose OV latch is set, whose power limit tripped,
+or whose whole unit the plane holds off (ADR 0005 decision 3) then
+carries nothing - and the job reported `done` on a node that is dark.
+On the bench that is exactly the case an operator meets: a module that
+latches at switch-on (ADR 0002 decisions 7c and 7d).
+
+**The rule.** After the stage that brings a rail up, the client looks
+at the slot once more before it reports: on the first SUMMARY newer
+than that stage (one second at most), `SlotStatus::OV_LATCHED`,
+`SlotStatus::POWER_LIMIT_TRIPPED` or the unit's
+`UnitStatus::HOT_SWAP_LATCHED_OFF` ends the job `JobOutcome::Failed`
+with the latch's name - `slot latched: ov_latched`,
+`power_limit_tripped`, `unit_latched_off` - whatever the plane's own
+result code said. The four verbs that end with a rail that should be
+carrying are checked: `on`, `power_on`, `cycle` and `clear_latch`
+(`NodeCommand::checks_latch`).
+
+**Where it lives.** The stage machinery of "`force_off` always ends
+with the rail down" already had the piece this needs, so it was reused:
+a third `plane::StageCondition`, `SlotUnlatched`, and the same
+`client::StageWatch` waiting for telemetry newer than the stage. It is
+the one condition that is checked *after* its stage rather than before
+it and that queues no writes either way, which is why the client
+installs it itself (`watch_for_latch`) and
+`NodeCommand::stage_condition` never returns it. The latch travels to
+the ack as `FinishedJob::latched: Option<SlotLatch>`, which is also
+what makes the ack text the latch's name instead of `failed: ok`.
+
+Choices this section left open, and what was decided:
+- **The intended-off bookkeeping does not change.** A verb that asks
+  for a rail still takes its node out of the set, whatever the outcome
+  (the bench case of "a failed `on` still takes the node out"): the
+  user asked for the rail, and a re-apply that cut it would fight
+  them.
+- **A watch that times out is not a latch.** No fresh SUMMARY inside
+  `STAGE_WATCH_MS` leaves the outcome the plane's own result earned:
+  an unreadable slot is no proof of a latch, and a plane that goes
+  away fails the job on its own path. The verbs' deadlines grew by
+  that window.
+- **`on_all` is not checked.** It ends with a node-on per slot and one
+  watch cannot answer for a set; its nodes are judged by their state
+  and their faults in `state`. A per-node watch would be a second
+  mechanism for the same thing and was not written.
+- **The OV latch is named before the power-limit trip.** A trip pulls
+  OV_KILL through the INA238's ALERT, so both bits are usually set
+  together; the latch is what has to be cleared, so it is the name the
+  operator gets.
+
+**Tests.** granite-core: the ack, the `action_failed` event and the
+node's own record carry `slot latched: ov_latched` and not the plane's
+`ok`. granite-sim (`plane_client.rs`): a `power_on` on a slot whose
+module holds OV_KILL low ends `failed` with `ov_latched` and the node
+stays out of the intended-off set; a `power_on` on a node of a unit the
+plane holds off ends `failed` with `unit_latched_off`; a clean slot
+still reports `done`.
+
+### `plane_log` answers from the fresh read (2026-11-25)
+Decided by the user and implemented 2026-11-25, as described here.
+This amends "Plane log readout" above, which answered from the cache.
+
+**What was wrong.** `plane_log` armed a read and answered at once with
+the lines the client already held, so the first reply was the ring as
+it stood at the *last* read - one command behind. A `plane_log` is sent
+precisely to see what the plane has written since.
+
+**The rule.** The lines in the reply are a read taken for that command.
+The dispatcher cannot do it - the plane link belongs to the task that
+owns the client, and only that task may touch it - so the dispatcher
+builds the payload from the cache, marks it `"stale": true` and returns
+a `SideEffect::ReadPlaneLog { address, plane }`. The task that owns the
+client (granite-fw's command loop, the simulator's `SimCore::dispatch`)
+does the read with `PlaneClient::read_plane_log_now` before the ack
+goes out and replaces the payload with `dispatch::plane_log_data`,
+`"stale": false`. The payload gained that one field; `lines` and
+`plane` are unchanged, and `GET /api/v1/planes/<n>/log` carries it too.
+
+**Why not a deferred ack.** The brief asked for the ack to be completed
+when the read lands, like a job, with a timeout and a stale fallback.
+It was not built that way: a deferred ack has to carry the lines, and
+the only path from the command loop to the MQTT worker is the event
+bus, which would have meant an event carrying a whole log ring (or a
+second ack channel) for a reply that is one bounded transaction away.
+The synchronous read on the command path is the same shape as the
+`accepted`-then-final ack from the operator's side - one ack, with the
+fresh lines - and it needs no timer: the link's own retries bound it,
+and a plane that does not answer gives `"stale": true` with the cache,
+which is the fallback the brief asked for.
+
+**What it costs.** One LOG block read (8 x 37 bytes at worst) on the
+command path of the task that reads that link every 50 ms anyway. The
+read is deliberately **not** rate-limited - an operator asking by hand
+is not the fault storm `READ_PERIOD_MS` is there for - but it counts as
+a read, so the automatic ones that follow keep their 3 s spacing. The
+lines go through the same `PlaneLogState::accept` diff, so nothing is
+reported twice on `.../log`.
+
+**Tests.** granite-core: the dispatcher's own payload is the cache,
+marked stale, plus the `ReadPlaneLog` effect. granite-sim
+(`node_model.rs`): a line the plane writes after the client's last read
+is in the *first* reply, and a plane that drops the transaction answers
+with the cache and `"stale": true`.
 
 ### Still open
 - The web UI (`firmware/web`) is unchanged and still speaks the rev C

@@ -17,7 +17,7 @@
 use granite_proto::{CrossCheck, EventKind, EventTarget, SEGMENT_CHANNELS, SlotStatus};
 
 use crate::device::Devices;
-use crate::drivers::expander::{self, In};
+use crate::drivers::expander::{self, In, Out};
 use crate::drivers::ina238::DIAG_POL;
 use crate::drivers::Ina238;
 use crate::log::level;
@@ -149,6 +149,21 @@ impl Plane {
             self.raise(EventTarget::Slot(slot as u8), EventKind::OvLatched);
         }
 
+        // The hold of ADR 0002 decision 7d: while OFF is high LCLR is
+        // high too, so the latch cannot be set. One that reads set
+        // anyway is a stuck latch or a broken LCLR path, and the ring
+        // says so once.
+        let held_off = exp.get_output(expander::out_line(b, Out::Off))
+            && exp.get_output(expander::out_line(b, Out::Lclr));
+        if lq && held_off {
+            if !self.latched_off_was_noted(slot) {
+                self.note(level::ERROR, "latched while off", Some(slot as u32));
+                self.set_latched_off_noted(slot, true);
+            }
+        } else {
+            self.set_latched_off_noted(slot, false);
+        }
+
         // DIAG_ALRT only when the ALERT node changed: the slot's INA238
         // alert is one of the three open-drain sources on OVK, and
         // DIAG_ALRT is what tells a power trip from the module's own
@@ -234,6 +249,21 @@ impl Plane {
             self.ovk_high |= 1 << slot;
         } else {
             self.ovk_high &= !(1u8 << slot);
+        }
+    }
+
+    /// Whether "latched while off" has already been said for this slot
+    /// (ADR 0002 decision 7d).
+    fn latched_off_was_noted(&self, slot: usize) -> bool {
+        self.latched_off_noted & (1 << slot) != 0
+    }
+
+    /// Remember whether it has.
+    fn set_latched_off_noted(&mut self, slot: usize, noted: bool) {
+        if noted {
+            self.latched_off_noted |= 1 << slot;
+        } else {
+            self.latched_off_noted &= !(1u8 << slot);
         }
     }
 }
