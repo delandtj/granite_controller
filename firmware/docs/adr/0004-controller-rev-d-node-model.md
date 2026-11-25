@@ -722,6 +722,61 @@ requests inside the rate-limit window cost one read.
   route is a `GET`; it needs the same authentication every other API
   route does.
 
+### `force_off` always ends with the rail down (2026-11-25)
+Decided by the user, not yet implemented.
+
+Decision 4 promises that `force_off` "always ends with the node off",
+but the plane cuts the rail only when the host LED is still lit after
+the 5 s hold (`Phase::ConfirmDark`, escalate 3). A front-panel cable
+that is missing or has come loose reads exactly like a dark LED, so on
+such a node `force_off` reports done while the rail stays up and the
+host keeps running. Seen on the bench (nodes 58-60, 2026-11-25), and
+`force_off` on `all` is the documented action of the leak and
+over-temperature rules. `front_panel = false` covers the nodes an
+operator marked, not a cable that falls out of a normal node.
+
+**`force_off`.** After the plane's node-off sequence (hold PWR, confirm)
+has finished, whatever its result, the controller cuts the rail
+(`Ctrl::Enable { on: false }`) if the slot still reports it enabled. It
+is a second stage of the same job, as `cycle` is for a node without a
+front panel, so the plane does not change. A host that the hold did
+shut down loses its standby power too (BMC, wake-on-LAN): that is the
+price of an emergency verb that cannot be fooled by the cabling. The
+job result says which way it ended: `"rail_cut": true` when the
+controller had to cut, in the ack, the HTTP job result and the
+`action_done` event. Safety rules (`rules.rs`, `force` set) use the
+same verb and get the same behaviour.
+
+**`off`.** Stays the graceful verb: a host that shut down keeps its
+standby power. When the plane's sequence ends Ok with the rail up and
+the LED dark, the controller looks at the slot's power: if it stays
+above `nodes.host_running_w` for `HOST_RUNNING_CONFIRM_MS` (2 s, read
+from the SUMMARY telemetry it already polls), the host is taken to be
+still running behind a front panel the plane cannot see, and the rail
+is cut, reported as above with `"rail_cut": true`. Below the threshold
+the LED is trusted and the rail stays up. This applies only when the
+node's escalation is `hold_then_cut` (the default): an operator who set
+`none` or `hold` asked for no cut.
+
+**Setting.** `nodes.host_running_w`, whole-section like
+`host_detect_w`, default 15.0 W, range 0..250, `0` turns the `off`
+check off. It has to sit above a host's standby draw plus the module's
+own idle loss (about 2 W for PM-19V-250W-B) and below the lightest
+running host; `host_detect_w` (3 W, "is anything behind the slot") is
+far too low for this, because a host in standby with a BMC draws 5-15
+W.
+
+**Nodes without a front panel** are unchanged: their `off` and
+`force_off` are already the rail cut.
+
+**Tests.** granite-sim: `force_off` on a node whose fake host never
+lights (no press felt) ends with the rail down and `rail_cut`;
+`force_off` on a host that the hold shuts down also ends with the rail
+down; `off` on a dark node drawing more than `host_running_w` ends with
+the rail down; `off` on a host that shut down to a standby draw below
+it keeps the rail up; `off` with escalation `hold` never cuts; a leak
+rule with `force_off` on `all` takes every rail down.
+
 ### Still open
 - The web UI (`firmware/web`) is unchanged and still speaks the rev C
   state payload; `docs/home-assistant.md` and `docs/modbus_map.md` are
