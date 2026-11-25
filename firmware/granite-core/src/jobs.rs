@@ -241,8 +241,12 @@ impl JobLog {
             .map(|e| e.0.clone())
             .unwrap_or_else(|| alloc::format!("job-{}", finished.id));
         let detail = finished.code.map(result_code_name);
-        let result = match detail {
-            Some(code) if !finished.outcome.is_ok() => {
+        // A rail-on verb whose slot ended latched names the latch: the
+        // plane's own result was `ok` and would read "failed: ok"
+        // otherwise (ADR 0004, "As built").
+        let result = match (finished.latched, detail) {
+            (Some(latch), _) => latch.text(),
+            (None, Some(code)) if !finished.outcome.is_ok() => {
                 alloc::format!("{}: {code}", finished.outcome.as_str())
             }
             _ => String::from(finished.outcome.as_str()),
@@ -440,6 +444,7 @@ mod tests {
             submitted_ms: 100,
             finished_ms: 500,
             rail_cut: false,
+            latched: None,
         }
     }
 
@@ -521,6 +526,38 @@ mod tests {
             }
             other => panic!("expected action_failed, got {other:?}"),
         }
+    }
+
+    /// A rail-on verb whose slot ended latched names the latch, in the
+    /// ack, the event and the node's own record - and not the plane's
+    /// `ok`, which is what the write earned and not what the rail did
+    /// (ADR 0004, "As built").
+    #[test]
+    fn a_latched_slot_is_reported_under_the_latchs_name() {
+        use crate::plane::SlotLatch;
+
+        let mut log = JobLog::new();
+        log.note("c-on", CommandKind::On, Target::Node(3), &one(9, 3), 100);
+        let latched = FinishedJob {
+            outcome: JobOutcome::Failed,
+            code: Some(granite_proto::ResultCode::Ok),
+            latched: Some(SlotLatch::OvLatched),
+            ..finished(9, JobOutcome::Failed)
+        };
+        let done = log.finish(&latched, 500);
+        let reply = done.reply.expect("the command is finished");
+        assert!(!reply.ok);
+        assert_eq!(reply.error.as_deref(), Some("slot latched: ov_latched"));
+        match done.event {
+            Some(EventKind::ActionFailed { error, .. }) => {
+                assert_eq!(error, "slot latched: ov_latched");
+            }
+            other => panic!("expected action_failed, got {other:?}"),
+        }
+        assert_eq!(
+            log.last(3).and_then(|r| r.result.clone()).as_deref(),
+            Some("slot latched: ov_latched")
+        );
     }
 
     /// A verb on a node with no front panel took the host's power away

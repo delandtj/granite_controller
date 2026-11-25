@@ -159,6 +159,22 @@ pub enum StageCondition {
     /// draw that falls, a rail that goes down or an LED that lights
     /// ends the job without a cut.
     HostStillDrawing,
+    /// The one condition that is checked **after** its stage instead of
+    /// before it, and that sends no writes either way: the slot a
+    /// rail-on verb just asked for must not report a latch
+    /// (ADR 0004, "As built").
+    ///
+    /// A plane answers `ok` to a 0x40 enable that reached the expander,
+    /// and a slot whose OV latch is set then stays dark with the verb
+    /// reporting `done`. So after the rail-on stage of `on`,
+    /// `power_on`, `cycle` and `clear_latch` the client looks at the
+    /// first SUMMARY newer than the stage: a latch ends the job
+    /// `failed` with the latch's name ([`SlotLatch`]), anything else
+    /// ends it as the plane's own result earned. It is never returned
+    /// by [`NodeCommand::stage_condition`] - the client installs it
+    /// itself, from [`NodeCommand::checks_latch`] - because there is no
+    /// stage behind it to hold back.
+    SlotUnlatched,
 }
 
 impl StageCondition {
@@ -185,6 +201,13 @@ impl StageCondition {
     /// leaves the rail up.
     pub const fn cuts_when_unreadable(self) -> bool {
         matches!(self, StageCondition::RailStillUp)
+    }
+
+    /// True for the condition that is checked after its stage has run
+    /// and that queues no writes of its own
+    /// ([`StageCondition::SlotUnlatched`]).
+    pub const fn checked_after(self) -> bool {
+        matches!(self, StageCondition::SlotUnlatched)
     }
 }
 
@@ -299,6 +322,55 @@ impl NodeOptions {
 /// front panel") and `force_power_off` on any node (ADR 0004, "Two
 /// explicit verbs").
 pub const HARD_CUT_TEXT: &str = "rail cut, no shutdown";
+
+/// What an ack, an HTTP job result and an `action_failed` event say
+/// about a rail-on verb whose slot ended latched, before the name of the
+/// latch (ADR 0004, "As built": a plane command that was accepted is not
+/// a rail that is up).
+pub const LATCH_TEXT: &str = "slot latched";
+
+/// Why a slot a rail-on verb asked for is not carrying its rail
+/// ([`FinishedJob::latched`]).
+///
+/// All three are latches the controller may not clear on its own: the
+/// slot's OV latch and the power-limit trip are cleared by `clear_latch`
+/// (ADR 0002 decision 7), and the unit's hot-swap latch by `unit_reset`
+/// (ADR 0005 decision 3). The verb therefore ends `failed` and says
+/// which one it was, instead of reporting `done` on a dark node.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SlotLatch {
+    /// The slot's OV latch is set (`SlotStatus::OV_LATCHED`).
+    OvLatched,
+    /// The plane's power limit tripped on this slot
+    /// (`SlotStatus::POWER_LIMIT_TRIPPED`).
+    PowerLimitTripped,
+    /// The plane holds the slot's whole unit off
+    /// (`UnitStatus::HOT_SWAP_LATCHED_OFF`).
+    UnitLatchedOff,
+}
+
+impl SlotLatch {
+    /// Lowercase wire name, which is the status bit's own name.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            SlotLatch::OvLatched => "ov_latched",
+            SlotLatch::PowerLimitTripped => "power_limit_tripped",
+            SlotLatch::UnitLatchedOff => "unit_latched_off",
+        }
+    }
+
+    /// The text an ack, a job result and an event carry for it.
+    pub fn text(self) -> alloc::string::String {
+        alloc::format!("{LATCH_TEXT}: {}", self.as_str())
+    }
+}
+
+impl core::fmt::Display for SlotLatch {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
 
 /// How long a conditional stage waits for telemetry newer than the
 /// stage before it \[ms\].
@@ -604,6 +676,28 @@ impl NodeCommand {
         )
     }
 
+    /// True for a verb whose last stage brings a rail up and whose slot
+    /// the client therefore looks at before it reports `done`
+    /// (ADR 0004, "As built"; [`StageCondition::SlotUnlatched`]).
+    ///
+    /// The four single-node verbs that end with a rail that should be
+    /// carrying: `on`, `power_on`, `cycle` (its rail-on step, whether
+    /// the plane's power-cycle or the controller's second stage) and
+    /// `clear_latch`, which is the verb whose whole point is the latch.
+    /// `on_all` is not one of them: it ends with a node-on per slot and
+    /// one watch cannot answer for a set, so its nodes are judged by
+    /// their own telemetry and the node faults of
+    /// [`crate::observed`].
+    pub const fn checks_latch(&self) -> bool {
+        matches!(
+            self,
+            NodeCommand::On { .. }
+                | NodeCommand::PowerOn { .. }
+                | NodeCommand::Cycle { .. }
+                | NodeCommand::ClearLatch { .. }
+        )
+    }
+
     /// True for a verb that may end with the rail cut, so the client
     /// looks at the slot once it is done.
     ///
@@ -692,13 +786,17 @@ impl NodeCommand {
         let press = u64::from(PRESS_MS);
         // A node with no front panel runs the rail and nothing else: one
         // enable write, or two with the cycle's wait between them.
+        // The look at the slot a rail-on verb ends with: it waits for
+        // telemetry newer than the stage, like a conditional cut does
+        // ([`Self::checks_latch`]).
+        let latch = if self.checks_latch() { STAGE_WATCH_MS } else { 0 };
         if let NodeCommand::On { opts, .. }
         | NodeCommand::Off { opts, .. }
         | NodeCommand::ForceOff { opts, .. }
         | NodeCommand::Cycle { opts, .. } = self
             && !opts.front_panel
         {
-            return self.stage_delay_ms(1) + SEQUENCE_SLACK_MS;
+            return self.stage_delay_ms(1) + latch + SEQUENCE_SLACK_MS;
         }
         // What a conditional cut stage adds: the wait for telemetry
         // newer than the sequence, the confirm window where there is
@@ -706,7 +804,7 @@ impl NodeCommand {
         let watch = STAGE_WATCH_MS + CUT_SETTLE_MS;
         match self {
             // Wait for the LED, press PWR, wait again (CTRL 0x50).
-            NodeCommand::On { opts, .. } => 2 * led(opts) + press + SEQUENCE_SLACK_MS,
+            NodeCommand::On { opts, .. } => 2 * led(opts) + press + latch + SEQUENCE_SLACK_MS,
             // Short press, wait for the host, hold PWR, cut the rail,
             // then the controller's own look at the slot's draw.
             NodeCommand::Off { opts, .. } => {
@@ -723,7 +821,7 @@ impl NodeCommand {
             NodeCommand::ForcePowerOff { .. } => SEQUENCE_SLACK_MS,
             // Rail down, the off delay, rail up, then an `on`.
             NodeCommand::Cycle { opts, .. } => {
-                u64::from(CYCLE_OFF_S) * 1_000 + 2 * led(opts) + press + SEQUENCE_SLACK_MS
+                u64::from(CYCLE_OFF_S) * 1_000 + 2 * led(opts) + press + latch + SEQUENCE_SLACK_MS
             }
             NodeCommand::Reset { .. } => press + SEQUENCE_SLACK_MS,
             NodeCommand::Press { ms, .. } => u64::from(*ms) + SEQUENCE_SLACK_MS,
@@ -738,7 +836,7 @@ impl NodeCommand {
             }
             NodeCommand::PowerOn { .. }
             | NodeCommand::PowerOff { .. }
-            | NodeCommand::ClearLatch { .. } => SEQUENCE_SLACK_MS,
+            | NodeCommand::ClearLatch { .. } => latch + SEQUENCE_SLACK_MS,
         }
     }
 
@@ -1064,6 +1162,16 @@ impl Command {
         }
     }
 
+    /// True when its last stage brings a rail up, so the client looks
+    /// at the slot before it reports `done` (see
+    /// [`NodeCommand::checks_latch`]).
+    pub const fn checks_latch(&self) -> bool {
+        match self {
+            Command::Node(c) => c.checks_latch(),
+            Command::Plane(_) => false,
+        }
+    }
+
     /// True when it cut a node's rail with no shutdown (see
     /// [`NodeCommand::hard_cut`]).
     pub const fn hard_cut(&self) -> bool {
@@ -1155,6 +1263,14 @@ pub struct FinishedJob {
     /// [`NodeCommand::hard_cut`]: a hard cut never tried a shutdown,
     /// while this one held PWR first and then found the rail still up.
     pub rail_cut: bool,
+    /// The latch the slot of a rail-on verb reported on the first
+    /// SUMMARY after the verb's rail-on stage
+    /// ([`StageCondition::SlotUnlatched`], ADR 0004 "As built").
+    ///
+    /// `Some` means the job ended [`JobOutcome::Failed`] with the
+    /// latch's name as its text, however well the plane's own result
+    /// read: a command the plane accepted is not a rail that is up.
+    pub latched: Option<SlotLatch>,
 }
 
 impl FinishedJob {

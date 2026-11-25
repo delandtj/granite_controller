@@ -34,7 +34,7 @@ use std::path::Path;
 use granite_core::hal::Switch;
 use granite_core::plane::{
     BufferedImage, ClientEvent, DesiredConfig, FinishedJob, JobId, JobOutcome, Node, NodeCommand,
-    PlaneClient, PlaneCommand, PowerState, UpdateFailure, UpdatePolicy,
+    PlaneClient, PlaneCommand, PowerState, SlotLatch, UpdateFailure, UpdatePolicy,
 };
 use granite_proto::{
     Config as ConfigRecord, EventKind, ImageState, PowerLimit, ResultCode, SlotStatus, StatusFlags,
@@ -1016,6 +1016,82 @@ fn a_watchdog_reboot_keeps_off_slots_and_a_power_loss_re_applies_them() {
         reapplies,
         "the re-apply happens once per plane boot"
     );
+}
+
+/// A rail-on verb the plane accepted whose slot ends latched is not
+/// `done` (ADR 0004, "As built"): the plane answers `ok` to a 0x40
+/// enable that reached the expander, and a latched slot then sits dark.
+#[test]
+fn a_rail_on_whose_slot_ends_latched_fails_and_names_the_latch() {
+    let mut harness = Harness::new(&scenario());
+    // Node 3 is slot 2 of 0x30. Its rail goes down first, so the
+    // `power_on` really switches it on.
+    harness.verb_ok(NodeCommand::PowerOff { node: 3 }, 5_000);
+    harness.run(1_000);
+    harness.clear();
+
+    // The module's OV comparator holds OV_KILL low for far longer than
+    // the plane's switch-on blanking, so the slot comes up latched -
+    // which is the hardware failure this check exists for.
+    harness
+        .fake(0x30)
+        .slot_mut(2)
+        .expect("slot 2")
+        .startup_ov_kill_ms = 60_000;
+
+    let job = harness.do_verb(NodeCommand::PowerOn { node: 3 }, 20_000);
+    assert_eq!(
+        job.outcome,
+        JobOutcome::Failed,
+        "a plane result of {:?} is not a rail that is up",
+        job.code
+    );
+    assert_eq!(job.code, Some(ResultCode::Ok), "the plane took the write");
+    assert_eq!(job.latched, Some(SlotLatch::OvLatched));
+    assert!(harness.status(3).contains(SlotStatus::OV_LATCHED));
+    // The bookkeeping is unchanged: a rail-on verb leaves the set,
+    // whatever its outcome.
+    assert!(harness.client.intended_off().is_empty());
+}
+
+/// The same for the latch one step up: the plane holds a faulted unit's
+/// hot-swap off, so no `on` of either of its slots can bring a rail up
+/// and only `unit_reset` lifts it (ADR 0005 decision 3).
+#[test]
+fn a_rail_on_on_a_latched_unit_fails_and_names_the_unit_latch() {
+    let mut harness = Harness::new(&scenario());
+    harness.clear();
+
+    // Unit 1 of 0x30 carries nodes 3 and 4.
+    harness.fake(0x30).fault_unit_hot_swap(1, true);
+    assert!(
+        harness.run_until(15_000, |h| h
+            .client
+            .plane(0x30)
+            .and_then(|p| p.units.get(1).copied())
+            .is_some_and(|u| u.status.contains(UnitStatus::HOT_SWAP_LATCHED_OFF))),
+        "the plane latched the unit off"
+    );
+    harness.clear();
+
+    let job = harness.do_verb(NodeCommand::PowerOn { node: 3 }, 20_000);
+    assert_eq!(job.outcome, JobOutcome::Failed, "{:?}", job.code);
+    assert_eq!(job.latched, Some(SlotLatch::UnitLatchedOff));
+}
+
+/// And a rail-on verb on a healthy slot still reports `done`: the check
+/// costs the job the wait for one SUMMARY and nothing else.
+#[test]
+fn a_rail_on_whose_slot_is_clean_still_reports_done() {
+    let mut harness = Harness::new(&scenario());
+    harness.verb_ok(NodeCommand::PowerOff { node: 4 }, 5_000);
+    harness.run(1_000);
+    harness.clear();
+
+    let job = harness.do_verb(NodeCommand::PowerOn { node: 4 }, 20_000);
+    assert_eq!(job.outcome, JobOutcome::Done, "{:?}", job.code);
+    assert_eq!(job.latched, None);
+    assert!(harness.run_until(5_000, |h| h.node(4).power == PowerState::On));
 }
 
 #[test]

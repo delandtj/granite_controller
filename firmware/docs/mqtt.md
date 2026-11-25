@@ -148,6 +148,13 @@ mosquitto_sub -h 127.0.0.1 -C 1 -t "$T/state" | jq .
   `config_revert` (the list of sections) and `plane_log` (the plane's
   log lines, section 6.8).
 
+A verb that asked for a rail and got it, on a slot that then reports a
+latch, is a failure and says which latch:
+`"error":"slot latched: ov_latched"` (also `power_limit_tripped`,
+`unit_latched_off`). The plane answered `ok` to the write - it reached
+the expander - but the rail is not carrying, so the ack may not say
+`done`. See section 5.5.
+
 A payload that is not a valid command but has a string `id` (64
 characters at most) is answered on that id with
 `"error":"bad command: <parser message>"`, e.g. a bad target:
@@ -189,10 +196,10 @@ Time limits:
   loses the acks of commands still in flight.
 
 Failure texts from a plane job: `failed: <code>`, `absent`,
-`link_lost`, `timed_out`, where `<code>` is the plane's result
-(`busy`, `bad_argument`, `conflict`, `not_present`, `refused`,
-`failed`). A command on `all` acks once with the worst outcome, e.g.
-`2 of 5 failed: failed`.
+`link_lost`, `timed_out`, `slot latched: <latch>` (section 5.5), where
+`<code>` is the plane's result (`busy`, `bad_argument`, `conflict`,
+`not_present`, `refused`, `failed`). A command on `all` acks once with
+the worst outcome, e.g. `2 of 5 failed: failed`.
 
 ## 5. Node, unit and plane verbs
 
@@ -316,6 +323,32 @@ Not a verb, but it moves nodes: `nodes.nodes[].boot_policy` `on` /
 `off` runs that verb once, 3 s after a **plane** boot (its boot count
 moved, or it came back with its intended state lost). A controller
 reboot moves nothing. The commands use the id `boot-<node>`.
+
+### 5.5 A rail-on verb whose slot ends latched
+
+`on`, `power_on`, `cycle` and `clear_latch` ask for a rail that
+carries. The plane answers `ok` to the write that releases the slot -
+the write reached the expander - so that answer alone is not the rail:
+a slot whose overvoltage latch is set, whose power limit tripped, or
+whose whole unit the plane holds off stays dark with the command
+reported as `done`.
+
+So after the rail-on step the controller looks at the slot once more,
+on the first telemetry newer than the step (one second at most), and
+ends the job `failed` with the latch's name instead:
+
+| Error text | What to do |
+|---|---|
+| `slot latched: ov_latched` | `clear_latch` on the node, then `on` again. If it latches again, the overvoltage is real: `plane_log` (section 6.8) has the plane's account. |
+| `slot latched: power_limit_tripped` | The slot drew more than `nodes[].power_limit_w`. `clear_latch` clears the trip with the latch. |
+| `slot latched: unit_latched_off` | The unit's own hot-swap is held off by the plane and no node verb can lift it: `unit_reset` on `planeN.unitU`. |
+
+A slot that is clean reports as it always did; the check costs the job
+the wait for one telemetry reading. `on_all` is not checked this way -
+one reading cannot answer for a set - so its nodes are judged by their
+state and their faults in `state` (section 9.2). What the verb means
+for the intended-off set does not change: a verb that asks for a rail
+takes its node out of the set, whatever the outcome.
 
 ## 6. Other verbs
 
@@ -441,23 +474,27 @@ probe attached. `target` is `"planeN"` and is required.
 The ack is `ok` at once with `data`:
 
 ```json
-{"plane":0,"lines":[
+{"plane":0,"stale":false,"lines":[
  {"uptime_ms":1120,"level":3,"text":"boot 2"},
  {"uptime_ms":64150,"level":1,"text":"unit fault, hot-swap held off 1"}]}
 ```
 
 - `uptime_ms` is the **plane's** clock, not the controller's.
 - `level` is the plane's own scale: 1 error, 2 warn, 3 info.
-- `lines` is what the controller read last, oldest first; the plane
-  keeps the last eight. It is empty on a plane whose log has not been
-  read yet.
-- The command also puts a fresh read in hand. That read happens within
-  a second, and the lines it brings that the controller has not seen
-  before go out on `.../log` (section 2) - so the lines in `data` are
-  the picture from the last read and the next `plane_log` carries the
-  newer ones.
-- One read per plane per 3 s, so repeating the command faster than
-  that does not read the plane more often.
+- `lines` is the plane's ring as a read taken **for this command**
+  brings it back, oldest first; the plane keeps the last eight. A line
+  the plane wrote a moment ago is therefore in this reply and not in
+  the next one.
+- `stale` is `false` when those lines are that fresh read. It is
+  `true` when the plane did not answer it: the lines are then the last
+  read the controller has, and may be empty on a plane whose log has
+  never been read.
+- The command's own read is not rate-limited - an operator asking by
+  hand is not a fault storm - but it does postpone the controller's
+  own next automatic read by 3 s.
+- Lines the controller has not seen before also go out on `.../log`
+  (section 2), from this read as from any other, so nothing appears
+  twice there.
 
 The controller also reads the ring on its own, without being asked,
 after a plane event that says something went wrong (`ov_latched`,
@@ -468,7 +505,7 @@ after a plane event that says something went wrong (`ov_latched`,
 account of a fault arrives with it.
 
 HTTP: `GET /api/v1/planes/<n>/log` does the same thing and answers
-`{"ok":true,"plane":0,"lines":[...]}`.
+`{"ok":true,"plane":0,"stale":false,"lines":[...]}`.
 
 ## 7. Changing the configuration
 
@@ -983,6 +1020,7 @@ to `valid`. How to build the `.bin`: `README.md`, "Making the .bin".
 | `off` took the rail down and the host lost its standby power | Section 5.2: the slot kept drawing more than `nodes.host_running_w` with its LED dark, so the host looked like it was still running. An unplugged front-panel cable does that; so does a threshold set below what this host draws in standby. Raise `nodes.host_running_w`, or set it to `0` to turn the check off. |
 | `off` left a running host running | The reverse: its draw is under `nodes.host_running_w`, or its escalation is `none` / `hold`. `force_off` always ends with the rail down. |
 | An ack says `"rail_cut":true` | The controller cut the rail itself, because the plane's sequence left it up (section 5.2). Expected on every `force_off`, and on an `off` whose host kept drawing. |
+| `slot latched: ov_latched` (or `power_limit_tripped`, `unit_latched_off`) | Section 5.5: the plane took the write but the slot is latched, so the rail is not carrying. `clear_latch`, or `unit_reset` for the unit latch, then try again; `plane_log` has the plane's account. |
 | `timed_out` / `the action did not finish in time` | The plane did not report. Check the plane link; the job may still have run. |
 | A node or a unit went off and nothing says why | The plane's own account is on `.../log` under `target` `planeN`, and `plane_log` (section 6.8) asks for it again. |
 | `state.probes` is `[]` with a probe plugged in | Check the probe's wire order: the board's JST PH pins are 1 = 3V3, 2 = DQ, 3 = GND. A reversed probe holds the bus low; the log shows `1-wire reset pulse receive timeout`. |
