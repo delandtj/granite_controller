@@ -158,6 +158,38 @@ Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
   6 blocks. Candidate for the next module order: diode emulation at
   light load via DEMB / R12 (check the LM5116 datasheet). No change for
   the first run (user).
+  - Why the coils run warm with no load: in forced continuous the
+    ripple swings around 0 A, ~1.3 A rms, so copper is only tens of mW;
+    it is core loss in the metal-dust core, which follows the ripple and
+    not the load (the doc assumed ~0.4 W at 5 A p-p with no maker
+    curve). The same loss is there at full load, plus ~1.8 W copper.
+    The slot `temp` in the state is the unit-board slot sensor, not the
+    coil: measure the coil itself (IR or thermocouple on L1's top).
+  - [ ] **Bench rework, one module: R12 10k -> 0R.** Datasheet (SNVS499I,
+    DEMB): a resistor lets the DEMB bias current lift the pin after soft
+    start (fully synchronous); 0 ohm to CSG keeps diode emulation at all
+    times. R12 is 0402 on the module's **B side** (faces the unit board,
+    so the module comes off): 16 mm in from the input end (VIN / input
+    GND screws), on the long centre line, under U1; C17 2.6 mm towards
+    the input end, R3 ~2 mm towards the output end (pcb: R12 at 116.0,
+    111.0; outline 100..158.4 x 100..122.9). Check U1 pin 11 (DEMB) to
+    pin 13 (CSG) reads ~0 ohm at the IC pins. Tie-on tag "DE, R12 = 0R".
+    Do it on node59 (slot 7.2) and keep node60 (7.3, same unit) stock as
+    the reference; after the 7d plane flash, so a switch-off latch does
+    not muddy the numbers.
+  - [ ] Measure, reworked vs stock: idle slot W and unit 1 input current;
+    coil top temperature after 15-20 min at no load; VOUT at no load
+    (AC, expect pulse-skipping bursts, listen for audible noise); and
+    **load-release overshoot**: VOUT DC with offset, 10 A -> 0 step,
+    `tools/sds_capture.py --single --repeat 20`, peak against OV_KILL
+    (20.83 V nominal, **19.83 V worst case**). Also small steps at light
+    load (DCM changes the loop gain: ringing).
+  - If it passes it is **BOM only** for the next order: R12 10k (C25744)
+    -> 0R 0402 (e.g. C17168, check stock), same footprint, Gerbers
+    unchanged. Change power/pm-19v-250w-b/tools/gensch.py:188 and the
+    soft-start note in docs/pm-19v-250w-b.md 4.8. If the overshoot is
+    too close to the OV threshold it becomes more output capacitance or
+    a higher OV_KILL divider (still BOM lines, no copper).
 
 - [ ] `cross_check` on both slots with no node and no front-panel
   cable: **not** the LED sense. The opto is a TLP291 (unit.py U8 /
