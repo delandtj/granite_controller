@@ -1260,3 +1260,108 @@ fn the_sample_scenario_runs_through_its_faults() {
             .intended_state_lost()
     );
 }
+
+// --- nodes without a front panel --------------------------------------
+
+/// ADR 0004, "Nodes without a front panel": the verbs become rail-only
+/// plane commands, nothing ever presses a button, and the host axis
+/// stays `unknown` because there is no LED to read.
+///
+/// Node 10 (plane 0x31, slot 1) plays the part: its host is dark in the
+/// scenario, and `min_press_ms = u32::MAX` makes it a host that feels no
+/// press at all - which is what a cable that is not there looks like.
+#[test]
+fn a_node_without_a_front_panel_is_driven_by_its_rail_alone() {
+    use granite_core::plane::{HostState, NodeOptions};
+    use granite_proto::CrossCheck;
+
+    let mut harness = Harness::new(&scenario());
+    // Bit 9 is node 10 (bit id - 1).
+    harness.client.set_no_front_panel(1 << 9);
+    assert_eq!(harness.client.no_front_panel(), 1 << 9);
+    harness
+        .fake(0x31)
+        .slot_mut(1)
+        .expect("slot 1")
+        .node
+        .min_press_ms = u32::MAX;
+    let opts = NodeOptions::DEFAULT.without_front_panel();
+
+    // The host axis says nothing about such a node, rail up or down.
+    assert_eq!(harness.node(10).power, PowerState::On);
+    assert_eq!(harness.node(10).host, HostState::Unknown);
+    // Node 9, which has its front panel, is unchanged.
+    assert_eq!(harness.node(9).host, HostState::On);
+
+    // off: the rail goes down, and the client knows it means to keep it
+    // down (the intended-OFF set of ADR 0004).
+    let job = harness.do_verb(NodeCommand::off(10).with_opts(opts), 10_000);
+    assert_eq!(job.outcome, JobOutcome::Done, "{:?}", job.code);
+    assert!(job.command.hard_cut(), "the result is a hard cut");
+    assert!(harness.run_until(5_000, |h| h.node(10).power == PowerState::Off));
+    assert!(!harness.status(10).contains(SlotStatus::ENABLED));
+    assert!(
+        harness.run_until(3_000, |h| h.client.intended_off() == [10]),
+        "intended off: {:?}",
+        harness.client.intended_off()
+    );
+
+    // on: the rail comes back, nothing waits for a host, and the node
+    // leaves the intended-OFF set.
+    let job = harness.do_verb(NodeCommand::on(10).with_opts(opts), 10_000);
+    assert_eq!(job.outcome, JobOutcome::Done, "{:?}", job.code);
+    assert!(!job.command.hard_cut());
+    assert!(harness.run_until(5_000, |h| h.node(10).power == PowerState::On));
+    assert!(harness.client.intended_off().is_empty());
+    assert_eq!(harness.node(10).host, HostState::Unknown);
+
+    // cycle: the rail goes down, waits out the cycle delay and comes
+    // back, as one job of the controller's own.
+    let id = harness
+        .client
+        .submit(harness.now_ms, NodeCommand::cycle(10).with_opts(opts));
+    assert!(
+        harness.run_until(10_000, |h| h.node(10).power == PowerState::Off),
+        "the rail goes down first"
+    );
+    assert!(
+        harness.run_until(30_000, |h| h.finished(id).is_some()),
+        "the cycle did not finish"
+    );
+    let job = harness.finished(id).expect("the cycle finished").clone();
+    assert_eq!(job.outcome, JobOutcome::Done, "{:?}", job.code);
+    assert!(job.command.hard_cut(), "a cycle with no shutdown either");
+    assert!(harness.run_until(5_000, |h| h.node(10).power == PowerState::On));
+
+    // Through all of that, no press ever reached the host and no LED
+    // cross-check was raised: the plane never ran a node sequence on
+    // the slot.
+    let slot = harness.fake(0x31).slot_mut(1).expect("slot 1");
+    assert_eq!(slot.node.last_press_ms(), 0, "a button was pressed");
+    assert_eq!(slot.node.held_ms(), 0);
+    assert!(
+        !harness
+            .node(10)
+            .telemetry
+            .cross
+            .contains(CrossCheck::NO_LED_AFTER_CYCLE),
+        "no sequence waited for a light"
+    );
+
+    // And a node that has its front panel behaves exactly as before:
+    // its `on` presses PWR and the host comes up.
+    harness.verb_ok(NodeCommand::force_off(9), 30_000);
+    assert!(harness.run_until(5_000, |h| h.node(9).host != HostState::On));
+    harness.verb_ok(NodeCommand::on(9), 60_000);
+    assert!(harness.run_until(10_000, |h| h.node(9).host == HostState::On));
+    assert!(
+        harness
+            .fake(0x31)
+            .slot_mut(0)
+            .expect("slot 0")
+            .node
+            .last_press_ms()
+            > 0,
+        "the node with a front panel was pressed"
+    );
+}

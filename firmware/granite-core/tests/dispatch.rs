@@ -419,6 +419,61 @@ fn the_node_settings_shape_the_verb() {
     assert_eq!(h.config.nodes.name_of(7), "node7");
 }
 
+/// ADR 0004, "Nodes without a front panel": `reset` and `press` are
+/// refused at dispatch, the rail verbs are accepted, and a group verb
+/// still reaches the nodes it can.
+#[test]
+fn a_node_without_a_front_panel_refuses_the_button_verbs() {
+    let mut h = Harness::new();
+    h.config.nodes.nodes.push(NodeSettings {
+        front_panel: false,
+        ..NodeSettings::for_node(1)
+    });
+
+    for action in [CommandKind::Reset, CommandKind::Press] {
+        let reply = h.verb(action, Target::Node(1));
+        assert!(!reply.ok, "{} must be refused", action.as_str());
+        let error = reply.error.unwrap_or_default();
+        assert!(error.contains("no front panel"), "{error}");
+    }
+
+    // The rail verbs are accepted and become a job.
+    for action in [
+        CommandKind::On,
+        CommandKind::Off,
+        CommandKind::ForceOff,
+        CommandKind::Cycle,
+        CommandKind::PowerOn,
+        CommandKind::PowerOff,
+    ] {
+        let out = h.dispatched(&Command::new("c-v", action).with_target(Target::Node(1)));
+        assert!(
+            out.reply.ok,
+            "{} should be accepted: {:?}",
+            action.as_str(),
+            out.reply.error
+        );
+        assert_eq!(out.jobs.len(), 1, "{} became one job", action.as_str());
+    }
+
+    // `reset` on `all` still reaches node 2, which has its buttons.
+    let out = h.dispatched(&Command::new("c-rst-all", CommandKind::Reset).with_target(Target::All));
+    assert!(out.reply.ok, "{:?}", out.reply.error);
+    assert_eq!(out.jobs.len(), 1, "one job, for the node that has a panel");
+
+    // With nobody left to press, the group is the refusal.
+    h.config.nodes.nodes.push(NodeSettings {
+        front_panel: false,
+        ..NodeSettings::for_node(2)
+    });
+    let reply = h.verb(CommandKind::Reset, Target::All);
+    assert!(!reply.ok);
+    assert!(
+        reply.error.unwrap_or_default().contains("no front panel"),
+        "the reason is the nodes', not 'no node is present'"
+    );
+}
+
 #[test]
 fn the_non_plane_commands_still_work() {
     let mut h = Harness::new();

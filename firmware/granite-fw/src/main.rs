@@ -946,8 +946,9 @@ fn dispatcher<L: PlaneLink>(
 ///
 /// The per-node settings are read when a command is dispatched, so
 /// nothing has to be pushed for them (ADR 0004 decisions 2 and 4).
-/// `nodes.host_detect_w` is the exception: the host axis is derived on
-/// the poll path, so the threshold has to live in the plane client.
+/// `nodes.host_detect_w` and `nodes[].front_panel` are the exceptions:
+/// the host axis is derived on the poll path, so the threshold and the
+/// nodes with no front panel have to live in the plane client.
 ///
 /// Also pushes what the other thread caches: the VIN trim into the ADC
 /// reader and the probe list, probe period and VIN window into
@@ -963,6 +964,7 @@ fn apply_config(
     rules.set_rules(cfg.rules.rules.clone());
     plane.set_policy(cfg.nodes.plane_update);
     plane.set_host_detect_dw(cfg.nodes.host_detect_dw());
+    plane.set_no_front_panel(cfg.nodes.no_front_panel_mask());
     hw::vin::set_trim(cfg.nodes.vin_trim);
     push_sense_cfg(cfg);
 }

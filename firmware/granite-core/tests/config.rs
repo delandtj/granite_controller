@@ -374,6 +374,44 @@ fn the_host_detect_threshold_defaults_above_the_module_idle() {
     c.validate().unwrap();
 }
 
+/// ADR 0004, "Nodes without a front panel": a per-node flag, default
+/// true, and a config written before it existed still loads.
+#[test]
+fn the_front_panel_flag_defaults_to_true_and_older_configs_load() {
+    let c = Config::default();
+    assert!(c.nodes.front_panel(1), "a node with no entry has one");
+    assert_eq!(c.nodes.no_front_panel_mask(), 0);
+
+    let mut c = Config::default();
+    c.nodes.nodes.push(granite_core::node::NodeSettings {
+        front_panel: false,
+        ..granite_core::node::NodeSettings::for_node(57)
+    });
+    c.nodes
+        .nodes
+        .push(granite_core::node::NodeSettings::for_node(1));
+    assert!(!c.nodes.front_panel(57));
+    assert!(c.nodes.front_panel(1));
+    assert_eq!(c.nodes.no_front_panel_mask(), 1 << 56);
+    c.validate().expect("a bool needs no validation");
+
+    // The round trip keeps it, and a `nodes` entry from before the flag
+    // existed reads as "has a front panel".
+    let json = c.export_json().unwrap();
+    let back = Config::import_json(&json).unwrap();
+    assert_eq!(
+        back.nodes.no_front_panel_mask(),
+        c.nodes.no_front_panel_mask()
+    );
+    let old = r#"{"nodes":[{"node":3,"name":"old","boot_policy":"on","led_sense":false,
+                 "t_soft_off_s":60,"escalation":"hold"}]}"#;
+    let mut c = Config::default();
+    c.set_section_json(Section::Nodes, old)
+        .expect("a config written before the flag existed");
+    assert!(c.nodes.front_panel(3));
+    assert!(!c.nodes.settings(3).led_sense, "the rest is still read");
+}
+
 #[test]
 fn too_many_rules_are_truncated_by_normalise() {
     let mut c = Config::default();

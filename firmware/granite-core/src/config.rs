@@ -637,6 +637,30 @@ impl NodesCfg {
         out
     }
 
+    /// True when this node has a front-panel cable: PWR, RST and the
+    /// power LED (ADR 0004, "Nodes without a front panel"). The default
+    /// for a node with no entry.
+    pub fn front_panel(&self, node: NodeId) -> bool {
+        self.nodes
+            .iter()
+            .find(|n| n.node == node)
+            .is_none_or(|n| n.front_panel)
+    }
+
+    /// The nodes with no front panel, as a bitmap of node ids (bit
+    /// `id - 1`): what the plane client is told
+    /// ([`crate::plane::PlaneClient::set_no_front_panel`]), because the
+    /// host axis is derived on the poll path.
+    pub fn no_front_panel_mask(&self) -> u64 {
+        let mut mask = 0u64;
+        for settings in &self.nodes {
+            if !settings.front_panel && crate::is_node(settings.node) {
+                mask |= 1 << (settings.node - 1);
+            }
+        }
+        mask
+    }
+
     /// True when `mv` is outside the configured VIN window, which is what
     /// sets the `vin` fault bit. A bound of `0` is not checked, so a
     /// window of `0`/`0` never faults.

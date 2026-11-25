@@ -602,3 +602,174 @@ fn a_controller_restart_moves_no_node() {
     assert_eq!(rig.host(1), HostState::On, "the host kept running");
     assert_eq!(rig.core.observed.present_nodes(), vec![1, 2, 3, 4]);
 }
+
+// --- nodes without a front panel --------------------------------------
+
+/// The configuration of a frame where node 2 has no front-panel cable.
+fn no_front_panel_config(node: NodeId, boot_policy: BootPolicy) -> Config {
+    let mut config = Config::default();
+    config.nodes.nodes.push(NodeSettings {
+        front_panel: false,
+        boot_policy,
+        ..NodeSettings::for_node(node)
+    });
+    config
+}
+
+/// How long the last press the fake host behind a slot felt was \[ms\].
+fn last_press_ms(rig: &mut Rig, slot: u8) -> u32 {
+    rig.core
+        .planes
+        .plane_mut(0x30)
+        .expect("the plane at 0x30")
+        .slot_mut(slot)
+        .expect("a slot")
+        .node
+        .last_press_ms()
+}
+
+/// ADR 0004, "Nodes without a front panel", end to end: the verbs are
+/// the rail, `off` is reported as a hard cut, `reset` is refused, the
+/// host axis stays `unknown`, and the flag is published.
+#[test]
+fn a_node_without_a_front_panel_is_switched_by_its_rail() {
+    use granite_core::modbus_map::{NODE_FRONT_PANEL_BIT_BASE, RegKind};
+    use granite_core::msg::State;
+    use granite_core::plane::HARD_CUT_TEXT;
+
+    let mut rig = Rig::with_scenario(scenario(), no_front_panel_config(2, BootPolicy::Leave));
+
+    // The host axis says nothing about node 2, and the flag is in the
+    // snapshot, the state payload and the Modbus map.
+    assert_eq!(rig.power(2), PowerState::On);
+    assert_eq!(rig.host(2), HostState::Unknown);
+    assert_eq!(rig.host(1), HostState::Off, "node 1 is unchanged");
+    assert!(!rig.core.observed.node(2).expect("node 2").front_panel);
+    let state = State::from_observed(&rig.core.observed, &rig.core.config.nodes, rig.now_ms);
+    let node2 = state
+        .nodes
+        .iter()
+        .find(|n| n.node == 2)
+        .expect("node 2 in the state payload");
+    assert!(!node2.front_panel);
+    assert_eq!(node2.host, "unknown");
+    assert!(
+        state
+            .nodes
+            .iter()
+            .find(|n| n.node == 1)
+            .expect("node 1")
+            .front_panel
+    );
+    let snapshot = rig.core.observed.clone();
+    let image = Image::new(&snapshot, FwVersion::default(), 0, ResultCode::Idle);
+    assert_eq!(
+        image.bit(RegKind::DiscreteInput, NODE_FRONT_PANEL_BIT_BASE + 1),
+        Some(false)
+    );
+    assert_eq!(
+        image.bit(RegKind::DiscreteInput, NODE_FRONT_PANEL_BIT_BASE),
+        Some(true)
+    );
+
+    // off: the rail goes down and the ack says what it was.
+    let reply = rig.verb("c-off", CommandKind::Off, Target::Node(2));
+    assert!(reply.ok, "{:?}", reply.error);
+    let ack = rig.ack("c-off", 30_000);
+    assert!(ack.ok, "{:?}", ack.error);
+    assert!(ack.hard_cut, "the ack flags the hard cut");
+    assert_eq!(ack.result.as_deref(), Some(HARD_CUT_TEXT));
+    assert!(rig.run_until(10_000, |core| {
+        core.observed.node_power(2) == PowerState::Off
+    }));
+    assert_eq!(
+        rig.core.plane.intended_off(),
+        &[2],
+        "a hard cut is a rail-off intent"
+    );
+    // The `action_done` event carries the same flag, which is what the
+    // surfaces with no room for the text have.
+    assert!(
+        rig.core.events.iter().any(|e| matches!(
+            e,
+            EventKind::ActionDone { id, hard_cut: true, .. } if id == "c-off"
+        )),
+        "no action_done with hard_cut for c-off"
+    );
+
+    // reset and press reach nothing, so they are refused at dispatch.
+    for (id, action) in [
+        ("c-rst", CommandKind::Reset),
+        ("c-press", CommandKind::Press),
+    ] {
+        let reply = rig.verb(id, action, Target::Node(2));
+        assert!(!reply.ok, "{} was accepted", action.as_str());
+        let error = reply.error.unwrap_or_default();
+        assert!(error.contains("no front panel"), "{error}");
+    }
+
+    // on: the rail comes back, and the ack is a plain `done`.
+    let reply = rig.verb("c-on", CommandKind::On, Target::Node(2));
+    assert!(reply.ok, "{:?}", reply.error);
+    let ack = rig.ack("c-on", 30_000);
+    assert!(ack.ok, "{:?}", ack.error);
+    assert!(!ack.hard_cut);
+    assert_eq!(ack.result.as_deref(), Some("done"));
+    assert!(rig.run_until(10_000, |core| {
+        core.observed.node_power(2) == PowerState::On
+    }));
+    assert!(rig.core.plane.intended_off().is_empty());
+
+    // cycle: the rail goes down and comes back as one job.
+    let reply = rig.verb("c-cycle", CommandKind::Cycle, Target::Node(2));
+    assert!(reply.ok, "{:?}", reply.error);
+    assert!(
+        rig.run_until(10_000, |core| {
+            core.observed.node_power(2) == PowerState::Off
+        }),
+        "the cycle never took the rail down"
+    );
+    let ack = rig.ack("c-cycle", 30_000);
+    assert!(ack.ok, "{:?}", ack.error);
+    assert!(ack.hard_cut, "a cycle is a cut too");
+    assert!(rig.run_until(10_000, |core| {
+        core.observed.node_power(2) == PowerState::On
+    }));
+
+    // Nothing ever pressed node 2's PWR, and node 1 still answers its
+    // own button the way it always did.
+    assert_eq!(last_press_ms(&mut rig, 1), 0, "node 2 was pressed");
+    let reply = rig.verb("c-on1", CommandKind::On, Target::Node(1));
+    assert!(reply.ok, "{:?}", reply.error);
+    rig.ack("c-on1", 60_000);
+    assert_eq!(rig.host(1), HostState::On);
+    assert!(last_press_ms(&mut rig, 0) > 0, "node 1 took a press");
+}
+
+/// `boot_policy = on` with no front panel means "this node powers up at
+/// every plane boot": the rail, not a button.
+#[test]
+fn a_boot_policy_on_a_node_without_a_front_panel_is_its_rail() {
+    let mut rig = Rig::with_scenario(scenario(), no_front_panel_config(2, BootPolicy::On));
+
+    // Take the rail down by hand first.
+    let reply = rig.verb("c-off2", CommandKind::PowerOff, Target::Node(2));
+    assert!(reply.ok, "{:?}", reply.error);
+    rig.ack("c-off2", 30_000);
+    assert!(rig.run_until(10_000, |core| {
+        core.observed.node_power(2) == PowerState::Off
+    }));
+
+    // The plane reboots on command: the boot count moves, which is what
+    // the policies run on, and an OFF slot stays off across it (ADR
+    // 0002 decision 3) - so the policy is what brings node 2 back.
+    let reply = rig.verb("c-rb", CommandKind::PlaneReboot, Target::Plane(0));
+    assert!(reply.ok, "{:?}", reply.error);
+    assert!(
+        rig.run_until(120_000, |core| {
+            core.observed.node_power(2) == PowerState::On
+        }),
+        "the boot policy never brought the rail up"
+    );
+    assert_eq!(last_press_ms(&mut rig, 1), 0, "and it pressed nothing");
+}

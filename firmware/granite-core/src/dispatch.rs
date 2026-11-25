@@ -540,8 +540,20 @@ fn node_jobs(cmd: &Command, ctx: &DispatchCtx<'_>) -> Result<Vec<PlaneJob>, Stri
             return Err(String::from("no node is present"));
         }
         let mut jobs = Vec::new();
+        let mut refused: Option<String> = None;
         for node in nodes {
-            jobs.push(PlaneJob::Node(node_verb(cmd.action, node, &cmd.args, ctx)?));
+            // A node the verb cannot apply to is left out of the group
+            // rather than failing it: `reset` on `all` still reaches
+            // every node that has a button (ADR 0004, "Nodes without a
+            // front panel"). A group where it applies to nobody is the
+            // refusal itself.
+            match node_verb(cmd.action, node, &cmd.args, ctx) {
+                Ok(verb) => jobs.push(PlaneJob::Node(verb)),
+                Err(e) => refused = Some(e),
+            }
+        }
+        if jobs.is_empty() {
+            return Err(refused.unwrap_or_else(|| String::from("no node is present")));
         }
         return Ok(jobs);
     }
@@ -577,6 +589,7 @@ fn on_all_job(cmd: &Command, ctx: &DispatchCtx<'_>) -> Result<Vec<PlaneJob>, Str
     }
     let mut nodes: Vec<NodeId> = Vec::new();
     let mut stagger: Vec<NodeId> = Vec::new();
+    let mut rail_only: Vec<NodeId> = Vec::new();
     for node in present {
         let Some(obs) = ctx.observed.node(node) else {
             continue;
@@ -590,13 +603,20 @@ fn on_all_job(cmd: &Command, ctx: &DispatchCtx<'_>) -> Result<Vec<PlaneJob>, Str
         if !matches!(obs.power, PowerState::On | PowerState::Starting) {
             stagger.push(node);
         }
+        // No front panel: the stagger as usual, and the rail instead of
+        // a node-on (ADR 0004, "Nodes without a front panel").
+        if !ctx.config.nodes.front_panel(node) {
+            rail_only.push(node);
+        }
     }
     if nodes.is_empty() {
         return Ok(Vec::new());
     }
     let opts = group_options(&nodes, cmd, ctx);
     Ok(alloc::vec![PlaneJob::Node(
-        NodeCommand::on_all_of(nodes, stagger).with_opts(opts)
+        NodeCommand::on_all_of(nodes, stagger)
+            .with_opts(opts)
+            .with_rail_only(rail_only)
     )])
 }
 
@@ -617,6 +637,17 @@ fn node_verb_with(
     args: &Args,
     opts: NodeOptions,
 ) -> Result<NodeCommand, String> {
+    // No front panel, so no button to press: `reset` and `press` are
+    // refused here rather than sent to a plane that would pulse a
+    // contact nothing is wired to (ADR 0004, "Nodes without a front
+    // panel"). Everything else becomes a rail-only command, which
+    // `NodeCommand::stages` builds from the options.
+    if !opts.front_panel && matches!(action, CommandKind::Reset | CommandKind::Press) {
+        return Err(alloc::format!(
+            "node {node} has no front panel, so {} reaches nothing",
+            action.as_str()
+        ));
+    }
     let verb = match action {
         CommandKind::On => NodeCommand::on(node),
         CommandKind::Off => NodeCommand::off(node),
@@ -680,6 +711,9 @@ fn group_options(nodes: &[NodeId], cmd: &Command, ctx: &DispatchCtx<'_>) -> Node
         opts.led_timeout_s = opts.led_timeout_s.min(one.led_timeout_s);
         opts.soft_off_s = opts.soft_off_s.min(one.soft_off_s);
     }
+    // The group's options are timings only: which of its nodes have no
+    // front panel travels as `rail_only`, per node.
+    opts.front_panel = true;
     cmd.args.apply_to(opts)
 }
 

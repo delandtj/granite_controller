@@ -24,6 +24,7 @@
 //! Discrete inputs    8-13      dry inputs, link, MQTT
 //!                    100+id-1  node rail on
 //!                    200+id-1  node host on
+//!                    300+id-1  node has a front panel
 //! Input registers    0-16      probes, board temp, VIN, uptime, fw,
 //!                              faults, map version, planes
 //!                    100+      per node, 12 registers (NODE_STRIDE)
@@ -63,6 +64,10 @@ pub const MQTT_ADDR: u16 = 13;
 pub const NODE_POWER_BIT_BASE: u16 = 100;
 /// First discrete input of the per-node host bits.
 pub const NODE_HOST_BIT_BASE: u16 = 200;
+/// First discrete input of the per-node front-panel bits (ADR 0004,
+/// "Nodes without a front panel"). An addition to map version 2: a
+/// client that does not read it sees the map it always did.
+pub const NODE_FRONT_PANEL_BIT_BASE: u16 = 300;
 
 /// First input register of the probes.
 pub const PROBE_BASE: u16 = 0;
@@ -672,6 +677,18 @@ pub const BLOCKS: &[Block] = &[
         scale: "0/1",
     },
     Block {
+        kind: RegKind::DiscreteInput,
+        base: NODE_FRONT_PANEL_BIT_BASE,
+        stride: 1,
+        count: MAX_NODES as u16,
+        of: "node",
+        first_index: 1,
+        fields: &[],
+        access: Access::R,
+        meaning: "Node front panel, 1 = PWR / RST / LED are cabled",
+        scale: "0/1",
+    },
+    Block {
         kind: RegKind::InputRegister,
         base: NODE_BASE,
         stride: NODE_STRIDE,
@@ -777,6 +794,9 @@ pub fn name_of(kind: RegKind, addr: u16) -> Option<String> {
         (RegKind::DiscreteInput, None) if block.base == NODE_HOST_BIT_BASE => {
             format!("node{index}_host")
         }
+        (RegKind::DiscreteInput, None) if block.base == NODE_FRONT_PANEL_BIT_BASE => {
+            format!("node{index}_front_panel")
+        }
         (RegKind::DiscreteInput, None) => format!("node{index}_power"),
         (RegKind::HoldingRegister, None) => format!("{}{index}_cmd", block.of),
         (_, None) => format!("{}{index}_rail", block.of),
@@ -876,6 +896,12 @@ impl<'a> Image<'a> {
                     return Some(
                         self.observed.node_host(node) == crate::plane::model::HostState::On,
                     );
+                }
+                if let Some(node) = node_of(NODE_FRONT_PANEL_BIT_BASE, addr) {
+                    // A node the controller has not read reads 1: the
+                    // default of the setting (ADR 0004, "Nodes without a
+                    // front panel").
+                    return Some(self.observed.node(node).is_none_or(|n| n.front_panel));
                 }
                 None
             }
@@ -1406,6 +1432,40 @@ mod tests {
         assert_eq!(image.bit(RegKind::Coil, NODE_COIL_BASE), Some(false));
         assert_eq!(image.bit(RegKind::DiscreteInput, 0), None);
         assert_eq!(image.word(RegKind::InputRegister, 17), None);
+    }
+
+    /// ADR 0004, "Nodes without a front panel": the flag is readable,
+    /// and a node the controller has not read reads as having one.
+    #[test]
+    fn the_front_panel_bit_reads_the_setting() {
+        let mut observed = Observed::new();
+        let mut node = crate::observed::NodeObs::unknown(2, 0x30, 1);
+        node.present = true;
+        node.front_panel = false;
+        observed.nodes.push(node);
+        let image = Image::new(&observed, FwVersion::default(), 0, ResultCode::Idle);
+        assert_eq!(
+            image.bit(RegKind::DiscreteInput, NODE_FRONT_PANEL_BIT_BASE + 1),
+            Some(false),
+            "node 2 has no front panel"
+        );
+        assert_eq!(
+            image.bit(RegKind::DiscreteInput, NODE_FRONT_PANEL_BIT_BASE),
+            Some(true),
+            "a node that was never read keeps the default"
+        );
+        assert_eq!(
+            image.bit(
+                RegKind::DiscreteInput,
+                NODE_FRONT_PANEL_BIT_BASE + MAX_NODES as u16
+            ),
+            None,
+            "one past the last node is not in the map"
+        );
+        assert_eq!(
+            name_of(RegKind::DiscreteInput, NODE_FRONT_PANEL_BIT_BASE + 1).as_deref(),
+            Some("node2_front_panel")
+        );
     }
 
     #[test]
