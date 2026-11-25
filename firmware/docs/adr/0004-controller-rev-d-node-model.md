@@ -545,7 +545,10 @@ empty slot, the same for Modbus input register `host`, and the MQTT
 `node_on` rule source are untouched.
 
 ### Nodes without a front panel (2026-11-25)
-Decided by the user, not yet implemented.
+Decided by the user and implemented 2026-11-25, as described here.
+`granite-proto`, plane-logic and plane-fd are untouched; the two places
+the implementation had to choose for itself are at the end of this
+section.
 
 Some nodes have no front-panel cable at all: no PWR, no RST, no LED.
 Their BIOS is set to power on after AC loss, so the host starts when the
@@ -611,6 +614,28 @@ with the rail down and `hard_cut`; `cycle` takes the rail down and up
 without a press; `reset` is refused; `boot_policy = on` brings the rail
 up after a plane boot; and a node with a front panel behaves exactly as
 before.
+
+**As built.** The mapping lives where the verb is built, so the plane
+sees nothing of it: the flag travels with the verb in
+`plane::NodeOptions` (as `led_sense` and the timings do), and
+`NodeCommand::stages` answers with `0x40 enable` instead of 0x50 / 0x51.
+`cycle` is the one verb the plane cannot do without a press, so the
+client runs it as two stages with `Command::stage_delay_ms` between
+them - the only delay the job machinery has. The poll path needs the
+flag too (the host axis and the cross-checks), and it gets it the way
+`host_detect_w` does: `PlaneClient::set_no_front_panel` takes a bitmap
+of node ids, pushed by `apply_config`. The cross-checks are masked in
+`observed::NodeObs::of_node`, the one place faults are read from, so
+MQTT, Modbus and the rules all drop them together. Two choices this
+section left open:
+- **Modbus.** `front_panel` is discrete input `300 + id - 1` (1 = the
+  panel is cabled), an addition beside the rail and host bits. Nothing
+  in the map moved, so a version 2 client reads what it always did.
+  `docs/modbus_map.md` is generated and was already stale; it is still
+  stale.
+- **A button verb on `all`.** `reset` or `press` on `all` is refused for
+  a node with no front panel but still runs on the nodes that have one;
+  the command fails as a whole only when none of them has.
 
 ### Still open
 - The web UI (`firmware/web`) is unchanged and still speaks the rev C
