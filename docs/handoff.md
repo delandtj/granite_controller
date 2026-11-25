@@ -4,6 +4,13 @@ Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
 
 ## 2026-11-25: to do today
 
+- Done: power-up OV latch clear (plane-logic power_up_clear, e8f6686
+  on the core): after a full 48 V power cycle with two PM-19V-250W-B
+  modules both slots come up ON, module VIN 48.1 V, class 5, no
+  clear_latch needed (before: both ov_latched at 1.3 V, every power-up).
+  Rev A modules (two COILANKs) not yet tried with it; if they still
+  latch, raise LCLR_HOLD_MS (power_up_clear.rs) to 150-250 ms.
+
 - [ ] `cross_check` on both slots with no node and no front-panel
   cable: **not** the LED sense. The opto is a TLP291 (unit.py U8 /
   U58): the host's LED+ drives its LED through R21 220R, the collector
