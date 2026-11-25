@@ -15,9 +15,13 @@ References are the drawing's + 200.
 - U207 LM5069-2 (auto-retry, as the slots; was -1 latch-off, 1 in stock at
   JLC on 2026-10-30): shunt R201 || R202 = 3 mOhm, current limit
   55 mV / 3 mOhm = 18.3 A (16.2-20.5 A over 48.5-61.5 mV), circuit breaker
-  105 mV = 35 A. Q202 || Q203 ISC035N10NM5LF2 (linear-mode FET, same
-  PG-TDSON-8; was BSC040N10NS5, outside its SOA on a short: ADR 0005
-  decision 3a) with 10 Ohm gate resistors;
+  105 mV = 35 A. Q202 || Q203 BSC040N10NS5 with 10 Ohm gate resistors.
+  FD batch 2 (2026-11-26, order date first): the unit input keeps the
+  BSC040N10NS5, which is outside its SOA if this stage holds a short in
+  power limit (ADR 0005 decision 3a); only the slots got the linear-mode
+  ISC035N10NM5LF2, because the slot is where a module short lands. For a
+  later order, PFET_VALUE / PFET_LCSC below to ISC035N10NM5LF2 /
+  C22408528;
   power limit ~75 W at 60 V (RPWR = 1.3e5 x (RSNS x PLIM - 1.18 mV x VDS)
   = 20.0k), insertion 160 ms, fault 10 ms, UVLO / OVLO as the slots. VBUS
   holds only the slot front ends' small caps when this stage starts; the
@@ -43,8 +47,8 @@ G = 1.27
 FET = "Transistor_FET:2N7002"
 SOT23 = "Package_TO_SOT_SMD:SOT-23"
 PFET = "Transistor_FET:BSC040N10NS5"      # symbol only (same pinout); the part is PFET_VALUE
-PFET_VALUE = "ISC035N10NM5LF2"
-PFET_LCSC = "C22408528"
+PFET_VALUE = "BSC040N10NS5"               # ISC035N10NM5LF2 (C22408528) when stock allows: ADR 0005 3a
+PFET_LCSC = "C534334"
 TDSON = "Package_TO_SOT_SMD:TDSON-8-1"
 
 
@@ -93,7 +97,7 @@ def block():
       desc="shunt, two 6 mOhm in parallel = 3 mOhm: limit 18.3 A, breaker 35 A")
     R(202, "6m 2W", R2512, {"1": "VIN", "2": "USENSE"}, (35, 38), rot=90, fields={"LCSC": "C2692028"}, desc="shunt (parallel)")
     sym("Q202", PFET, PFET_VALUE, TDSON, by_name(PFET, {"G": "GATE_A", "S": "VBUS", "D": "USENSE"}), (98, 34), rot=90,
-        fields={"LCSC": PFET_LCSC}, desc="100 V 3.5 mOhm linear-mode pass FET; holds the power limit (70 W at 48 V, 10 to 20 ms) alone")
+        fields={"LCSC": PFET_LCSC}, desc="100 V 4 mOhm pass FET; carries the start-up SOA alone (power limit 75 W, 10 ms); outside its SOA on a held short (ADR 0005 3a)")
     sym("Q203", PFET, PFET_VALUE, TDSON, by_name(PFET, {"G": "GATE_B", "S": "VBUS", "D": "USENSE"}), (98, 8), rot=90,
         fields={"LCSC": PFET_LCSC}, desc="parallel pass FET, for conduction loss")
     R(210, "10", R0402, {"1": "GATE", "2": "GATE_A"}, (90, 41), rot=90, desc="gate resistor (parallel FETs)")

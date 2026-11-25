@@ -499,11 +499,11 @@ Each step gates the next. Dates are the user's to set; the second order
 is the one with a deadline.
 
 1. **Now, at the desk** (no boards needed)
-   - [ ] Decide the second order's FET variant: all four positions (96
-     for 24 units, JLC has 58, the rest through global sourcing or
-     consignment, about two weeks) or slot-only (Q1 / Q51 new, Q202 /
-     Q203 stay BSC040N10NS5: 48 parts, in stock; needs the uinput.py
-     value put back for that order).
+   - [x] Decide the second order's FET variant: **slot-only** (user,
+     2026-11-26, the order date wins): Q1 / Q51 ISC035N10NM5LF2, Q202 /
+     Q203 stay BSC040N10NS5, in uinput.py and the board. Order sheet and
+     unit set: fab-archive/fd-batch2 (8 controllers, 8 cores, 30 units,
+     56 -B modules; batch 1 boards stay for development).
    - [x] Fault-case pass on the unit as routed (UVLO / OVLO with
      tolerances, OV_KILL latch, module output shorted to input, loss
      of 3V3 with the bus live). The one desk check that could still

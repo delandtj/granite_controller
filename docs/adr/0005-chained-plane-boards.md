@@ -151,7 +151,16 @@ instead of a column edge.
      PG-TDSON-8): the next unit-fd order carries it. JLC lists it as
      C22408528, extended, 58 in stock on 2026-11-11 (4 per unit).
      Open: the rework of boards already built (FD batch 1, tag
-     fd-batch1, carries the BSC parts). Second
+     fd-batch1, carries the BSC parts).
+     **FD batch 2 (user, 2026-11-26): slot positions only.** The order
+     date wins over the stock: Q1 / Q51 are ISC035N10NM5LF2, Q202 /
+     Q203 on the unit input stay BSC040N10NS5 (C534334), so 60 linear
+     FETs for 30 units instead of 120. The slot is where a module short
+     lands; the unit input is only held in power limit by a short on
+     the unit itself, a slot FET that failed, or the slot and unit
+     breakers tripping together (bench plan test 6), and then the
+     BSC040N10NS5 can still fail conducting. uinput.py PFET_VALUE /
+     PFET_LCSC go to ISC035N10NM5LF2 / C22408528 for a later order. Second
      candidate, SOA not read: Nexperia PSMN4R8-100YSE (LFPAK56E).
      Read and rejected: TI CSD19531Q5A / 19532Q5B / 19533Q5A and
      BSC060N10NS3 (0.7 to 1.7 A at 48 V, 10 ms).
@@ -453,8 +462,9 @@ input strip on the far side (right of slot B).
 - [ ] Unit hot-swap power limit and timer vs two slot insertions.
 - [ ] Hot-swap FETs: the fitted BSC070N10NS5 / BSC040N10NS5 are outside
   their SOA on a short (decision 3a). ISC035N10NM5LF2 is in the source
-  for the next order; decide the rework of FD batch 1 (JLC stock 58 on
-  2026-11-11 covers the slot FETs of 24 units, not all four positions).
+  for the slot positions (FD batch 2, 2026-11-26: the unit input keeps
+  BSC040N10NS5); decide the rework of FD batch 1 and when the unit
+  input gets the linear FET too.
 - [ ] Dead short on one slot: does the unit breaker trip with it
   (decision 3a, bench plan test 6).
 - [ ] Protection outside the fluid for the first pods (discussed
