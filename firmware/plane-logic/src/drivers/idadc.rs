@@ -31,12 +31,20 @@ pub const REG_CONFIGURATION: u8 = 0x02;
 /// Full scale of the 12-bit result.
 pub const FULL_SCALE: u16 = 0x0FFF;
 
-/// Counts above which a slot counts as empty.
+/// Counts at and above which a slot counts as empty.
 ///
 /// The divider is 10k to 3V3 over the module's resistor to ground, so an
-/// empty slot sits at the reference and a module of up to 390k still
-/// reads under this. Four counts of slack absorb the ADC's own noise.
-pub const EMPTY_THRESHOLD: u16 = FULL_SCALE - 4;
+/// empty slot sits at the reference. The highest resistor in the ID
+/// table (docs/pm-interface.md) is 47k, 0.82 of full scale (3378
+/// counts); open is 1.00. The threshold sits at 0.92 (3768), between
+/// the two, so an empty slot whose reading lands a little under full
+/// scale (the ADC's gain and offset error, VA and the pull-up not being
+/// exactly the same rail, leakage on the ID net) is still empty.
+///
+/// It was full scale minus 4 counts until 2026-11-25: the first unit-fd
+/// on the bench reported class 16 (0xF00 to 0xFFA) on an empty slot A
+/// and nothing on slot B.
+pub const EMPTY_THRESHOLD: u16 = 3768;
 
 /// One slot's ID ADC.
 #[derive(Debug, Clone, Copy)]
@@ -105,6 +113,23 @@ mod tests {
         assert!(is_empty(EMPTY_THRESHOLD));
         assert!(!is_empty(EMPTY_THRESHOLD - 1));
         assert_eq!(module_class(FULL_SCALE), 0);
+    }
+
+    #[test]
+    fn an_empty_slot_a_little_under_full_scale_is_empty() {
+        assert!(is_empty(0x0FF0));
+        assert!(is_empty(0x0F00));
+        assert_eq!(module_class(0x0FF0), 0);
+    }
+
+    #[test]
+    fn every_table_resistor_reads_as_a_module() {
+        // counts = 4095 * R / (R + 10k), 1 % resistors on the high side
+        for r_k in [2.2f32, 4.7, 10.0, 22.0, 47.0] {
+            let r = r_k * 1.01;
+            let counts = (4095.0 * r / (r + 10.0 * 0.99)) as u16;
+            assert!(!is_empty(counts), "{r_k}k reads {counts}");
+        }
     }
 
     #[test]
