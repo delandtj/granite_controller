@@ -178,7 +178,14 @@ Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
     curve). The same loss is there at full load, plus ~1.8 W copper.
     The slot `temp` in the state is the unit-board slot sensor, not the
     coil: measure the coil itself (IR or thermocouple on L1's top).
-  - [ ] **Bench rework, one module: R12 10k -> 0R.** Datasheet (SNVS499I,
+  - **Parked (user, 2026-11-26): the current setup works, R12 stays 10k.**
+    Forced continuous is proven on the bench, sinks current on a load
+    release (which protects the 0.8 V margin to OV_KILL at worst case),
+    and its ~2 W per module is harmless in the fluid. Cost of keeping it:
+    ~100 W for 6 blocks, ~875 kWh a year. Diode emulation only pays for
+    nodes below ~44 W and needs the overshoot proven first. Everything
+    below is kept for if it is ever picked up again.
+  - Parked: **Bench rework, one module: R12 10k -> 0R.** Datasheet (SNVS499I,
     DEMB): a resistor lets the DEMB bias current lift the pin after soft
     start (fully synchronous); 0 ohm to CSG keeps diode emulation at all
     times. R12 is 0402 on the module's **B side** (faces the unit board,
@@ -190,7 +197,7 @@ Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
     Do it on node59 (slot 7.2) and keep node60 (7.3, same unit) stock as
     the reference; after the 7d plane flash, so a switch-off latch does
     not muddy the numbers.
-  - [ ] Measure, reworked vs stock: idle slot W and unit 1 input current;
+  - Parked: measure, reworked vs stock: idle slot W and unit 1 input current;
     coil top temperature after 15-20 min at no load; VOUT at no load
     (AC, expect pulse-skipping bursts, listen for audible noise); and
     **load-release overshoot**: VOUT DC with offset, 10 A -> 0 step,
@@ -199,7 +206,8 @@ Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
     load (DCM changes the loop gain: ringing).
   - If it passes it is **BOM only** for the next order: R12 10k (C25744)
     -> 0R 0402 (e.g. C17168, check stock), same footprint, Gerbers
-    unchanged. Change power/pm-19v-250w-b/tools/gensch.py:188 and the
+    unchanged; R12 joins R3 on the existing 0R line (C17168, no new
+    part). Change power/pm-19v-250w-b/tools/gensch.py:188 and the
     soft-start note in docs/pm-19v-250w-b.md 4.8. If the overshoot is
     too close to the OV threshold it becomes more output capacitance or
     a higher OV_KILL divider (still BOM lines, no copper).
