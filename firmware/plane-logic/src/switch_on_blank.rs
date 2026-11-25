@@ -41,9 +41,23 @@
 //! or a glitch wider than the window, and the slot stays latched.
 //!
 //! The line itself is shared with the clear of
-//! [`crate::sequencer::Phase::ClearLatch`]: whichever of the two is
-//! holding LCLR last is the one that releases it
-//! ([`crate::plane::Plane::release_lclr`]).
+//! [`crate::sequencer::Phase::ClearLatch`] and with the hold while the
+//! slot is off (ADR 0002 decision 7d): whichever of them holds LCLR
+//! last is the one that releases it, and
+//! [`crate::plane::Plane::lclr_wanted`] is the list of holders.
+//!
+//! ## What decision 7d changed here
+//!
+//! The bench then found that a switched-off slot latches on its own,
+//! about 10 ms after the cut: its module's input sits at about 1.2 V,
+//! the comparator runs under its minimum supply and OV_KILL can go low
+//! at any moment while the slot is off. The slot was therefore already
+//! latched at the next switch-on and the rule above, by its own "a slot
+//! that is already latched is not touched", did nothing. Decision 7d
+//! keeps LCLR asserted for as long as OFF is high, so the latch cannot
+//! be set while the slot is off and the window below is what takes over
+//! at the switch-on - which is why the window is still the thing that
+//! releases the line.
 
 /// How long LCLR is held after a slot's OFF line was released \[ms\].
 ///

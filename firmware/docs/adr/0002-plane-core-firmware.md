@@ -2,7 +2,7 @@
 
 **Status**: Proposed
 **Date**: 2026-10-29
-**Updated**: 2026-10-29 (user answers: image integrity, stagger, latches decided; unit glitch state open; press deadline line asked from the hardware, docs/press-deadline-line.md); 2026-10-30 (the unit hot-swap is an LM5069-2 now, so the latch is this firmware's: decision 7a, and `unit reset` in decision 6 releases instead of pulsing); 2026-11-25 (decision 7b, the power-up clear of the slot OV latches, from the first bench unit with modules; decision 7c, switch-on blanking, from the same session: every rail switch-on latches, not only the unit's power-up)
+**Updated**: 2026-10-29 (user answers: image integrity, stagger, latches decided; unit glitch state open; press deadline line asked from the hardware, docs/press-deadline-line.md); 2026-10-30 (the unit hot-swap is an LM5069-2 now, so the latch is this firmware's: decision 7a, and `unit reset` in decision 6 releases instead of pulsing); 2026-11-25 (decision 7b, the power-up clear of the slot OV latches, from the first bench unit with modules; decision 7c, switch-on blanking, from the same session: every rail switch-on latches, not only the unit's power-up; decision 7d, LCLR held while a slot is off, after the bench run of 7c: a switched-off slot latches ~10 ms after the cut, so `off` then `on` stayed latched)
 
 Related: docs/adr/0001-48v-power-plane.md (safety rules, TLV message
 format, data flow), docs/adr/0005-chained-plane-boards.md (core + unit
@@ -170,8 +170,9 @@ Two things in the hardware shape the firmware more than the ADRs say:
    raises an event (ADR 0001 0x42: max, window, action). The slot OV
    latch and the unit hot-swap latch are never cleared automatically
    in the first release; the controller decides. The only clears the
-   plane does by itself are decisions 7b and 7c, which are start-up
-   artifacts of the module's OV comparator and not fault resets.
+   plane does by itself are decisions 7b, 7c and 7d, which are
+   artifacts of the module's OV comparator running under-supplied - at
+   start-up and while its slot is off - and not fault resets.
 
 7b. **Power-up clear of the slot OV latches** (added 2026-11-25, from
    the first bench unit-fd with modules; `plane-logic/src/power_up_clear.rs`).
@@ -332,6 +333,54 @@ Two things in the hardware shape the firmware more than the ADRs say:
      latch it holds, and a part at its defaults is written while its
      pins are still inputs, so no intended-state re-application ever
      releases OFF on its own.
+
+7d. **Clear held while a slot is off** (added 2026-11-25, user decision
+   after the bench run of 7c; implemented 2026-11-25,
+   `plane-logic/src/sequencer.rs`).
+
+   - **What the bench found.** With 7c flashed, `off` then `on` on the
+     B slots (7.1, 7.3) left them latched three rounds out of three: the
+     latch set about 10 ms after OFF went high (`slot off 3`, then
+     `ov latched 3` in the log ring), so at the next switch-on the slot
+     was already latched and 7c, by its own rule, did nothing. A
+     switched-off slot's module input sits at about 1.2 V (cause open:
+     leakage from 48 V or back-feed, docs/handoff.md), so the module's
+     comparators run below their 1.8 V minimum for as long as the slot
+     is off and OV_KILL can go low at any moment, not only at the edge.
+     Blanking only the switch-off edge would not be enough.
+   - **The rule.** While a slot's OFF line is high, LCLR is held
+     asserted. It goes up with OFF (asserted *before* OFF is raised,
+     in `Plane::set_slot_off`, the one function every cut goes through,
+     so there is no gap) and stays up until the switch-on, where 7c's
+     hold takes over: LCLR is then released `SWITCH_ON_BLANK_MS` after
+     OFF is released, as before. The latch therefore cannot be set while
+     the slot is off and comes up clear at every switch-on.
+   - **What changes from decision 7.** A latch set by a real
+     overvoltage while the slot was *on* is now cleared by the next
+     `off` (or any cut: retry limit, force-off escalation, stagger),
+     where before only `clear_latch` and 7b cleared it. That is
+     accepted: the slot is cut either way, the latch is reported when
+     it sets (SLOT 0x20 "OV latched", EVENTS kind 4, the log ring), and
+     the controller reads the log ring after that event. A slot that is
+     latched and *not* cut stays latched as before; only an explicit
+     cut, which is an operator or plane decision to take the rail away,
+     clears it. The switch-on after it still runs 7c, so an overvoltage
+     that is still there latches again 100 ms later.
+   - **What it is not.** No phase, no result, no event, like 7b and 7c.
+     The line is shared with `Phase::ClearLatch` and 7c through
+     `Plane::release_lclr`; the "held while off" holder is one more
+     reason to keep LCLR up, and the line is released only when no
+     holder wants it.
+   - **Reporting.** LQ still set at the end of 7c's window after a
+     switch-on from off logs "blank ended latched \<slot\>" as before.
+     A slot whose LQ reads set while OFF and LCLR are both high logs
+     "latched while off \<slot\>" once (a stuck latch or a broken LCLR
+     path).
+   - **Expander reset (CTRL 0x4D)** is still not covered, for the reason
+     given in 7c.
+   - **Hardware.** As for 7c, the right fix is on the unit (`/CLR` held
+     from the slot's own OFF, or `/PRE` gated by it); this is the
+     firmware stand-in.
 
 7a. **The unit hot-swap latch is this firmware's** (ADR 0005 decision 3,
    user 2026-10-30: the unit stage became an LM5069-**2**, auto-retry,
