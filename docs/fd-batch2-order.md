@@ -7,8 +7,11 @@ the wider bench history is docs/handoff.md.
 
 ## Status
 
+- **Ordered 2026-11-26** by the user: two pods, about 4.5K total, accepted
+  by JLC without part errors. Exact per-board quantities: see the JLC
+  order (the table below is the earlier one-pod plan).
 - Fab sets are generated, checked and committed (master b77862c and
-  earlier). Nothing is ordered yet. The user places the order.
+  earlier); the PM-B set is in fab-archive/fd-batch2 since 80281ba.
 - JLC's "Reorder" of the batch 1 orders is refused (parts out of stock),
   so this is a **new order with uploaded files** for every board.
 - Stock re-checked 2026-11-26 against these exact files and quantities:
