@@ -2,6 +2,29 @@
 
 Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
 
+## Bench services on the workstation (temporary, remove when bench work ends)
+
+Two systemd user units, both marked temporary in their unit files. Linger
+is off, so they only run while the user is logged in.
+
+- `granite-mqtt`: mosquitto, set up by `firmware/tools/mqtt-broker.sh`.
+  Config, local CA, server cert and passwords in
+  ~/.local/share/granite-mqtt/ (users/<name> holds each password).
+  8883 TLS + password on all interfaces, 1883 anonymous on 127.0.0.1.
+  Clients: granite-b4499b (controller-fd, 192.168.64.137, site bench,
+  topics granite/bench/granite-b4499b/) and bench (host tools). The rev C
+  board granite-cb374b was taken off on 2026-11-25; its user and
+  retained topics are gone.
+- `granite-view`: live view of every controller on that broker,
+  http://127.0.0.1:8088/, `~/Granite/infra/tools/granite_view.py --rw`
+  (read-only without --rw; --rw adds the command buttons). Reads the
+  broker on 127.0.0.1:1883, prefix granite.
+
+Watch raw: `mosquitto_sub -h 127.0.0.1 -v -t 'granite/#'`.
+Remove: `systemctl --user disable --now granite-view granite-mqtt`, then
+delete both files in ~/.config/systemd/user/ and, if nothing else needs
+it, ~/.local/share/granite-mqtt/.
+
 ## 2026-11-25 (late): node57 "powers off by itself" - controller bug, fixed
 
 - Symptom: `on` for node57 (unit 0 slot A, no host cabled) brought the
