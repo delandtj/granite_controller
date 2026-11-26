@@ -278,14 +278,14 @@ The link to the controller is CAN FD (above), not I2C.
 | Ref | Function | Part | LCSC |
 |---|---|---|---|
 | J201 | 48 V input | Amass XT60PW-M | C98732 |
-| J301 | Chain in (left edge) | CJT A2541WR-2x7P, 2x7 2.54 mm right-angle pin header (plug), gold, B side | C5136987 |
+| J301 | Chain in (left edge) | HCTL PZ254-2-07-W-8.5, 2x7 2.54 mm right-angle pin header (plug), B side (FD batch 1: CJT A2541WR-2x7P, C5136987) | C2894987 |
 | J302 | Chain out (right edge) | CJT A2541HWR-2x7P, 2x7 2.54 mm right-angle socket, gold, B side | C19100281 |
 | J303 | Link in (left edge, beside J301) | CJT A2541WR-2x3P, 2x3 2.54 mm right-angle pin header (plug) | C239334 |
 | J304 | Link out (right edge, beside J302) | CJT A2541HWR-2x3P, 2x3 2.54 mm right-angle socket | C5333425 |
 | JP301 | Link termination | 2x2 2.54 mm pin header (PZ254V-12-4P) | C492419 |
 | J1, J51 | Node 19 V, slot A, B | Degson DG128-5.0-02P | C711349 |
 | J2, J52 | Front panel, slot A, B | JST SM04B-GHS-TB (GH, 1.25 mm) | C189895 |
-| J3, J53 | Module aux, slot A, B | hanxia HX PM1.27-2x3P socket | C41397112 |
+| J3, J53 | Module aux, slot A, B | Hong Cheng HC-PM127-4.3H-2x3PS-02A socket (FD batch 1: hanxia HX PM1.27-2x3P, C41397112) | C42163098 |
 | SO1-SO4, SO51-SO54 | Module mount, slot A, B | Sinhoo SMTSO2070CTJ, M2, 7 mm | C2916355 |
 
 Slot B references are slot A's + 50.
@@ -436,7 +436,9 @@ other, in the plane of the boards, through two joints side by side:
 the 2x7 chain and the 2x3 link.
 
 A unit's J301 (left edge) is a right-angle 2x7 2.54 mm pin header,
-CJT A2541WR-2x7P (C5136987, gold), on the B side with its body flush
+HCTL PZ254-2-07-W-8.5 (C2894987; FD batch 1 carries the CJT
+A2541WR-2x7P, C5136987, same pitch and 6 mm mating pin), on the B side
+with its body flush
 with the board's left edge and the pins 6 mm past it. A unit's J302
 (right edge) and the core's J301 are the matching right-angle 2x7
 socket, CJT A2541HWR-2x7P (C19100281, gold), on the B side with its

@@ -4300,7 +4300,7 @@
 				)
 			)
 		)
-		(property "Value" "LM5164DDA"
+		(property "Value" "LM5164DDAT"
 			(at 57.15 44.45 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4346,7 +4346,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" "C477928"
+		(property "LCSC" "C2071198"
 			(at 57.15 55.88 0)
 			(hide yes)
 			(show_name no)

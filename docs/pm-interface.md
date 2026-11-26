@@ -130,9 +130,12 @@ placement error changes nothing, a 90 degree one does.
   block centre (6.50 outer span), with paste: the header is reflowed on
   the module's B side with the other B parts. The footprint is drawn F
   side mirrored in y and flipped top-bottom onto B (rotation 0).
-- Host socket: hanxia HX PM1.27-2x3P TP, LCSC C41397112 (second
-  source Hong Cheng HC-PM127-4.3H-2x3PS-02A, C42163098). 4.60 mm tall
-  over the PCB, pads 2.05 x 0.76 at x +/-1.975 (6.00 outer span).
+- Host socket: Hong Cheng HC-PM127-4.3H-2x3PS-02A, LCSC C42163098
+  (FD batch 2 onwards, 2026-11-26: the hanxia HX PM1.27-2x3P TP,
+  C41397112, ran out at JLC and is now the second source; it is what
+  FD batch 1 carries). Same 4.30 mm body / 4.60 mm over the PCB, same
+  1.27 mm pitch, pads 2.05 x 0.76 at x +/-1.975 (6.00 outer span), so
+  one footprint covers both.
 - Mating at the 7.0 mm gap: pin tip 1.5 mm above the host, 3.1 mm into
   the socket. Header plastic would seat at a 6.1 mm gap, pins bottom
   at ~6.2, the upper contact point is ~2.5 mm deep (lost above ~7.6):

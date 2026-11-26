@@ -109,6 +109,8 @@ BASIC = {   # JLC basic parts, by (value, footprint); verify in the JLC preview 
     # the unit's slot / unit hot-swap passives (JLC parts API 2026-10-30, same rule)
     ("143k", R0805): "C2930167", ("124k", R0805): "C2933298", ("4.99k", R0402): "C137965", ("13.7k", R0402): "C2933072",
     ("20.0k", R0402): "C25765", ("10", R0402): "C25077", ("220n", C0603): "C21120",
+    # slot LM5069 timer cap, FD batch 2 (2026-11-26): Yageo CC0603KRX7R9BB104, 100 nF 50 V X7R, basic
+    ("100n", C0603): "C14663",
 }
 
 DEFAULT_POWER = {"GND": "power:GND", "+3V3": "power:+3V3", "+12V": "power:+12V"}

@@ -5,7 +5,7 @@ decisions 4 and 9).
 Slot A (core side, references as drawn, nets A_*) and slot B (far side,
 references + 50, nets B_*, drawn to the right) are the same slot drawing;
 GND, +3V3, VBUS, SDA and SCL are shared. The only differences: slot B's
-address straps (INA237 A0 and ADC ADR0 on +3V3: 0x41 / 0x52 against slot
+address straps (INA228 A0 and ADC ADR0 on +3V3: 0x41 / 0x52 against slot
 A's 0x40 / 0x51), and the unit parts drawn once with slot A: the segment
 pull-ups R26 / R27 (placed in slot A) and the expander U5 (TCA6424A, 0x22,
 11 lines per slot, reset = all inputs; placed in slot B) with its caps C9 /
@@ -13,7 +13,7 @@ C13 and /RESET pull-up R30. The expander's two spares carry the unit
 hot-swap (docs/adr/0005 decision 3): P13 U_OFF out, P27 U_PGD in (ports).
 
 The slot: the front end (shunts, LM5069-2,
-pass FET, UVLO / OVLO, timer, PGD, output clamp), the INA237, the enable
+pass FET, UVLO / OVLO, timer, PGD, output clamp), the INA228, the enable
 chain and the OV latch are the PP-48-2S slot block (power/pp-48-2s/tools/
 sch/blocks/slot.py) unchanged, at the same coordinates. What changed:
 
@@ -42,9 +42,9 @@ sch/blocks/slot.py) unchanged, at the same coordinates. What changed:
   output caps).
 
 - Slot latch U3 is set (/PRE = OVK, low) by three open-drain sources: the
-  module's OV_KILL, the INA237 ALERT (power limit, ALATCH; firmware sets
+  module's OV_KILL, the INA228 ALERT (power limit, ALATCH; firmware sets
   the limit at boot, the reset value never trips) and the PGOOD-loss trip
-  Q6. The INA237 DIAG_ALRT register tells a power trip from the other two.
+  Q6. The INA228 DIAG_ALRT register tells a power trip from the other two.
 - PGOOD-loss blanking (ADR 0003): U10 holds ARM. It is set while the
   module's PGOOD and the LM5069 PGD are both high (Q8 / Q9 in series on
   /PRE, level, so either may rise first) and cleared while PGD is low (any
@@ -91,7 +91,7 @@ def block():
         slot(b, s)
     expander(b)
     b.text("UNIT: TWO SLOTS ON ONE I2C SEGMENT. SLOT A (LEFT, NETS A_*) AND SLOT B (RIGHT, REFS + 50, NETS B_*)", P(12, 12))
-    b.text("I2C SEGMENT: INA237 0x40 / 0x41,\nADC121C027 0x51 / 0x52 (slot A / B),\nTCA6424A 0x22", P(12, 150), size=1.5)
+    b.text("I2C SEGMENT: INA228 0x40 / 0x41,\nADC121C027 0x51 / 0x52 (slot A / B),\nTCA6424A 0x22", P(12, 150), size=1.5)
     return b.finish()
 
 
@@ -135,7 +135,7 @@ def expander(b):
 def slot(b, s):
     dx = 0 if s == "A" else SLOT_DX
     roff = 0 if s == "A" else SLOT_REF
-    strap = "GND" if s == "A" else "+3V3"       # INA237 A0 and ADC ADR0: slot B is the next address
+    strap = "GND" if s == "A" else "+3V3"       # INA228 A0 and ADC ADR0: slot B is the next address
 
     def n(net):
         return net if net in SHARED else "%s_%s" % (s, net)
@@ -172,10 +172,11 @@ def slot(b, s):
       desc="shunt, two 7 mOhm in parallel = 3.5 mOhm: limit 15.7 A, breaker 30 A")
     R(2, "7m 2W", R2512, {"1": "VBUS", "2": "SENSE"}, (35, 38), rot=90, fields={"LCSC": "C2904232"},
       desc="shunt (parallel)")
-    sym("Q1", "Transistor_FET:BSC070N10NS5", "ISC035N10NM5LF2", "Package_TO_SOT_SMD:TDSON-8-1",
-        by_name("Transistor_FET:BSC070N10NS5", {"G": "GATE", "S": "OUT", "D": "SENSE"}), (98, 34), rot=90, fields={"LCSC": "C22408528"},
-        desc="100 V 3.5 mOhm linear-mode pass FET (PG-TDSON-8, drawn with the BSC070N10NS5 symbol): about 7 A at 48 V for 10 ms "
-             "against 0.96 A in power limit; was BSC070N10NS5, 0.15 A (ADR 0005 decision 3a)")
+    sym("Q1", "Transistor_FET:BSC070N10NS5", "CSD19532Q5B", "Package_TO_SOT_SMD:TDSON-8-1",
+        by_name("Transistor_FET:BSC070N10NS5", {"G": "GATE", "S": "OUT", "D": "SENSE"}), (98, 34), rot=90, fields={"LCSC": "C473333"},
+        desc="100 V 4.9 mOhm linear-mode pass FET (TI CSD19532Q5B, SON 5x6 on the TDSON-8-1 land, drawn with the "
+             "BSC070N10NS5 symbol): SOA ~1.3 A at 48 V / 10 ms at T_C 25 C (SLPS414B fig. 10), ~1.3 A hot over the "
+             "4.7 ms fault time, against 0.96 A in power limit (ADR 0005 decision 3a)")
     sym("U1", "Power_Management:LM5069MM-2", "LM5069MM-2", "Package_SO:MSOP-10_3x3mm_P0.5mm",
         {"1": "SENSE", "2": "VBUS", "3": "UVLO", "4": "OVLO", "5": "GND", "6": "TIMER", "7": "PWR", "8": "PGD", "9": "OUT", "10": "GATE"},
         (96, 56), fields={"LCSC": "C111822"}, desc="hot-swap, 55 mV current limit, power limit, auto-retry 0.5 %")
@@ -186,19 +187,22 @@ def slot(b, s):
     R(6, "4.99k", R0402, {"1": "OVLO", "2": "GND"}, (76, 63))
     R(7, "13.7k", R0402, {"1": "PWR", "2": "GND"}, (116, 66),
       desc="power limit ~50 W at 60 V (RPWR = 1.3e5 x (RSNS x PLIM - 1.18mV x VDS))")
-    C(1, "220n", C0603, {"1": "TIMER", "2": "GND"}, (108, 68), desc="insertion 160 ms, fault timeout 10 ms")
+    C(1, "100n", C0603, {"1": "TIMER", "2": "GND"}, (108, 68),
+      desc="insertion ~73 ms, fault timeout ~4.7 ms typ (~9 ms worst case); was 220n (160 ms / 10.4 ms): the "
+           "shorter fault time is what brings the slot FET inside its SOA (ADR 0005 decision 3a)")
     R(8, "10k", R0402, {"1": "+3V3", "2": "PGD"}, (126, 52), desc="PGD pull-up")
     sym("D1", "Device:D_Zener", "SMBJ60A", "Diode_SMD:D_SMB", {"1": "OUT", "2": "GND"}, (112, 38), rot=270,
         fields={"LCSC": "C353345"}, desc="slot output clamp, unidirectional: cathode (pad 1) on OUT; 60 V standoff = top of the bus range, breakdown >= 66.7 V; SMBJ64A would clamp at 103 V, over the 100 V FET and module")
     C(2, "2.2u 100V", C1210, {"1": "OUT", "2": "GND"}, (122, 38), fields={"LCSC": "C338133"},
       desc="slot output, in front of the module")
 
-    # ========================================================== INA237 under the shunt
-    sym("U2", "Sensor_Energy:INA237", "INA237AIDGSR", "Package_SO:TSSOP-10_3x3mm_P0.5mm",
+    # ========================================================== INA228 under the shunt
+    sym("U2", "Sensor_Energy:INA237", "INA228AIDGSR", "Package_SO:TSSOP-10_3x3mm_P0.5mm",
         {"1": "GND", "2": strap, "3": "OVK", "4": "SDA", "5": "SCL", "6": "+3V3", "7": "GND", "8": "OUT", "9": "SENSE", "10": "VBUS"},
-        (44, 60), rot=270, fields={"LCSC": "C2864837", "MPN": "TI INA237AIDGSR"},
-        desc="16-bit monitor on the shunt, address 0x40 slot A / 0x41 slot B (A1 GND, A0 = strap); VBUS pin reads the slot output")
-    C(3, "100n", C0402, {"1": "+3V3", "2": "GND"}, (58, 63), desc="INA237 VS")
+        (44, 60), rot=270, fields={"LCSC": "C2887910", "MPN": "TI INA228AIDGSR"},
+        desc="20-bit monitor on the shunt, address 0x40 slot A / 0x41 slot B (A1 GND, A0 = strap); VBUS pin reads the "
+             "slot output; FD batch 2: INA228AIDGSR (85 V, pin-compatible VSSOP-10), was INA237AIDGSR (C2864837, out of stock)")
+    C(3, "100n", C0402, {"1": "+3V3", "2": "GND"}, (58, 63), desc="INA228 VS")
 
     # ========================================================== enable chain and OV latch, as PP-48-2S
     sym("Q2", FET, "2N7002", SOT23, {"1": "OFF", "2": "GND", "3": "UVLO"}, (82, 90),
@@ -246,7 +250,7 @@ def slot(b, s):
         fields={"LCSC": "C2916355", "MPN": "Sinhoo SMTSO2070CTJ"}, desc="module screw S3: GND, output end")
     sym("J3", "Connector_Generic:Conn_01x06", "AUX", "pp48:PM_Aux_Socket_2x03_P1.27",
         {"1": "OVK", "2": "PG", "3": "ID", "4": "RUN", "5": "GND", "6": "GND"}, (168, 68),
-        fields={"LCSC": "C41397112", "MPN": "hanxia HX PM1.27-2x3P TP"},
+        fields={"LCSC": "C42163098", "MPN": "Hong Cheng HC-PM127-4.3H-2x3PS-02A"},
         desc="module aux: 1 OV_KILL, 2 PGOOD, 3 ID, 4 RUN, 5-6 GND (pin n = An, docs/pm-interface.md)")
     R(13, "10k", R0402, {"1": "+3V3", "2": "OVK"}, (150, 53), desc="OV_KILL pull-up (module comparator is open drain)")
     R(14, "10k", R0402, {"1": "+3V3", "2": "PG"}, (156, 63), desc="module PGOOD pull-up (open = good; presence comes from ID)")
@@ -297,13 +301,13 @@ def slot(b, s):
     wire("VBUS", (16, 32), ("R1", "1"), (30, 32), ("R2", "1"))      # one VBUS symbol, both shunts
     wire("SENSE", ("R1", "2"), ("Q1", "5"))
     wire("SENSE", (40, 32), ("R2", "2"))
-    wire("SENSE", (40, 38), ("U2", "9"))                            # Kelvin tap to INA237 IN-
+    wire("SENSE", (40, 38), ("U2", "9"))                            # Kelvin tap to INA228 IN-
     wire("SENSE", ("U1", "1"), ("Q1", "5"))
     wire("GATE", ("Q1", "4"), ("U1", "10"))
     name("GATE", (98, 40))
     wire("OUT", ("Q1", "1"), ("SO1", "1"))
     wire("OUT", ("U1", "9"), ("Q1", "1"))
-    wire("OUT", (102, 42), (50, 42), ("U2", "8"))                   # INA237 VBUS reads the slot output
+    wire("OUT", (102, 42), (50, 42), ("U2", "8"))                   # INA228 VBUS reads the slot output
     for x, ref, pin in ((112, "D1", "1"), (122, "C2", "1")):
         wire("OUT", (x, 32), (ref, pin))
     b.flag(n("OUT"), pt((108, 32)))
@@ -321,7 +325,7 @@ def slot(b, s):
     wire("PWR", ("U1", "7"), ("R7", "1"))
     wire("TIMER", ("U1", "6"), ("C1", "1"))
 
-    # ========================================================== INA237 supply, alert, I2C segment
+    # ========================================================== INA228 supply, alert, I2C segment
     wire("+3V3", (58, 56), ("C3", "1"), ("U2", "6"))
     wire("GND", (32, 64), ("U2", "7"))
     wire("GND", (50, 73), ("U2", "1"))                              # GND below the A0 strap symbol
@@ -401,4 +405,4 @@ def slot(b, s):
             r = renumber(ref, roff)
             b.tie(b.syms[r].nets[pin], (r, pin))
 
-    b.text("SLOT %s: 48 V HOT-SWAP, INA237, OV LATCH, MODULE MOUNT, ID ADC, NODE TERMINAL" % s, pt((12, 20)))
+    b.text("SLOT %s: 48 V HOT-SWAP, INA228, OV LATCH, MODULE MOUNT, ID ADC, NODE TERMINAL" % s, pt((12, 20)))

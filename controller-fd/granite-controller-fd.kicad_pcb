@@ -25266,7 +25266,7 @@
 				)
 			)
 		)
-		(property "Value" "TMP1075D"
+		(property "Value" "TMP75AIDR"
 			(at 0 3.4 0)
 			(layer "F.Fab")
 			(uuid "0cd47d6b-cb4d-4472-9cb8-0ce688cd0f78")
@@ -25288,7 +25288,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "board temperature sensor at 0x48 (A0-A2 low), LM75 pinout and registers; FD batch 2 replacement for the TMP1075DR (C2878381, out of stock), drawn with the TMP1075D symbol"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -25323,7 +25323,7 @@
 				)
 			)
 		)
-		(property "MPN" "TMP1075DR"
+		(property "MPN" "TMP75AIDR"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -25335,7 +25335,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C2878381"
+		(property "LCSC" "C30389"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)

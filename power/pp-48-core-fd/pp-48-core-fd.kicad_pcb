@@ -4576,7 +4576,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C144645"
+		(property "LCSC" "C245987"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -4589,7 +4589,7 @@
 				(justify mirror)
 			)
 		)
-		(property "MPN" "Yageo AC0603FR-0760R4L"
+		(property "MPN" "Yageo RC0603FR-0760R4L"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -8579,7 +8579,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C144645"
+		(property "LCSC" "C245987"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -8591,7 +8591,7 @@
 				)
 			)
 		)
-		(property "MPN" "Yageo AC0603FR-0760R4L"
+		(property "MPN" "Yageo RC0603FR-0760R4L"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -15967,7 +15967,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Value" "LM5164DDA"
+		(property "Value" "LM5164DDAT"
 			(at 0 -3.4 180)
 			(layer "B.Fab")
 			(uuid "e8e9338f-9193-4b01-92dc-b7793201377d")
@@ -16016,7 +16016,7 @@
 				(justify mirror)
 			)
 		)
-		(property "LCSC" "C477928"
+		(property "LCSC" "C2071198"
 			(at 0 0 180)
 			(layer "B.Fab")
 			(hide yes)

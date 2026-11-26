@@ -36,9 +36,11 @@ def lm5164(b, gx, gy, u, vout, nets, rron, l, rfb1, cout, ca, rsuffix, cbase, lc
     lref = "L%d" % (1 if u == "U1" else 2)
     vo, sw, fb, inj, en, bst = nets["vout"], nets["sw"], nets["fb"], nets["inj"], nets["en"], nets["bst"]
 
-    b.sym(u, "Regulator_Switching:LM5164DDA", "LM5164DDA", "Package_SO:HSOP-8-1EP_3.9x4.9mm_P1.27mm_EP2.41x3.1mm",
+    # FD batch 2 (2026-11-26): LM5164DDAT (C2071198), the small-reel order code of the same die
+    # and HSOP-8 package; was LM5164DDAR (C477928), out of stock at JLC. Symbol unchanged.
+    b.sym(u, "Regulator_Switching:LM5164DDA", "LM5164DDAT", "Package_SO:HSOP-8-1EP_3.9x4.9mm_P1.27mm_EP2.41x3.1mm",
           {"1": "GND", "2": "VIN", "3": nets["en"], "4": nets["ron"], "5": nets["fb"], "6": "NC", "7": nets["bst"], "8": nets["sw"], "9": "GND"},
-          at=P(0, 0), fields={"LCSC": "C477928"}, desc="100 V 1 A COT buck, %s" % vout, ref_at=(0, -13.97))
+          at=P(0, 0), fields={"LCSC": "C2071198"}, desc="100 V 1 A COT buck, %s" % vout, ref_at=(0, -13.97))
 
     # ---------------------------------------------------------- input side (left)
     yr = -22                                       # VBUS rail above the chip

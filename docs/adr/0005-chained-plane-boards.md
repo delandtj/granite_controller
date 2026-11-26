@@ -12,7 +12,10 @@ into each other on a mounting bar: decisions 4 and 7, the "Direct
 board-to-board mating" alternative taken); 2026-11-11 (hot-swap SOA
 check done on the routed FD unit: the fitted FETs fail it on a short,
 decision 3a; replacement FET in the source for the next order, FD
-batch 1 unchanged)
+batch 1 unchanged); 2026-11-26 (FD batch 2: the slot FET is TI
+CSD19532Q5B with the slot timer cap at 100 nF, decision 3a; the chain
+plug is an HCTL PZ254-2-07-W-8.5, decision 4 - both because the parts
+of batch 1 ran out at JLC)
 
 Related: docs/adr/0004-plane-column-layout.md (decisions 1, 1a, 2, 6
 and 9 stand; 3, 4, 5, 7 and 8 are replaced here, see "What changes"),
@@ -126,6 +129,10 @@ instead of a column edge.
    | FET SOA at 48 V, 10 ms, T_C = 25 C | 0.15 A | 0.15 A each |
    | Asked / allowed | about 6 | about 10 on one FET, 5 if shared |
 
+   The table is the state checked on 2026-11-11. FD batch 2 changes
+   the slot column: C_T 100 nF, fault time about 4.7 ms typ (about
+   9 ms worst case), FET TI CSD19532Q5B (see the Fix bullet).
+
    - **Short: fails.** Both fitted types are trench switching FETs
      whose SOA falls with about V_DS^-2 in linear mode (1 ms at 48 V:
      about 0.5 A; still under the demand). Expect the slot FET to
@@ -152,18 +159,36 @@ instead of a column edge.
      C22408528, extended, 58 in stock on 2026-11-11 (4 per unit).
      Open: the rework of boards already built (FD batch 1, tag
      fd-batch1, carries the BSC parts).
-     **FD batch 2 (user, 2026-11-26): slot positions only.** The order
-     date wins over the stock: Q1 / Q51 are ISC035N10NM5LF2, Q202 /
-     Q203 on the unit input stay BSC040N10NS5 (C534334), so 60 linear
-     FETs for 30 units instead of 120. The slot is where a module short
+     **FD batch 2 (user, 2026-11-26): slot positions only, and a
+     different linear FET.** The order date wins over the stock: Q202 /
+     Q203 on the unit input stay BSC040N10NS5 (C534334), so 2 linear
+     FETs per unit instead of 4. The slot is where a module short
      lands; the unit input is only held in power limit by a short on
      the unit itself, a slot FET that failed, or the slot and unit
      breakers tripping together (bench plan test 6), and then the
      BSC040N10NS5 can still fail conducting. uinput.py PFET_VALUE /
-     PFET_LCSC go to ISC035N10NM5LF2 / C22408528 for a later order. Second
-     candidate, SOA not read: Nexperia PSMN4R8-100YSE (LFPAK56E).
-     Read and rejected: TI CSD19531Q5A / 19532Q5B / 19533Q5A and
-     BSC060N10NS3 (0.7 to 1.7 A at 48 V, 10 ms).
+     PFET_LCSC go to a linear FET for a later order.
+     The ISC035N10NM5LF2 itself ran out at JLC before the order, so
+     Q1 / Q51 are **TI CSD19532Q5B** (C473333, 100 V, 4.9 mOhm max,
+     SON 5x6): same pinout and pad pitch as the PG-TDSON-8, checked
+     against TI's land pattern, so the TDSON-8-1 footprint and the
+     copper stay. It comes with **C_T 220 nF -> 100 nF** on each slot
+     (C14663, a basic 0603; the unit input's C203 stays 220 nF): fault
+     time 10.4 -> about 4.7 ms typ (about 9 ms worst case), insertion
+     160 -> about 73 ms, both still far more than the about 0.3 ms a
+     module's 12 uF takes in power limit. The margin from the
+     CSD19532Q5B's linear-mode SOA (TI SLPS414B figure 10): about
+     1.3 A at 48 V for 10 ms at T_C = 25 C, x 0.72 for T_C = 60 C,
+     x (10 / 4.7)^0.5 for the shorter fault time -> about 1.3 A hot
+     against the 0.96 A the power limit asks at 48 V. At 60 V the
+     curve gives about 0.9 A for 10 ms at 25 C, so about 0.9 A hot
+     against 0.84 A asked: thin, as the ISC035N10NM5LF2 was at 60 V.
+     This supersedes the 2026-11-11 line "read and rejected: TI
+     CSD19531Q5A / 19532Q5B / 19533Q5A and BSC060N10NS3 (0.7 to 1.7 A
+     at 48 V, 10 ms)": the 19532Q5B was rejected against a 10 ms fault
+     time and a 25 C reading of the family, and the shorter timer plus
+     its own curve bring it inside. Second candidate, SOA not read:
+     Nexperia PSMN4R8-100YSE (LFPAK56E).
    - **Selectivity** (does a slot fault stay on the slot). Overload or
      soft short: yes once the FET holds; the slot folds back to about
      1 A in well under a millisecond, and the unit, which may touch
@@ -188,7 +213,12 @@ instead of a column edge.
    A2541 (gold over nickel; one series, so the two rows sit at the same
    heights: 5.08 / 5.00 mm bodies on the board). Plug A2541WR-2x7P
    (C5136987, 87 in stock 2026-11-02; KiCad PinHeader_2x07_P2.54mm_Horizontal):
-   body flush with the edge, pins 6 mm past it. Socket A2541HWR-2x7P
+   body flush with the edge, pins 6 mm past it. FD batch 2
+   (2026-11-26): the A2541WR ran out at JLC, so the plug is an HCTL
+   PZ254-2-07-W-8.5 (C2894987) - same 2.54 mm pitch, 6.00 mm mating
+   pin, 3.00 mm tail and 1.02 mm holes, so the footprint, the mating
+   height and the 4 mm gap are unchanged (its plastic is 2.5 mm per
+   pin against the A2541's 2.54). Socket A2541HWR-2x7P
    (C19100281, 430; KiCad PinSocket_2x07_P2.54mm_Horizontal, 8.5 mm deep):
    face 4 mm past the edge, so its pads clear the parts behind it on
    the core (U6, U301, L1) and in the unit's strip. Fully mated the
@@ -461,10 +491,10 @@ input strip on the far side (right of slot B).
 **Behavior definers**
 - [ ] Unit hot-swap power limit and timer vs two slot insertions.
 - [ ] Hot-swap FETs: the fitted BSC070N10NS5 / BSC040N10NS5 are outside
-  their SOA on a short (decision 3a). ISC035N10NM5LF2 is in the source
-  for the slot positions (FD batch 2, 2026-11-26: the unit input keeps
-  BSC040N10NS5); decide the rework of FD batch 1 and when the unit
-  input gets the linear FET too.
+  their SOA on a short (decision 3a). CSD19532Q5B with C_T 100 nF is in
+  the source for the slot positions (FD batch 2, 2026-11-26: the unit
+  input keeps BSC040N10NS5); decide the rework of FD batch 1 and when
+  the unit input gets the linear FET too.
 - [ ] Dead short on one slot: does the unit breaker trip with it
   (decision 3a, bench plan test 6).
 - [ ] Protection outside the fluid for the first pods (discussed
@@ -485,7 +515,7 @@ input strip on the far side (right of slot B).
   - What it changes for FD batch 1: with the fitted FETs a module
     input short is not switched off on the board (decision 3a), so
     whatever is outside the fluid is the only thing that ends it.
-    With ISC035N10NM5LF2 in the slot positions (2 per unit) the board
+    With the CSD19532Q5B in the slot positions (2 per unit) the board
     ends it and the device outside only guards the cabling. The fewer
     feeds and devices the pod gets, the more the FET rework of FD
     batch 1 is worth; no rework decided.

@@ -3155,7 +3155,7 @@
 		)
 		(uuid "be8542b9-fdcd-51ce-9ec6-28419e2bcd42")
 	)
-	(text "UNIT INPUT  J201 XT60 -> TVS -> U207 LM5069-2 (3 mOhm, Q202 || Q203) -> VBUS; U208 INA237 0x44"
+	(text "UNIT INPUT  J201 XT60 -> TVS -> U207 LM5069-2 (3 mOhm, Q202 || Q203) -> VBUS; U208 INA228 0x44"
 		(exclude_from_sim no)
 		(at 15.24 15.24 0)
 		(effects
@@ -3165,7 +3165,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "ba97ffe2-fb99-5fe1-bd3a-7afa96012afa")
+		(uuid "a0462e19-873b-5651-a516-cd32a15a4f34")
 	)
 	(symbol
 		(lib_id "Connector_Generic:Conn_01x02")
@@ -5135,7 +5135,7 @@
 				)
 			)
 		)
-		(property "Value" "INA237AIDGSR"
+		(property "Value" "INA228AIDGSR"
 			(at 108.87 85.09 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -5181,7 +5181,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" "C2864837"
+		(property "LCSC" "C2887910"
 			(at 88.9 96.52 0)
 			(hide yes)
 			(show_name no)
@@ -5193,7 +5193,7 @@
 				(justify left)
 			)
 		)
-		(property "MPN" "TI INA237AIDGSR"
+		(property "MPN" "TI INA228AIDGSR"
 			(at 88.9 96.52 0)
 			(hide yes)
 			(show_name no)
@@ -5299,7 +5299,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "INA237 VS"
+		(property "Description" "INA228 VS"
 			(at 106.68 100.33 0)
 			(hide yes)
 			(show_name no)

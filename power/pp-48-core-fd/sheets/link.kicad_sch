@@ -2560,7 +2560,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "f1059fd4-1405-5408-86f3-026bea1777ff")
+		(uuid "ec2e43ec-bdfc-5c1f-b0d1-aa90ef1e6818")
 	)
 	(label "CAN_N"
 		(at 99.06 66.04 0)
@@ -2570,7 +2570,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "c5c05b7d-9a95-5282-91a5-b642e72586a5")
+		(uuid "f8e68231-5592-51a8-997a-97c17ce6c271")
 	)
 	(label "CAN_P"
 		(at 147.32 60.96 180)
@@ -2580,7 +2580,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "47bdc09f-9eeb-53b3-ba07-901276e14b64")
+		(uuid "0e3e22e3-b6b8-5c45-8beb-5668deb10127")
 	)
 	(label "CAN_N"
 		(at 160.02 60.96 0)
@@ -2590,7 +2590,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "0969009e-e033-57db-a4ee-9377b97a4bf5")
+		(uuid "f2e7f2b6-2429-5e8c-82f3-0981abd78616")
 	)
 	(label "CAN_P"
 		(at 147.32 81.28 180)
@@ -2600,7 +2600,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "e54a3c36-c79c-581f-8574-46f84a154b4b")
+		(uuid "a82b75ad-3cb1-5015-855d-2665a80836e0")
 	)
 	(label "CAN_N"
 		(at 160.02 81.28 0)
@@ -2610,7 +2610,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "c27abb56-54c0-505d-84b0-8f31afa1ab4a")
+		(uuid "d9d86f35-e428-5944-b4d1-eb3039fafd42")
 	)
 	(label "CAN_P"
 		(at 177.8 66.04 90)
@@ -2620,7 +2620,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "733d60af-b804-59b2-bd63-da00a8458bfd")
+		(uuid "0633a947-89e2-5885-87a9-56b28beabc3f")
 	)
 	(label "CAN_N"
 		(at 182.88 66.04 90)
@@ -2630,7 +2630,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "2b323396-98de-53ed-ae04-f5969488387d")
+		(uuid "d774b248-5357-5c10-9e16-42d6eab9f4a6")
 	)
 	(label "CAN_P"
 		(at 200.66 66.04 90)
@@ -2640,7 +2640,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "bb73239a-11c0-5af4-87e2-b0c69b9470f5")
+		(uuid "990dadfe-670d-5342-99db-aa0761d48593")
 	)
 	(label "CAN_N"
 		(at 205.74 66.04 90)
@@ -2650,7 +2650,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "1e2eb1bb-1a7a-5c86-8b0c-3cecbf7df20b")
+		(uuid "4e7dc385-ab5a-5dda-9566-4183c5263bf4")
 	)
 	(label "CAN_P"
 		(at 134.62 106.68 180)
@@ -2660,7 +2660,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "7c5d4c7d-81f0-51ed-90ce-929586836d8e")
+		(uuid "6445b24a-629e-506d-90aa-d5422ed2ca6c")
 	)
 	(label "CAN_N"
 		(at 134.62 109.22 180)
@@ -2670,7 +2670,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "da63f13c-070d-5864-bbb0-d238f433145a")
+		(uuid "a4259615-cf9c-5c95-8254-4f22392cc606")
 	)
 	(text "LINK_5V  U7 from ISO_12V;  AUX_12V OR  D10"
 		(exclude_from_sim no)
@@ -2802,7 +2802,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "c8724e3f-4a3a-5364-a49d-7eac40a64d93")
+		(uuid "2df8b204-d0a4-5354-825b-202677f9fff3")
 	)
 	(text "TERMINATION  JP1: jumper caps on 1-2 and 3-4 on the last board of the row only"
 		(exclude_from_sim no)
@@ -4213,7 +4213,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" "C144645"
+		(property "LCSC" "C245987"
 			(at 163.83 106.68 0)
 			(hide yes)
 			(show_name no)
@@ -4225,7 +4225,7 @@
 				(justify left)
 			)
 		)
-		(property "MPN" "Yageo AC0603FR-0760R4L"
+		(property "MPN" "Yageo RC0603FR-0760R4L"
 			(at 163.83 106.68 0)
 			(hide yes)
 			(show_name no)
@@ -4319,7 +4319,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" "C144645"
+		(property "LCSC" "C245987"
 			(at 163.83 111.76 0)
 			(hide yes)
 			(show_name no)
@@ -4331,7 +4331,7 @@
 				(justify left)
 			)
 		)
-		(property "MPN" "Yageo AC0603FR-0760R4L"
+		(property "MPN" "Yageo RC0603FR-0760R4L"
 			(at 163.83 111.76 0)
 			(hide yes)
 			(show_name no)

@@ -48,7 +48,9 @@ TERM_CAP = "C5305"                                # 2.54 mm jumper cap (accessor
 PINS = {"1": "CAN_P", "2": "CAN_N", "3": "LINK_GND", "4": "LINK_GND", "5": "AUX_12V", "6": "AUX_12V"}
 ESD = ("Power_Protection:NUP2105L", "NUP2105L", "Package_TO_SOT_SMD:SOT-23",
        {"LCSC": "C14486", "MPN": "onsemi NUP2105LT1G"})
-TERM_R = {"LCSC": "C144645", "MPN": "Yageo AC0603FR-0760R4L"}
+# FD batch 2 (2026-11-26): RC0603FR-0760R4L (C245987); was AC0603FR-0760R4L (C144645), out of
+# stock at JLC. Same Yageo 60.4R 1 % 0603, the RC series instead of the AC series.
+TERM_R = {"LCSC": "C245987", "MPN": "Yageo RC0603FR-0760R4L"}
 TERM_C = {"LCSC": "C1538", "MPN": "FH 0402B472K500NT"}
 
 

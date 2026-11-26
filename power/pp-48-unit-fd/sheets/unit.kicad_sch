@@ -9102,7 +9102,7 @@
 		)
 		(uuid "045cb729-2fd9-5156-b1c6-22c602197522")
 	)
-	(text "SLOT A: 48 V HOT-SWAP, INA237, OV LATCH, MODULE MOUNT, ID ADC, NODE TERMINAL"
+	(text "SLOT A: 48 V HOT-SWAP, INA228, OV LATCH, MODULE MOUNT, ID ADC, NODE TERMINAL"
 		(exclude_from_sim no)
 		(at 15.24 25.4 0)
 		(effects
@@ -9112,9 +9112,9 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "91870568-67bb-5f32-b80e-13742cab2764")
+		(uuid "9d714c9a-46da-5e65-8378-b25028455f81")
 	)
-	(text "SLOT B: 48 V HOT-SWAP, INA237, OV LATCH, MODULE MOUNT, ID ADC, NODE TERMINAL"
+	(text "SLOT B: 48 V HOT-SWAP, INA228, OV LATCH, MODULE MOUNT, ID ADC, NODE TERMINAL"
 		(exclude_from_sim no)
 		(at 396.24 25.4 0)
 		(effects
@@ -9124,7 +9124,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "7d0c67ce-bb99-54f1-bacf-3e546acd9a96")
+		(uuid "813e0749-c841-5d5b-a5bd-ac0004d70fd6")
 	)
 	(text "UNIT: TWO SLOTS ON ONE I2C SEGMENT. SLOT A (LEFT, NETS A_*) AND SLOT B (RIGHT, REFS + 50, NETS B_*)"
 		(exclude_from_sim no)
@@ -9138,7 +9138,7 @@
 		)
 		(uuid "6818fcff-1314-5a04-ad90-cce98e8f4668")
 	)
-	(text "I2C SEGMENT: INA237 0x40 / 0x41,\nADC121C027 0x51 / 0x52 (slot A / B),\nTCA6424A 0x22"
+	(text "I2C SEGMENT: INA228 0x40 / 0x41,\nADC121C027 0x51 / 0x52 (slot A / B),\nTCA6424A 0x22"
 		(exclude_from_sim no)
 		(at 15.24 190.5 0)
 		(effects
@@ -9148,7 +9148,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "ae4cc3a3-19a7-5cfa-9ab1-2afd8800e087")
+		(uuid "52d4508d-d886-5c6e-8003-5ef1b152e21e")
 	)
 	(symbol
 		(lib_id "Device:R")
@@ -9359,7 +9359,7 @@
 				)
 			)
 		)
-		(property "Value" "ISC035N10NM5LF2"
+		(property "Value" "CSD19532Q5B"
 			(at 124.46 37.465 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -9393,7 +9393,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "100 V 3.5 mOhm linear-mode pass FET (PG-TDSON-8, drawn with the BSC070N10NS5 symbol): about 7 A at 48 V for 10 ms against 0.96 A in power limit; was BSC070N10NS5, 0.15 A (ADR 0005 decision 3a)"
+		(property "Description" "100 V 4.9 mOhm linear-mode pass FET (TI CSD19532Q5B, SON 5x6 on the TDSON-8-1 land, drawn with the BSC070N10NS5 symbol): SOA ~1.3 A at 48 V / 10 ms at T_C 25 C (SLPS414B fig. 10), ~1.3 A hot over the 4.7 ms fault time, against 0.96 A in power limit (ADR 0005 decision 3a)"
 			(at 124.46 43.18 0)
 			(hide yes)
 			(show_name no)
@@ -9405,7 +9405,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" "C22408528"
+		(property "LCSC" "C473333"
 			(at 124.46 43.18 0)
 			(hide yes)
 			(show_name no)
@@ -10050,7 +10050,7 @@
 				)
 			)
 		)
-		(property "Value" "220n"
+		(property "Value" "100n"
 			(at 142.462 87.63 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -10084,7 +10084,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "insertion 160 ms, fault timeout 10 ms"
+		(property "Description" "insertion ~73 ms, fault timeout ~4.7 ms typ (~9 ms worst case); was 220n (160 ms / 10.4 ms): the shorter fault time is what brings the slot FET inside its SOA (ADR 0005 decision 3a)"
 			(at 137.16 86.36 0)
 			(hide yes)
 			(show_name no)
@@ -10096,7 +10096,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" "C21120"
+		(property "LCSC" "C14663"
 			(at 137.16 86.36 0)
 			(hide yes)
 			(show_name no)
@@ -10426,7 +10426,7 @@
 				)
 			)
 		)
-		(property "Value" "INA237AIDGSR"
+		(property "Value" "INA228AIDGSR"
 			(at 75.85 64.77 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -10460,7 +10460,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "16-bit monitor on the shunt, address 0x40 slot A / 0x41 slot B (A1 GND, A0 = strap); VBUS pin reads the slot output"
+		(property "Description" "20-bit monitor on the shunt, address 0x40 slot A / 0x41 slot B (A1 GND, A0 = strap); VBUS pin reads the slot output; FD batch 2: INA228AIDGSR (85 V, pin-compatible VSSOP-10), was INA237AIDGSR (C2864837, out of stock)"
 			(at 55.88 76.2 0)
 			(hide yes)
 			(show_name no)
@@ -10472,7 +10472,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" "C2864837"
+		(property "LCSC" "C2887910"
 			(at 55.88 76.2 0)
 			(hide yes)
 			(show_name no)
@@ -10484,7 +10484,7 @@
 				(justify left)
 			)
 		)
-		(property "MPN" "TI INA237AIDGSR"
+		(property "MPN" "TI INA228AIDGSR"
 			(at 55.88 76.2 0)
 			(hide yes)
 			(show_name no)
@@ -10590,7 +10590,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "INA237 VS"
+		(property "Description" "INA228 VS"
 			(at 73.66 80.01 0)
 			(hide yes)
 			(show_name no)
@@ -12860,7 +12860,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" "C41397112"
+		(property "LCSC" "C42163098"
 			(at 213.36 86.36 0)
 			(hide yes)
 			(show_name no)
@@ -12872,7 +12872,7 @@
 				(justify left)
 			)
 		)
-		(property "MPN" "hanxia HX PM1.27-2x3P TP"
+		(property "MPN" "Hong Cheng HC-PM127-4.3H-2x3PS-02A"
 			(at 213.36 86.36 0)
 			(hide yes)
 			(show_name no)
@@ -15172,7 +15172,7 @@
 				)
 			)
 		)
-		(property "Value" "ISC035N10NM5LF2"
+		(property "Value" "CSD19532Q5B"
 			(at 505.46 37.465 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -15206,7 +15206,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "100 V 3.5 mOhm linear-mode pass FET (PG-TDSON-8, drawn with the BSC070N10NS5 symbol): about 7 A at 48 V for 10 ms against 0.96 A in power limit; was BSC070N10NS5, 0.15 A (ADR 0005 decision 3a)"
+		(property "Description" "100 V 4.9 mOhm linear-mode pass FET (TI CSD19532Q5B, SON 5x6 on the TDSON-8-1 land, drawn with the BSC070N10NS5 symbol): SOA ~1.3 A at 48 V / 10 ms at T_C 25 C (SLPS414B fig. 10), ~1.3 A hot over the 4.7 ms fault time, against 0.96 A in power limit (ADR 0005 decision 3a)"
 			(at 505.46 43.18 0)
 			(hide yes)
 			(show_name no)
@@ -15218,7 +15218,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" "C22408528"
+		(property "LCSC" "C473333"
 			(at 505.46 43.18 0)
 			(hide yes)
 			(show_name no)
@@ -15863,7 +15863,7 @@
 				)
 			)
 		)
-		(property "Value" "220n"
+		(property "Value" "100n"
 			(at 523.462 87.63 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -15897,7 +15897,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "insertion 160 ms, fault timeout 10 ms"
+		(property "Description" "insertion ~73 ms, fault timeout ~4.7 ms typ (~9 ms worst case); was 220n (160 ms / 10.4 ms): the shorter fault time is what brings the slot FET inside its SOA (ADR 0005 decision 3a)"
 			(at 518.16 86.36 0)
 			(hide yes)
 			(show_name no)
@@ -15909,7 +15909,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" "C21120"
+		(property "LCSC" "C14663"
 			(at 518.16 86.36 0)
 			(hide yes)
 			(show_name no)
@@ -16239,7 +16239,7 @@
 				)
 			)
 		)
-		(property "Value" "INA237AIDGSR"
+		(property "Value" "INA228AIDGSR"
 			(at 456.85 64.77 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -16273,7 +16273,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "16-bit monitor on the shunt, address 0x40 slot A / 0x41 slot B (A1 GND, A0 = strap); VBUS pin reads the slot output"
+		(property "Description" "20-bit monitor on the shunt, address 0x40 slot A / 0x41 slot B (A1 GND, A0 = strap); VBUS pin reads the slot output; FD batch 2: INA228AIDGSR (85 V, pin-compatible VSSOP-10), was INA237AIDGSR (C2864837, out of stock)"
 			(at 436.88 76.2 0)
 			(hide yes)
 			(show_name no)
@@ -16285,7 +16285,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" "C2864837"
+		(property "LCSC" "C2887910"
 			(at 436.88 76.2 0)
 			(hide yes)
 			(show_name no)
@@ -16297,7 +16297,7 @@
 				(justify left)
 			)
 		)
-		(property "MPN" "TI INA237AIDGSR"
+		(property "MPN" "TI INA228AIDGSR"
 			(at 436.88 76.2 0)
 			(hide yes)
 			(show_name no)
@@ -16403,7 +16403,7 @@
 				(justify left)
 			)
 		)
-		(property "Description" "INA237 VS"
+		(property "Description" "INA228 VS"
 			(at 454.66 80.01 0)
 			(hide yes)
 			(show_name no)
@@ -18673,7 +18673,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" "C41397112"
+		(property "LCSC" "C42163098"
 			(at 594.36 86.36 0)
 			(hide yes)
 			(show_name no)
@@ -18685,7 +18685,7 @@
 				(justify left)
 			)
 		)
-		(property "MPN" "hanxia HX PM1.27-2x3P TP"
+		(property "MPN" "Hong Cheng HC-PM127-4.3H-2x3PS-02A"
 			(at 594.36 86.36 0)
 			(hide yes)
 			(show_name no)

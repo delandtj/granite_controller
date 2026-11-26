@@ -8,12 +8,16 @@ GND x 3, PRESS_EN (the press deadline, bused: one line for all units) and
 EXP_RSTN (the units' TCA6424A /RESET, bused, open drain from the core,
 pulled up by R30 on every unit). No VBUS.
 
-Parts (CJT A2541 series, gold over nickel, one series so the rows mate at
-the same height): "IN" (a unit's left edge) is the plug, A2541WR-2x7P
-(C5136987), body flush with the edge, pins 6 mm out past it; "OUT" (the
-core's and a unit's right edge) is the socket, A2541HWR-2x7P (C19100281),
+Parts: "IN" (a unit's left edge) is the plug, HCTL PZ254-2-07-W-8.5
+(C2894987), body flush with the edge, pins 6 mm out past it; "OUT" (the
+core's and a unit's right edge) is the socket, CJT A2541HWR-2x7P (C19100281),
 its face 4 mm out past the edge. Mated fully the boards stand 4 mm apart;
-4..6 mm gap = 6..4 mm of the pins inside. Both on B with pin 1 at the top
+4..6 mm gap = 6..4 mm of the pins inside. FD batch 2 (2026-11-26): the plug
+was the CJT A2541WR-2x7P (C5136987), out of stock at JLC; the PZ254 has the
+same 2.54 mm pitch, 6.00 mm mating pin, 3.00 mm tail and 1.02 mm holes, so
+the footprint and the mating height stay (its plastic is 2.5 mm per pin
+against the A2541's 2.54, which the body width, not the pins, absorbs).
+Both on B with pin 1 at the top
 and the even pins in the row nearer the edge, so plug pin n meets socket
 pin n and IN and OUT share one pinout (top to bottom, odd / even row):
 
@@ -54,7 +58,7 @@ G = 1.27
 SYM = "Connector_Generic:Conn_02x07_Odd_Even"
 PLUG = "Connector_PinHeader_2.54mm:PinHeader_2x07_P2.54mm_Horizontal"
 SOCKET = "Connector_PinSocket_2.54mm:PinSocket_2x07_P2.54mm_Horizontal"
-PLUG_FIELDS = {"LCSC": "C5136987", "MPN": "CJT A2541WR-2x7P"}
+PLUG_FIELDS = {"LCSC": "C2894987", "MPN": "HCTL PZ254-2-07-W-8.5"}
 SOCKET_FIELDS = {"LCSC": "C19100281", "MPN": "CJT A2541HWR-2x7P"}
 IN = {1: "EXP_RSTN", 2: "PRESS_EN", 3: "P3_SDA", 4: "P3_SCL", 5: "P2_SDA", 6: "P2_SCL", 7: "GND",
       8: "GND", 9: "P1_SDA", 10: "P1_SCL", 11: "P0_SDA", 12: "P0_SCL", 13: "+3V3", 14: "GND"}

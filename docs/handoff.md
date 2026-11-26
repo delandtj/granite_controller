@@ -500,10 +500,26 @@ is the one with a deadline.
 
 1. **Now, at the desk** (no boards needed)
    - [x] Decide the second order's FET variant: **slot-only** (user,
-     2026-11-26, the order date wins): Q1 / Q51 ISC035N10NM5LF2, Q202 /
+     2026-11-26, the order date wins): Q1 / Q51 linear FET, Q202 /
      Q203 stay BSC040N10NS5, in uinput.py and the board. Order sheet and
-     unit set: fab-archive/fd-batch2 (8 controllers, 8 cores, 30 units,
-     56 -B modules; batch 1 boards stay for development).
+     the three fab sets: fab-archive/fd-batch2 (5 controllers, 10 cores,
+     30 units, 50 -B modules; batch 1 boards stay for development).
+   - [x] **FD batch 2 BOM substitutions** (user, 2026-11-26; the batch 1
+     parts ran out at JLC, each replacement checked by datasheet).
+     controller-fd U5 TMP1075DR -> TMP75AIDR (C30389). core-fd U1
+     LM5164DDAR -> DDAT (C2071198), R25 / R26 60.4R -> C245987.
+     unit-fd: Q1 / Q51 -> TI CSD19532Q5B (C473333) with the slot timer
+     cap C1 / C51 220n -> 100n (C14663, fault 4.7 ms, insertion 73 ms:
+     ADR 0005 3a), U2 / U52 / U208 INA237AIDGSR -> INA228AIDGSR
+     (C2887910, pin-compatible; the plane firmware side is a separate
+     job, and the INA237 name is still all over docs/ and firmware/),
+     J301 -> HCTL PZ254-2-07-W-8.5 (C2894987), J3 / J53 -> Hong Cheng
+     HC-PM127-4.3H-2x3PS-02A (C42163098, the second source of
+     docs/pm-interface.md), R301 / R302 -> C245987. No copper change on
+     any board; same footprints; new pcbkit.toml rotation entries by
+     analogy with the parts they replace (assumed, check in JLC's
+     preview). ERC 0 and DRC as before on all three; the three fab sets
+     are in fab-archive/fd-batch2, PM-19V-250W-B reuses the batch 1 set.
    - [x] Fault-case pass on the unit as routed (UVLO / OVLO with
      tolerances, OV_KILL latch, module output shorted to input, loss
      of 3V3 with the bus live). The one desk check that could still
@@ -541,11 +557,13 @@ is the one with a deadline.
      with the BOM change only and accept that it is unproven; say so
      in the order notes here.
 6. **Re-fab**
-   - [ ] `pcbkit jlcfab` for pp-48-unit-fd from master (not the
+   - [x] `pcbkit jlcfab` for pp-48-unit-fd from master (not the
      archived set: that is the old BOM). ERC / parity / DRC as before
      (DRC 15 known). Check the FET rotation in JLC's preview.
-   - [ ] controller-fd, core-fd, PM modules: reorder from
-     fab-archive/fd-batch1 unchanged, unless 2 to 4 found something.
+   - [x] controller-fd and core-fd: own sets in fab-archive/fd-batch2
+     (the 2026-11-26 substitutions; Gerbers and drill identical to
+     batch 1 apart from the header dates). PM modules: reorder
+     fab-archive/fd-batch1/pm-19v-250w-b unchanged.
    - [ ] Tag the source and add the set under fab-archive/ as a new
      batch directory.
 7. **Batch 1 boards**

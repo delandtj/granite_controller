@@ -34,9 +34,11 @@ References are the drawing's + 200.
   R214 holds Q204 off while the expander is in reset or unpowered: with no
   core the unit retries forever (unit ON, R214). U_PGD (P27): open-drain PGD
   with a 3V3 pull-up.
-- U208 INA237 on the shunt, on the unit segment at 0x44 (A1 = VS, A0 =
+- U208 INA228 on the shunt, on the unit segment at 0x44 (A1 = VS, A0 =
   GND): IN+ VIN, IN- USENSE, VBUS pin = unit output. ALERT is not wired
-  (polled, DIAG_ALRT).
+  (polled, DIAG_ALRT). FD batch 2 (2026-11-26): INA228AIDGSR (C2887910),
+  pin-compatible VSSOP-10, 85 V; was INA237AIDGSR (C2864837, out of stock
+  at JLC). The address straps are unchanged.
 
 Coordinates are in grid units of 1.27 mm (P(x, y)), as input.py.
 """
@@ -117,11 +119,11 @@ def block():
     C(214, "2.2u 100V", C1210, {"1": "VBUS", "2": "GND"}, (112, 38), fields={"LCSC": "C338133"}, desc="VBUS at the FETs")
     C(215, "2.2u 100V", C1210, {"1": "VBUS", "2": "GND"}, (124, 38), fields={"LCSC": "C338133"}, desc="VBUS at the FETs")
 
-    # ========================================================== INA237 under the shunt
-    sym("U208", "Sensor_Energy:INA237", "INA237AIDGSR", "Package_SO:TSSOP-10_3x3mm_P0.5mm",
+    # ========================================================== INA228 under the shunt
+    sym("U208", "Sensor_Energy:INA237", "INA228AIDGSR", "Package_SO:TSSOP-10_3x3mm_P0.5mm",
         {"1": "+3V3", "2": "GND", "3": "NC", "4": "SDA", "5": "SCL", "6": "+3V3", "7": "GND", "8": "VBUS", "9": "USENSE", "10": "VIN"},
-        (44, 60), rot=270, fields={"LCSC": "C2864837", "MPN": "TI INA237AIDGSR"}, desc="unit monitor on the shunt, segment address 0x44 (A1 VS, A0 GND); VBUS pin reads the unit output; ALERT unused")
-    C(216, "100n", C0402, {"1": "+3V3", "2": "GND"}, (58, 63), desc="INA237 VS")
+        (44, 60), rot=270, fields={"LCSC": "C2887910", "MPN": "TI INA228AIDGSR"}, desc="unit monitor on the shunt, segment address 0x44 (A1 VS, A0 GND); VBUS pin reads the unit output; ALERT unused")
+    C(216, "100n", C0402, {"1": "+3V3", "2": "GND"}, (58, 63), desc="INA228 VS")
 
     # ========================================================== expander control: U_OFF
     sym("Q204", FET, "2N7002", SOT23, {"1": "U_OFF", "2": "GND", "3": "UVLO"}, (82, 90),
@@ -134,7 +136,7 @@ def block():
     b.wire("VIN", [P(26, 32), P(30, 32), ("R201", "1"), P(30, 32), ("R202", "1")], sym=False)
     wire("USENSE", ("R201", "2"), ("Q202", "5"))
     wire("USENSE", (40, 32), ("R202", "2"))
-    wire("USENSE", (40, 38), ("U208", "9"))                        # Kelvin tap to INA237 IN-
+    wire("USENSE", (40, 38), ("U208", "9"))                        # Kelvin tap to INA228 IN-
     tie("USENSE", ("U207", "1"))                                    # by label: the gate labels need x = 94-98
     tie("USENSE", (70, 32))
     wire("USENSE", (40, 32), (40, 6), ("Q203", "5"))
@@ -168,5 +170,5 @@ def block():
     b.port("SCL", "bidirectional", side="left", pos=P(12, 76))
     b.port("U_OFF", "input", side="left", pos=P(64, 90))
     b.port("U_PGD", "output", side="right", pos=P(134, 58))
-    b.text("UNIT INPUT  J201 XT60 -> TVS -> U207 LM5069-2 (3 mOhm, Q202 || Q203) -> VBUS; U208 INA237 0x44", P(-14, -4))
+    b.text("UNIT INPUT  J201 XT60 -> TVS -> U207 LM5069-2 (3 mOhm, Q202 || Q203) -> VBUS; U208 INA228 0x44", P(-14, -4))
     return b.finish()

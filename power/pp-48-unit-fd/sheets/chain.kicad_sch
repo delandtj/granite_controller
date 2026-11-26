@@ -2307,7 +2307,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" "C5136987"
+		(property "LCSC" "C2894987"
 			(at 50.8 50.8 0)
 			(hide yes)
 			(show_name no)
@@ -2319,7 +2319,7 @@
 				(justify left)
 			)
 		)
-		(property "MPN" "CJT A2541WR-2x7P"
+		(property "MPN" "HCTL PZ254-2-07-W-8.5"
 			(at 50.8 50.8 0)
 			(hide yes)
 			(show_name no)
@@ -2939,7 +2939,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" "C144645"
+		(property "LCSC" "C245987"
 			(at 125.73 116.84 0)
 			(hide yes)
 			(show_name no)
@@ -2951,7 +2951,7 @@
 				(justify left)
 			)
 		)
-		(property "MPN" "Yageo AC0603FR-0760R4L"
+		(property "MPN" "Yageo RC0603FR-0760R4L"
 			(at 125.73 116.84 0)
 			(hide yes)
 			(show_name no)
@@ -3045,7 +3045,7 @@
 				(justify left)
 			)
 		)
-		(property "LCSC" "C144645"
+		(property "LCSC" "C245987"
 			(at 125.73 121.92 0)
 			(hide yes)
 			(show_name no)
@@ -3057,7 +3057,7 @@
 				(justify left)
 			)
 		)
-		(property "MPN" "Yageo AC0603FR-0760R4L"
+		(property "MPN" "Yageo RC0603FR-0760R4L"
 			(at 125.73 121.92 0)
 			(hide yes)
 			(show_name no)

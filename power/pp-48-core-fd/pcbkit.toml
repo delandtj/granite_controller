@@ -76,6 +76,7 @@ corrections = [
     ["^D_SMC$", "C2990209", 0, 0.0, 0.0],
     ["^D_SOD-123$", "C917030", 0, 0.0, 0.0],
     ["^HSOP-8-1EP_3.9x4.9mm_P1.27mm_EP2.41x3.1mm$", "C477928", 270, 0.0, 0.0],
+    ["^HSOP-8-1EP_3.9x4.9mm_P1.27mm_EP2.41x3.1mm$", "C2071198", 270, 0.0, 0.0],   # LM5164DDAT (2026-11-26): same part and package as C477928 above, small reel; assumed, not fitted against its own EasyEDA footprint
     ["^SOIC-8-1EP_3.9x4.9mm_P1.27mm_EP2.95x4.9mm_Mask2.71x3.4mm_ThermalVias$", "C471040", 270, 0.0, 0.0],
     ["^PinSocket_2x07_P2.54mm_Horizontal$", "C19100281", 270, 0.0, 0.0],    # chain socket: fitted on the body side (EasyEDA numbers the rows the other way; a socket has no pin identity)
     ["^L_Bourns_SRR1260$", "C840528", 0, 0.0, 0.0],

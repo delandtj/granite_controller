@@ -73,19 +73,23 @@ corrections = [
     ["^D_SMC$", "C2990209", 0, 0.0, 0.0],
     ["^JST_GH_SM04B-GHS-TB_1x04-1MP_P1.25mm_Horizontal$", "C189895", 0, 0.0, -0.25],
     ["^PinHeader_2x07_P2.54mm_Horizontal$", "C5136987", 90, 0.0, 0.0],      # chain plug: fitted on the body side (EasyEDA numbers the rows the other way; a header has no pin identity)
+    ["^PinHeader_2x07_P2.54mm_Horizontal$", "C2894987", 90, 0.0, 0.0],      # chain plug PZ254-2-07-W-8.5 (2026-11-26): assumed as the C5136987 above (same 2x7 2.54 right-angle body); another vendor's EasyEDA drawing, so check it in the preview
     ["^PinSocket_2x07_P2.54mm_Horizontal$", "C19100281", 270, 0.0, 0.0],    # chain socket: as the plug
     ["^PinHeader_2x03_P2.54mm_Horizontal$", "C239334", 270, 0.0, 0.0],      # CAN FD link plug J303: fitted on the body side (EasyEDA numbers the rows the other way; its body is drawn the other way round from the 2x7's, hence 270)
     ["^PinSocket_2x03_P2.54mm_Horizontal$", "C5333425", 270, 0.0, 0.0],     # CAN FD link socket J304: pads and body both fit
     ["^MSOP-10_3x3mm_P0.5mm$", "C111822", 270, 0.0, 0.0],
     ["^PM_Aux_Socket_2x03_P1.27$", "C41397112", 270, 0.0, 0.0],     # symmetric; our pins are numbered by function
+    ["^PM_Aux_Socket_2x03_P1.27$", "C42163098", 270, 0.0, 0.0],     # HC-PM127-4.3H-2x3PS-02A (2026-11-26): assumed as the C41397112 above (same 4.30 mm 1.27 mm 2x3 socket), not fitted against its EasyEDA footprint
     ["^PM_Standoff_M2x7_SMTSO$", "C2916355", 0, 0.0, 0.0],
     ["^SOIC-4_4.55x2.6mm_P1.27mm$", "C55144", 180, 0.0, 0.0],       # TLP291: EasyEDA footprint and model disagree on pin 1, check in the preview
     ["^SOT-23$", "C8545", 180, 0.0, 0.0],
     ["^TDSON-8-1$", "C534364", 270, 0.0, 0.0],                       # fitted on pins 1-4 (EasyEDA numbers the drain pins 5-8, the pad 9)
     ["^TDSON-8-1$", "C534334", 270, 0.0, 0.0],
     ["^TDSON-8-1$", "C22408528", 270, 0.0, 0.0],                     # ISC035N10NM5LF2 (2026-11-12): assumed as the two above (same PG-TDSON-8), not fitted against its EasyEDA footprint; check in the preview
+    ["^TDSON-8-1$", "C473333", 270, 0.0, 0.0],                        # CSD19532Q5B (2026-11-26, Q1 / Q51): assumed as the three above (TI SON 5x6 on the same land, same pinout), not fitted against its EasyEDA footprint; check in the preview
     ["^TSOT-23-6$", "C2670157", 180, 0.0, 0.0],
     ["^TSSOP-10_3x3mm_P0.5mm$", "C2864837", 270, 0.0, 0.0],
+    ["^TSSOP-10_3x3mm_P0.5mm$", "C2887910", 270, 0.0, 0.0],          # INA228AIDGSR (2026-11-26): assumed as the C2864837 above (same TI VSSOP-10 DGS), not fitted against its EasyEDA footprint
     ["^TerminalBlock_Degson_DG128-5.0-02P$", "C711349", 0, 0.0, 0.0],
     ["^VQFN-32-1EP_5x5mm_P0.5mm_EP3.15x3.15mm$", "C80692", 0, 0.0, 0.0],
     ["^VSSOP-8_2.3x2mm_P0.5mm$", "C70285", 180, 0.0, 0.0],
