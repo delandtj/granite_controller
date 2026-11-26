@@ -47,3 +47,13 @@ fabrication-toolkit-options.json
 
 # Tomachie analysis runs (external report, modified/markup zips)
 Tomachie/
+
+# mech: large or superseded files kept on disk only
+mech/frame/313_axb35-03_mb_*.stp
+mech/frame/MoboRef.FCStd
+mech/frame/Frame.pre-*.FCStd
+mech/frame/Frame.w198.FCStd
+mech/frame/Frame-v3-csg.FCStd
+mech/halo-clamp/archive-*/
+mech/halo-clamp/PXL_*.jpg
+mech/halo-clamp/HaloBridge-v12-static.FCStd

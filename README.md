@@ -24,6 +24,12 @@ on top of granite_controller's history, so both histories are here.
   use its libraries.
 - power/pm-19v-250w, power/pm-19v-250w-b: the port module. power/pm-bench-carrier: bench
   carrier for one module. power/tools: module mount geometry.
+- mech: the mechanical side. mech/frame: the 3D-printed pod frames
+  (node, infra and end frame, plane carrier), FreeCAD models and
+  freecadcmd generators; mech/pod-layout: the pod layout page;
+  mech/halo-clamp: the Strix Halo cooler bridge; mech/assembly: the
+  8-port plane assembly. Handoff in docs/handoff-frames.md. Moved in
+  from ~/Granite/Hardware on 2026-11-26.
 - site: installer / operator manual (mdBook). Still describes rev C
   (relays, expanders, 19 V input); to be reworked for rev D and the plane.
 - firmware: Rust workspace. granite-core (no_std: dispatcher, commands,

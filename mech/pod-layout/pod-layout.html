@@ -1,0 +1,1387 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>PRO9 Pod Layout</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: drawing-sheet column. Controls strip on top, then numbered sheets (to-scale SVG), then power chain, control link, block cabling and open items. */
+:root {
+  --paper: #f3f4f1;
+  --sheet: #fbfbf9;
+  --ink: #1e2428;
+  --ink-2: #5b656b;
+  --rule: #c9cdc8;
+  --frame: #e0a800;      /* frame filament amber */
+  --frame-fill: #f6dc8a;
+  --board: #3f7a52;
+  --board-fill: #cfe3d4;
+  --liquid: #2b8a99;
+  --liquid-fill: rgba(43,138,153,0.10);
+  --power: #b5562c;
+  --power-fill: #f2d3c2;
+  --net: #3d5fa8;
+  --net-fill: #d5ddf0;
+  --warn: #b3261e;
+  --link: #7b4f9e;        /* CAN FD plane link */
+  --link-fill: #e6dcef;
+  --ok: #2e7d4a;
+  --display: "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #15191b; --sheet: #1b2023; --ink: #e4e7e4; --ink-2: #9aa4a8; --rule: #353d41;
+    --frame: #f2bf1a; --frame-fill: #4a3d10; --board: #7cc28f; --board-fill: #1f3a28;
+    --liquid: #5cc0cf; --liquid-fill: rgba(92,192,207,0.10); --power: #e48a5c; --power-fill: #4a2a1b;
+    --net: #8fa8e6; --net-fill: #222c47; --warn: #ff7b6e; --ok: #6fd391; --link: #c7a2e6; --link-fill: #33244a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #15191b; --sheet: #1b2023; --ink: #e4e7e4; --ink-2: #9aa4a8; --rule: #353d41;
+  --frame: #f2bf1a; --frame-fill: #4a3d10; --board: #7cc28f; --board-fill: #1f3a28;
+  --liquid: #5cc0cf; --liquid-fill: rgba(92,192,207,0.10); --power: #e48a5c; --power-fill: #4a2a1b;
+  --net: #8fa8e6; --net-fill: #222c47; --warn: #ff7b6e; --ok: #6fd391; --link: #c7a2e6; --link-fill: #33244a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 28px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 28px; }
+h1, h2, h3 { font-family: var(--display); font-weight: 700; margin: 0; text-wrap: balance; letter-spacing: 0.01em; }
+h1 { font-size: 2.1rem; line-height: 1.1; }
+h2 { font-size: 1.35rem; }
+h3 { font-size: 1.05rem; font-weight: 600; }
+p { margin: 0; max-width: 68ch; }
+.lede { color: var(--ink-2); }
+.tag { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); }
+header { display: grid; gap: 10px; }
+
+.controls { background: var(--sheet); border: 1px solid var(--rule); padding: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px 20px; }
+.ctl { display: grid; gap: 4px; min-width: 0; }
+.ctl label { font-family: var(--display); font-weight: 600; font-size: 0.95rem; display: flex; justify-content: space-between; gap: 8px; }
+.ctl output { font-family: var(--mono); font-weight: 500; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+.ctl small { color: var(--ink-2); font-size: 0.8rem; line-height: 1.3; }
+input[type=range] { width: 100%; accent-color: var(--frame); }
+input:focus-visible, button:focus-visible, select:focus-visible { outline: 2px solid var(--net); outline-offset: 2px; }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg button { font: 600 0.9rem var(--display); border: 1px solid var(--rule); background: transparent; color: var(--ink); padding: 5px 10px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); border-color: var(--ink); }
+
+.options { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.opt { background: var(--sheet); border: 1px solid var(--rule); padding: 14px; display: grid; gap: 8px; min-width: 0; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+.opt[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.opt .head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 8px; }
+.opt .big { font-family: var(--display); font-size: 2rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.opt dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 12px; margin: 0; font-size: 0.85rem; }
+.opt dt { color: var(--ink-2); }
+.opt dd { margin: 0; font-family: var(--mono); font-size: 0.8rem; text-align: right; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.opt .why { font-size: 0.85rem; color: var(--ink-2); line-height: 1.35; }
+.pill { font-family: var(--mono); font-size: 0.7rem; padding: 2px 7px; border: 1px solid currentColor; }
+.pill.ok { color: var(--ok); }
+.pill.bad { color: var(--warn); }
+
+.sheet { background: var(--sheet); border: 1px solid var(--rule); display: grid; min-width: 0; }
+.sheet > .bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 16px; padding: 12px 16px; border-bottom: 1px solid var(--rule); }
+.sheet .draw { overflow-x: auto; padding: 12px; }
+.sheet svg { display: block; width: 100%; min-width: 520px; height: auto; }
+.sheet .draw img { display: block; width: 100%; max-width: 100%; height: auto; }
+.sheet .draw.shots { display: grid; gap: 12px; }
+.sheet .note { padding: 0 16px 14px; color: var(--ink-2); font-size: 0.88rem; display: grid; gap: 6px; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 28px; }
+
+svg text { font-family: var(--mono); fill: var(--ink); }
+svg .lbl { fill: var(--ink-2); }
+svg .tank { fill: var(--sheet); stroke: var(--ink); stroke-width: 3; }
+svg .bar-c { fill: var(--rule); stroke: var(--ink-2); stroke-width: 1; }
+svg .liq { fill: var(--liquid-fill); stroke: none; }
+svg .liq-line { stroke: var(--liquid); stroke-width: 2; stroke-dasharray: 10 6; fill: none; }
+svg .frm { fill: var(--frame-fill); stroke: var(--frame); stroke-width: 1.5; }
+svg .frm-line { stroke: var(--frame); stroke-width: 1.2; fill: none; }
+svg .brd { fill: var(--board-fill); stroke: var(--board); stroke-width: 1.2; }
+svg .brd-line { stroke: var(--board); stroke-width: 1.6; fill: none; }
+svg .sw { fill: var(--net-fill); stroke: var(--net); stroke-width: 1.5; }
+svg .rj { fill: var(--net); stroke: none; }
+svg .psu { fill: var(--power-fill); stroke: var(--power); stroke-width: 1.5; }
+svg .conv { fill: var(--power-fill); stroke: var(--power); stroke-width: 1.2; stroke-dasharray: 4 3; }
+svg .dc { fill: var(--power); stroke: none; }
+svg .band { fill: none; stroke: var(--ink-2); stroke-width: 1; stroke-dasharray: 3 3; }
+svg .dim { stroke: var(--ink-2); stroke-width: 1; fill: none; }
+svg .lnk { stroke: var(--link); stroke-width: 2.2; fill: none; }
+svg .lnk-sb { stroke: var(--link); stroke-width: 1.6; fill: none; stroke-dasharray: 6 4; }
+svg .ctrl { fill: var(--link-fill); stroke: var(--link); stroke-width: 1.6; }
+svg .ctrl-sb { fill: var(--sheet); stroke: var(--link); stroke-width: 1.4; stroke-dasharray: 5 3; }
+svg .core { fill: var(--board); stroke: var(--board); stroke-width: 1; }
+svg .term { fill: var(--sheet); stroke: var(--ink-2); stroke-width: 1.2; }
+svg .wall { stroke: var(--liquid); stroke-width: 2; stroke-dasharray: 10 6; fill: none; }
+svg .w48 { stroke: var(--power); stroke-width: 3; fill: none; }
+svg .w19 { stroke: var(--power); stroke-width: 1.8; fill: none; }
+svg .wfp { stroke: var(--ink-2); stroke-width: 1.2; stroke-dasharray: 4 3; fill: none; }
+svg .wnet { stroke: var(--net); stroke-width: 2; fill: none; }
+svg .box { fill: var(--sheet); stroke: var(--ink-2); stroke-width: 1.3; }
+svg .free { fill: none; stroke: var(--rule); stroke-width: 1; stroke-dasharray: 6 4; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.stat { background: var(--sheet); border: 1px solid var(--rule); padding: 12px 14px; display: grid; gap: 2px; align-content: start; }
+.stat .big { font-family: var(--display); font-size: 1.9rem; font-weight: 700; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.stat p { font-size: 0.85rem; color: var(--ink-2); line-height: 1.35; }
+.chain { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
+.chain .node { background: var(--sheet); border: 1px solid var(--rule); padding: 10px 12px; display: grid; gap: 2px; min-width: 0; flex: 1 1 150px; }
+.chain .node b { font-family: var(--display); font-size: 1rem; }
+.chain .node span { font-family: var(--mono); font-size: 0.78rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.chain .node.pw { border-color: var(--power); }
+.chain .arrow { align-self: center; color: var(--ink-2); font-family: var(--mono); }
+.flag { border-left: 3px solid var(--warn); padding: 8px 12px; background: var(--sheet); }
+
+.todo { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.todo div { background: var(--sheet); border: 1px solid var(--rule); padding: 12px 14px; display: grid; gap: 4px; }
+.todo div p { font-size: 0.9rem; color: var(--ink-2); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.82rem; color: var(--ink-2); }
+.sched { overflow-x: auto; background: var(--sheet); border: 1px solid var(--rule); }
+.sched table { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 0.88rem; }
+.sched th { font-family: var(--display); font-weight: 600; text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--ink-2); white-space: nowrap; }
+.sched td { padding: 7px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.sched td.n { font-family: var(--mono); font-size: 0.82rem; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sched th.n { text-align: right; }
+.sched tr:last-child td { border-bottom: 0; }
+.sched code, .note code, .lede code { font-family: var(--mono); font-size: 0.85em; }
+.legend i.ln { height: 0; border-width: 2px 0 0 0; width: 18px; vertical-align: 4px; }
+.legend i { display: inline-block; width: 12px; height: 12px; margin-right: 6px; vertical-align: -1px; border: 1.5px solid; }
+@media (prefers-reduced-motion: no-preference) { .opt { transition: box-shadow .15s, border-color .15s; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="tag">DCX PRO9 / AXB35 nodes / HaloBridge frames</span>
+    <h1>PRO9 pod layout</h1>
+    <div class="seg" id="presets" aria-label="Presets"><button type="button" data-p="n8" aria-pressed="true">One block - 8 nodes</button><button type="button" data-p="n48" aria-pressed="false">Demo pod - 48 nodes</button><button type="button" data-p="demo64" aria-pressed="false">Full pod - 64 nodes</button><button type="button" data-p="demo" aria-pressed="false">56 nodes</button><button type="button" data-p="k129" aria-pressed="false">K129 cooler - 48 nodes</button></div>
+    <p class="lede" id="presetNote"></p>
+    <p class="lede">Blocks of 8 frames (8 nodes) with an infra frame on the block end (2.5G switch, controller and plane core), packed into the PRO9 tank (inside 788 x 664.5 mm, liquid up to 422 mm). Updated for the 23 mm cooler (pitch 41.6 mm) and the frame widened to 216 mm (18 mm on each side of the board): a block now lies across one half of the tank instead of front to back. Drawings are to scale and follow the sliders. Nodes are powered and controlled by planes: one core and four units per block, a 48 to 19 V port module per node. Values marked TBD are placeholders.</p>
+  </header>
+
+  <section class="controls" aria-label="Parameters">
+    <div class="ctl"><label for="pitch">Frame pitch <output id="pitchV"></output></label><input id="pitch" type="range" min="30" max="60" step="0.1" value="41.6"><small>41.6 with the 23 mm cooler (was 58.7)</small></div>
+    <div class="ctl"><label for="watt">Node power at 19 V <output id="wattV"></output></label><input id="watt" type="range" min="100" max="220" step="5" value="150"><small>Strix Halo at 120-140 W package plus board losses</small></div>
+    <div class="ctl"><label for="psu">Supply rating <output id="psuV"></output></label><input id="psu" type="range" min="2" max="8" step="0.5" value="3"><small>Changbao CB3000, 48 V / 62.5 A, 287 x 185 x 70 mm; sized at 80% load</small></div>
+    <div class="ctl"><label for="band">Top band above board <output id="bandV"></output></label><input id="band" type="range" min="15" max="70" step="1" value="20"><small>Only the RJ45 plug now; right-angle about 15-20</small></div>
+    <div class="ctl"><label for="carrier">Infra frame depth <output id="carrierV"></output></label><input id="carrier" type="range" min="27" max="45" step="1" value="36"><small>Switch, controller and core; drawn at 36, 40 at most</small></div>
+    <div class="ctl"><label for="plane">Plane on the side <output id="planeV"></output></label><input id="plane" type="range" min="0" max="36" step="1" value="30"><small>Carrier 4, spacer 6, unit and port modules 20.2; 0 = no plane on the block</small></div>
+    <div class="ctl"><label for="fw">Frame width <output id="fwV"></output></label><input id="fw" type="range" min="180" max="220" step="1" value="216"><small>Board 180 plus 18 on the 10-pin connector side and 18 on the front panel header side</small></div>
+    <div class="ctl"><label>Block direction</label><div class="seg" id="orient"><button type="button" data-v="across" aria-pressed="true">Across a half</button><button type="button" data-v="depth" aria-pressed="false">Front to back</button></div><small>Front to back was the layout at 36 mm pitch and a 180 mm frame</small></div>
+    <div class="ctl"><label>Layers</label><div class="seg" id="layers"><button type="button" data-v="1" aria-pressed="false">1 layer</button><button type="button" data-v="2" aria-pressed="true">2 layers</button></div><small>2 layers need a stacking joint (TBD)</small></div>
+  </section>
+
+  <section style="display:grid;gap:12px" id="candsWrap" hidden>
+    <h2 id="candsTitle">Placements for 48 nodes</h2>
+    <p class="lede" id="candsNote"></p>
+    <div class="options" id="cands"></div>
+  </section>
+
+  <section style="display:grid;gap:12px" id="podsWrap" hidden>
+    <h2 id="podsTitle">Two pods from the boards on order</h2>
+    <div class="stats" id="pods"></div>
+    <p class="lede" id="podsNote"></p>
+  </section>
+
+  <section style="display:grid;gap:12px">
+    <h2>Where the power supplies go</h2>
+    <div class="options" id="options"></div>
+  </section>
+
+  <section class="sheet">
+    <div class="bar"><h2>Sheet 1 - Tank, top view</h2><div class="seg" id="viewLayer"></div></div>
+    <div class="draw" id="top"></div>
+    <div class="note">
+      <div class="legend"><span><i style="border-color:var(--frame);background:var(--frame-fill)"></i>frames (block of 8)</span><span><i style="border-color:var(--net);background:var(--net-fill)"></i>infra frame</span><span><i style="border-color:var(--power);background:var(--power-fill)"></i>48 V supplies</span><span><i style="border-color:var(--rule);border-style:dashed"></i>free</span><span><i style="border-color:var(--board);background:var(--board-fill)"></i>plane (4 units) on the bus bar side</span></div>
+      <p id="topNote"></p>
+    </div>
+  </section>
+
+  <section class="sheet">
+    <div class="bar"><h2>Sheet 2 - Tank, front elevation</h2><span class="tag" id="frontTag"></span></div>
+    <div class="draw" id="front"></div>
+    <div class="note"><p id="frontNote"></p></div>
+  </section>
+
+  <div class="two">
+    <section class="sheet">
+      <div class="bar"><h2>Sheet 3 - Node frame</h2><span class="tag">front view</span></div>
+      <div class="draw" id="node"></div>
+      <div class="note"><p>The frame is 18 mm wider than the board on the left, so the next frame's rail no longer covers the 10-pin power header and a plug can be seated there. Barrel jack and RJ45 sit on the top edge near the left rail (positions from the board STEP). 19 V arrives on a 14 AWG pair from the plane's port module, and the front-panel lines on a 4-wire cable to the motherboard header. Whether the 19 V ends in a barrel plug or in leads soldered to the jack pins is open; a plug adds to the top band.</p></div>
+    </section>
+    <section class="sheet">
+      <div class="bar"><h2>Sheet 4 - Block</h2><span class="tag">side view, infra frame + 8 frames</span></div>
+      <div class="draw" id="block"></div>
+      <div class="note"><p id="blockNote"></p></div>
+    </section>
+  </div>
+
+  <div class="two">
+    <section class="sheet">
+      <div class="bar"><h2>Sheet 8 - Infra frame</h2><span class="tag">model render, from the front</span></div>
+      <div class="draw shots">
+        <img src="img/infra-front.png" width="470" height="620" alt="Infra frame the way it stands in the tank: the switch on a ledge in the upper half, the core board below it on the bus bar side with its ribbon plugs towards the viewer" style="max-width:470px;margin:0 auto">
+      </div>
+      <div class="note">
+        <div class="legend"><span><i style="border-color:#2c5488;background:#3b6fb5"></i>switch</span><span><i style="border-color:#9c6620;background:#d08a2e"></i>core</span><span><i style="border-color:#5a4390;background:#7a5cc0"></i>ribbon plugs</span><span><i style="border-color:#b3a030;background:#e8d44a"></i>48 V plug</span></div>
+        <p>Same rails, legs, dovetails and bus bar holes as a node frame (216 x 210), but 36 mm deep and without the motherboard standoffs. Shown the way it stands in the tank. The switch stands on a ledge in the upper half with its ports up, 20.5 mm below the top of the frame. The core (68 x 72) is alone under the ledge, on the bus bar side, on four 9 mm standoffs.</p>
+        <p>The controller is no longer in this frame: it is on the plane carrier (sheet 10).</p>
+      </div>
+    </section>
+    <section class="sheet">
+      <div class="bar"><h2>Sheet 9 - Infra frame, from the back</h2><span class="tag">model render, open end of the block</span></div>
+      <div class="draw shots">
+        <img src="img/infra-back.png" width="470" height="620" alt="The same infra frame seen from the back, the open end of the block: the core's parts side and its 48 V plug face this way" style="max-width:470px;margin:0 auto">
+      </div>
+      <div class="note">
+        <p>The core faces the back of the frame, so that its 2x7 chain and 2x3 link plugs point to the bus bar side, where the plane carrier is. Its parts side and the 48 V plug are reached from the open end of the block; the plug goes in from below.</p>
+        <p>The first print of this frame came out upside down: in the tank the frames stand with the model's height axis pointing down. This version is laid out the tank way up. Open: the switch size (160 x 90 x 25) and its 12 V jack are assumed, and the front lips are only 3 mm.</p>
+      </div>
+    </section>
+  </div>
+
+  <div class="two">
+    <section class="sheet">
+      <div class="bar"><h2>Sheet 10 - Block with the plane</h2><span class="tag">model render, bus bar side</span></div>
+      <div class="draw shots">
+        <img src="img/block-plane.png" width="800" height="620" alt="Block of an infra frame and eight node frames seen from the bus bar side, with the plane carrier on the outside: the switch supply and the controller along the top, four units below them">
+        <img src="img/block-side.png" width="800" height="470" alt="The same block seen square on from the bus bar side: the switch supply and the controller in the top strip, four units in a row below with their 48 V plugs up and their node terminals down">
+        <img src="img/carrier-half.png" width="800" height="620" alt="One carrier half on its own, board side towards the viewer: pin standoffs and clips for the controller in the top strip and for two units below, screw slots at both ends of the two struts">
+        <img src="img/carrier-clip.png" width="800" height="560" alt="Close view of two pin standoffs and their clips: each clip is a thin post with a barb whose two faces slope at 30 degrees">
+      </div>
+      <div class="note">
+        <div class="legend"><span><i style="border-color:#a88420;background:#e0b040"></i>carrier, two halves</span><span><i style="border-color:#1c5a36;background:#2a7a4a"></i>unit</span><span><i style="border-color:#a03a36;background:#d9534f"></i>node terminals</span><span><i style="border-color:#b3a030;background:#e8d44a"></i>48 V plug</span><span><i style="border-color:#7d3434;background:#b04a4a"></i>switch supply</span><span><i style="border-color:#1f7341;background:#2e9e5b"></i>controller</span><span><i style="border-color:#2f6aa3;background:#4a90d9"></i>network cable</span></div>
+        <p>From the generator scripts (<code>plane_carrier.py</code>, <code>infra_frame.py</code>); the parts on the boards are envelopes measured on the KiCad STEP exports. The carrier is two identical printed halves. Each is held by four self-tapping screws (3 x 12) through slots at the ends of its two struts, into 2.5 mm pilot holes in the legs of the node frames. It prints flat, frame side on the bed, without supports. The plane stands 30.2 mm off the frame face.</p>
+        <p>The boards need no screws. Each sits on standoffs with a pin through its mounting holes (2.9 mm pins, for 3.2 mm holes) and is held down by four clips on two edges. A clip is a 1.2 mm post with a barb that overlaps the board by 0.6 mm; both barb faces slope at 30 degrees, so they print without supports. The pins take the load along the board, the clips only stop it lifting off. The switch supply keeps two self-tapping screws.</p>
+        <p>The top strip carries the switch supply (CUI DQD50-48-S12-T, 48 V in, 12 V 4.2 A, isolated) and the controller (105 x 50) on 10 mm pin standoffs, network jack up, so its cable leaves upward with the node cables.</p>
+        <p>The units are below, the right way up: 48 V plugs at their top edge, node terminals at the bottom edge. Unit 1 is next to the infra frame, so the core's two ribbons to it are about 10 cm. The 48 V leads turn in to the bus bars in the 34 mm between the units and the controller; one strut has an opening for unit 2's lead. The node leads run from the bottom of the plane up to the nodes' DC jacks, about 20 cm.</p>
+        <p>Tried and dropped: units along the top with their terminals up. It shortens the node leads but reverses the chain, which puts unit 1 at the far end and needs about 45 cm of ribbon for I2C.</p>
+      </div>
+    </section>
+    <section class="sheet">
+      <div class="bar"><h2>Sheet 11 - End frame</h2><span class="tag">model render, on the last node frame</span></div>
+      <div class="draw shots">
+        <img src="img/end-frame.png" width="470" height="620" alt="A flat end frame dropped onto the dovetails of the last node frame, covering the ends of its legs" style="max-width:470px;margin:0 auto">
+      </div>
+      <div class="note"><p>Closes a block: a flat frame (<code>end_frame.py</code>) that drops onto the dovetails of the last node frame and covers its legs. It is 9 mm thick, not 12, because a block with it is 377.8 mm against about 379 mm per half of the tank. The wall in front of the dovetail grooves is 2.8 mm.</p></div>
+    </section>
+    <section class="sheet">
+      <div class="bar"><h2>Sheet 12 - Locking the block for lifting</h2><span class="tag">model render, top joint with a mock tie</span></div>
+      <div class="draw shots">
+        <img src="img/tie-joint.png" width="1000" height="700" alt="Top corner of two joined frames seen from outside the block: a zip tie runs over the dovetail, down the leg and through a slot under the groove, lying flush with the top of the legs">
+        <img src="img/tie-joint-inside.png" width="1000" height="700" alt="The same joint seen from inside the block: the tie comes up the inner face of the leg, where its head sits above the top band">
+      </div>
+      <div class="note">
+        <p>The dovetails only fail one way: a frame can lift up out of the frame behind it. So a block cannot be picked up by one frame; everything on the end frame's side stays on the table.</p>
+        <p>A 3.6 mm zip tie on each top joint stops that. It runs over the tenon of the frame in front, down both sides of the leg and through a slot under the groove (4.4 x 2.2 mm, 1.3 mm below the groove floor). A recess 1.6 mm deep across the groove walls and the tenon keeps it flush, so the upper block still stands flat on the legs. The head goes on the inside of the leg. Two ties per joint, nine joints: 18 per block. The bottom joints need none.</p>
+        <p>The slot and recess are in the node, infra and end frames. Not printed yet: check the 1.3 mm floor between groove and slot on a test print, and lift a tied block of loaded frames before trusting it over the tank.</p>
+      </div>
+    </section>
+  </div>
+
+  <section style="display:grid;gap:12px">
+    <h2>Power chain</h2>
+    <div class="chain" id="chain"></div>
+    <div class="flag" id="jackFlag"></div>
+  </section>
+
+  <section style="display:grid;gap:12px" aria-labelledby="pwrTitle">
+    <h2 id="pwrTitle">Power distribution</h2>
+    <p class="lede" id="pwrLede"></p>
+    <div class="stats" id="pwrStats"></div>
+    <div class="sheet">
+      <div class="bar"><h2>Sheet 7 - Single line, mains to blocks</h2><span class="tag">schematic, not to scale</span></div>
+      <div class="draw" id="sld"></div>
+      <div class="note">
+        <div class="legend"><span><i class="ln" style="border-color:var(--power)"></i>230 V AC</span><span><i class="ln" style="border-color:var(--power);border-width:3px 0 0 0"></i>48 V</span><span><i class="ln" style="border-color:var(--link);border-style:dashed"></i>RS485</span></div>
+        <p id="sldNote"></p>
+      </div>
+    </div>
+    <h3>Settings and protection</h3>
+    <div class="sched" id="pwrSched"></div>
+    <div class="flag" id="pwrFlag"></div>
+  </section>
+
+  <section style="display:grid;gap:12px" aria-labelledby="ctlTitle">
+    <h2 id="ctlTitle">Control and plane link</h2>
+    <p class="lede" id="ctlLede"></p>
+    <div class="controls" aria-label="Control options">
+      <div class="ctl"><label>Blocks per controller</label><div class="seg" id="ctlPer"><button type="button" data-v="1" aria-pressed="true">1 block</button><button type="button" data-v="2" aria-pressed="false">2 blocks</button></div><small>1: a controller beside every block. 2: both blocks of a row on one link, which needs their planes in one line.</small></div>
+      <div class="ctl"><label>Standby controller</label><div class="seg" id="ctlStandby"><button type="button" data-v="none" aria-pressed="true">None</button><button type="button" data-v="ring" aria-pressed="false">Cross ring</button></div><small>Ring: every controller is master of its own link and standby for the next one (2 CAN ports per controller, port B isolated; not on today's board).</small></div>
+    </div>
+    <div class="stats" id="ctlStats"></div>
+    <div class="sheet">
+      <div class="bar"><h2>Sheet 5 - CAN FD link per controller</h2><span class="tag">schematic, front wall left, back wall right</span></div>
+      <div class="draw" id="link"></div>
+      <div class="note"><p id="linkNote"></p></div>
+    </div>
+    <div class="flag" id="fitFlag"></div>
+  </section>
+
+  <section style="display:grid;gap:12px" aria-labelledby="cabTitle">
+    <h2 id="cabTitle">Block cabling</h2>
+    <p class="lede">One block is the unit: 8 nodes, one plane, one switch, one controller. Core, units and port modules join board to board; everything drawn as a line here is a cable. The harness drawings with pinouts are in the repo under <code>cabling/</code>, the schedule in <code>docs/block-cabling.md</code>.</p>
+    <div class="sheet">
+      <div class="bar"><h2>Sheet 6 - Block wiring</h2><span class="tag">schematic, not to scale</span></div>
+      <div class="draw" id="wiring"></div>
+      <div class="note">
+        <div class="legend"><span><i class="ln" style="border-color:var(--power);border-width:3px 0 0 0"></i>48 V</span><span><i class="ln" style="border-color:var(--power)"></i>19 V and 12 V</span><span><i class="ln" style="border-color:var(--ink-2);border-style:dashed"></i>front panel</span><span><i class="ln" style="border-color:var(--link)"></i>CAN FD link + 12 V</span><span><i class="ln" style="border-color:var(--net)"></i>Ethernet</span></div>
+        <p>Three ground domains stay apart: the 48 V bus with the nodes (earthed once, at the busbar), the link with the controller (isolated at the core), and the switch supply output (floating). The front-panel cable has no ground wire; a press returns through the 19 V cable.</p>
+        <p>The switch has 8 copper ports and a block has 8 nodes, so the controller cannot use its own block's switch: it goes to a management switch outside. Node ports never carry VLAN 1, the switch's management VLAN; only the uplink does.</p>
+      </div>
+    </div>
+    <h3 id="schedTitle">Cable schedule</h3>
+    <div class="sched" id="sched"></div>
+  </section>
+
+  <section style="display:grid;gap:12px">
+    <h2>Bench checks</h2>
+    <p class="lede">What to look at when the parts arrive, in the order that settles the most. Dates are 2026.</p>
+    <div class="todo">
+      <div><h3>Mon 23 Nov - controller and plane boards</h3><p>Units on the printed carrier: the chain connectors on the back (5.2 mm in the board model) pass 0.8 mm over the rib between unit 1 and 2 and over the end strut of each half, on 6 mm standoffs. Check that they clear, and measure the mated pair above the back of the board. If they touch: a 2 mm relief in the rib and strut, not higher standoffs.</p><p>Controller link plug (9.0 mm) has 1.0 mm over the ladder. Pins: 2.9 mm into the board holes. Clips: whether they snap over the board edge without breaking.</p><p>Front panel cable: the unit has 4 pins (JST GH: 1 PWR_SW, 2 RST_SW, 3 PLED+, 4 PLED-), not the 5 of controller rev C. There is no ground wire; a press returns through the 19 V cable. With a meter on the AXB35 header, before making eight cables: which pin of each button is ground (wire the other one), and the polarity and voltage of the power LED pins.</p><p>To order for that cable: JST GH series, 1.25 mm pitch, 4 positions, latching. Housing GHR-04V-S, contacts SSHL-002T-P0.2 (26 to 30 AWG); shops list it as "JST GH 1.25 mm 4-pin". Pre-crimped, single-ended leads of 30 cm or more save the crimp tool. Not PicoBlade (1.25 mm, no latch), SH (1.0 mm) or PH (2.0 mm). 8 per block: 96 for 12 blocks, 128 for 16, plus spares. The header on the unit is SM04B-GHS-TB; the motherboard end is plain 2.54 mm.</p><p>Controller on the carrier: on 10 mm pin standoffs with clips (check the board's hole size, drawn for 3.2 mm, and that its edges are free where the clips sit), and 2.5 mm between unit 2's 48 V plug and the controller's ESP32 module.</p><p>Link ribbon from the controller around the block corner to the core: estimated 30 to 35 cm.</p><p>Core in the infra frame: on its four standoffs, parts side to the back, both ribbon plugs for unit 1 reaching the carrier side.</p><p>Power-up: first-batch units should switch on at about 41.3 V and off at about 38.3 V. Watch for a false power-good trip when a slot starts.</p></div>
+      <div><h3>Tue 24 Nov - Dynatron K129, 2 pieces</h3><p>Pad height: it must stand more than 2.1 mm proud of the base, or the base lands on the board's 3.8 mm posts before the pad touches the chip (1.7 mm high). A copper shim is the way out.</p><p>Screws: whether they thread into the board's posts (75 x 75 mm), and whether their length suits.</p><p>Stick-out: mounted, the cooler should stand about 5 mm proud of the rail back. It then has 3.5 mm to the tallest part behind the next board.</p></div>
+      <div><h3>When the parts are at hand</h3><p>The switch's real size (assumed 160 x 90 x 25): it decides the 0.3 mm between the first node's K129 and the switch.</p><p>The tank's inside depth (664.5 mm from the spec sheet) and the length of a half beside the centre bar (379 mm): neither is measured. The depth decides whether supplies fit two side by side, the half whether a block goes in with 1.2 mm to spare.</p><p>The front panel header: I cleared four header-like parts along the board edge, without knowing which one it is.</p><p>The 2.8 mm wall in front of the end frame's dovetail grooves.</p></div>
+    </div>
+  </section>
+
+  <section style="display:grid;gap:12px">
+    <h2>Still to settle</h2>
+    <div class="todo">
+      <div><h3>Supplies in the fluid</h3><p>CB3000, 287 x 185 x 70 (203 over the mounting tabs). The maker says it may be immersed: get that in writing for ThermaSafe R (PAO), and ask whether the fan comes off. Clean them first, then run one unit at full load for 24 to 48 h before the others.</p></div>
+      <div><h3>Overload behaviour</h3><p>Short one supply through a 10 A fuse at a 30 A limit. If the current holds, the block fuses work. If it pulses (hiccup), a short anywhere drops the whole pod and each block needs an electronic breaker instead.</p></div>
+      <div><h3>ORing and sharing</h3><p>The CB3000 has no ORing and no share pin. One ideal-diode stage per supply (80 A, 60 V), and the currents are balanced over Modbus by trimming setpoints; without that the supplies cascade on their 58 A limits, which is only safe if they hold a constant current there (the overload test).</p></div>
+      <div><h3>RS485 master</h3><p>The block controllers have no RS485 port. A Modbus TCP to RTU gateway on the management switch, outside the tank, makes the six supplies reachable over the network. To buy. The balancing software is not written: for the first pod a script that sets every supply to 48.0 V and logs the currents. Check whether the CB3000 keeps its setpoint and limit through a power cycle.</p></div>
+      <div><h3>Idle draw</h3><p>Nodes idle at about 20 W, so six supplies then run at 6 to 8% each, where their fixed loss dominates. Measure the mains draw of one CB3000 with nothing connected: around 15 W is not worth acting on, 50 W would make switching supplies off at idle worth doing later.</p></div>
+      <div><h3>19 V into the node</h3><p>9 to 13 A through the DC-045D jack: a barrel plug rated for it, or leads soldered to the jack pins. Also the motherboard's front-panel pinout, which fixes the node end of that cable.</p></div>
+      <div><h3>Tank entry</h3><p>One mains feed per supply (3G2.5), the RS485 pair and the network cables pass the tank wall; the 48 V stays inside. Check every cable's insulation against PAO: silicone, PTFE or XLPE are safe choices. The gland or pass-through is open.</p></div>
+      <div><h3>Infra frame</h3><p>Second version (sheets 8 and 9), laid out the tank way up after the first print came out upside down: switch and core only, 216 mm wide, with a pocket in the ledge for the first node's cooler; not printed yet. Switch size and its 12 V jack are assumed, not measured. The switch is held at the front by two 3 mm lips only.</p></div>
+      <div><h3>Switch supply</h3><p>The switch needs 12 V, isolated from the bus. A bought converter replaces the proposed board: CUI DQD50-48-S12-T, one per block, on the plane carrier (sheet 10). Ordered. Whether the switch sits in the fluid is open.</p></div>
+      <div><h3>Cooler height</h3><p>The pitch is 41.6 mm, which holds a cooler of 23 mm flush with the rail back. A taller one can stand proud into the free space behind the next board: the K129 (28.2 mm above the board) does so by 5.2 mm and leaves 3.5 mm. A block with its 36 mm infra frame and the 9 mm end frame is 377.8 mm, about 1 mm less than a half of the tank. Front to back, two blocks per string would need 36 mm or less.</p></div>
+      <div><h3>Frame width</h3><p>216 mm: the board is 180 and both rails stand 18 mm clear of it, so the 10-pin power plug on one side and the front panel headers on the other can be reached. With the plane on its side (30 mm) a row is 246 mm: two rows use 492 of the 664.5 mm depth, which leaves 172 mm. Two supplies side by side in that strip (2 x 70, covers off) leave 32 mm: 6 mm at each wall and between the rows, 8 mm between the supplies. That is tight, and the 664.5 mm is from the spec sheet, not measured. Front to back, two strings per half need a frame of 189.5 mm or less.</p></div>
+      <div><h3>Lifting a block</h3><p>Zip ties on the top dovetails (sheet 12), 18 per block, 3.6 mm. Frames printed before 21 Nov have no slot; they cannot be tied. Lift test with loaded frames still to do. Cutting the ties is the price of swapping a node.</p></div>
+      <div><h3>Plane carrier</h3><p>Drawn, not printed: a ladder in two halves, screwed to the legs of the node frames on the bus bar side with four self-tapping screws each; boards on pin standoffs with 30 degree clips, no screws. Switch supply and controller along the top, units below with unit 1 next to the infra frame (sheet 10). The plane stands 30.2 mm off the frame. The clips are untested: they stand upright in the print, so they bend across the layers. Print one half and click a board in and out a few times before the batch. Node frames printed before 21 Nov have no pilot holes; drill 2.5 mm at 32.7 mm from the frame's back, in the middle of each leg.</p></div>
+      <div><h3>Stacking joint</h3><p>The dovetails join frame to frame along a block only. A second layer needs tenons on the bottom arms, or a shelf.</p></div>
+      <div><h3>Cable path</h3><p>Lower-layer RJ45 and 48 V feeds must pass the upper layer. The rows stand 6 mm apart, and the strip behind them (about 148 mm with the 216 mm frame) holds the supplies two deep with 8 mm between them; beside the centre bar only about 7 mm is left per half.</p></div>
+      <div><h3>Plane length</h3><p>Solved by splitting the plane. In one piece it is 398 mm (core 68 + 4 units of 78.5 + joints), longer than a block's slot. Now the core sits in the infra frame under the switch, on two ribbons (2x7 chain, 2x3 link) to unit 1, and the controller is on the carrier's top strip. The four units alone are 326 mm and hang along the 8 frames (332.8 mm), a unit with its joint (82.5) over every two frames (83.2). To check on the bench: the two core ribbons of about 10 cm and the controller's link ribbon of 30 to 35 cm.</p></div>
+      <div><h3>Controller network port</h3><p>8 nodes fill the switch's 8 copper ports, so the controllers need a management switch of their own (or a block gives up a node). A standby ring needs a second, isolated CAN port on the controller.</p></div>
+      <div><h3>Centre bar</h3><p>Drawn about 30 mm wide from the spec sheet drawing. Measure it, and how far down it reaches: a block of 377.8 mm with its end frame relies on about 379 mm per half, so 1 mm decides whether a block goes in.</p></div>
+      <div><h3>Bus bar holder</h3><p>To design and print: the two 48 V bars (Cu 15 x 15 x 350, tapped for the supply and block lugs) sit at the centre bar in a holder that keeps them apart and covered, so no frame, lug or dropped tool can touch them. It needs the bar's real width, height, material and how far below the liquid its top is; with 1.2 mm of slack per half the holder cannot reach down beside the blocks. Infra frames face the bar, so every block's feed and uplink start there. Open: whether the bars lie along the centre bar or stand upright. With the right half turned, the block bars end at four places 423 mm apart in depth, more than 350; the two layers' block bars are 212 mm apart in height.</p></div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  var TANK_W = 788, TANK_D = 664.5, TANK_H = 475, LIQ = 422, BAR = 30;
+  var NB = 8,   /* node frames per block, set by geom() from the preset */ FW = 198, BOARD_W = 180, BOARD = 180, LIFT = 12, ARM = 12, TENON = 9,   /* the flat end frame that closes a block (it covers the 6 mm tenons) */ SWITCH_W = 10;
+  var PSU_L = 287, PSU_H = 185, PSU_T = 70;   // Changbao CB3000 48 V / 62.5 A, standing on its terminal end
+  var ROWS = 3;   // set by geom(): rows across the depth (blocks across each half) or strings front to back
+  var HALF = (788 - 30) / 2;
+  var state = { pitch: 41.6, watt: 150, psu: 3, band: 20, carrier: 36, layers: 2, option: 'E', viewLayer: 0, fw: 216, plane: 30, orient: 'across', preset: 'n8', cap: null, fitted: 0, ctl: 'plane', standby: 'none', perCtl: 1, per: 8 };
+  var PRESETS = {
+    n8: { layers: 1, option: 'A', psu: 3, cap: 8, note: 'One block: a row of 8 nodes with its plane, its switch and its controller. This is the unit the cabling below is drawn for; every larger pod is a multiple of it. With the 23 mm cooler the frame pitch is 41.6 mm, so a block with its infra frame is 375 mm and lies across one half of the tank (379 mm beside the centre bar).' },
+    n48: { layers: 2, option: 'A', psu: 3, cap: 48, fitted: 6, note: 'First demo pod: 48 nodes = 6 blocks of 8, and two of these come out of the 100 boards arriving. With the plane on the side of every block a row is 246 mm deep, so two rows fit, not three. Blocks stand two high in both halves, six of the eight slots used, and six supplies lie in the strip behind them: four would carry the load, six let two fail or a mains phase drop. The fill is capped at 6 blocks, so the layers toggle and the three cards below rearrange the same 48 nodes instead of adding more.' },
+    demo: { layers: 2, option: 'A', psu: 3, cap: 56, fitted: 6, note: '56 nodes: 7 blocks two high in the two rows of both halves, one slot spare. The strip behind them holds six supplies.' },
+    k129: { layers: 2, option: 'A', psu: 3, cap: 48, fitted: 6, note: 'The Dynatron K129 (1U copper, 90 x 90 x 26.5 mm, 75 x 75 holes) in the frames as they are: 8 per block at 41.6 mm pitch, 6 blocks for 48 nodes. It ends 28.2 mm above the board, so it stands 5.2 mm proud of the rail back and reaches into the free space behind the next board. In the board model the tallest part it faces there is 8.3 mm, which leaves 3.5 mm; the back plate leaves 7.3 mm. The infra frame has a pocket in its ledge for the first node, where the fins end 0.3 mm from the switch as it is assumed (160 x 90 x 25). Not settled: whether the K129 mounts at all (its pad must stand more than 2.1 mm proud to clear the board posts, and its screws must suit them).' },
+    demo64: { layers: 2, option: 'A', psu: 3, fitted: 6, note: 'Fullest pod with the planes on the block sides: 8 blocks (64 nodes, 8 switches) two high in the two rows of both halves. The strip behind them is 148 mm with the 216 mm frame. The supplies lie on their long edge, covers off, one deep and two high in each half (one per layer view): that is 4. The fifth and sixth go beside the lower two, side by side with 8 mm between them (a 0.5 mm fit on the unmeasured tank depth). Five would carry the load with one out; six put two on each phase, so a lost phase leaves four at 85%.' }
+  };
+  var $ = function (id) { return document.getElementById(id); };
+  var f1 = function (v) { return (Math.round(v * 10) / 10).toString(); };
+  function clone(o) { var c = {}; for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) c[k] = o[k]; return c; }
+
+  function geom(s) {
+    FW = s.fw;
+    NB = s.per || 8;
+    var blockLen = NB * s.pitch + TENON;
+    var slotLen = blockLen + s.carrier;
+    var across = s.orient === 'across';
+    var along, rowX = [], rowY = [], rowH = [], gapX = 0, gapY = 0, spareY, perHalf = 0, rw = FW, nb = 0, stripRow = -1, stripDeep = 2;
+    if (across) {
+      // a block lies across one half of the tank; rows follow each other front to back
+      rw = FW + s.plane;
+      nb = Math.max(0, Math.floor(TANK_D / rw));
+      along = slotLen <= HALF ? 2 : 0;
+      var G0 = 6;   // gap between rows and to the walls when a strip is left for the supplies
+      var stripRoom = TANK_D - nb * rw - (nb + 2) * G0;
+      // two supplies side by side (covers off) need 2 x 70 + 8 between them; a narrower strip takes them one deep
+      if (nb > 0 && stripRoom < 2 * PSU_T + 8 && stripRoom >= PSU_T + 10) stripDeep = 1;
+      if (nb > 0 && stripRoom >= (stripDeep === 2 ? 2 * PSU_T + 8 : PSU_T + 10)) {
+        gapY = G0;
+        for (var q = 0; q < nb; q++) { rowY.push(G0 + q * (rw + G0)); rowH.push(rw); }
+        stripRow = nb;
+        rowY.push(G0 + nb * (rw + G0));
+        rowH.push(TANK_D - rowY[nb] - G0);
+      } else {
+        gapY = (TANK_D - nb * rw) / (nb + 1);
+        for (var q2 = 0; q2 < nb; q2++) { rowY.push(gapY + q2 * (rw + gapY)); rowH.push(rw); }
+      }
+      ROWS = nb + (stripRow >= 0 ? 1 : 0);
+      spareY = TANK_D - nb * rw;
+      gapX = (HALF - slotLen) / 2;
+    } else {
+      // strings run front to back, up to two side by side in each half
+      perHalf = Math.min(2, Math.max(0, Math.floor(HALF / FW)));
+      ROWS = 2 * perHalf;
+      along = Math.min(2, Math.max(0, Math.floor(TANK_D / slotLen)));
+      gapX = (HALF - perHalf * FW) / (perHalf + 1);
+      for (var h = 0; h < 2; h++) for (var i = 0; i < perHalf; i++) rowX.push(h * (HALF + BAR) + gapX + i * (FW + gapX));
+      spareY = TANK_D - along * slotLen;
+    }
+    if (ROWS === 0) along = 0;
+    var layerH = LIFT + BOARD + Math.max(s.band, ARM);
+    return { blockLen: blockLen, slotLen: slotLen, along: along, rowX: rowX, rowY: rowY, rowH: rowH, rw: rw, nb: nb, stripRow: stripRow, stripDeep: stripRow >= 0 ? stripDeep : 2, gapX: gapX, gapY: gapY, spareY: spareY, layerH: layerH,
+      across: across, perHalf: perHalf,
+      upperBoardTop: (s.layers - 1) * layerH + LIFT + BOARD, stackTop: s.layers * layerH, slotsPerLayer: ROWS * along };
+  }
+
+  function powerSlots(s, g, opt) {
+    var list = [], last = ROWS - 1;
+    if (g.along === 0) return list;
+    if (opt === 'A') { for (var l = 0; l < s.layers; l++) for (var j = 0; j < g.along; j++) list.push([l, last, j]); }
+    else if (opt === 'B') {
+      if (s.layers === 2) list = [[0, last, 0], [1, last, 0]];
+      else list = g.along > 1 ? [[0, last, 0], [0, last, 1]] : (last > 0 ? [[0, last, 0], [0, last - 1, 0]] : [[0, last, 0]]);
+    } else if (opt === 'C') list = [[0, last, 0]];
+    else if (opt === 'E') { for (var l2 = 0; l2 < s.layers; l2++) for (var r2 = 0; r2 < ROWS; r2++) for (var j2 = 1; j2 < g.along; j2++) list.push([l2, r2, j2]); }
+    return list;   // 'D': supplies on a shelf above the blocks, no slot used
+  }
+
+  // Fill order: row by row, front slot then back slot, lower layer then upper. A capped
+  // pod therefore fills whole rows to full stack height and leaves the last rows empty.
+  function blockSlotList(s, g, ps) {
+    var out = [];
+    for (var r = 0; r < ROWS; r++) for (var j = 0; j < g.along; j++) for (var l = 0; l < s.layers; l++) {
+      if (r !== g.stripRow && !isPower(ps, l, r, j)) out.push([l, r, j]);
+    }
+    return out;
+  }
+
+  function evalOpt(s, g, opt) {
+    var ps = powerSlots(s, g, opt);
+    var all = blockSlotList(s, g, ps);
+    var want = s.cap ? Math.floor(s.cap / NB) : all.length;
+    var blocks = Math.max(0, Math.min(all.length, want));
+    var blockSlots = all.slice(0, blocks);
+    var freeSlots = all.slice(blocks);
+    var nodes = blocks * NB;
+    var loadKW = (nodes * s.watt + blocks * SWITCH_W) / 1000;
+    var fit = ps.length * (s.layers === 1 ? 2 : 1) * g.stripDeep;   // one layer: supplies stack two high (2 x 190 under 422); a narrow strip holds them one deep
+    if (opt === 'D') fit = shelfZ(s, g) + 4 + PSU_H <= LIQ ? SHELF_MAX : 0;
+    if (opt === 'E') fit = (PSU_L <= LIQ && (g.across ? g.along === 2 : TANK_D - g.spareY / 2 - g.slotLen >= PSU_H + 10)) ? SIDE_MAX : 0;
+    var need = Math.ceil(loadKW / (0.8 * s.psu));
+    var use = Math.min(fit, Math.max(need, s.fitted || 1));   // s.fitted: supplies fitted whatever the load needs
+    var loadPct = use > 0 ? loadKW / (use * s.psu) * 100 : 0;
+    var short = s.cap ? nodes < s.cap : false;
+    return { ps: ps, blockSlots: blockSlots, freeSlots: freeSlots, blocks: blocks, nodes: nodes, loadKW: loadKW,
+      fit: fit, need: need, use: use, loadPct: loadPct, short: short,
+      ok: need <= fit && loadKW <= 40 && !short, cool: loadKW <= 40 };
+  }
+
+  var SHELF_MAX = 8, SHELF_GAP = 30;   // standing on edge (190 up), 70 thick, 30 convection gap between units, one row across
+  function shelfZ(s, g) { return s.layers * g.layerH + 6; }
+  function shelfX(n) { var w = n * PSU_T + (n - 1) * SHELF_GAP; return (TANK_W - w) / 2; }
+  var SIDE_MAX = 8;   // tall (280 up), 70 x 190 footprint, 4 per half with 30 mm gaps
+  function sideUnits(n) {
+    var out = [], q;
+    if (state.orient === 'across') {
+      // the whole right half: 3 across, rows of supplies front to back
+      var per = 3, w0 = per * PSU_T + (per - 1) * SHELF_GAP, x0 = HALF + BAR + (HALF - w0) / 2;
+      for (q = 0; q < n; q++) out.push({ x: x0 + (q % per) * (PSU_T + SHELF_GAP), y: 16 + Math.floor(q / per) * (PSU_H + SHELF_GAP) });
+      return out;
+    }
+    var y = TANK_D - 8 - PSU_H;
+    for (q = 0; q < n; q++) {
+      var h = q < Math.ceil(n / 2) ? 0 : 1, k = h === 0 ? q : q - Math.ceil(n / 2);
+      var cnt = h === 0 ? Math.ceil(n / 2) : n - Math.ceil(n / 2);
+      var w = cnt * PSU_T + (cnt - 1) * SHELF_GAP;
+      out.push({ x: h * (HALF + BAR) + (HALF - w) / 2 + k * (PSU_T + SHELF_GAP), y: y });
+    }
+    return out;
+  }
+  var OPT_NAMES = { A: 'Power row', B: 'Two power slots', C: 'One power slot', D: 'Shelf above blocks', E: 'Blocks one side, power the other' };
+  var OPT_DESC = { A: 'Supplies in the strip behind the rows (or the last row)', B: 'One slot per layer at a row end', C: 'Supplies in a single slot', D: 'Supplies stand upright on an open grate over the blocks', E: 'Blocks on one side, supplies standing tall on the other' };
+
+  // Candidate placements for a capped pod; each card sets layers and option together.
+  var CANDS = [
+    { l: 2, o: 'A', name: '2 layers, supplies behind', why: 'Blocks two high in the two rows of both halves, supplies lying in the strip behind them. Two slots stay spare, so it grows to 64 nodes without moving anything.' },
+    { l: 2, o: 'E', name: '2 layers, one half each', why: 'Blocks in the left half only, supplies standing 287 tall in the right half. With the planes on the block sides only two rows fit, so this holds 32 nodes.' },
+    { l: 1, o: 'D', name: '1 layer, shelf above', why: 'Blocks on the floor only, supplies upright on an open grate over them. One layer has four slots, so this also stops at 32 nodes.' }
+  ];
+
+  function renderCands(s) {
+    if (!s.cap || s.cap < 48) { $('candsWrap').hidden = true; return; }
+    $('candsWrap').hidden = false;
+    $('candsTitle').textContent = 'Placements for ' + s.cap + ' nodes';
+    $('candsNote').textContent = 'Each card sets the layer count and the supply placement together; the sliders and the cards further down stay free, and the drawings follow whichever is selected.';
+    var html = '';
+    CANDS.forEach(function (c) {
+      var st = clone(s); st.layers = c.l;
+      var g2 = geom(st), r2 = evalOpt(st, g2, c.o);
+      var sel = (s.layers === c.l && s.option === c.o);
+      var pill = !r2.cool ? '<span class="pill bad">over 40 kW tank</span>'
+        : r2.short ? '<span class="pill bad">only ' + r2.nodes + ' of ' + s.cap + '</span>'
+        : r2.need > r2.fit ? '<span class="pill bad">needs ' + r2.need + ' supplies, room for ' + r2.fit + '</span>'
+        : '<span class="pill ok">fits</span>';
+      html += '<button type="button" class="opt" data-l="' + c.l + '" data-o="' + c.o + '" aria-pressed="' + sel + '">' +
+        '<div class="head"><h3>' + c.name + '</h3>' + pill + '</div>' +
+        '<div><span class="big">' + r2.nodes + '</span> <span class="tag">nodes</span></div>' +
+        '<dl><dt>Slots</dt><dd>' + r2.blocks + ' used / ' + r2.freeSlots.length + ' spare</dd>' +
+        '<dt>Stack height</dt><dd>' + f1(g2.stackTop) + ' mm</dd>' +
+        '<dt>Load</dt><dd>' + f1(r2.loadKW) + ' kW</dd>' +
+        '<dt>Supplies</dt><dd>' + r2.use + ' of ' + r2.fit + ' places</dd>' +
+        '<dt>Supply load</dt><dd>' + Math.round(r2.loadPct) + '%</dd></dl>' +
+        '<p class="why">' + c.why + '</p></button>';
+    });
+    $('cands').innerHTML = html;
+    Array.prototype.forEach.call($('cands').querySelectorAll('.opt'), function (b) {
+      b.addEventListener('click', function () {
+        state.layers = +b.getAttribute('data-l');
+        state.option = b.getAttribute('data-o');
+        state.viewLayer = 0;
+        syncLayers();
+        render();
+      });
+    });
+  }
+
+  var PODS = 2, BOARDS = 100;
+  function statCard(title, big, sub) {
+    return '<div class="stat"><h3>' + title + '</h3><span class="big">' + big + '</span><p>' + sub + '</p></div>';
+  }
+  function renderPods(s, g, r) {
+    if (!s.cap || s.cap < 48) { $('podsWrap').hidden = true; return; }
+    $('podsWrap').hidden = false;
+    var perPod = r.nodes, total = perPod * PODS, spare = BOARDS - total;
+    var blocks = r.blocks * PODS;
+    var loadTot = r.loadKW * PODS;
+    var rest = spare > 0 ? spare % 8 : 0;
+    var needBoards = rest === 0 ? 8 : 8 - rest;   // boards still to buy to complete one more block
+    $('podsTitle').textContent = PODS + ' pods of ' + perPod + ' nodes from the ' + BOARDS + ' boards';
+    $('pods').innerHTML =
+      statCard('Nodes in service', total, PODS + ' pods x ' + r.blocks + ' blocks x ' + NB + ' nodes') +
+      statCard('Boards used', total + ' / ' + BOARDS, spare >= 0 ? spare + ' board(s) left over' : Math.abs(spare) + ' board(s) short of the order') +
+      statCard('Cold spares', Math.max(spare, 0), spare <= 0 ? 'No spare boards left in this arrangement' :
+        spare < 8 ? 'Less than a block: a 7th block in one pod needs ' + needBoards + ' more boards' :
+        Math.floor(spare / NB) + ' more block(s) possible, ' + (spare % NB) + ' loose') +
+      statCard('Blocks / switches', blocks + ' / ' + blocks, r.blocks + ' blocks and ' + r.blocks + ' switches per pod') +
+      statCard('Parts to print', total + ' frames', blocks + ' infra frames, plus a few frames for the spare boards') +
+      statCard('Load', f1(loadTot) + ' kW', f1(r.loadKW) + ' kW per pod at ' + s.watt + ' W per node') +
+      statCard('Supplies', (r.use * PODS) + ' x ' + f1(s.psu) + ' kW', r.use + ' per pod at ' + Math.round(r.loadPct) + '% load');
+    $('podsNote').textContent = 'Two PRO9 tanks, one arrangement. The ' + Math.max(spare, 0) + ' leftover board(s) stay cold spares with no frame assigned: a block takes 8, so a 7th block in one pod (' + (perPod + 8) + ' nodes there, ' + (total + 8) + ' boards in service) means ordering ' + needBoards + ' more. Every figure follows the sliders and the placement selected above.';
+  }
+
+  function renderOptions(s, g) {
+    var html = '';
+    // with a strip behind the rows the supplies take no block slot, so the one-slot and two-slot
+    // variants are only a part of that same strip and say nothing new
+    var strip = g.across && g.stripRow >= 0;
+    if (strip && (state.option === 'B' || state.option === 'C')) state.option = 'A';
+    (strip ? ['E', 'A', 'D'] : ['E', 'A', 'B', 'C', 'D']).forEach(function (k) {
+      var r = evalOpt(s, g, k);
+      var status = !r.cool ? '<span class="pill bad">over 40 kW tank</span>'
+        : r.short ? '<span class="pill bad">only ' + r.nodes + ' of ' + s.cap + '</span>'
+        : r.need <= r.fit ? '<span class="pill ok">' + r.use + ' x ' + f1(s.psu) + ' kW fits</span>'
+        : '<span class="pill bad">needs ' + r.need + ' supplies, room for ' + r.fit + '</span>';
+      html += '<button type="button" class="opt" data-opt="' + k + '" aria-pressed="' + (state.option === k) + '">' +
+        '<div class="head"><h3>' + OPT_NAMES[k] + '</h3>' + status + '</div>' +
+        '<div><span class="big">' + r.nodes + '</span> <span class="tag">nodes</span></div>' +
+        '<dl><dt>Layout</dt><dd>' + OPT_DESC[k] + '</dd>' +
+        '<dt>Blocks</dt><dd>' + r.blocks + ' x ' + NB + ' = ' + r.nodes + '</dd>' +
+        '<dt>Switches</dt><dd>' + r.blocks + ' (1 per block)</dd>' +
+        (s.cap ? '<dt>Spare slots</dt><dd>' + r.freeSlots.length + '</dd>' : '') +
+        '<dt>Load</dt><dd>' + f1(r.loadKW) + ' kW</dd>' +
+        '<dt>Supplies used / room</dt><dd>' + r.use + ' / ' + r.fit + '</dd>' +
+        '<dt>Supply load</dt><dd>' + Math.round(r.loadPct) + '%</dd></dl></button>';
+    });
+    $('options').innerHTML = html;
+    Array.prototype.forEach.call($('options').querySelectorAll('.opt'), function (b) {
+      b.addEventListener('click', function () { state.option = b.getAttribute('data-opt'); render(); });
+    });
+  }
+
+  function isPower(ps, l, r, j) { return ps.some(function (p) { return p[0] === l && p[1] === r && p[2] === j; }); }
+  function has(list, l, r, j) { return list.some(function (p) { return p[0] === l && p[1] === r && p[2] === j; }); }
+
+  function slotRect(g, r, j) {
+    if (g.across) return { x: j === 0 ? g.gapX : HALF + BAR + g.gapX, y: g.rowY[r], w: g.slotLen, h: g.rowH[r] };
+    var gapY = g.spareY / 2;
+    return { x: g.rowX[r], y: j === 0 ? gapY : gapY + g.slotLen, w: FW, h: g.slotLen };   // carriers meet in the middle
+  }
+
+  function blockTop(s, g, x, y, carrierFirst) {
+    var o = '', k;
+    if (g.across) {
+      var bx = carrierFirst ? x + s.carrier : x + TENON, cx = carrierFirst ? x : x + g.blockLen;
+      if (s.plane > 0) {
+        var ux = carrierFirst ? bx + 3 : bx + NB * s.pitch - 3 - UNITS_LEN;
+        // a block cannot be mirrored: the one in the right half is turned half a turn, so its
+        // plane is on the other side of the row (and its boards face the other way)
+        var uy = carrierFirst ? y + FW + 4 : y + Math.max(0, s.plane - 26), ly = carrierFirst ? y + FW : y + s.plane - 4;
+        for (k = 0; k < 4; k++) o += '<rect class="brd" x="' + (ux + k * 82.5) + '" y="' + uy + '" width="78.5" height="' + (Math.min(s.plane, 26) - 4) + '"/>';
+        o += '<rect class="frm" x="' + ux + '" y="' + ly + '" width="' + UNITS_LEN + '" height="4"/>';
+        if (!carrierFirst) y += s.plane;
+      }
+      for (k = 0; k < NB; k++) {
+        var fx = bx + k * s.pitch;
+        o += '<rect class="frm" x="' + fx + '" y="' + y + '" width="' + s.pitch + '" height="' + FW + '"/>';
+        var bl = fx + s.pitch * (carrierFirst ? 0.38 : 0.62);
+        o += '<line class="brd-line" x1="' + bl + '" x2="' + bl + '" y1="' + (y + 8) + '" y2="' + (y + FW - 8) + '"/>';
+      }
+      o += '<rect class="sw" x="' + cx + '" y="' + (y + 10) + '" width="' + s.carrier + '" height="' + (FW - 20) + '"/>';
+      return o;
+    }
+    var by = carrierFirst ? y + s.carrier : y;
+    var cy = carrierFirst ? y : y + g.blockLen;
+    for (k = 0; k < NB; k++) {
+      var fy = by + k * s.pitch;
+      o += '<rect class="frm" x="' + x + '" y="' + fy + '" width="' + FW + '" height="' + s.pitch + '"/>';
+      o += '<line class="brd-line" x1="' + (x + 8) + '" x2="' + (x + FW - 8) + '" y1="' + (fy + s.pitch * 0.62) + '" y2="' + (fy + s.pitch * 0.62) + '"/>';
+    }
+    o += '<rect class="sw" x="' + (x + 10) + '" y="' + cy + '" width="' + (FW - 20) + '" height="' + s.carrier + '"/>';
+    return o;
+  }
+
+  function psuTop(g, q, stacked, n) {
+    var o = '', label = stacked ? '2 x 2 stacked PSU' : '2 x 48 V PSU', px, py;
+    if (g.across && g.stripDeep === 1) {
+      label = stacked ? '2 stacked PSU' : '1 x 48 V PSU';
+      px = q.x + (q.w - PSU_L) / 2; py = q.y + (q.h - PSU_T) / 2;
+      o += '<rect class="psu" x="' + px + '" y="' + py + '" width="' + PSU_L + '" height="' + PSU_T + '"/>';
+      o += '<text x="' + (q.x + q.w / 2) + '" y="' + (py + PSU_T / 2 + 5) + '" text-anchor="middle" font-size="15">' + label + '</text>';
+      return o;
+    }
+    if (g.across) {
+      px = q.x + (q.w - PSU_L) / 2; py = q.y + (q.h - 2 * PSU_T - 8) / 2;
+      if (n === 1) label = '1 x 48 V PSU';
+      o += '<rect class="psu" x="' + px + '" y="' + py + '" width="' + PSU_L + '" height="' + PSU_T + '"/>';
+      if (n !== 1) o += '<rect class="psu" x="' + px + '" y="' + (py + PSU_T + 8) + '" width="' + PSU_L + '" height="' + PSU_T + '"/>';
+      o += '<text x="' + (q.x + q.w / 2) + '" y="' + (py + PSU_T / 2 + 5) + '" text-anchor="middle" font-size="15">' + label + '</text>';
+      return o;
+    }
+    px = q.x + (FW - 2 * PSU_T - 8) / 2; py = q.y + (q.h - PSU_L) / 2;
+    o += '<rect class="psu" x="' + px + '" y="' + py + '" width="' + PSU_T + '" height="' + PSU_L + '"/>';
+    o += '<rect class="psu" x="' + (px + PSU_T + 8) + '" y="' + py + '" width="' + PSU_T + '" height="' + PSU_L + '"/>';
+    o += '<text x="' + (q.x + FW / 2) + '" y="' + (py + PSU_L / 2) + '" text-anchor="middle" font-size="15" transform="rotate(-90 ' + (q.x + FW / 2) + ' ' + (py + PSU_L / 2) + ')">' + label + '</text>';
+    return o;
+  }
+
+  function renderTop(s, g, r) {
+    var L = state.viewLayer;
+    var o = '<svg viewBox="-70 -70 930 820" role="img" aria-label="Tank top view">';
+    o += '<rect class="tank" x="0" y="0" width="' + TANK_W + '" height="' + TANK_D + '"/>';
+    o += '<rect class="bar-c" x="' + ((TANK_W - BAR) / 2) + '" y="0" width="' + BAR + '" height="' + TANK_D + '"/>';
+    if (g.across && g.along === 2) {
+      o += '<path class="w48" d="M' + (TANK_W / 2 - 6) + ' 4 V' + (TANK_D - 4) + ' M' + (TANK_W / 2 + 6) + ' 4 V' + (TANK_D - 4) + '"/>';
+      o += '<text class="lbl" x="' + (TANK_W / 2) + '" y="-12" text-anchor="middle" font-size="13">48 V bars on the centre bar</text>';
+    }
+    if (g.along === 0) {
+      o += '<text x="' + TANK_W / 2 + '" y="' + TANK_D / 2 + '" text-anchor="middle" font-size="20">' + (g.across
+        ? 'A block plus infra frame (' + f1(g.slotLen) + ' mm) does not fit a half of ' + f1(HALF) + ' mm'
+        : (ROWS === 0 ? 'A ' + FW + ' mm frame does not fit a half of ' + f1(HALF) + ' mm' : 'A block plus infra frame (' + f1(g.slotLen) + ' mm) does not fit the 664.5 mm depth')) + '</text>';
+    }
+    // Two layers with a strip: show only the supplies in use. They go one deep and two high first
+    // (one per layer in each half); the second one deep is taken only when more are needed.
+    var alloc = null;
+    if (g.across && s.layers === 2 && g.stripRow >= 0 && state.option !== 'E' && state.option !== 'D') {
+      alloc = {};
+      var leftP = r.use, order = r.ps.slice().sort(function (a, b) { return a[2] - b[2] || a[0] - b[0]; });
+      for (var dp = 0; dp < g.stripDeep; dp++) order.forEach(function (e) { if (leftP > 0) { var k = e.join('_'); alloc[k] = (alloc[k] || 0) + 1; leftP--; } });
+    }
+    for (var row = 0; row < ROWS; row++) {
+      for (var j = 0; j < g.along; j++) {
+        var p = slotRect(g, row, j);
+        var nP = alloc ? (alloc[[L, row, j].join('_')] || 0) : 2;
+        if (isPower(r.ps, L, row, j) && nP > 0) {
+          if (state.option !== 'E') o += psuTop(g, p, s.layers === 1, nP);
+        } else if (has(r.blockSlots, L, row, j)) {
+          o += blockTop(s, g, p.x, p.y, j === 1);
+        } else {
+          o += '<rect class="free" x="' + (p.x + 3) + '" y="' + (p.y + 3) + '" width="' + (p.w - 6) + '" height="' + (p.h - 6) + '"/>';
+          o += '<text class="lbl" x="' + (p.x + p.w / 2) + '" y="' + (p.y + p.h / 2) + '" text-anchor="middle" font-size="16">' + (row === g.stripRow ? 'free strip' : 'spare slot') + '</text>';
+        }
+      }
+      if (g.across) {
+        o += '<text class="lbl" x="-10" y="' + (g.rowY[row] + g.rowH[row] / 2 + 5) + '" text-anchor="end" font-size="15">' + (row === g.stripRow ? 'strip' : 'row ' + (row + 1)) + '</text>';
+      } else {
+        var used = g.along * g.slotLen;
+        if (TANK_D - used > 20) {
+          var fy = g.along === 2 ? null : (g.along === 1 ? g.spareY / 2 + g.slotLen : 0);
+          if (fy !== null) o += '<rect class="free" x="' + g.rowX[row] + '" y="' + (fy + 4) + '" width="' + FW + '" height="' + (TANK_D - used - 8) + '"/>';
+        }
+        o += '<text class="lbl" x="' + (g.rowX[row] + FW / 2) + '" y="-14" text-anchor="middle" font-size="15">row ' + (row + 1) + '</text>';
+      }
+    }
+    if (state.option === 'E' && r.fit > 0) {
+      sideUnits(r.use).forEach(function (u, q) {
+        o += '<rect class="psu" x="' + u.x + '" y="' + u.y + '" width="' + PSU_T + '" height="' + PSU_H + '"/>';
+        o += '<text x="' + (u.x + PSU_T / 2) + '" y="' + (u.y + PSU_H / 2) + '" text-anchor="middle" font-size="14" transform="rotate(-90 ' + (u.x + PSU_T / 2) + ' ' + (u.y + PSU_H / 2) + ')">PSU ' + (q + 1) + '</text>';
+      });
+      if (g.across) o += '<text class="lbl" x="' + (HALF + BAR + HALF / 2) + '" y="' + (TANK_D - 14) + '" text-anchor="middle" font-size="14">supplies 287 tall, terminals up; rest free for busbar and management switch</text>';
+      else o += '<text class="lbl" x="' + (TANK_W / 2) + '" y="' + (TANK_D - PSU_H - 20) + '" text-anchor="middle" font-size="14">supplies standing 287 tall on the floor, ' + SHELF_GAP + ' mm gaps</text>';
+    }
+    if (state.option === 'D' && L === s.layers - 1) {
+      var sx0 = shelfX(r.use), sy0 = (TANK_D - PSU_L) / 2;
+      for (var q = 0; q < r.use; q++) {
+        var qx = sx0 + q * (PSU_T + SHELF_GAP);
+        o += '<rect class="psu" x="' + qx + '" y="' + sy0 + '" width="' + PSU_T + '" height="' + PSU_L + '" style="fill-opacity:0.6;stroke-dasharray:8 4"/>';
+        o += '<text x="' + (qx + PSU_T / 2) + '" y="' + (sy0 + PSU_L / 2) + '" text-anchor="middle" font-size="15" transform="rotate(-90 ' + (qx + PSU_T / 2) + ' ' + (sy0 + PSU_L / 2) + ')">PSU ' + (q + 1) + '</text>';
+      }
+      o += '<text class="lbl" x="' + (TANK_W / 2) + '" y="-40" text-anchor="middle" font-size="15">open grate at ' + f1(shelfZ(s, g)) + ' mm, supplies upright, ' + SHELF_GAP + ' mm gaps</text>';
+    }
+    // dims
+    o += '<line class="dim" x1="0" x2="' + TANK_W + '" y1="' + (TANK_D + 30) + '" y2="' + (TANK_D + 30) + '"/>';
+    o += '<text x="' + TANK_W / 2 + '" y="' + (TANK_D + 52) + '" text-anchor="middle" font-size="16">' + (g.across ? '788 inside: 2 x ' + f1(g.slotLen) + ' + bar ' + BAR + ' + ' + f1(TANK_W - BAR - 2 * g.slotLen) + ' spare' : '788 inside (' + ROWS + ' x ' + FW + ' + ' + f1(TANK_W - ROWS * FW) + ' spare)') + '</text>';
+    o += '<line class="dim" x1="' + (TANK_W + 26) + '" x2="' + (TANK_W + 26) + '" y1="0" y2="' + TANK_D + '"/>';
+    o += '<text x="' + (TANK_W + 46) + '" y="' + TANK_D / 2 + '" text-anchor="middle" font-size="16" transform="rotate(90 ' + (TANK_W + 46) + ' ' + TANK_D / 2 + ')">' + (g.across ? '664.5 inside, ' + g.nb + ' x ' + f1(g.rw) + ' + ' + f1(g.spareY) + (g.stripRow >= 0 ? ' behind' : ' spare') : '664.5 inside, ' + g.along + ' x ' + f1(g.slotLen) + ' + ' + f1(g.spareY) + ' spare') + '</text>';
+    o += '<text class="lbl" x="' + (TANK_W / 2) + '" y="' + (TANK_D + 76) + '" text-anchor="middle" font-size="13">centre bar about 30 (from spec drawing)</text>';
+    o += '</svg>';
+    $('top').innerHTML = o;
+    var seg = '';
+    for (var l = 0; l < s.layers; l++) seg += '<button type="button" data-l="' + l + '" aria-pressed="' + (l === L) + '">' + (l === 0 ? 'Lower layer' : 'Upper layer') + '</button>';
+    $('viewLayer').innerHTML = seg;
+    Array.prototype.forEach.call($('viewLayer').querySelectorAll('button'), function (b) {
+      b.addEventListener('click', function () { state.viewLayer = +b.getAttribute('data-l'); render(); });
+    });
+    $('topNote').textContent = 'Slot = block of ' + NB + ' frames (' + f1(g.blockLen) + ' mm incl. the end frame) + infra frame (' + s.carrier + ' mm) = ' + f1(g.slotLen) + ' mm. ' +
+      (g.across ? (g.along === 2 ? 'One slot lies across each half (' + f1(HALF) + ' mm beside the centre bar, ' + f1(HALF - g.slotLen) + ' mm to spare), infra frames towards the bar, where the 48 V bars run in a printed holder. The right half\'s blocks are turned half a turn (a block cannot be mirrored), so their planes are on the far side of the row. A row is ' + f1(g.rw) + ' mm deep (frame ' + FW + (s.plane > 0 ? ' + plane ' + s.plane : '') + '), so ' + g.nb + ' rows fit the 664.5 mm depth with ' + f1(g.gapY) + ' mm between them' + (g.stripRow >= 0 ? ', and a strip of ' + f1(g.rowH[g.stripRow]) + ' mm is left at the back for the supplies. ' : '. ')
+          : 'The slot is longer than a half of ' + f1(HALF) + ' mm: lower the pitch to ' + f1((HALF - s.carrier - TENON) / NB) + ' mm or make the infra frame shallower. ')
+        : (ROWS === 0 ? 'The frame is wider than a half. '
+          : (ROWS < 4 ? 'Only one string fits per half: two need a frame of ' + f1(HALF / 2) + ' mm or less. ' : '') +
+            (g.along >= 2 ? 'Two slots per string; the infra frames meet in the middle. ' :
+             g.along === 1 ? 'Only one slot fits per string at this pitch; two need a pitch of ' + f1((TANK_D / 2 - s.carrier - TENON) / NB) + ' mm or less. ' : ''))) +
+      (s.cap ? 'Capped at ' + Math.floor(s.cap / NB) + ' blocks (' + s.cap + ' nodes): ' + r.freeSlots.length + ' slot(s) stay dashed and spare' +
+        (r.short ? ', and this placement only reaches ' + r.nodes + ' nodes.' : '.') : '');
+  }
+
+  function renderFront(s, g, r) {
+    var o = '<svg viewBox="-70 -40 930 580" role="img" aria-label="Tank front elevation">';
+    var Y = function (z) { return TANK_H - z; };
+    o += '<rect class="tank" x="0" y="0" width="' + TANK_W + '" height="' + TANK_H + '"/>';
+    o += '<rect class="liq" x="0" y="' + Y(LIQ) + '" width="' + TANK_W + '" height="' + LIQ + '"/>';
+    o += '<line class="liq-line" x1="0" x2="' + TANK_W + '" y1="' + Y(LIQ) + '" y2="' + Y(LIQ) + '"/>';
+    o += '<text x="8" y="' + (Y(LIQ) - 8) + '" font-size="15" style="fill:var(--liquid)">liquid 422</text>';
+    if (g.across) {
+      var fhA = LIFT + BOARD + ARM;
+      for (var la = 0; la < s.layers; la++) {
+        var za = la * g.layerH;
+        for (var ja = 0; ja < g.along; ja++) {
+          var qa = slotRect(g, 0, ja);
+          if (isPower(r.ps, la, 0, ja)) {
+            if (state.option !== 'E') {
+              var pxa = qa.x + (qa.w - PSU_L) / 2;
+              o += '<rect class="psu" x="' + pxa + '" y="' + Y(za + PSU_H) + '" width="' + PSU_L + '" height="' + PSU_H + '"/>';
+              if (s.layers === 1) o += '<rect class="psu" x="' + pxa + '" y="' + Y(za + 2 * PSU_H + 6) + '" width="' + PSU_L + '" height="' + PSU_H + '"/>';
+            }
+            continue;
+          }
+          if (!has(r.blockSlots, la, 0, ja)) {
+            o += '<rect class="free" x="' + qa.x + '" y="' + Y(za + g.layerH) + '" width="' + qa.w + '" height="' + g.layerH + '"/>';
+            continue;
+          }
+          var bxa = ja === 1 ? qa.x + s.carrier : qa.x + TENON, cxa = ja === 1 ? qa.x : qa.x + g.blockLen;
+          for (var ka = 0; ka < NB; ka++) {
+            var xa = bxa + ka * s.pitch;
+            o += '<rect class="frm" x="' + (ja === 1 ? xa : xa + s.pitch - 12) + '" y="' + Y(za + fhA) + '" width="12" height="' + fhA + '"/>';
+            o += '<rect class="frm" x="' + xa + '" y="' + Y(za + ARM) + '" width="' + s.pitch + '" height="' + ARM + '"/>';
+            o += '<rect class="frm" x="' + xa + '" y="' + Y(za + fhA) + '" width="' + s.pitch + '" height="' + ARM + '"/>';
+            o += '<rect class="brd" x="' + (ja === 1 ? xa + s.pitch - 17 - 1.6 : xa + 17) + '" y="' + Y(za + LIFT + BOARD) + '" width="1.6" height="' + BOARD + '"/>';
+          }
+          o += '<rect class="band" x="' + bxa + '" y="' + Y(za + LIFT + BOARD + s.band) + '" width="' + (NB * s.pitch) + '" height="' + s.band + '"/>';
+          o += '<rect class="sw" x="' + cxa + '" y="' + Y(za + fhA) + '" width="' + s.carrier + '" height="' + fhA + '" style="fill:none"/>';
+          o += infraSideParts(cxa, za, s.carrier, ja === 1 ? 1 : -1, Y, false, fhA / INFRA.h);
+        }
+      }
+      o += '<rect class="bar-c" x="' + HALF + '" y="0" width="' + BAR + '" height="14"/>';
+    }
+    for (var l = 0; l < (g.across ? 0 : s.layers); l++) {
+      var z0 = l * g.layerH;
+      for (var row = 0; row < ROWS; row++) {
+        var x = g.rowX[row];
+        if (g.along > 0 && state.option !== 'E' && isPower(r.ps, l, row, 0)) {
+          var px = x + (FW - 2 * PSU_T - 8) / 2;
+          o += '<rect class="psu" x="' + px + '" y="' + Y(z0 + PSU_H) + '" width="' + PSU_T + '" height="' + PSU_H + '"/>';
+          o += '<rect class="psu" x="' + (px + PSU_T + 8) + '" y="' + Y(z0 + PSU_H) + '" width="' + PSU_T + '" height="' + PSU_H + '"/>';
+          if (s.layers === 1) {
+            o += '<rect class="psu" x="' + px + '" y="' + Y(z0 + 2 * PSU_H + 6) + '" width="' + PSU_T + '" height="' + PSU_H + '"/>';
+            o += '<rect class="psu" x="' + (px + PSU_T + 8) + '" y="' + Y(z0 + 2 * PSU_H + 6) + '" width="' + PSU_T + '" height="' + PSU_H + '"/>';
+          }
+          continue;
+        }
+        if (g.along === 0) continue;
+        if (!has(r.blockSlots, l, row, 0)) {
+          o += '<rect class="free" x="' + x + '" y="' + Y(z0 + g.layerH) + '" width="' + FW + '" height="' + g.layerH + '"/>';
+          continue;
+        }
+        var fh = LIFT + BOARD + ARM;
+        o += '<rect class="frm" x="' + x + '" y="' + Y(z0 + fh) + '" width="' + FW + '" height="' + fh + '"/>';
+        o += '<rect class="brd" x="' + (x + 16) + '" y="' + Y(z0 + LIFT + BOARD) + '" width="' + (FW - 32) + '" height="' + BOARD + '"/>';
+        o += '<rect class="band" x="' + x + '" y="' + Y(z0 + LIFT + BOARD + s.band) + '" width="' + FW + '" height="' + s.band + '"/>';
+        o += '<rect class="dc" x="' + (x + 11.5) + '" y="' + Y(z0 + LIFT + BOARD + Math.min(s.band, 20)) + '" width="9.5" height="' + Math.min(s.band, 20) + '"/>';
+        o += '<rect class="rj" x="' + (x + 38.3) + '" y="' + Y(z0 + LIFT + BOARD + Math.min(s.band, 20)) + '" width="11.7" height="' + Math.min(s.band, 20) + '"/>';
+      }
+    }
+    if (state.option === 'E' && r.fit > 0) {
+      sideUnits(r.use).forEach(function (u) {
+        o += '<rect class="psu" x="' + u.x + '" y="' + Y(PSU_L) + '" width="' + PSU_T + '" height="' + PSU_L + '" style="fill-opacity:0.35;stroke-dasharray:6 4"/>';
+      });
+      o += '<text class="lbl" x="' + (TANK_W - 8) + '" y="' + (Y(PSU_L) - 8) + '" text-anchor="end" font-size="13">' + (g.across ? 'supplies in the right half (dashed), 287 tall' : 'supplies behind the blocks (dashed), 287 tall') + '</text>';
+    }
+    if (state.option === 'D') {
+      var sz = shelfZ(s, g), sx = shelfX(r.use), top = sz + 4 + PSU_H;
+      o += '<rect class="bar-c" x="0" y="' + Y(sz + 4) + '" width="' + TANK_W + '" height="4" style="stroke-dasharray:6 4"/>';
+      for (var q = 0; q < r.use; q++) {
+        var qx = sx + q * (PSU_T + SHELF_GAP);
+        o += '<rect class="psu" x="' + qx + '" y="' + Y(top) + '" width="' + PSU_T + '" height="' + PSU_H + '"/>';
+        o += '<path class="dim" d="M' + (qx + PSU_T + SHELF_GAP / 2) + ' ' + Y(sz + 30) + ' V ' + Y(top - 20) + ' m -5 9 l 5 -9 l 5 9" style="stroke:var(--liquid);stroke-width:1.5"/>';
+      }
+      o += '<text x="' + (TANK_W - 8) + '" y="' + (Y(top) - 8) + '" text-anchor="end" font-size="14">supplies upright on grate, top ' + f1(top) + (top <= LIQ ? ' (' + f1(LIQ - top) + ' under liquid)' : ' ABOVE liquid') + '</text>';
+    }
+    // height dims
+    var dx = TANK_W + 24;
+    o += '<line class="dim" x1="' + dx + '" x2="' + dx + '" y1="' + Y(0) + '" y2="' + Y(g.upperBoardTop) + '"/>';
+    o += '<text x="' + (dx + 8) + '" y="' + (Y(g.upperBoardTop) + 5) + '" font-size="15">' + f1(g.upperBoardTop) + ' top board</text>';
+    o += '<text x="' + (dx + 8) + '" y="' + (Y(TANK_H) + 5) + '" font-size="15">475 tank</text>';
+    o += '<text class="lbl" x="0" y="' + (TANK_H + 30) + '" font-size="14">per layer: lift ' + LIFT + ' + board 180 + top band ' + s.band + ' = ' + f1(g.layerH) + '</text>';
+    o += '</svg>';
+    $('front').innerHTML = o;
+    $('frontTag').textContent = g.across ? 'looking from the front, front row shown' : 'looking along the strings, front slot shown';
+    var cover = LIQ - g.upperBoardTop;
+    var topBand = g.upperBoardTop + s.band;
+    $('frontNote').textContent = (s.layers === 2 ? 'Upper boards end at ' + f1(g.upperBoardTop) + ' mm, ' : 'Boards end at ' + f1(g.upperBoardTop) + ' mm, ') +
+      (cover >= 0 ? f1(cover) + ' mm under the liquid. ' : f1(-cover) + ' mm ABOVE the liquid: lower the top band or lift. ') +
+      'Their plugs and converters reach ' + f1(topBand) + ' mm' + (topBand > LIQ ? ', partly above the surface (converters run cooler submerged).' : ', fully submerged.') +
+      (state.option === 'E' || state.option === 'D' ? ' Supplies stand upright; ' : ' Supplies lie on their long edge, 185 mm tall, ' + (g.stripDeep === 1 ? 'one deep' : 'two deep') + '; ') + 'the maker allows immersion (to confirm in writing for ThermaSafe R).' +
+      (s.cap ? ' Dashed outlines are spare slots left by the ' + s.cap + '-node cap.' : '');
+  }
+
+  function renderNode(s) {
+    var fh = LIFT + BOARD + ARM;
+    var WID = FW - BOARD_W;   // extra width on the 10-pin connector side
+    var H = LIFT + BOARD + Math.max(s.band, ARM) + 50;
+    var Y = function (z) { return H - 30 - z; };
+    var o = '<svg viewBox="-40 -10 310 ' + (H + 20) + '" role="img" aria-label="Node frame front view">';
+    o += '<rect class="frm" x="0" y="' + Y(fh) + '" width="' + FW + '" height="' + fh + '"/>';
+    o += '<rect class="brd" x="' + WID + '" y="' + Y(LIFT + BOARD) + '" width="' + BOARD_W + '" height="' + BOARD + '"/>';
+    o += '<rect class="frm" x="0" y="' + Y(fh) + '" width="16" height="' + fh + '"/>';
+    o += '<rect class="frm" x="' + (FW - 16) + '" y="' + Y(fh) + '" width="16" height="' + fh + '"/>';
+    o += '<rect class="band" x="0" y="' + Y(LIFT + BOARD + s.band) + '" width="' + FW + '" height="' + s.band + '"/>';
+    // jacks on the top edge (board x from STEP): DC 11.5-21, RJ45 38.3-50; 10-pin header 3.3-14.7, 17.7-40.2 below the top edge
+    o += '<rect class="dc" x="' + (WID + 11.5) + '" y="' + Y(LIFT + BOARD) + '" width="9.5" height="9"/>';
+    o += '<rect class="rj" x="' + (WID + 38.3) + '" y="' + Y(LIFT + BOARD) + '" width="11.7" height="13"/>';
+    o += '<text x="' + (WID + 16) + '" y="' + (Y(LIFT + BOARD) - 3) + '" text-anchor="middle" font-size="7.5">DC</text>';
+    o += '<text x="' + (WID + 44) + '" y="' + (Y(LIFT + BOARD) + 24) + '" text-anchor="middle" font-size="7.5">RJ45</text>';
+    o += '<rect class="dc" x="' + (WID + 3.3) + '" y="' + Y(LIFT + BOARD - 17.7) + '" width="11.4" height="22.5" style="fill-opacity:0.55"/>';
+    o += '<text x="' + (WID + 18) + '" y="' + (Y(LIFT + BOARD - 17.7) + 14) + '" font-size="7.5">10-pin power</text>';
+    o += '<text x="' + (WID + BOARD_W / 2) + '" y="' + Y(LIFT + BOARD / 2) + '" text-anchor="middle" font-size="10">AXB35 180 x 180</text>';
+    o += '<text class="lbl" x="' + (WID + BOARD_W / 2) + '" y="' + (Y(LIFT + BOARD / 2) + 14) + '" text-anchor="middle" font-size="8">23 mm cooler on the far side</text>';
+    o += '<line class="dim" x1="' + (FW + 14) + '" x2="' + (FW + 14) + '" y1="' + Y(0) + '" y2="' + Y(LIFT + BOARD + s.band) + '"/>';
+    o += '<text x="' + (FW + 20) + '" y="' + Y(LIFT + BOARD + s.band / 2 + 3) + '" font-size="8">band ' + s.band + '</text>';
+    o += '<text x="' + (FW + 20) + '" y="' + Y(LIFT + BOARD / 2) + '" font-size="8">board 180</text>';
+    o += '<text x="' + (FW + 20) + '" y="' + Y(LIFT / 2 - 3) + '" font-size="8">lift ' + LIFT + '</text>';
+    o += '<line class="dim" x1="0" x2="' + FW + '" y1="' + (Y(0) + 14) + '" y2="' + (Y(0) + 14) + '"/>';
+    o += '<text x="' + FW / 2 + '" y="' + (Y(0) + 26) + '" text-anchor="middle" font-size="8">' + FW + (WID > 0 ? ' (board 180 + ' + WID + ')' : '') + '</text>';
+    o += '</svg>';
+    $('node').innerHTML = o;
+  }
+
+  function renderBlock(s, g) {
+    var fh = LIFT + BOARD + ARM;
+    var W = g.slotLen + 60, H = fh + 70;
+    var Y = function (z) { return fh + 20 - z; };
+    var o = '<svg viewBox="-20 -10 ' + W + ' ' + H + '" role="img" aria-label="Block side view">';
+    for (var k = 0; k < NB; k++) {
+      var x = s.carrier + k * s.pitch;
+      o += '<rect class="frm" x="' + x + '" y="' + Y(fh) + '" width="12" height="' + fh + '"/>';
+      o += '<rect class="frm" x="' + x + '" y="' + Y(ARM) + '" width="' + s.pitch + '" height="' + ARM + '"/>';
+      o += '<rect class="frm" x="' + x + '" y="' + Y(fh) + '" width="' + s.pitch + '" height="' + ARM + '"/>';
+      var bx = x + s.pitch - 17 - 1.6;
+      o += '<rect class="brd" x="' + bx + '" y="' + Y(LIFT + BOARD) + '" width="1.6" height="' + BOARD + '"/>';
+      o += '<rect class="frm" x="' + (x + 12) + '" y="' + Y(LIFT + BOARD / 2 + 25) + '" width="' + Math.max(1, bx - x - 12) + '" height="50" style="fill:var(--sheet)"/>';
+    }
+    o += '<rect class="frm" x="' + (s.carrier + NB * s.pitch) + '" y="' + Y(ARM) + '" width="' + TENON + '" height="' + ARM + '"/>';
+    o += infraSideParts(0, 0, s.carrier, 1, Y, false, fh / INFRA.h);
+    o += '<text class="lbl" x="' + (s.carrier / 2) + '" y="' + (Y(fh) - 4) + '" text-anchor="middle" font-size="9">infra</text>';
+    o += '<line class="dim" x1="0" x2="' + g.slotLen + '" y1="' + (Y(0) + 18) + '" y2="' + (Y(0) + 18) + '"/>';
+    o += '<text x="' + g.slotLen / 2 + '" y="' + (Y(0) + 36) + '" text-anchor="middle" font-size="12">' + f1(g.slotLen) + ' (' + s.carrier + ' + ' + NB + ' x ' + f1(s.pitch) + ' + ' + TENON + ')</text>';
+    o += '<text class="lbl" x="' + (s.carrier + s.pitch / 2) + '" y="' + (Y(fh) - 4) + '" text-anchor="middle" font-size="9">pitch</text>';
+    o += '</svg>';
+    $('block').innerHTML = o;
+    $('blockNote').textContent = 'Each pitch of ' + f1(s.pitch) + ': rail 12, standoff ' + f1(s.pitch - 30.6) + ' (a cooler of up to ' + f1(s.pitch - 18.6) + ' mm above the board sits here, flush with the rail back), board 1.6, 17 clearance on the other side. The infra frame comes first: the switch (160 x 90 x 25) stands on its ledge, ports up, with the core under it (sheet 8); the controller is on the plane carrier (sheet 10). A flat end frame of 9 mm closes the block (sheet 11).';
+  }
+
+
+  // Infra frame as modelled (mech/frame/infra_frame.py): frame x across (0 = bus bar side), y = depth (0 = back), z = up.
+  var INFRA = { w: 198, h: 210, d: 36, rail: 12, band: 16, arm: 10,
+    shelfZ: 101, shelfT: 4, sw: { x0: 19, x1: 179, y0: 5.5, t: 25, z0: 105, z1: 195 },
+    core: { x0: 20, x1: 88, y: 20, z0: 27, z1: 99, holes: [[24, 95], [24, 31], [84, 95]] },
+    ctl: { x0: 91, x1: 196, y: 15.5, z0: 10.5, z1: 60.5, holes: [[192, 56.5], [192, 14.5], [95, 56.5], [95, 14.5]] } };
+
+  // contents of the infra frame in a side view; back = the rail side. dir +1: back at x0, -1: back at x0 + depth
+  function infraSideParts(x0, zb, depth, dir, Y, detail, zs) {
+    var I = INFRA, o = '';
+    var X = function (y) { return dir > 0 ? x0 + y : x0 + depth - y; };
+    var R = function (cls, ya, yb, za, z1, extra) {
+      var xa = Math.min(X(ya), X(yb));
+      return '<rect class="' + cls + '" x="' + xa + '" y="' + Y(zb + z1 * zs) + '" width="' + Math.abs(yb - ya) + '" height="' + ((z1 - za) * zs) + '"' + (extra || '') + '/>';
+    };
+    var d = Math.min(depth, 60);
+    o += R('frm', 0, I.rail, 0, I.h);
+    o += R('frm', 0, d, 0, I.arm);
+    o += R('frm', 0, d, I.h - I.arm, I.h);
+    o += R('frm', 0, d, I.shelfZ, I.shelfZ + I.shelfT);
+    if (detail) {
+      [I.core.holes[0], I.core.holes[1]].forEach(function (h) { o += R('frm', 0, I.core.y, h[1] - 4.5, h[1] + 4.5, ' style="fill-opacity:0.55"'); });
+      [I.ctl.holes[0], I.ctl.holes[1]].forEach(function (h) { o += R('frm', 0, I.ctl.y, h[1] - 4.5, h[1] + 4.5); });
+      o += R('frm', I.sw.y0 + I.sw.t + 0.5, I.sw.y0 + I.sw.t + 3.5, I.sw.z0, I.sw.z0 + 3);
+    }
+    o += R('sw', I.sw.y0, I.sw.y0 + I.sw.t, I.sw.z0, I.sw.z1);
+    o += R('brd', I.core.y, I.core.y + 1.6, I.core.z0, I.core.z1);
+    if (detail) {
+      o += R('rj', I.ctl.y + 1.6, I.ctl.y + 15, 38.2, I.ctl.z1);
+      o += R('brd', I.core.y + 1.6, I.core.y + 12.5, 44.2, 55);
+    }
+    return o;
+  }
+
+  function renderInfra(s) {
+    var I = INFRA, o, k;
+    var Y = function (z) { return 215 - z; };
+    var SX = function (x) { return I.w - x; };   // seen from the front, frame x runs to the left
+    var R = function (cls, xa, xb, za, z1, extra) {
+      return '<rect class="' + cls + '" x="' + SX(xb) + '" y="' + Y(z1) + '" width="' + (xb - xa) + '" height="' + (z1 - za) + '"' + (extra || '') + '/>';
+    };
+    o = '<svg viewBox="-34 -12 300 256" role="img" aria-label="Infra frame front view: switch on a shelf, controller and core below it">';
+    o += R('frm', 0, I.w, 0, I.h, ' style="fill:none"');
+    o += R('frm', 0, I.band, 0, I.h) + R('frm', I.w - I.band, I.w, 0, I.h);
+    o += R('frm', 0, I.w, 0, I.arm) + R('frm', 0, I.w, I.h - I.arm, I.h);
+    o += R('frm', I.band, I.w - I.band, I.shelfZ, I.shelfZ + I.shelfT);
+    // bus bar holes through the rail
+    o += R('dc', 2.5, 12.9, 124.8, 135.2) + R('dc', 2.5, 12.9, 106.8, 117.2);
+    o += '<text x="204" y="' + (Y(130) + 3) + '" font-size="7.5">+ bus bar</text><text x="204" y="' + (Y(112) + 3) + '" font-size="7.5">- bus bar</text>';
+    // switch, ports on the top edge
+    o += R('sw', I.sw.x0, I.sw.x1, I.sw.z0, I.sw.z1);
+    for (k = 0; k < 8; k++) o += '<rect class="rj" x="' + (30 + k * 14) + '" y="' + Y(I.sw.z1) + '" width="10" height="6"/>';
+    o += '<rect class="rj" x="146" y="' + Y(I.sw.z1) + '" width="14" height="6" style="fill-opacity:0.5"/>';
+    o += '<text x="99" y="' + Y(152) + '" text-anchor="middle" font-size="10">switch 160 x 90 x 25</text>';
+    o += '<text class="lbl" x="99" y="' + (Y(152) + 13) + '" text-anchor="middle" font-size="8">8 x 2.5G + SFP+, ports up</text>';
+    o += '<text class="lbl" x="99" y="' + (Y(I.shelfZ + I.shelfT) - 4) + '" text-anchor="middle" font-size="7.5">shelf at ' + I.shelfZ + '-' + (I.shelfZ + I.shelfT) + '</text>';
+    // controller
+    o += R('ctrl', I.ctl.x0, I.ctl.x1, I.ctl.z0, I.ctl.z1);
+    o += R('rj', 165.9, 184.9, 38.2, 60.5);
+    o += R('ctrl', 103, 123, 4, 30.5, ' style="fill:none;stroke-dasharray:3 2"');
+    o += '<text x="70" y="' + Y(49) + '" text-anchor="middle" font-size="9">controller</text>';
+    o += '<text class="lbl" x="70" y="' + (Y(49) + 10) + '" text-anchor="middle" font-size="7.5">105 x 50</text>';
+    o += '<text class="lbl" x="22.6" y="' + (Y(38.2) + 9) + '" text-anchor="middle" font-size="6.5">RJ45</text>';
+    o += '<text class="lbl" x="85" y="' + (Y(4) + 9) + '" text-anchor="middle" font-size="6.5">ESP32</text>';
+    // core
+    o += R('brd', I.core.x0, I.core.x1, I.core.z0, I.core.z1);
+    o += '<text x="144" y="' + Y(84) + '" text-anchor="middle" font-size="9">core</text>';
+    o += '<text class="lbl" x="144" y="' + (Y(84) + 10) + '" text-anchor="middle" font-size="7.5">68 x 72</text>';
+    o += R('dc', 42.3, 56.7, 18, 34);
+    o += '<text class="lbl" x="' + (SX(56.7) - 3) + '" y="' + (Y(18) - 1) + '" text-anchor="end" font-size="6.5">XT30</text>';
+    // standoffs
+    I.core.holes.concat(I.ctl.holes).forEach(function (h) { o += '<circle class="term" cx="' + SX(h[0]) + '" cy="' + Y(h[1]) + '" r="2.2"/>'; });
+    // link ribbon: controller J15 (behind its end) up to the core's link plug
+    o += '<path class="lnk" d="M' + SX(86) + ' ' + Y(34) + ' V ' + Y(64) + '"/>';
+    o += '<text x="' + (SX(86) - 5) + '" y="' + (Y(78) + 3) + '" text-anchor="end" font-size="7.5">6-way link ribbon</text>';
+    o += '<text class="lbl" x="' + (SX(86) - 5) + '" y="' + (Y(78) + 12) + '" text-anchor="end" font-size="6.5">behind the boards</text>';
+    // ribbons to unit 1 leave on the bus bar side
+    o += '<path class="lnk" d="M' + SX(20) + ' ' + Y(66.5) + ' H 206"/><path class="lnk" d="M' + SX(20) + ' ' + Y(49) + ' H 206"/>';
+    o += '<text x="210" y="' + (Y(66.5) + 3) + '" font-size="7.5">2x3 link</text><text x="210" y="' + (Y(49) + 3) + '" font-size="7.5">2x7 chain</text>';
+    o += '<text class="lbl" x="210" y="' + (Y(49) + 13) + '" font-size="6.5">to unit 1</text>';
+    // dims
+    o += '<line class="dim" x1="0" x2="' + I.w + '" y1="' + (Y(0) + 12) + '" y2="' + (Y(0) + 12) + '"/>';
+    o += '<text x="' + I.w / 2 + '" y="' + (Y(0) + 24) + '" text-anchor="middle" font-size="8">' + I.w + '</text>';
+    o += '<line class="dim" x1="-10" x2="-10" y1="' + Y(0) + '" y2="' + Y(I.h) + '"/>';
+    o += '<text x="-16" y="' + Y(I.h / 2) + '" text-anchor="middle" font-size="8" transform="rotate(-90 -16 ' + Y(I.h / 2) + ')">' + I.h + '</text>';
+    o += '</svg>';
+    $('infra').innerHTML = o;
+
+    // side section, to scale, as modelled at 36 mm
+    var X0 = 70;
+    o = '<svg viewBox="-34 -12 300 256" role="img" aria-label="Infra frame side section: switch 25 deep on the shelf, controller board at 15.5 and core board at 20 from the back">';
+    o += '<rect class="free" x="' + (X0 + I.d) + '" y="' + Y(I.h) + '" width="12" height="' + I.h + '"/>';
+    o += '<rect class="free" x="' + (X0 + I.d) + '" y="' + Y(I.arm) + '" width="41.6" height="' + I.arm + '"/><rect class="free" x="' + (X0 + I.d) + '" y="' + Y(I.h) + '" width="41.6" height="' + I.arm + '"/>';
+    o += infraSideParts(X0, 0, I.d, 1, Y, true, 1);
+    var lead = function (y, z, txt, sub) {
+      var q = '<path class="dim" d="M' + (X0 + y) + ' ' + Y(z) + ' H 146"/><text x="150" y="' + (Y(z) + 3) + '" font-size="7.5">' + txt + '</text>';
+      if (sub) q += '<text class="lbl" x="150" y="' + (Y(z) + 12) + '" font-size="6.5">' + sub + '</text>';
+      return q;
+    };
+    o += lead(I.sw.y0 + I.sw.t, 160, 'switch, 25 deep', '5.5 behind, 5.5 in front');
+    o += lead(I.d, I.shelfZ + 2, 'shelf, 4 thick', 'two 3 mm lips at the front');
+    o += lead(I.core.y + 1.6, 76, 'core board at 20', 'capacitor reaches 32.5');
+    o += lead(I.ctl.y + 15, 50, 'controller RJ45', '40 mm up to the shelf');
+    o += lead(I.ctl.y + 1.6, 22, 'controller board at 15.5', 'link plug behind it');
+    o += '<text class="lbl" x="' + (X0 - 6) + '" y="' + Y(I.h / 2) + '" text-anchor="middle" font-size="7.5" transform="rotate(-90 ' + (X0 - 6) + ' ' + Y(I.h / 2) + ')">back: rail 12, lies on the print bed</text>';
+    o += '<text class="lbl" x="' + (X0 + I.d + 22) + '" y="' + (Y(I.h) - 4) + '" text-anchor="middle" font-size="6.5">first node frame</text>';
+    o += '<line class="dim" x1="' + X0 + '" x2="' + (X0 + I.d) + '" y1="' + (Y(0) + 12) + '" y2="' + (Y(0) + 12) + '"/>';
+    o += '<text x="' + (X0 + I.d / 2) + '" y="' + (Y(0) + 24) + '" text-anchor="middle" font-size="8">' + I.d + '</text>';
+    o += '</svg>';
+    $('infraSide').innerHTML = o;
+    $('infraNote').textContent = 'Drawn at the modelled depth of 36 mm' + (s.carrier !== I.d ? ' (the slider is at ' + s.carrier + ' mm; the model is not regenerated from it)' : '') +
+      '. Nothing reaches past 32.5 mm, so the first node frame closes the front. The infra frame goes first in the block: its legs plug into the back of node frame 1. ' +
+      'With ' + NB + ' frames at ' + f1(s.pitch) + ' mm and the tenon the block is ' + f1(NB * s.pitch + TENON + I.d) + ' mm, ' + f1(HALF - (NB * s.pitch + TENON + I.d)) + ' mm less than a half of the tank. ' +
+      'Open: the switch size and its 12 V jack are assumed, the front lips are only 3 mm. The 48 to 12 V switch supply is on the plane carrier (sheet 10).';
+  }
+
+  function renderChain(s, g, r) {
+    var perNodeA48 = s.watt / 0.95 / 48;
+    var perNodeA19 = s.watt / 19;
+    var totA48 = r.loadKW * 1000 / 0.95 / 48;
+    $('chain').innerHTML =
+      '<div class="node pw"><b>' + r.use + ' x ' + f1(s.psu) + ' kW supply</b><span>48 V, ' + Math.round(totA48) + ' A total</span><span>' + Math.round(r.loadPct) + '% load, 0 V earthed at the busbar</span></div><div class="arrow">-&gt;</div>' +
+      '<div class="node pw"><b>Feed per block</b><span>' + f1(perNodeA48 * NB) + ' A, 2 x 10 mm2</span><span>fused at the busbar, in the fluid</span></div><div class="arrow">-&gt;</div>' +
+      '<div class="node pw"><b>Unit, XT60</b><span>' + f1(perNodeA48 * 2) + ' A for 2 nodes, 4 mm2</span><span>hot-swap limit 18.3 A</span></div><div class="arrow">-&gt;</div>' +
+      '<div class="node pw"><b>Port module</b><span>48 to 19 V, 250 W</span><span>screwed to the unit, no cable</span></div><div class="arrow">-&gt;</div>' +
+      '<div class="node pw"><b>19 V cable</b><span>' + f1(perNodeA19) + ' A, 2 x 14 AWG</span><span>screw terminal to the node</span></div><div class="arrow">-&gt;</div>' +
+      '<div class="node"><b>AXB35 node</b><span>' + r.nodes + ' x ' + s.watt + ' W</span></div>';
+    $('jackFlag').innerHTML = '<b>How 19 V enters the node is open.</b> ' + f1(perNodeA19) + ' A at 19 V (13.2 A at the module limit) has to get through the DC-045D jack: a barrel plug rated for it, or leads soldered to the jack pins. The 63 A breaker per block is replaced by a fuse per block at the busbar; see Power distribution below.';
+  }
+
+
+  var PLANE = { core: 68, unit: 78.5, gap: 4, units: 4 };
+  var PLANE_LEN = PLANE.core + PLANE.units * PLANE.unit + PLANE.units * PLANE.gap;   // 398: 4 joints
+  var UNITS_LEN = PLANE.units * PLANE.unit + (PLANE.units - 1) * PLANE.gap;   // 326: the units without the core
+  var LOAD_PER_BLOCK = 0.16;   // % of the CAN FD bus per plane at 1 Hz readouts (STATUS + SUMMARY + detail)
+
+  function buses(r) {
+    var map = {}, order = [];
+    r.blockSlots.forEach(function (b) {
+      var k = b[0] + '-' + b[1];
+      if (!map[k]) { map[k] = { layer: b[0], row: b[1], blocks: [] }; order.push(k); }
+      map[k].blocks.push(b[2]);
+    });
+    var rows = order.map(function (k) { map[k].blocks.sort(); return map[k]; });
+    if (state.perCtl !== 1) return rows;
+    var out = [];
+    rows.forEach(function (b) { b.blocks.forEach(function (j) { out.push({ layer: b.layer, row: b.row, blocks: [j], single: true }); }); });
+    return out;
+  }
+
+  function renderControl(s, g, r) {
+    var bs = buses(r), n = bs.length, plane = s.ctl === 'plane', ring = s.standby === 'ring' && n > 1;
+    var boards = plane ? (r.blocks + ' cores + ' + (r.blocks * 4) + ' units') : (r.blocks + ' block boards');
+    var maxLoad = 0; bs.forEach(function (b) { maxLoad = Math.max(maxLoad, b.blocks.length * LOAD_PER_BLOCK); });
+    var cols = s.perCtl === 1 ? 1 : 2;
+    $('ctlLede').textContent = 'One controller per ' + (cols === 1 ? 'block of ' + NB + ' nodes' : 'row of up to ' + (2 * NB) + ' nodes (two blocks)') + '. Each controller drives one CAN FD link over a single ribbon to the core, which is also its only supply (12 V from the core, isolated from the 48 V bus); the last unit is terminated with two jumper caps. Nodes keep running when a controller fails; what stops is monitoring, rules and remote power control.';
+    $('ctlStats').innerHTML =
+      statCard('Controllers', n, n + ' bus' + (n === 1 ? '' : 'es') + ', ' + r.nodes + ' nodes, at most ' + (cols * NB) + ' per controller') +
+      statCard(plane ? 'Plane boards' : 'Control boards', plane ? r.blocks * 5 : r.blocks, boards + (plane ? ', ' + r.blocks * 8 + ' port modules' : '')) +
+      statCard('Link load', f1(maxLoad) + '%', 'Busiest bus at 1 Hz readouts (V, I, P, status, power LED per node)') +
+      statCard('Standby', ring ? 'ring' : (s.standby === 'ring' ? 'n/a' : 'none'),
+        ring ? n + ' controllers with 2 CAN ports; any one may fail' : (s.standby === 'ring' ? 'A ring needs at least 2 controllers' : 'A dead controller leaves its row unmanaged until replaced'));
+
+    var LANE = 86, W = 940, X0 = 108, BW = 330, GAP = 24;
+    var o = '<svg viewBox="-10 -26 ' + W + ' ' + (n * LANE + 30) + '" role="img" aria-label="CAN FD link per controller">';
+    if (n === 0) o += '<text x="10" y="30" font-size="15">No blocks placed</text>';
+    bs.forEach(function (b, i) {
+      var y = i * LANE, cy = y + 32;
+      var lbl = 'row ' + (b.row + 1) + (s.layers === 2 ? (b.layer === 0 ? ', lower' : ', upper') : '');
+      o += '<text class="lbl" x="0" y="' + (y - 6) + '" font-size="13">' + lbl + '</text>';
+      o += '<rect class="ctrl" x="0" y="' + (cy - 20) + '" width="84" height="40"/>';
+      o += '<text x="42" y="' + (cy - 3) + '" text-anchor="middle" font-size="13">CTRL ' + (i + 1) + '</text>';
+      o += '<text class="lbl" x="42" y="' + (cy + 12) + '" text-anchor="middle" font-size="10">master</text>';
+      var endX = X0 + cols * BW + (cols - 1) * GAP;
+      o += '<line class="lnk" x1="84" x2="' + (endX + 14) + '" y1="' + cy + '" y2="' + cy + '"/>';
+      for (var j = 0; j < cols; j++) {
+        var bx = X0 + j * (BW + GAP), present = cols === 1 || b.blocks.indexOf(j) >= 0;
+        if (!present) {
+          o += '<rect class="free" x="' + bx + '" y="' + (cy - 22) + '" width="' + BW + '" height="44"/>';
+          o += '<text class="lbl" x="' + (bx + BW / 2) + '" y="' + (cy + 4) + '" text-anchor="middle" font-size="12">no block</text>';
+          continue;
+        }
+        if (plane) {
+          o += '<rect class="core" x="' + bx + '" y="' + (cy - 22) + '" width="54" height="44"/>';
+          o += '<text x="' + (bx + 27) + '" y="' + (cy + 4) + '" text-anchor="middle" font-size="11" style="fill:var(--sheet)">core</text>';
+          for (var u = 0; u < 4; u++) {
+            var ux = bx + 60 + u * 67.5;
+            o += '<rect class="brd" x="' + ux + '" y="' + (cy - 22) + '" width="62" height="44"/>';
+            o += '<text x="' + (ux + 31) + '" y="' + (cy - 4) + '" text-anchor="middle" font-size="10">unit</text>';
+            o += '<text class="lbl" x="' + (ux + 31) + '" y="' + (cy + 12) + '" text-anchor="middle" font-size="9">2 nodes</text>';
+          }
+        } else {
+          o += '<rect class="brd" x="' + bx + '" y="' + (cy - 22) + '" width="' + BW + '" height="44"/>';
+          o += '<text x="' + (bx + BW / 2) + '" y="' + (cy - 3) + '" text-anchor="middle" font-size="12">block board</text>';
+          o += '<text class="lbl" x="' + (bx + BW / 2) + '" y="' + (cy + 13) + '" text-anchor="middle" font-size="10">8 nodes: PWR / RST / LED, 48 V metering</text>';
+        }
+        o += '<text class="lbl" x="' + (bx + BW / 2) + '" y="' + (cy + 36) + '" text-anchor="middle" font-size="10">' + ((cols === 1 ? b.blocks[0] : j) === 0 ? (state.orient === 'across' ? 'left block' : 'front block') : (state.orient === 'across' ? 'right block' : 'back block')) + ', 8 nodes</text>';
+      }
+      var tx = endX + 14;
+      if (ring) {
+        var sb = ((i - 1 + n) % n) + 1;
+        o += '<rect class="ctrl-sb" x="' + tx + '" y="' + (cy - 20) + '" width="84" height="40"/>';
+        o += '<text x="' + (tx + 42) + '" y="' + (cy - 3) + '" text-anchor="middle" font-size="13">CTRL ' + sb + '</text>';
+        o += '<text class="lbl" x="' + (tx + 42) + '" y="' + (cy + 12) + '" text-anchor="middle" font-size="10">standby, port B</text>';
+      } else {
+        o += '<rect class="term" x="' + tx + '" y="' + (cy - 14) + '" width="56" height="28"/>';
+        o += '<text x="' + (tx + 28) + '" y="' + (cy + 4) + '" text-anchor="middle" font-size="11">term</text>';
+      }
+    });
+    o += '</svg>';
+    $('link').innerHTML = o;
+    $('linkNote').textContent = (plane ? (cols === 1 ? 'The controller\'s ribbon (6-way IDC) goes to the core\'s link plug: the controller is on the plane carrier\'s top strip, the core in the infra frame, so the ribbon runs around the block corner, about 30 to 35 cm. Two ribbons (2x7 chain, 2x3 link) take the core to unit 1, and from there the link passes board to board through the four units. ' : 'The controller\'s ribbon goes to the first core; the back block\'s core plugs onto the front block\'s last unit, and the link passes through every unit. ')
+      : 'Busbar: one block board per block on the same bus, two nodes per bus; its 8 channels drive each node\'s front-panel lines and meter its 48 V feed. ') +
+      (ring ? 'Ring: each controller\'s second port is the standby on the next link and terminates it at the far end; on no SYNC from the master it takes over with a higher epoch.'
+        : 'Two jumper caps on the last unit terminate each link. A second controller can sit there later (ADR 0006 decision 13) without changing any plane board.');
+
+    var flag = '';
+    if (plane) {
+      // the core sits in the infra frame and the controller on the carrier, so only the four units
+      // have to fit along the block's frames
+      var frames = NB * s.pitch;
+      if (UNITS_LEN <= frames) flag = '<b>Plane fits.</b> The core is in the infra frame under the switch (sheet 8), on two ribbons to unit 1. The four units (' + f1(UNITS_LEN) + ' mm) hang on the carrier along the ' + NB + ' frames (' + f1(frames) + ' mm), with the controller and the switch supply in the carrier\'s top strip (sheet 10). Nothing of the plane is longer than its block, so two blocks in one line fit the tank like the frames do.';
+      else flag = '<b>Plane does not fit the block.</b> The four units are ' + f1(UNITS_LEN) + ' mm, the ' + NB + ' frames only ' + f1(frames) + ' mm at ' + f1(s.pitch) + ' mm pitch.';
+    } else {
+      flag = '<b>Block board is new.</b> One board per block: 8 channels of power / reset / power LED, per-node 48 V metering and hot-swap or an e-fuse, the same CAN FD link. It could sit in the infra frame. Not designed yet.';
+    }
+    $('fitFlag').innerHTML = flag;
+  }
+
+  function renderCabling(s, g, r) {
+    var n = buses(r).length, B = r.blocks;
+    var o = '<svg viewBox="0 0 1000 520" role="img" aria-label="Wiring of one block">';
+    var box = function (cls, x, y, w, h, t1, t2) {
+      var q = '<rect class="' + cls + '" x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '"/>';
+      q += '<text x="' + (x + w / 2) + '" y="' + (y + h / 2 + (t2 ? -2 : 4)) + '" text-anchor="middle" font-size="12">' + t1 + '</text>';
+      if (t2) q += '<text class="lbl" x="' + (x + w / 2) + '" y="' + (y + h / 2 + 13) + '" text-anchor="middle" font-size="10">' + t2 + '</text>';
+      return q;
+    };
+    // tank wall
+    o += '<line class="wall" x1="170" x2="170" y1="0" y2="520"/>';
+    o += '<text class="lbl" x="160" y="512" text-anchor="end" font-size="11">outside the fluid</text>';
+    o += '<text class="lbl" x="180" y="512" font-size="11">in the fluid</text>';
+    // network lines first, so boxes sit on top
+    o += '<path class="wnet" d="M860 40 V22 H140"/>';
+    o += '<text class="lbl" x="500" y="16" text-anchor="middle" font-size="10">uplink, SFP+ 10G</text>';
+    o += '<path class="wnet" d="M440 450 V480 H975 V70 H960"/>';
+    for (var k = 1; k < 8; k++) { var nx = 440 + Math.floor(k / 2) * 140 + (k % 2) * 66; o += '<line class="wnet" x1="' + nx + '" x2="' + nx + '" y1="450" y2="480"/>'; }
+    o += '<text class="lbl" x="700" y="496" text-anchor="middle" font-size="10">8 x Cat6 patch to switch ports 1-8</text>';
+    o += '<path class="wnet" d="M180 365 H140"/>';
+    // 48 V
+    o += '<path class="w19" d="M80 110 V140"/><path class="w19" d="M140 160 H210"/>';
+    o += '<path class="w48" d="M300 160 H315 V200 H945"/>';
+    o += '<line class="w48" x1="365" x2="365" y1="200" y2="250"/>';
+    for (var u = 0; u < 4; u++) { var dx = 410 + u * 140 + 115; o += '<line class="w48" x1="' + dx + '" x2="' + dx + '" y1="200" y2="250"/>'; }
+    o += '<line class="w48" x1="685" x2="685" y1="200" y2="90"/>';
+    o += '<text class="lbl" x="330" y="193" font-size="10">48 V: XT60 per unit, XT30 to core and sw12</text>';
+    o += '<text class="lbl" x="175" y="176" text-anchor="middle" font-size="10">230 V AC</text>';
+    // 12 V to the switch, link, node cables
+    o += '<path class="w19" d="M730 70 H760"/>';
+    o += '<path class="lnk" d="M300 355 H315 V280 H330"/>';
+    o += '<text class="lbl" x="240" y="328" text-anchor="middle" font-size="10">6-way ribbon</text>';
+    for (var q2 = 0; q2 < 8; q2++) {
+      var cx = 440 + Math.floor(q2 / 2) * 140 + (q2 % 2) * 66;
+      o += '<line class="w19" x1="' + (cx - 7) + '" x2="' + (cx - 7) + '" y1="310" y2="400"/>';
+      o += '<line class="wfp" x1="' + (cx + 7) + '" x2="' + (cx + 7) + '" y1="310" y2="400"/>';
+    }
+    o += '<text class="lbl" x="404" y="412" text-anchor="end" font-size="10">per node:</text>';
+    o += '<text class="lbl" x="404" y="425" text-anchor="end" font-size="10">19 V, 2 x 14 AWG</text>';
+    o += '<text class="lbl" x="404" y="438" text-anchor="end" font-size="10">front panel, 4 wires</text>';
+    // boxes
+    o += box('sw', 20, 6, 120, 34, 'top of rack', 'SFP+');
+    o += box('psu', 20, 66, 120, 44, 'mains panel', '4P main + RCBOs');
+    o += box('psu', 20, 140, 120, 40, 'mains feeds', '1 per supply');
+    o += box('sw', 20, 345, 120, 40, 'mgmt switch', '10/100 port');
+    o += box('psu', 210, 140, 90, 40, 'supplies + bus', 'fuse per block');
+    o += box('psu', 640, 50, 90, 40, 'sw12', '48 to 12 V');
+    o += box('sw', 760, 40, 200, 60, 'block switch', '8 x 2.5G + SFP+');
+    o += box('ctrl', 180, 340, 120, 50, 'controller', '12 V from the link');
+    o += '<rect class="core" x="330" y="250" width="70" height="60"/><text x="365" y="284" text-anchor="middle" font-size="12" style="fill:var(--sheet)">core</text>';
+    for (var u2 = 0; u2 < 4; u2++) {
+      var ux = 410 + u2 * 140;
+      o += box('brd', ux, 250, 130, 60, 'unit ' + (u2 + 1), '2 port modules');
+      o += '<line class="lnk" x1="' + (ux - 10) + '" x2="' + ux + '" y1="280" y2="280"/>';
+      for (var sl = 0; sl < 2; sl++) o += box('frm', ux + 2 + sl * 66, 400, 56, 50, 'N' + (u2 * 2 + sl + 1));
+    }
+    o += '<text class="lbl" x="960" y="193" text-anchor="end" font-size="10">unit 4: 2 jumper caps end the link</text>';
+    o += '</svg>';
+    $('wiring').innerHTML = o;
+
+    var rows = [
+      ['Block feed', 'busbar, via its fuse, to the distribution block', '2 x 10 mm2', 'lugs', 1, 'b'],
+      ['Unit feed', 'distribution block to unit', '2 x 4 mm2', 'XT60H-F', 4, 'b'],
+      ['Core feed', 'distribution block to core', '2 x 0.75 mm2', 'XT30U-F', 1, 'b'],
+      ['Switch supply feed', 'distribution block to sw12', '2 x 0.75 mm2', 'XT30U-F', 1, 'b'],
+      ['Switch 12 V', 'sw12 to the switch', '2 x 0.75 mm2', 'Micro-Fit 2p, barrel plug', 1, 'b'],
+      ['Node 19 V', 'unit slot to node', '2 x 14 AWG', 'screw terminal, node end open', 8, 'b'],
+      ['Front panel', 'unit slot to motherboard header', '4 x 28 AWG', 'JST GH 4p, 2.54 mm housing', 8, 'b'],
+      ['Node patch', 'node to switch port', 'Cat6', 'RJ45', 8, 'b'],
+      ['Uplink', 'switch port 9 to top of rack', 'SFP+ DAC or fibre', 'SFP+', 1, 'b'],
+      ['Link', 'controller to core, inside the infra frame', '6-way IDC ribbon, about 10 cm', '2x3 IDC socket', 1, 'c'],
+      ['Core chain', 'core to unit 1', '14-way 1.27 mm ribbon, 28 AWG, 10-15 cm', '2x7 IDC: male at the core, female at the unit', 1, 'b'],
+      ['Core link', 'core to unit 1', '6-way 1.27 mm ribbon, 28 AWG, 10-15 cm', '2x3 IDC: male at the core, female at the unit', 1, 'b'],
+      ['Controller patch', 'controller to management switch', 'Cat5e, straight', 'RJ45', 1, 'c']
+    ];
+    var h = '<table><thead><tr><th>Cable</th><th>From, to</th><th>Wire</th><th>Ends</th><th class="n">Per block</th><th class="n">This pod</th></tr></thead><tbody>';
+    rows.forEach(function (x) {
+      var tot = x[5] === 'b' ? x[4] * B : n;
+      h += '<tr><td>' + x[0] + '</td><td>' + x[1] + '</td><td>' + x[2] + '</td><td>' + x[3] + '</td><td class="n">' + (x[5] === 'b' ? x[4] : '1 per controller') + '</td><td class="n">' + tot + '</td></tr>';
+    });
+    h += '</tbody></table>';
+    $('sched').innerHTML = h;
+    $('schedTitle').textContent = 'Cable schedule: ' + B + ' block' + (B === 1 ? '' : 's') + ', ' + r.nodes + ' nodes, ' + n + ' controller' + (n === 1 ? '' : 's');
+  }
+
+  var BUS_V = 48, CC_SET = 58, AUX_W = 15;   // CB3000 48 V variant; AUX_W = switch, core and controller per block
+  function pickFuse(a) { var t = [25, 30, 32, 40, 50, 63, 80]; for (var i = 0; i < t.length; i++) if (t[i] >= a) return t[i]; return 100; }
+  function renderPower(s, g, r) {
+    var psuA = s.psu * 1000 / BUS_V;
+    var blockW = NB * s.watt / 0.95 + AUX_W;
+    var busW = r.blocks * blockW, busA = busW / BUS_V;
+    var NPSU = Math.max(r.use, 2);   // the supplies the plan uses; the strip may hold more (r.fit)
+    var a4 = busA / NPSU, a3 = busA / (NPSU - 1);
+    var onPh = [0, 0, 0], PHN = ['L1', 'L2', 'L3'], k;
+    for (k = 0; k < NPSU; k++) onPh[k % 3]++;
+    var room = Math.max(r.fit, NPSU);
+    $('pwrTitle').textContent = 'Power distribution: ' + NPSU + ' x CB3000';
+    var more = (NPSU > r.need && NPSU >= 3) ? ' The load needs ' + r.need + ' at 80%; the rest is reserve: with two out, or one mains phase lost, the other ' + (NPSU - 2) + ' run at ' + Math.round(busA / (NPSU - 2) / psuA * 100) + '%.'
+      : room > NPSU ? ' The strip has room for ' + room + '; with ' + (NPSU + 1) + ' fitted, one out leaves the others at ' + Math.round(busA / NPSU / psuA * 100) + '%.' : '';
+    var idleW = r.nodes * 20 / 0.95 + r.blocks * AUX_W;
+    more += ' At idle (20 W per node) the bus carries ' + f1(idleW / 1000) + ' kW, ' + Math.round(idleW / NPSU / (s.psu * 1000) * 100) + '% per supply, below their efficient range; all stay on so a load step cannot sag the bus.';
+    $('pwrLede').textContent = NPSU + ' Changbao CB3000 supplies (48 V / 62.5 A, 3 kW) sit in the strip behind the block rows, or standing in the right half, immersed in ThermaSafe R (PAO). All ' + NPSU + ' share the load at ' + Math.round(busA / NPSU / psuA * 100) + '%; with one out the other ' + (NPSU === 2 ? 'one runs' : (NPSU - 1) + ' run') + ' at ' + Math.round(busA / (NPSU - 1) / psuA * 100) + '%.' + more + ' Each has its own breaker on the mains; the outputs meet through an ORing stage each on one busbar pair, which feeds every block through its own fuse. Setpoints, sharing and readouts run over RS485 Modbus through a Modbus TCP to RTU gateway on the management network, outside the tank; the block controllers have no RS485 port.';
+    var left = NPSU - onPh[0], pl = busA / left / psuA * 100;
+    $('sldNote').textContent = 'The supplies go round the phases: ' + onPh[0] + ' on L1, ' + onPh[1] + ' on L2, ' + onPh[2] + ' on L3. Losing only L1 would leave ' + left + ' at ' + Math.round(pl) + '%' + (busA / left > CC_SET ? ', which is over their current limit; that is accepted, since a trip normally takes all three phases' : ', which still holds') + '. The 0 V bar is bonded to PE once, at the bus; every supply case and the tank are on PE. Only mains, RS485 and network cross the tank wall; the 48 V stays in the fluid.';
+    var p4 = a4 / psuA * 100, p3 = a3 / psuA * 100;
+    var blkA = blockW / BUS_V, blkMin = blockW / 42, fuse = pickFuse(1.25 * blkMin);
+    var wire = fuse <= 50 ? '2 x 10 mm2' : '2 x 16 mm2';
+    var acA = a4 * BUS_V / 0.88 / 230;
+    $('pwrStats').innerHTML =
+      statCard('Bus load', f1(busW / 1000) + ' kW', Math.round(busA) + ' A at ' + BUS_V + ' V: ' + r.nodes + ' nodes at ' + s.watt + ' W plus port-module losses') +
+      statCard('Per supply, ' + NPSU + ' running', Math.round(a4) + ' A', Math.round(p4) + '% of ' + f1(psuA) + ' A') +
+      statCard('Per supply, one out', Math.round(a3) + ' A', Math.round(p3) + '% of ' + f1(psuA) + ' A' + (p3 > 90 ? ', too close to the limit' : '')) +
+      (NPSU >= 3 ? statCard('Two out or a phase lost', Math.round(busA / (NPSU - 2)) + ' A', Math.round(busA / (NPSU - 2) / psuA * 100) + '% of ' + f1(psuA) + ' A' + (busA / (NPSU - 2) > CC_SET ? ', over the ' + CC_SET + ' A limit' : '')) : '') +
+      statCard('Per block', f1(blkA) + ' A', f1(blkMin) + ' A at 42 V; ' + fuse + ' A fuse, ' + wire) +
+      statCard('Mains', f1(onPh[0] * acA) + ' A on L1', f1(onPh[1] * acA) + ' A on L2, ' + f1(onPh[2] * acA) + ' A on L3');
+
+    var bx = function (cls, x, y, w, h, t1, t2) {
+      var q = '<rect class="' + cls + '" x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '"/>';
+      q += '<text x="' + (x + w / 2) + '" y="' + (y + h / 2 + (t2 ? -2 : 4)) + '" text-anchor="middle" font-size="12">' + t1 + '</text>';
+      if (t2) q += '<text class="lbl" x="' + (x + w / 2) + '" y="' + (y + h / 2 + 13) + '" text-anchor="middle" font-size="10">' + t2 + '</text>';
+      return q;
+    };
+    var PSTEP = NPSU <= 4 ? 90 : 62, PY = [], PH = [], nb = Math.min(r.blocks, 6), i;
+    for (i = 0; i < NPSU; i++) { PY.push(30 + i * PSTEP); PH.push(PHN[i % 3]); }
+    var BOT = Math.max(360, PY[NPSU - 1] + 60), SH = BOT + 85;
+    var o = '<svg viewBox="0 0 1000 ' + SH + '" role="img" aria-label="Single line from the mains to the blocks">';
+    o += '<line class="wall" x1="420" x2="420" y1="0" y2="' + SH + '"/>';
+    o += '<path class="lnk-sb" d="M520 55 V' + (SH - 35) + ' H140"/>';
+    o += '<text class="lbl" x="300" y="' + (SH - 43) + '" text-anchor="middle" font-size="10">RS485 Modbus, daisy chain</text>';
+    o += '<path class="w19" d="M140 190 H170 M270 190 H290 M290 ' + (PY[0] + 25) + ' V' + (PY[NPSU - 1] + 25) + '"/>';
+    for (i = 0; i < NPSU; i++) {
+      var y = PY[i] + 25;
+      o += '<path class="w19" d="M290 ' + y + ' H300 M390 ' + y + ' H450"/>';
+      o += '<path class="w48" d="M580 ' + y + ' H610 M680 ' + y + ' H740"/>';
+    }
+    for (i = 0; i < nb; i++) { var yk = 40 + i * 56; o += '<path class="w48" d="M752 ' + yk + ' H800 M850 ' + yk + ' H880"/>'; }
+    o += '<path class="dim" d="M746 ' + BOT + ' v32 M734 ' + (BOT + 32) + ' h24 M738 ' + (BOT + 38) + ' h16 M742 ' + (BOT + 44) + ' h8"/>';
+    o += '<text class="lbl" x="764" y="' + (BOT + 40) + '" font-size="10">0 V to PE, once</text>';
+    o += '<rect class="dc" x="740" y="20" width="12" height="' + (BOT - 20) + '"/>';
+    o += '<text class="lbl" x="746" y="13" text-anchor="middle" font-size="10">+48 V and 0 V bars</text>';
+    o += bx('box', 20, 165, 120, 50, '3 x 400 V + N', 'mains');
+    o += bx('box', 170, 165, 100, 50, '4P main', 'switch / RCD');
+    for (i = 0; i < NPSU; i++) {
+      o += bx('box', 300, PY[i] + 5, 90, 40, 'RCBO C16', PH[i] + ', 30 mA');
+      o += bx('psu', 450, PY[i], 130, 50, 'PSU ' + (i + 1) + ' CB3000', BUS_V + '.0 V, CC ' + CC_SET + ' A');
+      o += bx('conv', 610, PY[i] + 7, 70, 36, 'ORing');
+    }
+    for (i = 0; i < nb; i++) {
+      var yb = 40 + i * 56;
+      o += bx('term', 800, yb - 10, 50, 20, fuse + ' A');
+      o += bx('frm', 880, yb - 18, 110, 36, (r.blocks > 6 && i === 5) ? 'blocks 6-' + r.blocks : 'block ' + (i + 1), NB + ' nodes');
+    }
+    o += bx('ctrl', 20, SH - 53, 120, 36, 'RS485 gateway', 'Modbus TCP to RTU');
+    o += '<text class="lbl" x="410" y="' + (SH - 7) + '" text-anchor="end" font-size="11">outside the fluid</text>';
+    o += '<text class="lbl" x="430" y="' + (SH - 7) + '" font-size="11">in the fluid</text>';
+    o += '</svg>';
+    $('sld').innerHTML = o;
+
+    var rows = [
+      ['Supply setpoint', BUS_V + '.0 V, set over Modbus through the gateway', 'Top of the 48 V variant, so the full 3 kW; inside the 42 to 62 V window and under 60 V (SELV)'],
+      ['Supply current limit', CC_SET + ' A', 'Above the ' + Math.round(a3) + ' A each with one supply out, below the ' + f1(psuA) + ' A rating; also the fallback sharing'],
+      ['Modbus master', 'Modbus TCP to RTU gateway (DIN rail, on the management switch)', 'The block controllers have Ethernet and CAN FD only; the software that uses the gateway is not written'],
+      ['Current sharing', 'management software trims setpoints by a few mV', 'No share pin on the CB3000; without trimming the supplies cascade on their limits'],
+      ['ORing', 'ideal diode per supply, 80 A, 60 V', 'A supply that fails short must not pull the bus down'],
+      ['Mains protection', 'RCBO C16 1P+N 30 mA per supply', 'Supplies go round L1, L2, L3; the 4P main trips all three'],
+      ['Mains cable', '3G2.5 per supply', 'Insulation checked against PAO'],
+      ['Supply output', '2 x 16 mm2 to the ORing and the bus', 'Up to ' + f1(psuA) + ' A per supply'],
+      ['Bus bars', 'Cu 15 x 15 x 350 mm, + and 0 V, tapped for every lug, in a printed holder', 'About ' + Math.round(busA) + ' A in total, ' + f1(busA / 225) + ' A/mm2'],
+      ['Block bars', 'Al 10 x 10 mm through the frames, two per block', f1(blkMin) + ' A per block at 42 V; clean the joint faces and use spring washers, aluminium creeps'],
+      ['Block fuse', fuse + ' A sealed DC fuse at the bus', f1(blkA) + ' A per block at 48 V, ' + f1(blkMin) + ' A at 42 V'],
+      ['Block feed', wire, 'Voltage drop is no concern with a 42 to 62 V window'],
+      ['Earthing', '0 V to PE once, at the bus', 'Every supply case and the tank on PE']
+    ];
+    var h = '<table><thead><tr><th>Item</th><th>Setting</th><th>Why</th></tr></thead><tbody>';
+    rows.forEach(function (x) { h += '<tr><td>' + x[0] + '</td><td>' + x[1] + '</td><td>' + x[2] + '</td></tr>'; });
+    $('pwrSched').innerHTML = h + '</tbody></table>';
+
+    var wmax = r.blocks ? Math.floor(((0.9 * psuA * (NPSU - 1) * BUS_V) / r.blocks - AUX_W) / NB * 0.95) : 0;
+    var warn = (p3 > 90 || a3 > CC_SET) ? '<b>One supply out leaves the other ' + (NPSU - 1) + ' at ' + Math.round(p3) + '%' + (a3 > CC_SET ? ', above the ' + CC_SET + ' A limit' : '') + '.</b> Keep nodes at ' + wmax + ' W or less, or add a supply' + (room > NPSU ? ' (room for ' + room + ')' : '') + '. ' : '';
+    $('pwrFlag').innerHTML = warn + '<b>Test the overload behaviour before trusting the fuses.</b> Set one supply to a 30 A limit and short it through a 10 A fuse: if the current holds, the fuse blows, and a block fuse will isolate a short. If it pulses (hiccup), a short anywhere takes the whole pod down and the blocks need electronic breakers instead.';
+  }
+
+  function render() {
+    var s = state;
+    $('pitchV').textContent = f1(s.pitch) + ' mm';
+    $('wattV').textContent = s.watt + ' W';
+    $('psuV').textContent = f1(s.psu) + ' kW';
+    $('bandV').textContent = s.band + ' mm';
+    $('planeV').textContent = s.plane + ' mm';
+    $('carrierV').textContent = s.carrier + ' mm';
+    $('fwV').textContent = s.fw + ' mm';
+    if (s.viewLayer >= s.layers) s.viewLayer = 0;
+    var g = geom(s);
+    var r = evalOpt(s, g, s.option);
+    renderCands(s);
+    renderPods(s, g, r);
+    renderOptions(s, g);
+    renderTop(s, g, r);
+    renderFront(s, g, r);
+    renderNode(s);
+    renderBlock(s, g);
+    renderChain(s, g, r);
+    renderControl(s, g, r);
+    renderCabling(s, g, r);
+    renderPower(s, g, r);
+  }
+
+  function syncLayers() {
+    Array.prototype.forEach.call($('layers').querySelectorAll('button'), function (x) { x.setAttribute('aria-pressed', String(+x.getAttribute('data-v') === state.layers)); });
+  }
+  function applyPreset(k) {
+    var p = PRESETS[k];
+    state.preset = k; state.layers = p.layers; state.option = p.option; state.viewLayer = 0;
+    state.cap = p.cap || null; state.fitted = p.fitted || 0;
+    state.pitch = p.pitch || 41.6; state.per = p.per || 8; $('pitch').value = state.pitch;
+    if (p.psu) { state.psu = p.psu; $('psu').value = p.psu; }
+    Array.prototype.forEach.call($('presets').querySelectorAll('button'), function (x) { x.setAttribute('aria-pressed', String(x.getAttribute('data-p') === k)); });
+    $('presetNote').textContent = p.note;
+    syncLayers();
+    render();
+  }
+  Array.prototype.forEach.call($('presets').querySelectorAll('button'), function (b) {
+    b.addEventListener('click', function () { applyPreset(b.getAttribute('data-p')); });
+  });
+  [['pitch', 'pitch'], ['watt', 'watt'], ['psu', 'psu'], ['band', 'band'], ['carrier', 'carrier'], ['fw', 'fw'], ['plane', 'plane']].forEach(function (p) {
+    $(p[0]).addEventListener('input', function (e) { state[p[1]] = parseFloat(e.target.value); render(); });
+  });
+  Array.prototype.forEach.call($('layers').querySelectorAll('button'), function (b) {
+    b.addEventListener('click', function () {
+      state.layers = +b.getAttribute('data-v');
+      syncLayers();
+      render();
+    });
+  });
+  [['ctlPer', 'perCtl'], ['ctlStandby', 'standby'], ['orient', 'orient']].forEach(function (p) {
+    Array.prototype.forEach.call($(p[0]).querySelectorAll('button'), function (b) {
+      b.addEventListener('click', function () {
+        var v = b.getAttribute('data-v'); state[p[1]] = p[1] === 'perCtl' ? +v : v;
+        Array.prototype.forEach.call($(p[0]).querySelectorAll('button'), function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+        render();
+      });
+    });
+  });
+  applyPreset('n8');
+})();
+</script>
+
+</body></html>
