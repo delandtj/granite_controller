@@ -21,7 +21,7 @@ the wider bench history is docs/handoff.md.
 | controller-fd | 5 | fab-archive/fd-batch2/controller-fd/granite-controller-fd-* |
 | pp-48-core-fd | 10 | fab-archive/fd-batch2/pp-48-core-fd/pp-48-core-fd-* |
 | pp-48-unit-fd | 30 | fab-archive/fd-batch2/pp-48-unit-fd/pp-48-unit-fd-* |
-| PM-19V-250W-B | 50 | fab-archive/fd-batch1/pm-19v-250w-b/pm-19v-250w-b-* (unchanged) |
+| PM-19V-250W-B | 50 | fab-archive/fd-batch2/pm-19v-250w-b/pm-19v-250w-b-* (copy of the batch 1 set, unchanged) |
 
 Quantities are the user's (2026-11-26): a 48-node pod is 6 blocks =
 6 controllers, 6 cores, 24 units, 48 modules; the user's numbers include
@@ -29,7 +29,8 @@ spares and use batch 1 boards for the rest (batch 1 boards in hand are
 for development). Not ordered: PM-19V-250W rev A (out for the first run;
 its U1 LTC7810 C581067 is out of stock anyway).
 
-PM-19V-250W-B: upload the batch 1 set, not a fresh `pcbkit jlcfab`
+PM-19V-250W-B: the batch 2 folder holds a byte-identical copy of the
+batch 1 set; upload that, not a fresh `pcbkit jlcfab`
 output. A fresh CPL differs in bottom-side rotations (pcbkit changed
 after batch 1); the batch 1 files assembled the modules that run on the
 bench. BOM and copper are identical either way.

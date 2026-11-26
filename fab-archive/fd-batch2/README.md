@@ -8,14 +8,14 @@ boards in hand stay for development.
 | controller-fd | 6 | **5** | `controller-fd/` here (U5 changed) |
 | pp-48-core-fd | 6 | **10** | `pp-48-core-fd/` here (U1, R25 / R26 changed) |
 | pp-48-unit-fd | 24 | **30** | `pp-48-unit-fd/` here (new BOM, see below) |
-| PM-19V-250W-B | 48 | **50** | `../fd-batch1/pm-19v-250w-b` (unchanged, R12 10k) |
+| PM-19V-250W-B | 48 | **50** | `pm-19v-250w-b/` here (a copy of the batch 1 set, unchanged, R12 10k) |
 
 The quantities are the user's (2026-11-26). A pod of 6 blocks needs 6
 controllers, 6 cores, 24 units and 48 modules: the controller count is
 one under that and the core count four over, the user's call with the
 batch 1 boards in hand.
 
-PM-19V-250W-B reuses the **batch 1** set on purpose: its BOM is
+PM-19V-250W-B (`pm-19v-250w-b/` here) is a byte-identical copy of the **batch 1** set, on purpose: its BOM is
 unchanged and its Gerbers and drill are identical apart from header
 lines, but a fresh CPL differs in the bottom-side rotations (pcbkit's
 bottom-side handling changed after the batch 1 set was made). The batch

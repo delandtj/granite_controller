@@ -22,7 +22,7 @@ Example (FD batch 2, fab-archive/fd-batch2/README.md):
       controller-fd=fab-archive/fd-batch2/controller-fd/granite-controller-fd-bom.csv=5 \\
       core-fd=fab-archive/fd-batch2/pp-48-core-fd/pp-48-core-fd-bom.csv=10 \\
       unit-fd=fab-archive/fd-batch2/pp-48-unit-fd/pp-48-unit-fd-bom.csv=30 \\
-      pm-b=fab-archive/fd-batch1/pm-19v-250w-b/pm-19v-250w-b-bom.csv=50
+      pm-b=fab-archive/fd-batch2/pm-19v-250w-b/pm-19v-250w-b-bom.csv=50
 
 The API is undocumented and may change; if every line comes back with no
 stock, check one known basic part (C25744) before trusting the result.
