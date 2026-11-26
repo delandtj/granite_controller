@@ -61,7 +61,7 @@
 
 use std::path::Path;
 
-use plane_logic::drivers::idadc;
+use plane_logic::drivers::{idadc, ina};
 
 use serde::{Deserialize, Serialize};
 
@@ -229,6 +229,32 @@ impl Default for PlaneFault {
     }
 }
 
+/// Which current monitor a plane's unit boards carry.
+///
+/// The two parts are pin-compatible and the firmware tells them apart
+/// by DEVICE_ID; everything the link reports is in the same units
+/// whichever it is, which is what the sim is used to check.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, clap::ValueEnum)]
+#[serde(rename_all = "snake_case")]
+#[value(rename_all = "snake_case")]
+pub enum MonitorKind {
+    /// INA238 (or INA237): the FD batch 1 units.
+    #[default]
+    Ina238,
+    /// INA228: the FD batch 2 units, pp-48-unit-fd U2 / U52 / U208.
+    Ina228,
+}
+
+impl MonitorKind {
+    /// The driver's kind for this part.
+    pub const fn kind(self) -> ina::Kind {
+        match self {
+            MonitorKind::Ina238 => ina::Kind::Ina238,
+            MonitorKind::Ina228 => ina::Kind::Ina228,
+        }
+    }
+}
+
 /// One simulated plane on the link.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
@@ -237,6 +263,10 @@ pub struct PlaneScenario {
     pub address: u8,
     /// Which chain channels carry a unit board, 0-3.
     pub units: Vec<u8>,
+    /// Which current monitor the unit boards carry: the INA238 of the
+    /// FD batch 1 units, or the INA228 of batch 2. One plane can only
+    /// be told one kind here; a pod that mixes them is a mix of planes.
+    pub monitor: MonitorKind,
     /// Blink detection window \[ms\], shortest and longest period. Left
     /// out, the plane keeps its own default (200 / 4000), and every wait
     /// on a host LED is then at least five seconds long.
@@ -254,6 +284,7 @@ impl Default for PlaneScenario {
         PlaneScenario {
             address: granite_proto::ADDR_BASE,
             units: (0..granite_proto::UNIT_COUNT as u8).collect(),
+            monitor: MonitorKind::default(),
             blink_window_ms: None,
             slots: Vec::new(),
             faults: Vec::new(),

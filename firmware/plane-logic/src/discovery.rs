@@ -3,8 +3,10 @@
 //!
 //! At boot and then every [`RESCAN_MS`] for the channels that have no
 //! unit: select channel k, probe the expander at 0x22. A unit is present
-//! when the expander acknowledges; its INA238s and ADCs are then probed
-//! and their absence is a unit fault, not "no unit".
+//! when the expander acknowledges; its monitors and ADCs are then
+//! probed and their absence is a unit fault, not "no unit". A monitor
+//! that answers also gets its DEVICE_ID read, which is what says
+//! whether it is an INA238 or an INA228 ([`crate::drivers::ina`]).
 //!
 //! A present unit that NAKs twice in a row is lost (event), and its
 //! channel goes back on the re-scan. A unit that appears or comes back
@@ -20,7 +22,8 @@ use granite_proto::{EventKind, EventTarget, SEGMENT_CHANNELS, SlotStatus, UnitSt
 
 use crate::device::{DeviceError, DevResult, Devices, SegmentBus};
 use crate::drivers::expander::{self, Expander};
-use crate::drivers::{IdAdc, Ina238};
+use crate::drivers::ina::{self, Ina};
+use crate::drivers::IdAdc;
 use crate::log::level;
 use crate::plane::Plane;
 
@@ -29,6 +32,10 @@ pub const RESCAN_MS: u64 = 2_000;
 
 /// NAKs in a row that make a present unit lost.
 pub const LOST_AFTER_NAKS: u8 = 2;
+
+/// Index of the unit input's monitor in [`Channel::ina`]; 0 and 1 are
+/// the slots.
+pub const UNIT_MONITOR: usize = 2;
 
 /// Where a channel stands.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -54,6 +61,12 @@ pub struct Channel {
     pub next_scan_ms: u64,
     /// The unit needs configuring from scratch before it is polled.
     pub needs_config: bool,
+    /// Which part answers at each of the unit's three monitor
+    /// addresses - slot A, slot B, the unit input - read from DEVICE_ID
+    /// by [`Plane::configure_unit`]. An FD batch 1 unit has three
+    /// INA238s, a batch 2 unit three INA228s; the plane makes nothing
+    /// of a unit that mixes them.
+    pub ina: [ina::Kind; 3],
 }
 
 impl Default for Channel {
@@ -70,6 +83,7 @@ impl Channel {
             naks: 0,
             next_scan_ms: 0,
             needs_config: false,
+            ina: [ina::Kind::Ina238; 3],
         }
     }
 
@@ -164,27 +178,19 @@ impl Plane {
             }
         }
 
-        // The two slot monitors and the unit's own.
+        // The two slot monitors and the unit's own. The unit input's
+        // limit is 0: its ALERT is not wired (uinput.py).
         let mut monitors_ok = true;
-        for half in 0..2u8 {
-            let slot = (2 * ch) as u8 + half;
-            let ina = Ina238::slot(half == 1);
-            let limit = self.config.power_limit[slot as usize];
-            let ok = ina
-                .manufacturer_id(dev.bus())
-                .is_ok_and(|id| id == crate::drivers::ina238::MANUFACTURER_ID)
-                && ina.configure(dev.bus(), limit).is_ok();
-            if ok {
-                self.slots[slot as usize].power_limit = limit;
+        for half in 0..2usize {
+            let slot = 2 * ch + half;
+            let limit = self.config.power_limit[slot];
+            if self.configure_monitor(dev, ch, half, limit) {
+                self.slots[slot].power_limit = limit;
             } else {
                 monitors_ok = false;
             }
         }
-        let unit_ina = Ina238::unit();
-        let unit_ok = unit_ina
-            .manufacturer_id(dev.bus())
-            .is_ok_and(|id| id == crate::drivers::ina238::MANUFACTURER_ID)
-            && unit_ina.configure(dev.bus(), 0).is_ok();
+        let unit_ok = self.configure_monitor(dev, ch, UNIT_MONITOR, 0);
         self.units[ch].status = self
             .units[ch]
             .status
@@ -196,6 +202,59 @@ impl Plane {
         // The ID ADCs, so a module's presence is known before the first
         // sequence can ask about it.
         self.read_ids(dev, ch);
+    }
+
+    /// One of a unit's three monitors: probe it, learn which part it is
+    /// and configure it. False is a monitor that is not there or would
+    /// not take its configuration.
+    ///
+    /// `index` is 0 / 1 for the slots and [`UNIT_MONITOR`] for the unit
+    /// input. The INA228 of an FD batch 2 unit answers the same
+    /// register map as the INA238 but scales differently, so DEVICE_ID
+    /// is read once here and the kind kept on the channel; the poll's
+    /// conversions then need no bus traffic to know it. An id this
+    /// driver does not know gets one log line and is read as an INA238,
+    /// which is what the plane did before the INA228 existed.
+    fn configure_monitor<D: Devices>(
+        &mut self,
+        dev: &mut D,
+        ch: usize,
+        index: usize,
+        limit: u16,
+    ) -> bool {
+        let at = |kind| match index {
+            0 => Ina::slot(false, kind),
+            1 => Ina::slot(true, kind),
+            _ => Ina::unit(kind),
+        };
+        let probe = at(ina::Kind::default());
+        if !probe
+            .manufacturer_id(dev.bus())
+            .is_ok_and(|id| id == ina::MANUFACTURER_ID)
+        {
+            return false;
+        }
+        match probe.device_kind(dev.bus()) {
+            Ok((_, Some(kind))) => self.channels[ch].ina[index] = kind,
+            Ok((id, None)) => {
+                self.channels[ch].ina[index] = ina::Kind::default();
+                self.note(level::WARN, "ina device id unknown", Some(id as u32));
+            }
+            Err(_) => return false,
+        }
+        at(self.channels[ch].ina[index])
+            .configure(dev.bus(), limit)
+            .is_ok()
+    }
+
+    /// One slot's monitor, of whatever kind this channel's is.
+    pub(crate) fn slot_monitor(&self, ch: usize, half: usize) -> Ina {
+        Ina::slot(half == 1, self.channels[ch].ina[half])
+    }
+
+    /// One unit input's monitor, of whatever kind it is.
+    pub(crate) fn unit_monitor(&self, ch: usize) -> Ina {
+        Ina::unit(self.channels[ch].ina[UNIT_MONITOR])
     }
 
     /// Read both slots' ID ADCs on a selected channel.

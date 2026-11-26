@@ -2,8 +2,9 @@
 //!
 //! Everything here is a fake of one of [`crate::device`]'s traits, with
 //! enough of the board's behaviour that the plane logic cannot tell the
-//! difference: expander registers with pin semantics, INA238s whose
-//! power limit really trips the slot's OV latch, ID ADCs, and a host per
+//! difference: expander registers with pin semantics, INA238s or
+//! INA228s ([`FakeIna`]) whose power limit really trips the slot's OV
+//! latch, ID ADCs, and a host per
 //! slot whose power LED follows the PWR presses and the rail, so a whole
 //! `node off` or `power-cycle` sequence runs to its end.
 //!

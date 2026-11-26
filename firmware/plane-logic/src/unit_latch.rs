@@ -19,9 +19,9 @@
 //!
 //! Not the unit's own INA237. On the board (uinput.py U208) IN+ sits on
 //! VIN and IN- on USENSE, but the **VBUS pin is on the hot-swap output**,
-//! so [`crate::drivers::Ina238::unit`]'s VBUS register - the only
+//! so [`crate::drivers::Ina::unit`]'s VBUS register - the only
 //! absolute voltage the part reports, see
-//! [`crate::drivers::ina238`] - reads ~0 V exactly when the hot-swap is
+//! [`crate::drivers::ina`] - reads ~0 V exactly when the hot-swap is
 //! open, which is every moment this module has to judge. The INA237 can
 //! never witness its own input during a fault.
 //!

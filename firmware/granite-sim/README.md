@@ -107,6 +107,7 @@ ignores its PWR button) plus a single-unit plane at 0x31.
 address = 0x30
 units = [0, 1, 2, 3]
 blink_window_ms = [100, 500]   # shortens every wait on a host LED
+monitor = "ina238"             # ina238 | ina228 (the FD batch 2 units)
 
 [[plane.slot]]
 slot = 0

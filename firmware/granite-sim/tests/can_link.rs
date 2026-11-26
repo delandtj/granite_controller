@@ -141,6 +141,7 @@ fn plane(address: u8, units: Vec<u8>, slots: Vec<PlaneSlotScenario>) -> PlaneSce
         blink_window_ms: Some([100, 500]),
         slots,
         faults: Vec::new(),
+        ..Default::default()
     }
 }
 

@@ -2,7 +2,7 @@
 
 **Status**: Proposed
 **Date**: 2026-10-29
-**Updated**: 2026-10-29 (user answers: image integrity, stagger, latches decided; unit glitch state open; press deadline line asked from the hardware, docs/press-deadline-line.md); 2026-10-30 (the unit hot-swap is an LM5069-2 now, so the latch is this firmware's: decision 7a, and `unit reset` in decision 6 releases instead of pulsing); 2026-11-25 (decision 7b, the power-up clear of the slot OV latches, from the first bench unit with modules; decision 7c, switch-on blanking, from the same session: every rail switch-on latches, not only the unit's power-up; decision 7d, LCLR held while a slot is off, after the bench run of 7c: a switched-off slot latches ~10 ms after the cut, so `off` then `on` stayed latched)
+**Updated**: 2026-10-29 (user answers: image integrity, stagger, latches decided; unit glitch state open; press deadline line asked from the hardware, docs/press-deadline-line.md); 2026-10-30 (the unit hot-swap is an LM5069-2 now, so the latch is this firmware's: decision 7a, and `unit reset` in decision 6 releases instead of pulsing); 2026-11-25 (decision 7b, the power-up clear of the slot OV latches, from the first bench unit with modules; decision 7c, switch-on blanking, from the same session: every rail switch-on latches, not only the unit's power-up; decision 7d, LCLR held while a slot is off, after the bench run of 7c: a switched-off slot latches ~10 ms after the cut, so `off` then `on` stayed latched); 2026-11-26 (decision 4: the monitor kind comes from DEVICE_ID, because the FD batch 2 units carry an INA228 where batch 1 carries an INA238)
 
 Related: docs/adr/0001-48v-power-plane.md (safety rules, TLV message
 format, data flow), docs/adr/0005-chained-plane-boards.md (core + unit
@@ -46,6 +46,8 @@ addresses:
   U_PGD (in).
 - INA238 0x40 / 0x41 (slot A / B shunt, ALERT sets the slot latch on a
   power limit the firmware programs), INA238 0x44 (unit input, polled).
+  The FD batch 2 units have an INA228 in all three places; the firmware
+  tells them apart by DEVICE_ID (decision 4, note of 2026-11-26).
 - ADC121C027 0x51 / 0x52: module ID resistor per slot (open = no
   module).
 
@@ -135,6 +137,22 @@ Two things in the hardware shape the firmware more than the ADRs say:
    slots were ON (hardware default); that cannot be avoided. A bus that stays
    stuck (SDA low) gets nine SCL clocks, then a MUX_RST pulse, then
    the channel is skipped until the next re-scan.
+
+   Amended 2026-11-26: configuring a monitor reads its DEVICE_ID first
+   and keeps which part it is (slot A, slot B, unit input, per
+   channel). The FD batch 2 units carry an **INA228** at U2 / U52 /
+   U208 instead of the INA238 - pin-compatible, out of stock was the
+   reason - and one plane can have units of both batches on its chain.
+   Only the scaling differs, so the kind reaches no further than the
+   conversions and the PWR_LIMIT arithmetic in
+   `plane-logic/src/drivers/ina.rs`: the INA228 path runs
+   `CURRENT_LSB = 0.5 mA` (1 mA would need a SHUNT_CAL of 45875 at the
+   slot's 3.5 mOhm, past the part's 15-bit field), reads VBUS and
+   CURRENT as 24-bit registers, and gets a 409.6 mW PWR_LIMIT step
+   where the INA238 gets 51.2 mW. Everything the link reports is
+   unchanged in meaning and resolution (10 mV, mA, 0.1 W, 0.1 C), and
+   a DEVICE_ID from neither family is one log line and then treated as
+   an INA238.
 
 5. **Polling.** I2C2 at 100 kHz (chain length, ADR 0005 risks). One
    cycle every 50 ms (20 Hz) over every present unit: expander inputs
@@ -492,8 +510,8 @@ Two things in the hardware shape the firmware more than the ADRs say:
      TLV request handler, config.
    - Device traits: `SegmentBus` (select channel, read / write a
      register at an address), `Clock`, `BackupRegs`, `ConfigStore`,
-     `Int`. Drivers for TCA6424A, INA238, ADC121C027, TCA9548A are
-     written against `SegmentBus` and live here too.
+     `Int`. Drivers for TCA6424A, INA238 / INA228, ADC121C027, TCA9548A
+     are written against `SegmentBus` and live here too.
    - Depends on granite-proto.
 2. **plane-fw** (`firmware/plane-fw`, thumbv6m)
    - embassy-stm32 glue: I2C2 master as `SegmentBus`, I2C1 slave link

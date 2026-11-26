@@ -23,7 +23,6 @@ use granite_proto::{
 };
 
 use crate::device::Devices;
-use crate::drivers::Ina238;
 use crate::log::level;
 use crate::plane::{CAPABILITIES, Plane};
 use crate::sequencer::Button;
@@ -280,7 +279,7 @@ impl Plane {
         }
     }
 
-    /// Push the config's power limits into the present units' INA238s.
+    /// Push the config's power limits into the present units' monitors.
     fn apply_power_limits<D: Devices>(&mut self, dev: &mut D) {
         for unit in 0..UNIT_COUNT {
             if !self.unit_present(unit) {
@@ -293,7 +292,8 @@ impl Plane {
             for half in 0..2usize {
                 let slot = 2 * unit + half;
                 let limit = self.config.power_limit[slot];
-                if Ina238::slot(half == 1)
+                if self
+                    .slot_monitor(unit, half)
                     .set_power_limit(dev.bus(), limit)
                     .is_ok()
                 {

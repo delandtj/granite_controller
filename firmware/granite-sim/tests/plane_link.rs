@@ -35,7 +35,7 @@ use granite_proto::{
 };
 use granite_sim::Scenario;
 use granite_sim::planes::{FakePlaneLink, PLANE_TICK_MS};
-use granite_sim::scenario::{PlaneScenario, PlaneSlotScenario};
+use granite_sim::scenario::{MonitorKind, PlaneScenario, PlaneSlotScenario};
 
 // --- the mini client --------------------------------------------------
 
@@ -291,6 +291,7 @@ fn plane(address: u8, units: Vec<u8>, slots: Vec<PlaneSlotScenario>) -> PlaneSce
         blink_window_ms: Some([100, 500]),
         slots,
         faults: Vec::new(),
+        ..Default::default()
     }
 }
 
@@ -549,6 +550,86 @@ fn dropped_transactions_look_like_a_plane_that_is_not_there() {
     assert!(client.write(0x30, BLK_CTRL, &payload).is_ok());
     client.advance(PLANE_TICK_MS);
     assert_eq!(client.result(0x30, 3), Some(ResultCode::Ok));
+}
+
+// --- the two current monitors -----------------------------------------
+
+#[test]
+fn an_ina228_plane_reports_what_an_ina238_plane_does() {
+    // The same pod twice: FD batch 1 units with INA238s, FD batch 2
+    // units with INA228s. The parts are pin-compatible and the plane
+    // converts before it reports, so every telemetry record on the
+    // link has to match (firmware ADR 0002, as built 2026-11-26).
+    let telemetry = |monitor: MonitorKind| {
+        let mut plane = plane(0x30, vec![0, 1], (0..4).map(|s| slot(s, true, 1_000)).collect());
+        plane.monitor = monitor;
+        let mut scenario = Scenario {
+            planes: vec![plane],
+            ..Default::default()
+        };
+        scenario.normalise();
+        let mut client = Client::new(&scenario);
+        let mut out: Vec<(u8, Vec<Slot>)> = Vec::new();
+        for s in 0..4u8 {
+            let payload = client.expect_read(0x30, BLK_SLOT, s);
+            out.push((
+                s,
+                Slot::records(&payload)
+                    .map(|r| r.expect("a SLOT record"))
+                    .filter(|r| {
+                        matches!(
+                            r,
+                            Slot::Volts(_) | Slot::Amps(_) | Slot::Watts(_) | Slot::Temperature(_)
+                        )
+                    })
+                    .collect(),
+            ))
+        }
+        let mut units: Vec<(u8, Vec<Unit>)> = Vec::new();
+        for u in 0..2u8 {
+            let payload = client.expect_read(0x30, BLK_UNIT, u);
+            units.push((
+                u,
+                Unit::records(&payload)
+                    .map(|r| r.expect("a UNIT record"))
+                    .filter(|r| {
+                        matches!(
+                            r,
+                            Unit::InputVolts(_)
+                                | Unit::InputAmps(_)
+                                | Unit::InputWatts(_)
+                                | Unit::InputTemperature(_)
+                        )
+                    })
+                    .collect(),
+            ))
+        }
+        (out, units)
+    };
+
+    let with238 = telemetry(MonitorKind::Ina238);
+    let with228 = telemetry(MonitorKind::Ina228);
+    assert_eq!(with238, with228, "the INA228 units read differently");
+    // And the numbers are the scenario's: 48.00 V, 1.000 A, 48.0 W per
+    // slot, 2.000 A and 96.0 W per unit input.
+    assert_eq!(
+        with228.0[0].1,
+        vec![
+            Slot::Volts(4_800),
+            Slot::Amps(1_000),
+            Slot::Watts(480),
+            Slot::Temperature(250),
+        ]
+    );
+    assert_eq!(
+        with228.1[0].1,
+        vec![
+            Unit::InputVolts(4_800),
+            Unit::InputAmps(2_000),
+            Unit::InputWatts(960),
+            Unit::InputTemperature(250),
+        ]
+    );
 }
 
 // --- the state the plane keeps ----------------------------------------
