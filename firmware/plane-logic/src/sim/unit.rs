@@ -1,6 +1,7 @@
 //! A simulated unit board: its expander with real pin semantics, its
-//! three INA238s, its two ID ADCs, and a node per slot whose power LED
-//! follows the PWR presses and the rail.
+//! three current monitors (INA238 or INA228, see [`FakeIna`]), its two
+//! ID ADCs, and a node per slot whose power LED follows the PWR presses
+//! and the rail.
 //!
 //! The point of the pin semantics is that the plane logic cannot tell
 //! this from a board: an output line reads back what the latch holds
@@ -9,7 +10,7 @@
 //! a slot whose OFF is asserted drops PGD, which drops the node.
 
 use crate::drivers::expander::{self, In, Out};
-use crate::drivers::ina238;
+use crate::drivers::ina;
 
 /// Register values a TCA6424A has after a reset: every line an input,
 /// every output latch high (SCPS224).
@@ -81,11 +82,23 @@ impl FakeExpander {
     }
 }
 
-/// A simulated INA238.
+/// A simulated INA238 or INA228.
+///
+/// The physical quantities are the fake's state; the registers are
+/// derived from them with the part's own scaling, so a test that sets
+/// 48 V and 1 A gets whatever the real part would have put on the bus.
+/// [`FakeIna::kind`] picks which: an FD batch 1 unit's monitors are
+/// INA238s, an FD batch 2 unit's are INA228s.
 #[derive(Debug, Clone, Copy)]
 pub struct FakeIna {
     /// The part answers on the bus.
     pub present: bool,
+    /// Which part this is.
+    pub kind: ina::Kind,
+    /// What DEVICE_ID answers; `None` is the kind's own reset value. A
+    /// test sets it to an id neither family claims, which is what a
+    /// third part at the same address would look like.
+    pub device_id: Option<u16>,
     /// Bus voltage \[mV\].
     pub bus_mv: u32,
     /// Current \[mA\].
@@ -108,6 +121,8 @@ impl Default for FakeIna {
     fn default() -> Self {
         FakeIna {
             present: true,
+            kind: ina::Kind::Ina238,
+            device_id: None,
             bus_mv: 0,
             current_ma: 0,
             temperature: 250,
@@ -133,8 +148,12 @@ impl FakeIna {
         if self.power_limit == u16::MAX {
             return false;
         }
-        // PWR_LIMIT is compared against POWER / 256.
-        self.power_register() / 256 > self.power_limit as u32
+        // The threshold is PWR_LIMIT scaled by 256 x Power LSB, so it
+        // is POWER that is compared and not a truncated copy of it:
+        // that is what makes an INA238 and an INA228 given the same
+        // limit trip at the same watt, as far as each part's PWR_LIMIT
+        // step allows.
+        self.power_register() > self.power_limit as u32 * 256
     }
 
     /// True while the ALERT pin is pulled.
@@ -145,41 +164,79 @@ impl FakeIna {
     /// whole point of the latch: the core gets to see which source
     /// fired (ADR 0002 decision 6, unit.py U3).
     pub const fn alert(&self) -> bool {
-        self.diag & ina238::DIAG_POL != 0
+        self.diag & ina::DIAG_POL != 0
     }
 
-    /// The POWER register: `0.2 mW` per count.
+    /// The POWER register: `0.2 mW` per count on an INA238,
+    /// `1.6 mW` on an INA228.
     pub const fn power_register(&self) -> u32 {
-        self.power_mw() * 5
+        match self.kind {
+            ina::Kind::Ina238 => self.power_mw() * 5,
+            ina::Kind::Ina228 => self.power_mw() * 5 / 8,
+        }
+    }
+
+    /// Put a power limit of `deciwatt` \[0.1 W\] in PWR_LIMIT the way
+    /// the core would, in this part's own scaling. 0 is "no limit".
+    pub fn set_power_limit_deciwatt(&mut self, deciwatt: u16) {
+        self.power_limit = match self.kind {
+            ina::Kind::Ina238 => ina::power_limit_register(deciwatt),
+            ina::Kind::Ina228 => ina::power_limit_register_228(deciwatt),
+        };
+    }
+
+    /// DEVICE_ID as this part answers it: the reset value of its
+    /// datasheet, or whatever [`FakeIna::device_id`] was set to.
+    pub const fn device_id_reg(&self) -> u16 {
+        match self.device_id {
+            Some(id) => id,
+            None => match self.kind {
+                ina::Kind::Ina238 => 0x2381,
+                ina::Kind::Ina228 => 0x2281,
+            },
+        }
     }
 
     /// Answer a register read.
+    ///
+    /// The width the driver asks for is part of the match: an INA228's
+    /// VBUS and CURRENT are three bytes with the data in bits 23-4, an
+    /// INA238's are two, and a driver that asks for the wrong one gets
+    /// the bus error a real part's wrong-width read would be.
     pub fn read(&self, reg: u8, out: &mut [u8]) -> bool {
         let word = |v: u16, out: &mut [u8]| {
             out.copy_from_slice(&v.to_be_bytes());
             true
         };
+        let long = |v: u32, out: &mut [u8]| {
+            out[0] = (v >> 16) as u8;
+            out[1] = (v >> 8) as u8;
+            out[2] = v as u8;
+            true
+        };
+        let is228 = self.kind == ina::Kind::Ina228;
         match (reg, out.len()) {
-            (ina238::REG_CONFIG, 2) => word(self.config, out),
-            (ina238::REG_ADC_CONFIG, 2) => word(self.adc_config, out),
-            (ina238::REG_SHUNT_CAL, 2) => word(self.shunt_cal, out),
+            (ina::REG_CONFIG, 2) => word(self.config, out),
+            (ina::REG_ADC_CONFIG, 2) => word(self.adc_config, out),
+            (ina::REG_SHUNT_CAL, 2) => word(self.shunt_cal, out),
             // 3.125 mV per count: mV x 8 / 25.
-            (ina238::REG_VBUS, 2) => word((self.bus_mv * 8 / 25) as u16, out),
-            (ina238::REG_CURRENT, 2) => word(self.current_ma as u16, out),
+            (ina::REG_VBUS, 2) if !is228 => word((self.bus_mv * 8 / 25) as u16, out),
+            // 195.3125 uV per count: mV x 128 / 25, in bits 23-4.
+            (ina::REG_VBUS, 3) if is228 => long((self.bus_mv * 128 / 25) << 4, out),
+            (ina::REG_CURRENT, 2) if !is228 => word(self.current_ma as u16, out),
+            // 0.5 mA per count, in bits 23-4.
+            (ina::REG_CURRENT, 3) if is228 => long((self.current_ma * 2) << 4, out),
             // 125 m C per count, in bits 15-4.
-            (ina238::REG_DIETEMP, 2) => {
+            (ina::REG_DIETEMP, 2) if !is228 => {
                 word(((self.temperature as i32 * 4 / 5) as u16) << 4, out)
             }
-            (ina238::REG_POWER, 3) => {
-                let p = self.power_register();
-                out[0] = (p >> 16) as u8;
-                out[1] = (p >> 8) as u8;
-                out[2] = p as u8;
-                true
-            }
-            (ina238::REG_DIAG_ALRT, 2) => word(self.diag, out),
-            (ina238::REG_PWR_LIMIT, 2) => word(self.power_limit, out),
-            (ina238::REG_MANUFACTURER_ID, 2) => word(ina238::MANUFACTURER_ID, out),
+            // 7.8125 m C per count, all 16 bits.
+            (ina::REG_DIETEMP, 2) => word((self.temperature as i32 * 64 / 5) as u16, out),
+            (ina::REG_POWER, 3) => long(self.power_register(), out),
+            (ina::REG_DIAG_ALRT, 2) => word(self.diag, out),
+            (ina::REG_PWR_LIMIT, 2) => word(self.power_limit, out),
+            (ina::REG_MANUFACTURER_ID, 2) => word(ina::MANUFACTURER_ID, out),
+            (ina::REG_DEVICE_ID, 2) => word(self.device_id_reg(), out),
             _ => false,
         }
     }
@@ -187,15 +244,15 @@ impl FakeIna {
     /// Take a register write.
     pub fn write(&mut self, reg: u8, value: u16) -> bool {
         match reg {
-            ina238::REG_CONFIG => self.config = value,
-            ina238::REG_ADC_CONFIG => self.adc_config = value,
-            ina238::REG_SHUNT_CAL => self.shunt_cal = value,
-            ina238::REG_DIAG_ALRT => {
+            ina::REG_CONFIG => self.config = value,
+            ina::REG_ADC_CONFIG => self.adc_config = value,
+            ina::REG_SHUNT_CAL => self.shunt_cal = value,
+            ina::REG_DIAG_ALRT => {
                 // The configuration bits are written; the sticky flags
                 // are not settable from outside.
                 self.diag = (self.diag & 0x07FF) | (value & 0xF800);
             }
-            ina238::REG_PWR_LIMIT => self.power_limit = value,
+            ina::REG_PWR_LIMIT => self.power_limit = value,
             _ => return false,
         }
         true
@@ -611,6 +668,26 @@ impl FakeUnit {
         unit
     }
 
+    /// Make all three of this unit's monitors `kind`.
+    ///
+    /// An FD batch 1 unit has INA238s, an FD batch 2 unit INA228s
+    /// (pp-48-unit-fd U2 / U52 / U208). Nothing else about the board
+    /// changes, which is the point of the swap.
+    pub fn set_ina_kind(&mut self, kind: ina::Kind) -> &mut Self {
+        self.input.kind = kind;
+        for slot in self.slots.iter_mut() {
+            slot.ina.kind = kind;
+        }
+        self
+    }
+
+    /// A [`FakeUnit::populated`] whose three monitors are `kind`.
+    pub fn populated_with(kind: ina::Kind) -> Self {
+        let mut unit = FakeUnit::populated();
+        unit.set_ina_kind(kind);
+        unit
+    }
+
     /// Cut the unit's 3V3: the expander resets to all inputs and every
     /// slot goes to its hardware default, which is ON.
     pub fn power_off(&mut self) {
@@ -723,7 +800,7 @@ impl FakeUnit {
             // With ALATCH programmed it holds the pin until the core
             // reads DIAG_ALRT, which bus.rs models.
             if slot.ina.over_limit() {
-                slot.ina.diag |= ina238::DIAG_POL;
+                slot.ina.diag |= ina::DIAG_POL;
             }
             // The module has VIN while the slot's hot-swap conducts: the
             // latch's Q and the OFF line both cut it, and this is read

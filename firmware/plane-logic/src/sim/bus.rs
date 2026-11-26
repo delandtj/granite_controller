@@ -8,7 +8,7 @@
 //! which is exactly what discovery reads as absence.
 
 use crate::device::{DevResult, DeviceError, SegmentBus};
-use crate::drivers::{expander, idadc, ina238, mux};
+use crate::drivers::{expander, idadc, ina, mux};
 use crate::sim::unit::FakeUnit;
 
 /// The simulated bus.
@@ -125,10 +125,10 @@ impl SegmentBus for FakeBus {
                 }
                 Ok(())
             }
-            (ina238::INA_SLOT_A | ina238::INA_SLOT_B | ina238::INA_UNIT, [reg, hi, lo]) => {
+            (ina::INA_SLOT_A | ina::INA_SLOT_B | ina::INA_UNIT, [reg, hi, lo]) => {
                 let part = match addr {
-                    ina238::INA_SLOT_A => &mut unit.slots[0].ina,
-                    ina238::INA_SLOT_B => &mut unit.slots[1].ina,
+                    ina::INA_SLOT_A => &mut unit.slots[0].ina,
+                    ina::INA_SLOT_B => &mut unit.slots[1].ina,
                     _ => &mut unit.input,
                 };
                 if !part.present {
@@ -203,10 +203,10 @@ impl SegmentBus for FakeBus {
                 }
                 Ok(())
             }
-            ina238::INA_SLOT_A | ina238::INA_SLOT_B | ina238::INA_UNIT => {
+            ina::INA_SLOT_A | ina::INA_SLOT_B | ina::INA_UNIT => {
                 let part = match addr {
-                    ina238::INA_SLOT_A => unit.slots[0].ina,
-                    ina238::INA_SLOT_B => unit.slots[1].ina,
+                    ina::INA_SLOT_A => unit.slots[0].ina,
+                    ina::INA_SLOT_B => unit.slots[1].ina,
                     _ => unit.input,
                 };
                 if !part.present {
@@ -219,10 +219,10 @@ impl SegmentBus for FakeBus {
                     return Err(DeviceError::Bus);
                 }
                 // Reading DIAG_ALRT clears its latched flags.
-                if *reg == ina238::REG_DIAG_ALRT {
+                if *reg == ina::REG_DIAG_ALRT {
                     let target = match addr {
-                        ina238::INA_SLOT_A => &mut unit.slots[0].ina,
-                        ina238::INA_SLOT_B => &mut unit.slots[1].ina,
+                        ina::INA_SLOT_A => &mut unit.slots[0].ina,
+                        ina::INA_SLOT_B => &mut unit.slots[1].ina,
                         _ => &mut unit.input,
                     };
                     target.diag &= 0xF800;

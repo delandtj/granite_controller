@@ -11,7 +11,7 @@
 //! - [`device`]: the small synchronous traits the firmware fills in
 //!   (segment bus, core pins, backup registers, config pages, DFU slot).
 //!   Nothing else in the crate touches hardware.
-//! - [`drivers`]: TCA9548A, TCA6424A, INA238 and ADC121C027 over
+//! - [`drivers`]: TCA9548A, TCA6424A, INA238 / INA228 and ADC121C027 over
 //!   [`device::SegmentBus`], including the unit board's expander line
 //!   map.
 //! - [`model`]: the per-slot and per-unit model the poll cycle fills and

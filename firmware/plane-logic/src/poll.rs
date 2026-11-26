@@ -1,10 +1,14 @@
 //! The poll schedule of ADR 0002 decision 5.
 //!
 //! One cycle every 50 ms (20 Hz) over every present unit: the expander's
-//! three input ports, then each slot's INA238 bus voltage, current,
+//! three input ports, then each slot's monitor bus voltage, current,
 //! power and die temperature, and DIAG_ALRT whenever the slot's ALERT
-//! node changed. The unit's own INA238 goes at 2 Hz and the ID ADCs at
-//! 1 Hz, or at once on a PG or presence change.
+//! node changed. The unit's own monitor goes at 2 Hz and the ID ADCs at
+//! 1 Hz, or at once on a PG or presence change. Which part answers -
+//! INA238 or INA228 - is the channel's, read at configure time
+//! ([`crate::drivers::ina`]); the poll only asks for a [`Sample`].
+//!
+//! [`Sample`]: crate::drivers::Sample
 //!
 //! Everything a status bit says comes from this cycle, so a bit cannot
 //! be stale: the only sticky ones are the latches (OV, power limit),
@@ -18,13 +22,12 @@ use granite_proto::{CrossCheck, EventKind, EventTarget, SEGMENT_CHANNELS, SlotSt
 
 use crate::device::Devices;
 use crate::drivers::expander::{self, In, Out};
-use crate::drivers::ina238::DIAG_POL;
-use crate::drivers::Ina238;
+use crate::drivers::ina::DIAG_POL;
 use crate::log::level;
 use crate::model::RetryOutcome;
 use crate::plane::Plane;
 
-/// The unit input INA238's period \[ms\] (2 Hz).
+/// The unit input monitor's period \[ms\] (2 Hz).
 pub const UNIT_POLL_MS: u64 = 500;
 
 /// The ID ADCs' period \[ms\] (1 Hz).
@@ -97,7 +100,7 @@ impl Plane {
         }
 
         if unit_due {
-            let sample = Ina238::unit().sample(dev.bus())?;
+            let sample = self.unit_monitor(ch).sample(dev.bus())?;
             self.units[ch].volts = sample.volts;
             self.units[ch].amps = sample.amps;
             self.units[ch].watts = sample.watts;
@@ -164,12 +167,12 @@ impl Plane {
             self.set_latched_off_noted(slot, false);
         }
 
-        // DIAG_ALRT only when the ALERT node changed: the slot's INA238
+        // DIAG_ALRT only when the ALERT node changed: the slot monitor's
         // alert is one of the three open-drain sources on OVK, and
         // DIAG_ALRT is what tells a power trip from the module's own
         // OV_KILL (unit.py U3).
         if !ovk && self.ovk_was_high(slot) {
-            let ina = Ina238::slot(b);
+            let ina = self.slot_monitor(ch, half);
             if let Ok(diag) = ina.diag_alrt(dev.bus())
                 && diag & DIAG_POL != 0
             {
@@ -180,7 +183,7 @@ impl Plane {
         }
         self.set_ovk_high(slot, ovk);
 
-        let sample = Ina238::slot(b).sample(dev.bus())?;
+        let sample = self.slot_monitor(ch, half).sample(dev.bus())?;
         self.slots[slot].take_sample(self.now_ms, sample);
 
         let blink = self.config.blink;

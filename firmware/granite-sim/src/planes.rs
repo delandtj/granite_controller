@@ -4,8 +4,9 @@
 //!
 //! Each plane is a real [`plane_logic::Plane`] over plane-logic's own
 //! fake devices (`plane-logic/src/sim`): the expander with pin
-//! semantics, the INA238s, the ID ADCs and a host per slot whose power
-//! LED follows the PWR presses and the rail. The link in front of them
+//! semantics, the current monitors (INA238 or INA228, the scenario's
+//! `monitor`), the ID ADCs and a host per slot whose power LED follows
+//! the PWR presses and the rail. The link in front of them
 //! does what the controller's I2C peripheral does and no more: it hands
 //! the request bytes to [`plane_logic::Plane::handle_frame`] and gives
 //! the answer bytes back. Framing, CRC, records and retries are
@@ -29,7 +30,7 @@
 
 use granite_core::hal::{LinkError, PlaneLink};
 use granite_proto::{MAX_PLANES, SLOT_COUNT, UNIT_COUNT, frame, plane_of_address};
-use plane_logic::drivers::{idadc, ina238};
+use plane_logic::drivers::idadc;
 use plane_logic::model::POLL_PERIOD_MS;
 use plane_logic::reset_cause;
 use plane_logic::sim::{FakeSlot, FakeUnit, Fakes, Sim};
@@ -99,6 +100,7 @@ impl FakePlane {
                 continue;
             }
             let mut fake = FakeUnit::new();
+            fake.set_ina_kind(scenario.monitor.kind());
             for half in 0..2usize {
                 let index = 2 * unit + half as u8;
                 let slot = scenario.slot(index);
@@ -317,7 +319,7 @@ impl FakePlane {
             } else {
                 ((fake.ina.power_mw() / 100 / 2) as u16).max(1)
             };
-            fake.ina.power_limit = ina238::power_limit_register(limit);
+            fake.ina.set_power_limit_deciwatt(limit);
         }
     }
 

@@ -151,6 +151,7 @@ fn scenario() -> Scenario {
                 })
                 .collect(),
             faults: Vec::new(),
+            ..Default::default()
         }],
         ..Scenario::default()
     };
