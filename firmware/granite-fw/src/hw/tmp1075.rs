@@ -1,10 +1,23 @@
-//! TMP1075 board temperature sensor at 0x48 on the internal bus
-//! (ADR 0001 component 4, "TMP1075 (0x48, internal bus) every 1 s").
+//! Board temperature sensor at 0x48 on the internal bus (ADR 0001
+//! component 4, "TMP1075 (0x48, internal bus) every 1 s").
 //!
-//! The temperature register is 12 bits, left justified in a big-endian
-//! 16-bit word, 0.0625 C/LSB. The trait wants centi-degrees, so the
-//! conversion is `(raw >> 4) * 625 / 100`, done in integer arithmetic:
-//! 0.0625 C is exactly 6.25 centi-C, hence `* 25 / 4`.
+//! Two parts answer there, and the firmware does not tell them apart:
+//! the TMP1075 of the earlier boards (SBOS854) and the TMP75A of
+//! controller-fd U5 (SBOS288, the LM75 family). The module keeps the
+//! TMP1075 name because that is what the ADRs, the README and the
+//! Modbus map call this sensor.
+//!
+//! The temperature register is the same on both: 12 bits left justified
+//! in a big-endian 16-bit word, 0.0625 C/LSB. The trait wants
+//! centi-degrees, so the conversion is `(raw >> 4) * 625 / 100`, done
+//! in integer arithmetic: 0.0625 C is exactly 6.25 centi-C, hence
+//! `* 25 / 4`. A TMP75 starts in its 9-bit mode, where the low three
+//! bits of the 12 read zero; the same arithmetic then lands on a
+//! multiple of 0.5 C, which is resolution enough for a board sensor.
+//!
+//! What is *not* the same is the configuration register: 16 bits on the
+//! TMP1075, 8 on the TMP75. See [`CFG_CONTINUOUS`] for what that means
+//! for the one write this module makes.
 
 use granite_core::hal::{BoardTemp, HalError, HalResult};
 
@@ -17,11 +30,25 @@ const REG_TEMP: u8 = 0x00;
 /// Configuration register.
 const REG_CFG: u8 = 0x01;
 
-/// CFG = the part's own reset value (SBOS734, Configuration Register):
-/// OS = 0, conversion rate 27.5 ms, SD = 0 (continuous), ALERT unused, and
-/// the reserved low byte left at its default 0xff. Written explicitly so a
-/// warm restart after a shutdown command still ends up in continuous mode.
-const CFG_CONTINUOUS: u16 = 0x00ff;
+/// CFG as a **single** byte: both parts' reset value for the bits it
+/// covers. OS = 0, R1/R0 = 0, F1/F0 = 0, POL = 0, TM = 0 and - the one
+/// that matters - SD = 0, continuous conversion.
+///
+/// One byte and not two. The TMP1075's CFG is 16 bits, but SBOS854
+/// 7.5.1.2 says the register takes a single-byte write "for software
+/// compatibility with xx75 standard temperature sensors", where the
+/// byte updates bits 15-8 (and the low byte is reserved anyway); the
+/// TMP75's CFG *is* those eight bits (SBOS288 7.5.3, reset 0x00). A
+/// two-byte write of the old 0x00ff would have put the second byte -
+/// every bit set, SD among them - into a TMP75's one and only
+/// configuration byte and shut the sensor down.
+///
+/// The write is kept rather than dropped because it costs one
+/// transaction at start-up and puts a part that somehow sits in
+/// shutdown back into continuous mode. R1/R0 stay 0: that is 9-bit
+/// resolution on a TMP75 and the 27.5 ms conversion rate the TMP1075
+/// boards have always run.
+const CFG_CONTINUOUS: u8 = 0x00;
 
 /// [`BoardTemp`] over the TMP1075.
 pub struct Tmp1075 {
@@ -61,8 +88,7 @@ impl Tmp1075 {
     }
 
     fn configure(&self) -> HalResult<()> {
-        let bytes = [REG_CFG, (CFG_CONTINUOUS >> 8) as u8, CFG_CONTINUOUS as u8];
-        self.dev.write(&bytes).map_err(hal_err)
+        self.dev.write(&[REG_CFG, CFG_CONTINUOUS]).map_err(hal_err)
     }
 
     /// Raw 12-bit signed reading, for logs and self-test.
@@ -94,7 +120,7 @@ impl BoardTemp for Tmp1075 {
             log::info!("tmp1075: answering again");
         }
         if self.unconfigured {
-            // One retry: the power-on default is continuous mode too, so a
+            // One retry: both parts power up in continuous mode, so a
             // sensor that reads but will not take the write still works.
             self.unconfigured = false;
             match self.configure() {
