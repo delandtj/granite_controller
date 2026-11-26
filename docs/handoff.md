@@ -543,6 +543,22 @@ is the one with a deadline.
      analogy with the parts they replace (assumed, check in JLC's
      preview). ERC 0 and DRC as before on all three; the three fab sets
      are in fab-archive/fd-batch2, PM-19V-250W-B reuses the batch 1 set.
+   - [x] Plane firmware for the INA228 (5cb6a8a, merged e13dd58): each
+     monitor's DEVICE_ID picks INA238/237 or INA228 scaling (INA228:
+     CURRENT_LSB 0.5 mA, SHUNT_CAL 22938 slot / 19661 unit), so batch 1
+     and batch 2 units mix on one plane; sim tests check both report the
+     same V / A / W / C and trip the power limit at the same watt.
+     controller-fd: one-byte CFG write so a TMP75 at U5 is not put in
+     shutdown (4b53035). **Neither is flashed yet**: the plane image
+     (SWD, pogo) must be on every core before a batch 2 unit is used;
+     the controller image goes by OTA.
+   - JLC stock re-checked 2026-11-26 against the final fd-batch2 files
+     at 5 / 10 / 30 / 50: every line in stock; tightest C623510
+     MCP65R46-2.4 (PM-B U2 / U3), 115 for 100.
+   - Known flaky: granite-sim tests/flow.rs
+     `first_boot_then_power_a_node_on` (wall clock) fails under a fully
+     parallel `cargo test` on a loaded machine, passes alone (5/5);
+     same at f0769cd, not from the INA228 work.
    - [x] Fault-case pass on the unit as routed (UVLO / OVLO with
      tolerances, OV_KILL latch, module output shorted to input, loss
      of 3V3 with the bus live). The one desk check that could still
