@@ -108,6 +108,8 @@ to batch 1. Each checked against datasheets on 2026-11-26.
   support, 5cb6a8a, plus decision 7d) before a batch 2 unit is used; an
   older image reads an INA228 with INA238 scaling (wrong V / A / W and
   power limit). SWD over the pogo: site/src/commissioning/flash-core.md.
+  Done on the bench core (2026-11-26, boot count 4): batch 1 INA237s
+  detected and read as before; other cores still to do.
 - Controller-fd: master's granite-fw by OTA (TMP75 CFG write). OTA pull
   procedure: docs/handoff.md, 2026-11-25 (late).
 - Bench before the pod: unit-fd tests 1 to 6 (docs/unit-fd-emi-bench-plan.md),

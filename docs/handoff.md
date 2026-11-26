@@ -187,7 +187,8 @@ it, ~/.local/share/granite-mqtt/.
   rounds out of three. Fixed by ADR 0002 decision 7d (LCLR held while a
   slot is off, 1678bbf), flashed the same evening: three rounds of `off`
   / `on` on nodes 58 and 60, no latch, back at 48.1 V every time. The
-  bench core now runs master at 7b90ef1 (boot count 3).
+  bench core ran master at 7b90ef1 (boot count 3), and since 2026-11-26
+  the INA228-capable image (below).
   Unit 0 slot A (node57) latched at two power-ups in a row with the
   power-up clear; it is also the slot whose empty ID read low this
   morning: suspect leakage / a fault on that slot (module swap pending).
@@ -553,9 +554,21 @@ is the one with a deadline.
      and batch 2 units mix on one plane; sim tests check both report the
      same V / A / W / C and trip the power limit at the same watt.
      controller-fd: one-byte CFG write so a TMP75 at U5 is not put in
-     shutdown (4b53035). **Neither is flashed yet**: the plane image
-     (SWD, pogo) must be on every core before a batch 2 unit is used;
-     the controller image goes by OTA.
+     shutdown (4b53035). The plane image (SWD, pogo) must be on every
+     core before a batch 2 unit is used; the controller image goes by
+     OTA.
+   - [x] **Bench core flashed with the INA228-capable plane image**
+     (2026-11-26, plane-fd from master 66ae2fe / 2d49b23, no firmware
+     change after e13dd58; probe-rs download + reset over the pogo).
+     Boot count 4, a reset with VDD kept: nothing lost, all four slots
+     back on. Readings unchanged against the previous image (units
+     48.1 V / 0.1 A / 4 W, slots 48.1 V / 2 W, 34-42 C), and the log
+     ring has no "ina device id unknown" line: the six INA237s of the
+     batch 1 units were recognised by DEVICE_ID and took the INA238
+     path. The INA228 path itself is untested on hardware until batch 2
+     units arrive (readings against a meter).
+   - [ ] Controller-fd still runs the image without the TMP75 CFG write
+     (harmless on its TMP1075); OTA it with the next controller update.
    - JLC stock re-checked 2026-11-26 against the final fd-batch2 files
      at 5 / 10 / 30 / 50: every line in stock; tightest C623510
      MCP65R46-2.4 (PM-B U2 / U3), 115 for 100.
