@@ -69,6 +69,15 @@ Key numbers:
   the carrier's top strip (link ribbon around the block corner, 30 to 35 cm), the four units
   (326 mm) along the 8 frames. Chain connector = 3V3, GND, I2C only; link = CAN FD.
 
+## Board screws: self-tapping, no inserts (2026-11-27)
+
+- The four standoff holes are pilot holes for 3 mm self-tapping screws (3 x 10 pan head,
+  ST2.9 works too), no heat-set inserts: 2.5 mm x 10 deep (Params insert_d 2.5,
+  insert_depth 10; set by `tools/screw_pilot.py`, the same pilot as the carrier screws).
+  3 x 10 through the 1.6 mm board leaves 8.4 mm of thread in the standoff. Do not
+  overtighten. Backup with the insert holes: `Frame.pre-screw-pilot.FCStd`.
+- The drop-in claw mount (2149b23) was tried and reverted: it would not fit.
+
 ## Plane carrier fixing (changed 2026-11-21)
 
 - The hooks into the frame windows are gone (they needed supports). Each half has four slots
