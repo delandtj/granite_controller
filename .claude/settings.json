@@ -1,0 +1,45 @@
+{
+  "enabledPlugins": {
+    "hero-automation@hero-bundles": false,
+    "hero-code@hero-bundles": false,
+    "hero-collections@hero-bundles": false,
+    "hero-core@hero-bundles": false,
+    "hero-deployment@hero-bundles": false,
+    "hero-forge@hero-bundles": false,
+    "hero-hflow@hero-bundles": false,
+    "hero-lab@hero-bundles": false,
+    "hero-life-cycle@hero-bundles": false,
+    "hero-mother@hero-bundles": false,
+    "hero-naming@hero-bundles": false,
+    "hero-rust@hero-bundles": false,
+    "hero-sdks@hero-bundles": false,
+    "hero-skills-meta@hero-bundles": false,
+    "hero-ui-dioxus@hero-bundles": false,
+    "hero-web@hero-bundles": false,
+    "herolib-advanced@hero-bundles": false,
+    "herolib-base@hero-bundles": false
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/no-hero.sh session"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/no-hero.sh pretool"
+          }
+        ]
+      }
+    ]
+  }
+}
