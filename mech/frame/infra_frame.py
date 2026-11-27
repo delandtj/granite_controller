@@ -51,7 +51,7 @@ CORE_X0, CORE_ZTOP = 130.0, 93.5     # lx of board x = 0 (18 mm in from the bus 
 CORE_YF = 14.0                        # parts side of the board (it faces the back)
 CORE_W, CORE_H = 68.0, 72.0
 
-SO_D, PILOT_D, PILOT_DEPTH = 9.0, 4.0, 7.0
+SO_D, PILOT_D, PILOT_DEPTH = 9.0, 2.5, 10.0   # pilot for 3 x 10 self-tapping screws (was 4.0 x 7 for M3 inserts)
 
 # cooler of the first node frame, in FRAME axes: centre of the chip, half width of the pocket
 # (cooler base 90 x 90 plus 1 mm around), and how deep it reaches into the infra frame's front

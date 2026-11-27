@@ -76,6 +76,8 @@ Key numbers:
   insert_depth 10; set by `tools/screw_pilot.py`, the same pilot as the carrier screws).
   3 x 10 through the 1.6 mm board leaves 8.4 mm of thread in the standoff. Do not
   overtighten. Backup with the insert holes: `Frame.pre-screw-pilot.FCStd`.
+- The infra frame's four core standoffs (infra_frame.py PILOT_D, PILOT_DEPTH) are the same
+  2.5 x 10 pilot, same screws: 1 mm of plastic left under the hole.
 - The drop-in claw mount (2149b23) was tried and reverted: it would not fit.
 
 ## Plane carrier fixing (changed 2026-11-21)
