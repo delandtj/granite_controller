@@ -6,6 +6,9 @@ Read this first, then README.md and docs/adr/0005-chained-plane-boards.md.
 instead: it is self-contained (what to upload, substitutions, checks,
 stock tool, what to flash before the boards are used).**
 
+**Designing the PM rev C module (second pod's 48 modules)? Read
+docs/pm-rev-c-handoff.md: why, the fixed interface, what to decide first.**
+
 ## Bench services on the workstation (temporary, remove when bench work ends)
 
 Two systemd user units, both marked temporary in their unit files. Linger

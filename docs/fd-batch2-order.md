@@ -7,9 +7,11 @@ the wider bench history is docs/handoff.md.
 
 ## Status
 
-- **Ordered 2026-11-26** by the user: two pods, about 4.5K total, accepted
-  by JLC without part errors. Exact per-board quantities: see the JLC
-  order (the table below is the earlier one-pod plan).
+- **Ordered 2026-11-26** by the user: controllers, cores and units for
+  two pods (about 4.5K total; exact quantities in the JLC order, the
+  table below is the earlier one-pod plan), and **50 PM-19V-250W-B, one
+  pod only**: JLC had 115 MCP65R46 (C623510) against 200 for two pods.
+  The second pod's modules will be PM rev C: docs/pm-rev-c-handoff.md.
 - Fab sets are generated, checked and committed (master b77862c and
   earlier); the PM-B set is in fab-archive/fd-batch2 since 80281ba.
 - JLC's "Reorder" of the batch 1 orders is refused (parts out of stock),
