@@ -78,6 +78,10 @@ Key numbers:
   overtighten. Backup with the insert holes: `Frame.pre-screw-pilot.FCStd`.
 - The infra frame's four core standoffs (infra_frame.py PILOT_D, PILOT_DEPTH) are the same
   2.5 x 10 pilot, same screws: 1 mm of plastic left under the hole.
+- Flood openings: infra_frame.py and end_frame.py now also write `infra_frame_flood.3mf` and
+  `end_frame_flood.3mf`, the frame plus the node frame's six FloodModifiers boxes (set walls 0
+  on them in the slicer, as on frame_flood.3mf). Infra: same place (y 8..11). End frame (9 mm
+  thick): moved to y 5.5..8.5.
 - The drop-in claw mount (2149b23) was tried and reverted: it would not fit.
 
 ## Plane carrier fixing (changed 2026-11-21)

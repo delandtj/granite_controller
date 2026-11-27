@@ -79,6 +79,8 @@ def build():
     W = float(sh.get("frame_w"))
     H = float(sh.get("frame_h"))
     band = float(sh.get("band"))
+    # flood openings: the node frame's slicer modifier boxes (walls 0), the rails are the same here
+    flood = [o.Shape.copy() for o in src.getObject("FloodModifiers").Links]
     App.closeDocument(src.Name)                    # never saved: Frame.FCStd stays as it is
 
     add = []
@@ -132,11 +134,11 @@ def build():
         "Core_C1_cap": box(CORE_X0 + 16.2, CORE_X0 + 28.8, CORE_YF - 10.9, CORE_YF, CORE_ZTOP - 54.8, CORE_ZTOP - 44.0),
     }
     refs = {n: turn(r) for n, r in refs.items()}
-    return shape, refs, W, H, bad
+    return shape, refs, W, H, bad, flood
 
 
 def main():
-    shape, refs, W, H, bad = build()
+    shape, refs, W, H, bad, flood = build()
     print("CHK recompute problems", bad)
     print("CHK infra frame valid", shape.isValid(), "solids", len(shape.Solids), "bbox", shape.BoundBox, "vol", round(shape.Volume))
     for n, r in refs.items():
@@ -168,15 +170,27 @@ def main():
     # print orientation: back on the bed, legs up, centred (same as the node frame)
     m = App.Matrix()
     m.rotateX(1.5707963267948966)
-    p = shape.copy()
-    p.translate(V(-W / 2, 0, -H / 2))
-    p = p.transformGeometry(m)
-    mesh = MeshPart.meshFromShape(Shape=p, LinearDeflection=0.02, AngularDeflection=0.2, Relative=False)
-    mf = doc.addObject("Mesh::Feature", "print_mesh")
-    mf.Mesh = mesh
+    def orient(s):
+        s = s.copy()
+        s.translate(V(-W / 2, 0, -H / 2))
+        return s.transformGeometry(m)
+
+    def mesh(s, name):
+        o = doc.addObject("Mesh::Feature", name)
+        o.Mesh = MeshPart.meshFromShape(Shape=orient(s), LinearDeflection=0.02, AngularDeflection=0.2, Relative=False)
+        return o
+
+    for fl in flood:
+        inner = fl.common(Part.makeBox(W, 100, H, V(0, -50, 0)))
+        print("CHK flood modifier y %.1f..%.1f z %.1f..%.1f: solid inside %.2f" % (
+            fl.BoundBox.YMin, fl.BoundBox.YMax, fl.BoundBox.ZMin, fl.BoundBox.ZMax, shape.common(inner).Volume / inner.Volume))
+    mf = mesh(shape, "print_mesh")
+    mm = mesh(Part.makeCompound(flood), "flood_modifiers")
     Mesh.export([mf], HERE + "infra_frame.stl")
     Mesh.export([mf], HERE + "infra_frame.3mf")
+    Mesh.export([mf, mm], HERE + "infra_frame_flood.3mf")   # set walls 0 on flood_modifiers in the slicer
     doc.removeObject("print_mesh")
+    doc.removeObject("flood_modifiers")
     chk = Mesh.Mesh(HERE + "infra_frame.stl")
     print("CHK stl bbox", chk.BoundBox, "vol", round(chk.Volume), "solid", chk.isSolid(), "nonmanifold", chk.hasNonManifolds())
 

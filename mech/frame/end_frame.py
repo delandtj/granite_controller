@@ -41,6 +41,13 @@ def main():
     src.recompute()
     bad = [o.Name for o in src.Objects if "Invalid" in o.State]
     base = src.getObject("FrameBody").Shape.copy()
+    # flood openings: the node frame's slicer modifier boxes (walls 0), moved from y 8..11 to
+    # y 5.5..8.5 to stay inside this thinner frame (0.5 mm short of its front face)
+    flood = []
+    for o in src.getObject("FloodModifiers").Links:
+        f = o.Shape.copy()
+        f.translate(V(0, THICK - 0.5 - f.BoundBox.YMax, 0))
+        flood.append(f)
     App.closeDocument(src.Name)                    # never saved: Frame.FCStd stays as it is
 
     shape = base.common(Part.makeBox(W + 20, THICK + 5, H + 20, V(-10, -5, -10))).removeSplitter()
@@ -63,15 +70,27 @@ def main():
     # print orientation: back on the bed, centred (same as the node frame)
     m = App.Matrix()
     m.rotateX(1.5707963267948966)
-    p = shape.copy()
-    p.translate(V(-W / 2, 0, -H / 2))
-    p = p.transformGeometry(m)
-    mesh = MeshPart.meshFromShape(Shape=p, LinearDeflection=0.02, AngularDeflection=0.2, Relative=False)
-    mf = doc.addObject("Mesh::Feature", "print_mesh")
-    mf.Mesh = mesh
+    def orient(s):
+        s = s.copy()
+        s.translate(V(-W / 2, 0, -H / 2))
+        return s.transformGeometry(m)
+
+    def mesh(s, name):
+        o = doc.addObject("Mesh::Feature", name)
+        o.Mesh = MeshPart.meshFromShape(Shape=orient(s), LinearDeflection=0.02, AngularDeflection=0.2, Relative=False)
+        return o
+
+    for fl in flood:
+        inner = fl.common(Part.makeBox(W, 100, H, V(0, -50, 0)))
+        print("CHK flood modifier y %.1f..%.1f z %.1f..%.1f: solid inside %.2f" % (
+            fl.BoundBox.YMin, fl.BoundBox.YMax, fl.BoundBox.ZMin, fl.BoundBox.ZMax, shape.common(inner).Volume / inner.Volume))
+    mf = mesh(shape, "print_mesh")
+    mm = mesh(Part.makeCompound(flood), "flood_modifiers")
     Mesh.export([mf], HERE + "end_frame.stl")
     Mesh.export([mf], HERE + "end_frame.3mf")
+    Mesh.export([mf, mm], HERE + "end_frame_flood.3mf")   # set walls 0 on flood_modifiers in the slicer
     doc.removeObject("print_mesh")
+    doc.removeObject("flood_modifiers")
     chk = Mesh.Mesh(HERE + "end_frame.stl")
     print("CHK stl bbox", chk.BoundBox, "vol", round(chk.Volume), "solid", chk.isSolid(), "nonmanifold", chk.hasNonManifolds())
 
