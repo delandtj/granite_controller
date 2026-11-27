@@ -36,8 +36,8 @@ def main():
     pitch = float(sh.get("pitch"))
     W = float(sh.get("frame_w"))
     H = float(sh.get("frame_h"))
-    for n in ["Standoffs", "PilotHoles"] + [o.Name for o in src.Objects if o.Name.startswith("Claw")]:
-        src.getObject(n).Suppressed = True       # no board here: drop the board mount (tools/drop_in.py claws too)
+    for n in ("Standoffs", "PilotHoles"):
+        src.getObject(n).Suppressed = True
     src.recompute()
     bad = [o.Name for o in src.Objects if "Invalid" in o.State]
     base = src.getObject("FrameBody").Shape.copy()

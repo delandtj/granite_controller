@@ -82,23 +82,6 @@ Key numbers:
   side down. Clips are untested and bend across the layers.
 - `tools/render_page.sh` re-renders all page pictures into `pod-layout/img`.
 
-## Board mount: drop-in claws, no screws (2026-11-27)
-
-- `tools/drop_in.py` (run once on Frame.FCStd; backup `Frame.pre-dropin.FCStd`): four corner
-  claws replace the M3 heat-set inserts (`PilotHoles` suppressed, top two standoffs cut away).
-  Fitting: tilt the board, push its top edge 4.2 mm up into the deep top claws, swing the
-  bottom edge in over the bottom lips, drop it onto the bottom floors. Then a 3.6 mm zip tie
-  along x through each top claw, in the gap above the board edge, closed round the front lip:
-  the board can lift 0.6 mm, the bottom lips hold 2.7 mm.
-- Claws only at the corners: plugs and edge connectors fill the rest of both board edges.
-  Top claws frame x 16..31 and 179.5..200, bottom 15..27.5 and 188.5..201. Pocket y
-  22.6..25.0 (board 23..24.6), lip front 27.2. Back stop: bottom standoffs and the top claws.
-- Checked: board parts seated and pushed up, plugs, next frame, infra, end frame, carrier all 0.
-  MoboLink #368..#371 (cubes at the corner holes) are screw stand-ins, nothing on the board.
-- `Unnamed2-Board without cooler (with backplate).step` is the same model as MoboRef (same
-  3647 parts). Not printed: the top lip bridges a 6 x 13 mm overhang over the pocket.
-- The infra and end frames suppress every `Claw*` feature with the standoffs.
-
 ## Locking the block for lifting (2026-11-21)
 
 - The dovetails slide along z and only stop one way: a frame can lift up out of the frame
