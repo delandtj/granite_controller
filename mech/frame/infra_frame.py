@@ -71,8 +71,8 @@ def build():
     src = App.openDocument(HERE + "Frame.FCStd")
     sh = src.getObject("Params")
     sh.set("B18", str(DEPTH))                      # pitch
-    for n in ("Standoffs", "PilotHoles"):
-        src.getObject(n).Suppressed = True
+    for n in ["Standoffs", "PilotHoles"] + [o.Name for o in src.Objects if o.Name.startswith("Claw")]:
+        src.getObject(n).Suppressed = True       # no board here: drop the board mount (tools/drop_in.py claws too)
     src.recompute()
     bad = [o.Name for o in src.Objects if "Invalid" in o.State]
     base = src.getObject("FrameBody").Shape.copy()
