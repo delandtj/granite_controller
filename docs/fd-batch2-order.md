@@ -49,6 +49,10 @@ they replace (pcbkit.toml rotation tables, keyed by LCSC number):
 - unit-fd J301 (PZ254-2-07-W-8.5, C2894987): pins pointing off the board edge, as J302.
 - core-fd U1 (LM5164DDAT, C2071198): pin 1 and exposed pad.
 - Also, as always: the -B module's bottom-side Q3.
+- **PM-19V-250W-B preview confirmed by the user 2026-11-27.** Top side
+  checked against power/pm-19v-250w-b: C13-C15 + pad toward L1, U1 pin 1
+  bottom-left, L1 and C2-C6 as on the board; bottom side (Q3, Q1/Q2,
+  U2-U4, diodes) checked by the user.
 
 ## Substitutions (batch 1 part out of stock at JLC)
 
